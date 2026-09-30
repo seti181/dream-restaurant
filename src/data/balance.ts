@@ -85,6 +85,16 @@ export const balance = {
     matchesForFullAppeal: 2,
   },
 
+  lunchSet: {
+    /** "Obiad dnia" is served from 12:00 until 15:00. */
+    startHour: 12,
+    endHour: 15,
+    /** How much a lunch set tempts a group that loves it (times the group's lunchSetAppeal). */
+    appealBonus: 1.5,
+    /** A new lunch set starts at this share of the two dishes' separate prices. */
+    startingPriceShare: 0.8,
+  },
+
   supplier: {
     /** Premium ingredients make every dish this much better (quality points)... */
     premiumQualityBonus: 8,

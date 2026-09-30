@@ -233,7 +233,7 @@ export function stepDay(rng: RngState, progress: DayInProgress): void {
     floor.visits.push({
       party,
       tablesUsed,
-      order: chooseOrder(rng, restaurant.menu, party),
+      order: chooseOrder(rng, restaurant, party, minute),
       seatedAt: minute,
       orderedAt: minute + orderMinutes(restaurant, restaurant.tables - floor.freeTables),
       readyAt: null,

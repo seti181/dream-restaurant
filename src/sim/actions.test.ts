@@ -5,17 +5,20 @@ import { EQUIPMENT } from '../data/equipment';
 import {
   addDish,
   buyEquipment,
+  clearLunchSet,
   dishUnavailableReason,
   equipmentUnavailableReason,
   extraUnavailableReason,
   menuBoardUnavailableReason,
   removeDish,
   setDishPrice,
+  setLunchSet,
+  setLunchSetPrice,
   setSupplier,
   upgradeMenuBoard,
 } from './actions';
 import { newGame, playerOf } from './game';
-import { ingredientCostOf, pairingsOf, tagsOf } from './menu';
+import { ingredientCostOf, pairingsOf, recipeKey, tagsOf } from './menu';
 import { orderQuality } from './service';
 
 const fresh = () => newGame(1);
@@ -183,5 +186,36 @@ describe('hidden pairings', () => {
 
   it('can stack', () => {
     expect(pairingsOf(dish('pierogi', 'meat', ['friedOnions', 'oscypek', 'cranberry']))).toHaveLength(2);
+  });
+});
+
+describe('the lunch set', () => {
+  // Starter menu: 0 tomato soup, 1 żurek, 2 pierogi, 3 schabowy, 4 gołąbki, 5 kompot.
+  it('pairs a soup and a main, a little cheaper than buying both', () => {
+    const state = setLunchSet(fresh(), 0, 2);
+    const set = playerOf(state).lunchSet!;
+    const [soup, , main] = menuOf(state);
+    expect(set.soup).toBe(recipeKey(soup));
+    expect(set.main).toBe(recipeKey(main));
+    expect(set.price).toBe(Math.round((soup.price + main.price) * balance.lunchSet.startingPriceShare));
+  });
+
+  it('needs a soup and a main, in that order', () => {
+    const state = fresh();
+    expect(setLunchSet(state, 2, 0)).toBe(state);
+    expect(setLunchSet(state, 0, 5)).toBe(state);
+  });
+
+  it('keeps its price when swapping a dish, and can be repriced or removed', () => {
+    let state = setLunchSetPrice(setLunchSet(fresh(), 0, 2), 33);
+    state = setLunchSet(state, 1, 3);
+    expect(playerOf(state).lunchSet!.price).toBe(33);
+    expect(playerOf(clearLunchSet(state)).lunchSet).toBeNull();
+  });
+
+  it('disappears when one of its dishes leaves the menu', () => {
+    const state = setLunchSet(fresh(), 0, 2);
+    expect(playerOf(removeDish(state, 4)).lunchSet).not.toBeNull();
+    expect(playerOf(removeDish(state, 2)).lunchSet).toBeNull();
   });
 });

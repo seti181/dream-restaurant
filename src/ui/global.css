@@ -729,3 +729,28 @@ h2.spaced {
   opacity: 0.4;
   cursor: default;
 }
+
+/* ---------- Lunch set ---------- */
+
+.lunch-set {
+  margin-top: 24px;
+  padding: 16px;
+  border-radius: 16px;
+  background: #fdf6ea;
+}
+
+.lunch-set h2 {
+  margin: 0 0 4px;
+}
+
+.lunch-set .chips {
+  margin-top: 10px;
+}
+
+.lunch-set-price {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 16px;
+  margin-top: 14px;
+}

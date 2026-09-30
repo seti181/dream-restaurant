@@ -72,9 +72,12 @@ export function addDish(
 }
 
 export function removeDish(state: GameState, index: number): GameState {
-  const menu = playerOf(state).menu;
+  const { menu, lunchSet } = playerOf(state);
   if (index < 0 || index >= menu.length) return state;
-  return withPlayer(state, { menu: menu.filter((_, i) => i !== index) });
+  const removed = recipeKey(menu[index]);
+  // A lunch set can't be served without both of its dishes.
+  const keepSet = lunchSet && lunchSet.soup !== removed && lunchSet.main !== removed;
+  return withPlayer(state, { menu: menu.filter((_, i) => i !== index), lunchSet: keepSet ? lunchSet : null });
 }
 
 export function setDishPrice(state: GameState, index: number, price: number): GameState {
@@ -138,4 +141,32 @@ export function upgradeMenuBoard(state: GameState): GameState {
 
 export function setSupplier(state: GameState, supplier: Supplier): GameState {
   return withPlayer(state, { supplier });
+}
+
+// ---------- Lunch set ----------
+
+/**
+ * Sets up the lunch set from a soup and a main on the menu (by position).
+ * A brand-new set starts a little cheaper than the two dishes bought separately.
+ */
+export function setLunchSet(state: GameState, soupIndex: number, mainIndex: number): GameState {
+  const { menu, lunchSet } = playerOf(state);
+  const soup = menu[soupIndex];
+  const main = menu[mainIndex];
+  if (!soup || !main) return state;
+  if (DISH_TEMPLATES[soup.template].category !== 'soup' || DISH_TEMPLATES[main.template].category !== 'main') {
+    return state;
+  }
+  const price = lunchSet?.price ?? Math.round((soup.price + main.price) * balance.lunchSet.startingPriceShare);
+  return withPlayer(state, { lunchSet: { soup: recipeKey(soup), main: recipeKey(main), price } });
+}
+
+export function setLunchSetPrice(state: GameState, price: number): GameState {
+  const { lunchSet } = playerOf(state);
+  if (!lunchSet) return state;
+  return withPlayer(state, { lunchSet: { ...lunchSet, price: Math.max(balance.menu.minPrice, Math.round(price)) } });
+}
+
+export function clearLunchSet(state: GameState): GameState {
+  return withPlayer(state, { lunchSet: null });
 }

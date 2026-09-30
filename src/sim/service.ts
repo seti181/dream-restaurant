@@ -3,9 +3,9 @@
 
 import { balance } from '../data/balance';
 import type { MenuDish } from '../data/dishes';
-import type { GroupId } from '../data/groups';
+import { GROUPS, type GroupId } from '../data/groups';
 import { dishAppeal } from './choice';
-import { pairingQuality, templateOf } from './menu';
+import { lunchSetServing, pairingQuality, templateOf } from './menu';
 import { chance, nextFloat, type RngState } from './rng';
 import type { Party, Restaurant, Staff, Supplier } from './types';
 
@@ -38,8 +38,19 @@ export function pickByAppeal(rng: RngState, dishes: MenuDish[], group: GroupId):
   return dishes[dishes.length - 1];
 }
 
-/** Each guest orders a soup or main, and maybe a drink and a dessert. */
-export function chooseOrder(rng: RngState, menu: MenuDish[], party: Party): MenuDish[] {
+/** The lunch set's soup and main, priced so they add up to the set price. */
+function lunchSetOrder(set: { soup: MenuDish; main: MenuDish; price: number }): MenuDish[] {
+  const separate = set.soup.price + set.main.price;
+  return [set.soup, set.main].map((dish) => ({ ...dish, price: (set.price * dish.price) / separate, fromLunchSet: true }));
+}
+
+/**
+ * Each guest orders a soup or main (or the lunch set, if it's lunchtime and they
+ * fancy it), and maybe a drink and a dessert.
+ */
+export function chooseOrder(rng: RngState, restaurant: Restaurant, party: Party, minute: number): MenuDish[] {
+  const { menu } = restaurant;
+  const lunchSet = lunchSetServing(restaurant, minute);
   const inCategory = (...categories: string[]) =>
     menu.filter((dish) => categories.includes(templateOf(dish).category));
   const food = inCategory('soup', 'main');
@@ -47,7 +58,11 @@ export function chooseOrder(rng: RngState, menu: MenuDish[], party: Party): Menu
   const desserts = inCategory('dessert');
   const order: MenuDish[] = [];
   for (let guest = 0; guest < party.size; guest++) {
-    order.push(pickByAppeal(rng, food.length > 0 ? food : menu, party.group));
+    if (lunchSet && chance(rng, GROUPS[party.group].lunchSetAppeal)) {
+      order.push(...lunchSetOrder(lunchSet));
+    } else {
+      order.push(pickByAppeal(rng, food.length > 0 ? food : menu, party.group));
+    }
     if (drinks.length > 0 && chance(rng, balance.orders.drinkChance)) {
       order.push(pickByAppeal(rng, drinks, party.group));
     }

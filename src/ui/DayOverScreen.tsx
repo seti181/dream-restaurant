@@ -152,6 +152,9 @@ export function DayOverScreen() {
                   ))}
                 </ul>
               )}
+              {summary.lunchSetsSold > 0 && (
+                <p className="small">🍲 {summary.lunchSetsSold} lunch sets sold</p>
+              )}
               <h2 className="spaced">Around the Old Town</h2>
               <ul className="rows">
                 {summary.rivals.map((rival) => (

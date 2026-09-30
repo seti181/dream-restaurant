@@ -15,7 +15,7 @@ import {
 } from '../../data/dishes';
 import { dishUnavailableReason, extraUnavailableReason, priceRange } from '../../sim/actions';
 import { playerOf } from '../../sim/game';
-import { ingredientCostOf, tagsOf, templateOf } from '../../sim/menu';
+import { ingredientCostOf, recipeKey, tagsOf, templateOf } from '../../sim/menu';
 import { money, recipeText } from '../format';
 import { useGame } from '../store';
 
@@ -98,6 +98,96 @@ function CurrentMenu() {
         ))}
       </ul>
     </section>
+  );
+}
+
+/** "Obiad dnia": a soup and a main from the menu at one price, served 12:00–15:00. */
+function LunchSetCard() {
+  const game = useGame((s) => s.game);
+  const setLunchSet = useGame((s) => s.setLunchSet);
+  const setLunchSetPrice = useGame((s) => s.setLunchSetPrice);
+  const clearLunchSet = useGame((s) => s.clearLunchSet);
+  const { menu, lunchSet } = playerOf(game);
+
+  const inCategory = (category: Category) =>
+    menu.map((dish, index) => ({ dish, index })).filter(({ dish }) => templateOf(dish).category === category);
+  const soups = inCategory('soup');
+  const mains = inCategory('main');
+  const indexOf = (key: string | undefined) => menu.findIndex((dish) => recipeKey(dish) === key);
+  const soupIndex = indexOf(lunchSet?.soup);
+  const mainIndex = indexOf(lunchSet?.main);
+
+  // Until both halves are chosen, remember the first pick here.
+  const [pending, setPending] = useState<{ soup?: number; main?: number }>({});
+  const pick = (part: 'soup' | 'main', index: number) => {
+    const next = {
+      soup: part === 'soup' ? index : lunchSet ? soupIndex : pending.soup,
+      main: part === 'main' ? index : lunchSet ? mainIndex : pending.main,
+    };
+    if (next.soup !== undefined && next.main !== undefined) {
+      setLunchSet(next.soup, next.main);
+      setPending({});
+    } else {
+      setPending(next);
+    }
+  };
+  const chosen = (part: 'soup' | 'main', index: number) =>
+    lunchSet ? (part === 'soup' ? soupIndex : mainIndex) === index : pending[part] === index;
+
+  const separately = lunchSet ? menu[soupIndex].price + menu[mainIndex].price : 0;
+  const { startHour, endHour } = balance.lunchSet;
+
+  return (
+    <div className="lunch-set">
+      <h2>
+        Obiad dnia <span className="muted">· lunch set, {startHour}:00–{endHour}:00</span>
+      </h2>
+      <p className="small muted">A soup and a main at one price. Office workers love it.</p>
+      {soups.length === 0 || mains.length === 0 ? (
+        <p className="note">Put at least one soup and one main on your menu to offer a lunch set.</p>
+      ) : (
+        <>
+          {(['soup', 'main'] as const).map((part) => (
+            <div key={part} className="chips">
+              {(part === 'soup' ? soups : mains).map(({ dish, index }) => (
+                <button
+                  key={index}
+                  type="button"
+                  className="chip"
+                  aria-pressed={chosen(part, index)}
+                  onClick={() => pick(part, index)}
+                >
+                  {dish.name ?? templateOf(dish).name}
+                </button>
+              ))}
+            </div>
+          ))}
+          {lunchSet ? (
+            <div className="lunch-set-price">
+              <div className="stepper">
+                {[-5, -1].map((change) => (
+                  <button key={change} type="button" onClick={() => setLunchSetPrice(lunchSet.price + change)}>
+                    −{-change}
+                  </button>
+                ))}
+                <output>{money(lunchSet.price)}</output>
+                {[1, 5].map((change) => (
+                  <button key={change} type="button" onClick={() => setLunchSetPrice(lunchSet.price + change)}>
+                    +{change}
+                  </button>
+                ))}
+              </div>
+              <span className="small muted">Separately {money(separately)}</span>
+              <button type="button" className="secondary" onClick={clearLunchSet}>
+                Stop serving
+              </button>
+            </div>
+          ) : (
+            <p className="small muted">Pick a soup and a main to start serving it.</p>
+          )}
+        </>
+      )}
+    </div>
   );
 }
 
@@ -231,7 +321,10 @@ function DishCreator() {
 export function MenuPanel() {
   return (
     <div className="two-panels">
-      <CurrentMenu />
+      <div>
+        <CurrentMenu />
+        <LunchSetCard />
+      </div>
       <DishCreator />
     </div>
   );

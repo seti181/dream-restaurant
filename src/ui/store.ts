@@ -58,6 +58,9 @@ interface GameStore {
   setDishPrice: (index: number, price: number) => void;
   hire: (candidateId: number) => void;
   letGo: (employeeId: number) => void;
+  setLunchSet: (soupIndex: number, mainIndex: number) => void;
+  setLunchSetPrice: (price: number) => void;
+  clearLunchSet: () => void;
   buyEquipment: (id: EquipmentId) => void;
   upgradeMenuBoard: () => void;
   setSupplier: (supplier: Supplier) => void;
@@ -121,6 +124,9 @@ export const useGame = create<GameStore>((set, get) => ({
   setDishPrice: (index, price) => plan((game) => actions.setDishPrice(game, index, price)),
   hire: (candidateId) => plan((game) => actions.hire(game, candidateId)),
   letGo: (employeeId) => plan((game) => actions.letGo(game, employeeId)),
+  setLunchSet: (soupIndex, mainIndex) => plan((game) => actions.setLunchSet(game, soupIndex, mainIndex)),
+  setLunchSetPrice: (price) => plan((game) => actions.setLunchSetPrice(game, price)),
+  clearLunchSet: () => plan((game) => actions.clearLunchSet(game)),
   buyEquipment: (id) => plan((game) => actions.buyEquipment(game, id)),
   upgradeMenuBoard: () => plan((game) => actions.upgradeMenuBoard(game)),
   setSupplier: (supplier) => plan((game) => actions.setSupplier(game, supplier)),

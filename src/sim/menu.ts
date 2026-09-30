@@ -12,7 +12,7 @@ import {
   type Tag,
   type Variant,
 } from '../data/dishes';
-import type { Supplier } from './types';
+import type { Restaurant, Supplier } from './types';
 
 export function templateOf(dish: MenuDish): DishTemplate {
   return DISH_TEMPLATES[dish.template];
@@ -70,4 +70,18 @@ export function ingredientCostOf(dish: MenuDish, supplier: Supplier): number {
   const multiplier = supplier === 'premium' ? balance.supplier.premiumCostMultiplier : 1;
   const extras = extrasOf(dish).reduce((sum, extra) => sum + EXTRAS[extra].ingredientCost, 0);
   return (variantOf(dish).ingredientCost + extras) * multiplier;
+}
+
+/** The lunch set's dishes and price if it is being served at this minute, otherwise null. */
+export function lunchSetServing(
+  restaurant: Restaurant,
+  minute: number,
+): { soup: MenuDish; main: MenuDish; price: number } | null {
+  const set = restaurant.lunchSet;
+  if (!set) return null;
+  const hour = minute / 60;
+  if (hour < balance.lunchSet.startHour || hour >= balance.lunchSet.endHour) return null;
+  const soup = restaurant.menu.find((dish) => recipeKey(dish) === set.soup);
+  const main = restaurant.menu.find((dish) => recipeKey(dish) === set.main);
+  return soup && main ? { soup, main, price: set.price } : null;
 }

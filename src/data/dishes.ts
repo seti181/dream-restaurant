@@ -84,6 +84,8 @@ export interface MenuDish {
   extras?: ExtraId[];
   /** The player's own name for the dish, if they gave it one. */
   name?: string;
+  /** Marks a dish served as part of a lunch set (price is its share of the set). */
+  fromLunchSet?: boolean;
 }
 
 export const TEMPLATE_IDS: readonly TemplateId[] = [

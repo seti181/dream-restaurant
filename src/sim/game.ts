@@ -73,6 +73,8 @@ export interface DaySummary extends DayTally {
   dishesSold: { dish: MenuDish; count: number }[];
   /** Guests each rival served today. */
   rivals: { id: string; name: string; guestsServed: number }[];
+  /** Lunch sets ordered today. */
+  lunchSetsSold: number;
   /** What guests said about pairings they tasted: hints for the dish creator. */
   pairingComments: { comment: string; happy: boolean }[];
 }
@@ -250,6 +252,9 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
       feedback: averageFeedback(open.progress.outcomes, playerBefore.id),
       dishesSold: dishesSold(open.progress.outcomes, playerBefore.id),
       pairingComments: pairingComments(open.progress.outcomes, playerBefore.id),
+      lunchSetsSold: open.progress.outcomes
+        .filter((o) => o.restaurant === playerBefore.id && o.kind === 'served')
+        .reduce((sum, o) => sum + o.order.filter((d) => d.fromLunchSet).length / 2, 0),
       rivals: open.progress.restaurants.slice(1).map((rival) => ({
         id: rival.id,
         name: rival.name,

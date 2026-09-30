@@ -26,6 +26,8 @@ export interface Group {
   expectedQuality: number;
   /** Minutes a party will wait for its food before giving up. */
   patienceMinutes: number;
+  /** How much the group loves a lunch set, 0–1. Also the chance each guest orders it. */
+  lunchSetAppeal: number;
   partySize: { min: number; max: number };
   /** How keen the group is to eat out at each time of day (1 = normal). */
   timeOfDay: { lunch: number; afternoon: number; evening: number };
@@ -46,6 +48,7 @@ export const GROUPS: Record<GroupId, Group> = {
     priceSensitivity: 0.35,
     expectedQuality: 55,
     patienceMinutes: 40,
+    lunchSetAppeal: 0.2,
     partySize: { min: 2, max: 4 },
     timeOfDay: { lunch: 1, afternoon: 1, evening: 0.9 },
     weekendFactor: 1.4,
@@ -59,6 +62,7 @@ export const GROUPS: Record<GroupId, Group> = {
     priceSensitivity: 0.9,
     expectedQuality: 40,
     patienceMinutes: 35,
+    lunchSetAppeal: 0.6,
     partySize: { min: 1, max: 4 },
     timeOfDay: { lunch: 0.7, afternoon: 0.8, evening: 1.2 },
     weekendFactor: 0.9,
@@ -73,6 +77,7 @@ export const GROUPS: Record<GroupId, Group> = {
     priceSensitivity: 0.6,
     expectedQuality: 60,
     patienceMinutes: 45,
+    lunchSetAppeal: 0.4,
     partySize: { min: 2, max: 5 },
     timeOfDay: { lunch: 0.8, afternoon: 0.7, evening: 1.1 },
     weekendFactor: 1.5,
@@ -86,6 +91,7 @@ export const GROUPS: Record<GroupId, Group> = {
     priceSensitivity: 0.6,
     expectedQuality: 50,
     patienceMinutes: 25,
+    lunchSetAppeal: 1,
     partySize: { min: 1, max: 3 },
     // Weekday lunch only.
     timeOfDay: { lunch: 1.5, afternoon: 0.2, evening: 0 },
@@ -100,6 +106,7 @@ export const GROUPS: Record<GroupId, Group> = {
     priceSensitivity: 0.2,
     expectedQuality: 75,
     patienceMinutes: 55,
+    lunchSetAppeal: 0,
     partySize: { min: 1, max: 2 },
     timeOfDay: { lunch: 0.5, afternoon: 0.6, evening: 1.4 },
     weekendFactor: 1.2,

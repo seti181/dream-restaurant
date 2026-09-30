@@ -39,6 +39,8 @@ export interface Restaurant {
   /** Kitchen equipment owned; dishes that need other equipment can't be cooked. */
   equipment: EquipmentId[];
   supplier: Supplier;
+  /** "Obiad dnia": a soup and a main (identified by recipe key) at one price, or null. */
+  lunchSet: { soup: string; main: string; price: number } | null;
   tables: number;
   chefs: Staff[];
   waiters: Staff[];

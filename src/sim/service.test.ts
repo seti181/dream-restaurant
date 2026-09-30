@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { balance } from '../data/balance';
 import type { MenuDish } from '../data/dishes';
-import { templateOf } from './menu';
+import { lunchSetServing, recipeKey, templateOf } from './menu';
 import { createRng } from './rng';
 import {
   averageLevel,
@@ -95,12 +95,15 @@ describe('expected wait', () => {
 
 describe('ordering', () => {
   const party = { group: 'locals' as const, size: 3, origin: 'ogarna' as const, arrivalMinute: 720 };
+  const NOON = 12 * 60;
+  const EVENING = 19 * 60;
+  const restaurantWith = (menu: MenuDish[]) => createPlayerRestaurant('Test', menu, [average], [average]);
 
   it('gives every guest exactly one soup or main', () => {
     const rng = createRng(2);
     for (let i = 0; i < 50; i++) {
-      const order = chooseOrder(rng, [pierogi, soup, kompot], party);
-      const food = order.filter((dish) => dish !== kompot);
+      const order = chooseOrder(rng, restaurantWith([pierogi, soup, kompot]), party, NOON);
+      const food = order.filter((dish) => dish.template !== kompot.template);
       expect(food).toHaveLength(party.size);
     }
   });
@@ -108,8 +111,42 @@ describe('ordering', () => {
   it('only orders drinks and desserts that are on the menu', () => {
     const rng = createRng(3);
     for (let i = 0; i < 50; i++) {
-      const order = chooseOrder(rng, [pierogi, soup], party);
-      expect(order.every((dish) => dish === pierogi || dish === soup)).toBe(true);
+      const order = chooseOrder(rng, restaurantWith([pierogi, soup]), party, NOON);
+      expect(order.every((dish) => [pierogi.template, soup.template].includes(dish.template))).toBe(true);
     }
+  });
+
+  describe('with a lunch set', () => {
+    const withSet = () => {
+      const restaurant = restaurantWith([pierogi, soup]);
+      return { ...restaurant, lunchSet: { soup: recipeKey(soup), main: recipeKey(pierogi), price: 40 } };
+    };
+    const office = { ...party, group: 'office' as const, size: 2 };
+
+    it('is served only between 12:00 and 15:00', () => {
+      const restaurant = withSet();
+      expect(lunchSetServing(restaurant, NOON)).not.toBeNull();
+      expect(lunchSetServing(restaurant, 14 * 60 + 55)).not.toBeNull();
+      expect(lunchSetServing(restaurant, 15 * 60)).toBeNull();
+      expect(lunchSetServing(restaurant, 11 * 60 + 30)).toBeNull();
+    });
+
+    it('is ordered by office workers at lunch, at exactly the set price', () => {
+      const order = chooseOrder(createRng(4), withSet(), office, NOON);
+      const setDishes = order.filter((dish) => dish.fromLunchSet);
+      expect(setDishes).toHaveLength(2 * office.size); // office workers always take it
+      const perGuest = setDishes.reduce((sum, dish) => sum + dish.price, 0) / office.size;
+      expect(perGuest).toBeCloseTo(40);
+    });
+
+    it('is never ordered in the evening', () => {
+      const order = chooseOrder(createRng(5), withSet(), office, EVENING);
+      expect(order.some((dish) => dish.fromLunchSet)).toBe(false);
+    });
+
+    it('is not served if one of its dishes left the menu', () => {
+      const restaurant = { ...withSet(), menu: [pierogi] };
+      expect(lunchSetServing(restaurant, NOON)).toBeNull();
+    });
   });
 });
