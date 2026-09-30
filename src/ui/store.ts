@@ -5,6 +5,7 @@
 import { create } from 'zustand';
 import { balance } from '../data/balance';
 import type { TemplateId } from '../data/dishes';
+import { loadGame, saveGame } from '../save/save';
 import * as actions from '../sim/actions';
 import { minuteOfDay } from '../sim/clock';
 import {
@@ -42,6 +43,8 @@ interface GameStore {
   live: LiveDay | null;
   summary: DaySummary | null;
   planTab: PlanTab;
+  /** Whether the last autosave worked; null before the first one. */
+  saved: boolean | null;
 
   open: () => void;
   tick: () => void;
@@ -67,17 +70,22 @@ function liveFrom(openDay: OpenDay): LiveDay {
 }
 
 export const useGame = create<GameStore>((set, get) => ({
-  game: newGame(Date.now() >>> 0),
+  // Carry on from the saved game, or start a new one with a fresh seed.
+  game: loadGame() ?? newGame(Date.now() >>> 0),
   phase: 'plan',
   speed: 1,
   openDay: null,
   live: null,
   summary: null,
   planTab: 'today',
+  saved: null,
 
   open: () => {
+    // Save the plan first, so menu and staff changes survive if the app closes mid-day.
+    const saved = saveGame(get().game);
     const openDay = openRestaurant(get().game);
     set({
+      saved,
       phase: 'open',
       openDay,
       live: liveFrom(openDay),
@@ -91,7 +99,7 @@ export const useGame = create<GameStore>((set, get) => ({
     playTick(openDay);
     if (openDay.progress.done) {
       const { state, summary } = closeDay(game, openDay);
-      set({ game: state, summary, phase: 'dayOver', openDay: null, live: null });
+      set({ game: state, summary, phase: 'dayOver', openDay: null, live: null, saved: saveGame(state) });
     } else {
       set({ live: liveFrom(openDay) });
     }

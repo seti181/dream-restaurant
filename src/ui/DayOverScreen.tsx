@@ -71,6 +71,7 @@ function Change({ before, after }: { before: number; after: number }) {
 export function DayOverScreen() {
   const summary = useGame((s) => s.summary);
   const planNextDay = useGame((s) => s.planNextDay);
+  const saved = useGame((s) => s.saved);
   if (!summary) return null;
 
   return (
@@ -156,6 +157,9 @@ export function DayOverScreen() {
           </div>
         </div>
         <footer className="plan-footer">
+          <span className={saved ? 'save-note' : 'save-note warning'}>
+            {saved ? '✓ Progress saved' : 'Couldn’t save this time. Your browser may be blocking storage.'}
+          </span>
           <button type="button" className="primary" onClick={planNextDay}>
             Plan tomorrow
           </button>

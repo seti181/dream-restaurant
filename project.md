@@ -420,7 +420,7 @@ Work in small steps, and test each step in the browser before moving on.
 
 - [x] HUD, speed controls, day start and end flow
 - [x] Menu and price screen, staff hiring, daily report
-- [ ] Autosave and load
+- [x] Autosave and load
 
 **M3 – MVP systems**
 

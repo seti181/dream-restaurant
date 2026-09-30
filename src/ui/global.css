@@ -589,3 +589,18 @@ button {
 .down {
   color: var(--brick);
 }
+
+.plan-footer {
+  align-items: center;
+  gap: 16px;
+}
+
+.save-note {
+  margin-right: auto;
+  color: var(--leaf);
+  font-weight: 600;
+}
+
+.save-note.warning {
+  color: var(--brick);
+}
