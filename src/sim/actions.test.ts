@@ -1,12 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { balance } from '../data/balance';
-import { DISH_TEMPLATES } from '../data/dishes';
+import { DISH_TEMPLATES, type ExtraId, type MenuDish } from '../data/dishes';
 import { EQUIPMENT } from '../data/equipment';
 import {
   addDish,
   buyEquipment,
   dishUnavailableReason,
   equipmentUnavailableReason,
+  extraUnavailableReason,
   menuBoardUnavailableReason,
   removeDish,
   setDishPrice,
@@ -14,7 +15,7 @@ import {
   upgradeMenuBoard,
 } from './actions';
 import { newGame, playerOf } from './game';
-import { ingredientCostOf } from './menu';
+import { ingredientCostOf, pairingsOf, tagsOf } from './menu';
 import { orderQuality } from './service';
 
 const fresh = () => newGame(1);
@@ -118,5 +119,69 @@ describe('kitchen actions', () => {
     expect(orderQuality([dish], chef, 'premium')).toBe(
       orderQuality([dish], chef, 'market') + balance.supplier.premiumQualityBonus,
     );
+  });
+});
+
+describe('the dish creator', () => {
+  const roomy = () => removeDish(fresh(), 0);
+
+  it('adds a dish with extras and a name, counting extras in cost and tags', () => {
+    const state = addDish(roomy(), 'pierogi', 'meat', ['friedOnions', 'skwarki'], '  Babcia’s Pierogi  ');
+    const dish = menuOf(state).at(-1)!;
+    expect(dish.extras).toEqual(['friedOnions', 'skwarki']);
+    expect(dish.name).toBe('Babcia’s Pierogi');
+    expect(ingredientCostOf(dish, 'market')).toBe(11 + 1 + 2);
+    expect(tagsOf(dish)).toContain('hearty');
+    expect(new Set(tagsOf(dish)).size).toBe(tagsOf(dish).length);
+  });
+
+  it('treats the same dish with different extras as a different recipe', () => {
+    const state = addDish(roomy(), 'pierogi', 'ruskie', ['friedOnions']);
+    expect(menuOf(state).filter((d) => d.template === 'pierogi' && d.variant === 'ruskie')).toHaveLength(2);
+    expect(dishUnavailableReason(state, 'pierogi', 'ruskie', ['friedOnions'])).toBe('Already on your menu');
+  });
+
+  it('refuses extras that don’t suit the dish, or too many', () => {
+    const state = roomy();
+    expect(extraUnavailableReason('kompot', [], 'dill')).toBe('Doesn’t suit this dish');
+    expect(extraUnavailableReason('pierogi', ['dill', 'chili', 'honey'], 'skwarki')).toBe('Up to 3 extras');
+    expect(addDish(state, 'kompot', 'cherry', ['dill'])).toBe(state);
+    expect(addDish(state, 'pierogi', 'meat', ['dill', 'chili', 'honey', 'skwarki'])).toBe(state);
+  });
+
+  it('keeps names short', () => {
+    const dish = menuOf(addDish(roomy(), 'barszcz', 'mug', [], 'A'.repeat(100))).at(-1)!;
+    expect(dish.name).toHaveLength(balance.menu.maxNameLength);
+  });
+});
+
+describe('hidden pairings', () => {
+  const chef = { skill: 3, speed: 3 };
+  const dish = (template: MenuDish['template'], variant: string, extras: ExtraId[]): MenuDish => ({
+    template,
+    variant,
+    price: 30,
+    extras,
+  });
+
+  it('reward perfect pairings', () => {
+    const withDill = dish('fishSoup', 'classic', ['dill']);
+    expect(pairingsOf(withDill)).toHaveLength(1);
+    expect(orderQuality([withDill], chef)).toBeGreaterThan(orderQuality([dish('fishSoup', 'classic', [])], chef));
+    expect(pairingsOf(dish('pierogi', 'meat', ['oscypek', 'cranberry']))[0].quality).toBeGreaterThan(0);
+  });
+
+  it('punish clashes', () => {
+    const clash = dish('iceCream', 'vanilla', ['chili', 'whippedCream']);
+    expect(pairingsOf(clash).some((p) => p.quality < 0)).toBe(true);
+    expect(orderQuality([clash], chef)).toBeLessThan(orderQuality([dish('iceCream', 'vanilla', [])], chef));
+  });
+
+  it('need the right dish: dill does nothing special for pierogi', () => {
+    expect(pairingsOf(dish('pierogi', 'ruskie', ['dill']))).toHaveLength(0);
+  });
+
+  it('can stack', () => {
+    expect(pairingsOf(dish('pierogi', 'meat', ['friedOnions', 'oscypek', 'cranberry']))).toHaveLength(2);
   });
 });

@@ -2,10 +2,11 @@
 // the old state is never changed. Invalid actions return the state unchanged.
 
 import { balance } from '../data/balance';
-import { DISH_TEMPLATES, type EquipmentId, type TemplateId } from '../data/dishes';
+import { DISH_TEMPLATES, EXTRAS, type EquipmentId, type ExtraId, type MenuDish, type TemplateId } from '../data/dishes';
 import { EQUIPMENT } from '../data/equipment';
 import { LOCATIONS } from '../data/locations';
 import { playerOf, type GameState } from './game';
+import { recipeKey } from './menu';
 import { staffOf } from './staff';
 import type { Employee, Restaurant, Supplier } from './types';
 
@@ -25,23 +26,49 @@ function clampPrice(template: TemplateId, price: number): number {
   return Math.max(min, Math.min(max, Math.round(price)));
 }
 
-/** Why a dish can't be added to the menu right now, or null if it can. */
-export function dishUnavailableReason(state: GameState, template: TemplateId, variant: string): string | null {
-  const player = playerOf(state);
-  const needs = DISH_TEMPLATES[template].equipment;
-  if (needs !== null && !player.equipment.includes(needs)) return `Needs a ${EQUIPMENT[needs].name.toLowerCase()}`;
-  if (player.menu.some((dish) => dish.template === template && dish.variant === variant)) {
-    return 'Already on your menu';
-  }
-  if (player.menu.length >= state.menuSlots) return 'Your menu is full';
+/** Why this extra can't go on this dish, or null if it can. */
+export function extraUnavailableReason(template: TemplateId, chosen: ExtraId[], extra: ExtraId): string | null {
+  if (chosen.includes(extra)) return null; // already chosen: it can always be taken off again
+  if (!EXTRAS[extra].categories.includes(DISH_TEMPLATES[template].category)) return 'Doesn’t suit this dish';
+  if (chosen.length >= balance.menu.maxExtras) return `Up to ${balance.menu.maxExtras} extras`;
   return null;
 }
 
-/** Adds a dish at the typical Old Town price. */
-export function addDish(state: GameState, template: TemplateId, variant: string): GameState {
-  if (dishUnavailableReason(state, template, variant) !== null) return state;
-  const price = clampPrice(template, DISH_TEMPLATES[template].referencePrice);
-  return withPlayer(state, { menu: [...playerOf(state).menu, { template, variant, price }] });
+/** Why a dish can't be added to the menu right now, or null if it can. */
+export function dishUnavailableReason(
+  state: GameState,
+  template: TemplateId,
+  variant: string,
+  extras: ExtraId[] = [],
+): string | null {
+  const player = playerOf(state);
+  const needs = DISH_TEMPLATES[template].equipment;
+  if (needs !== null && !player.equipment.includes(needs)) return `Needs a ${EQUIPMENT[needs].name.toLowerCase()}`;
+  if (!DISH_TEMPLATES[template].variants.some((v) => v.id === variant)) return 'Unknown recipe';
+  const recipe = recipeKey({ template, variant, extras, price: 0 });
+  if (player.menu.some((dish) => recipeKey(dish) === recipe)) return 'Already on your menu';
+  if (player.menu.length >= state.menuSlots) return 'Your menu is full';
+  if (new Set(extras).size !== extras.length || extras.length > balance.menu.maxExtras) return 'Too many extras';
+  if (extras.some((extra) => !EXTRAS[extra].categories.includes(DISH_TEMPLATES[template].category))) {
+    return 'An extra doesn’t suit this dish';
+  }
+  return null;
+}
+
+/** Adds a dish, with any extras and name, at the typical Old Town price. */
+export function addDish(
+  state: GameState,
+  template: TemplateId,
+  variant: string,
+  extras: ExtraId[] = [],
+  name = '',
+): GameState {
+  if (dishUnavailableReason(state, template, variant, extras) !== null) return state;
+  const dish: MenuDish = { template, variant, price: clampPrice(template, DISH_TEMPLATES[template].referencePrice) };
+  if (extras.length > 0) dish.extras = [...extras];
+  const cleanName = name.trim().slice(0, balance.menu.maxNameLength);
+  if (cleanName) dish.name = cleanName;
+  return withPlayer(state, { menu: [...playerOf(state).menu, dish] });
 }
 
 export function removeDish(state: GameState, index: number): GameState {

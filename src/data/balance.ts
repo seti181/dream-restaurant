@@ -27,6 +27,10 @@ export const balance = {
     minPrice: 1,
     /** Highest menu price allowed for any dessert, in złoty. */
     maxDessertPrice: 50,
+    /** Extras a dish can have in the dish creator. */
+    maxExtras: 3,
+    /** Longest name a player can give a dish. */
+    maxNameLength: 30,
   },
 
   calendar: {

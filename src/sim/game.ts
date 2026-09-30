@@ -8,6 +8,7 @@ import { RIVAL_IDS } from '../data/rivals';
 import { startDay, stepDay, type DayInProgress } from './day';
 import { isMonday } from './calendar';
 import { weeklyBillsDue } from './finance';
+import { pairingsOf } from './menu';
 import { createRng, type RngState } from './rng';
 import { createPlayerRestaurant, createRivalRestaurant } from './setup';
 import { generateCandidates, starterTeam, staffOf } from './staff';
@@ -72,6 +73,8 @@ export interface DaySummary extends DayTally {
   dishesSold: { dish: MenuDish; count: number }[];
   /** Guests each rival served today. */
   rivals: { id: string; name: string; guestsServed: number }[];
+  /** What guests said about pairings they tasted: hints for the dish creator. */
+  pairingComments: { comment: string; happy: boolean }[];
 }
 
 export function newGame(seed: number): GameState {
@@ -195,6 +198,17 @@ function dishesSold(outcomes: PartyOutcome[], restaurantId: string): { dish: Men
   return [...counts.values()].sort((a, b) => b.count - a.count);
 }
 
+function pairingComments(outcomes: PartyOutcome[], restaurantId: string): { comment: string; happy: boolean }[] {
+  const comments = new Map<string, boolean>();
+  for (const o of outcomes) {
+    if (o.restaurant !== restaurantId || o.kind !== 'served') continue;
+    for (const dish of o.order) {
+      for (const pairing of pairingsOf(dish)) comments.set(pairing.comment, pairing.quality > 0);
+    }
+  }
+  return [...comments].map(([comment, happy]) => ({ comment, happy })).sort((a, b) => Number(b.happy) - Number(a.happy));
+}
+
 /** Ends the day: pays wages and any weekly bills, and moves on to the next day. */
 export function closeDay(state: GameState, open: OpenDay): { state: GameState; summary: DaySummary } {
   const playerBefore = playerOf(state);
@@ -235,6 +249,7 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
       groups: groupDays(open.progress.outcomes, playerBefore, playerAfter),
       feedback: averageFeedback(open.progress.outcomes, playerBefore.id),
       dishesSold: dishesSold(open.progress.outcomes, playerBefore.id),
+      pairingComments: pairingComments(open.progress.outcomes, playerBefore.id),
       rivals: open.progress.restaurants.slice(1).map((rival) => ({
         id: rival.id,
         name: rival.name,

@@ -80,6 +80,10 @@ export interface MenuDish {
   /** A variant id from that template. */
   variant: string;
   price: number;
+  /** Up to three extras from the dish creator. */
+  extras?: ExtraId[];
+  /** The player's own name for the dish, if they gave it one. */
+  name?: string;
 }
 
 export const TEMPLATE_IDS: readonly TemplateId[] = [
@@ -350,3 +354,81 @@ export const DISH_TEMPLATES: Record<TemplateId, DishTemplate> = {
     ],
   },
 };
+
+// ---------- Extras and pairings (the dish creator) ----------
+
+export type ExtraId =
+  | 'dill'
+  | 'sourCream'
+  | 'friedOnions'
+  | 'skwarki'
+  | 'oscypek'
+  | 'cranberry'
+  | 'horseradish'
+  | 'wildMushrooms'
+  | 'chili'
+  | 'whippedCream'
+  | 'honey'
+  | 'strawberries';
+
+export interface Extra {
+  name: string;
+  /** Złoty per portion, on top of the variant's ingredients. */
+  ingredientCost: number;
+  tags: Tag[];
+  /** Kinds of dish it can go on. */
+  categories: Category[];
+}
+
+export const EXTRA_IDS: readonly ExtraId[] = [
+  'dill', 'sourCream', 'friedOnions', 'skwarki', 'oscypek', 'cranberry',
+  'horseradish', 'wildMushrooms', 'chili', 'whippedCream', 'honey', 'strawberries',
+];
+
+export const EXTRAS: Record<ExtraId, Extra> = {
+  dill: { name: 'dill', ingredientCost: 1, tags: [], categories: ['soup', 'main'] },
+  sourCream: { name: 'sour cream', ingredientCost: 2, tags: ['homemade'], categories: ['soup', 'main', 'dessert'] },
+  friedOnions: { name: 'fried onions', ingredientCost: 1, tags: ['hearty'], categories: ['soup', 'main'] },
+  skwarki: { name: 'skwarki (crispy bacon bits)', ingredientCost: 2, tags: ['hearty', 'polish'], categories: ['soup', 'main'] },
+  oscypek: { name: 'oscypek (smoked mountain cheese)', ingredientCost: 5, tags: ['polish', 'premium'], categories: ['soup', 'main', 'dessert'] },
+  cranberry: { name: 'cranberry', ingredientCost: 2, tags: ['creative'], categories: ['main', 'dessert', 'drink'] },
+  horseradish: { name: 'horseradish', ingredientCost: 1, tags: ['polish', 'spicy'], categories: ['soup', 'main', 'dessert'] },
+  wildMushrooms: { name: 'wild mushrooms', ingredientCost: 5, tags: ['premium'], categories: ['soup', 'main'] },
+  chili: { name: 'chili', ingredientCost: 1, tags: ['spicy'], categories: ['soup', 'main', 'dessert', 'drink'] },
+  whippedCream: { name: 'whipped cream', ingredientCost: 2, tags: ['sweet'], categories: ['soup', 'main', 'dessert', 'drink'] },
+  honey: { name: 'honey', ingredientCost: 2, tags: ['sweet', 'homemade'], categories: ['main', 'dessert', 'drink'] },
+  strawberries: { name: 'Kashubian strawberries', ingredientCost: 3, tags: ['sweet', 'polish'], categories: ['main', 'dessert', 'drink'] },
+};
+
+/**
+ * A hidden pairing: extras that go wonderfully (positive quality) or terribly
+ * (negative quality) together, or with a certain kind of dish. The player never
+ * sees this list; guests drop hints in the daily report.
+ */
+export interface Pairing {
+  /** All of these extras must be on the dish... */
+  extras: ExtraId[];
+  /** ...and, if given, the dish must also have this tag, be this dish, or be in this category. */
+  with?: { tag?: Tag; template?: TemplateId; category?: Category };
+  /** Quality points added (or, for a clash, taken away). */
+  quality: number;
+  /** What a guest says about it. */
+  comment: string;
+}
+
+export const PAIRINGS: Pairing[] = [
+  // Perfect pairings
+  { extras: ['dill'], with: { tag: 'seafood' }, quality: 10, comment: 'The dill and the fish were made for each other.' },
+  { extras: ['oscypek', 'cranberry'], quality: 12, comment: 'Oscypek with cranberry! Just like in the mountains.' },
+  { extras: ['horseradish'], with: { template: 'zurek' }, quality: 10, comment: 'Żurek with horseradish, like Easter at Grandma’s.' },
+  { extras: ['friedOnions'], with: { template: 'pierogi' }, quality: 8, comment: 'Pierogi with fried onions, exactly as they should be.' },
+  { extras: ['wildMushrooms', 'sourCream'], quality: 10, comment: 'Wild mushrooms and sour cream: a hug in a bowl.' },
+  { extras: ['whippedCream'], with: { template: 'szarlotka' }, quality: 8, comment: 'Szarlotka with a cloud of cream. Perfect.' },
+  { extras: ['strawberries', 'whippedCream'], quality: 10, comment: 'Kashubian strawberries and cream taste like summer.' },
+  { extras: ['honey'], with: { template: 'lemonade' }, quality: 6, comment: 'Honey in the lemonade was a lovely touch.' },
+  // Clashes
+  { extras: ['chili', 'whippedCream'], quality: -15, comment: 'Someone put chili in the cream. Brave, but no.' },
+  { extras: ['cranberry'], with: { tag: 'seafood' }, quality: -10, comment: 'Cranberry and fish? The seagulls approved. Nobody else did.' },
+  { extras: ['horseradish'], with: { category: 'dessert' }, quality: -15, comment: 'Horseradish in a dessert made a guest cry. Not happy tears.' },
+  { extras: ['whippedCream'], with: { category: 'soup' }, quality: -12, comment: 'Whipped cream on soup. Bold. Very bold.' },
+];

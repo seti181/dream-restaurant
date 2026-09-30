@@ -81,6 +81,11 @@ export function DayOverScreen() {
           <p className="eyebrow">{formatDate(dateOf(summary.day))} · day over</p>
           <h1>{headline(summary)}</h1>
           <p className="said">💬 {guestsSaid(summary.feedback)}</p>
+          {summary.pairingComments.slice(0, 3).map(({ comment, happy }) => (
+            <p key={comment} className="said small">
+              {happy ? '😋' : '🤔'} “{comment}”
+            </p>
+          ))}
 
           <div className="report">
             <section>

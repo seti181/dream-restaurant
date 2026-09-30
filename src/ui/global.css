@@ -678,3 +678,54 @@ button {
 h2.spaced {
   margin-top: 24px;
 }
+
+/* ---------- Dish creator ---------- */
+
+.creator h3 {
+  margin: 18px 0 6px;
+}
+
+.picker-group {
+  margin-bottom: 8px;
+}
+
+.chip[aria-pressed='true'] {
+  background: var(--sea);
+  color: #fff;
+}
+
+.chip[aria-pressed='true'] .muted {
+  color: #d6e7ef;
+}
+
+.text-input {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 48px;
+  padding: 0 14px;
+  border: 2px solid var(--sand);
+  border-radius: 12px;
+  font: inherit;
+  user-select: text;
+}
+
+.creator-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 18px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: var(--cream);
+}
+
+.creator-summary .small {
+  display: block;
+  margin-top: 4px;
+}
+
+.primary:disabled {
+  opacity: 0.4;
+  cursor: default;
+}

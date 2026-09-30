@@ -4,7 +4,7 @@
 
 import { create } from 'zustand';
 import { balance } from '../data/balance';
-import type { EquipmentId, TemplateId } from '../data/dishes';
+import type { EquipmentId, ExtraId, TemplateId } from '../data/dishes';
 import { loadGame, saveGame } from '../save/save';
 import * as actions from '../sim/actions';
 import { minuteOfDay } from '../sim/clock';
@@ -53,7 +53,7 @@ interface GameStore {
   planNextDay: () => void;
   setPlanTab: (tab: PlanTab) => void;
 
-  addDish: (template: TemplateId, variant: string) => void;
+  addDish: (template: TemplateId, variant: string, extras?: ExtraId[], name?: string) => void;
   removeDish: (index: number) => void;
   setDishPrice: (index: number, price: number) => void;
   hire: (candidateId: number) => void;
@@ -115,7 +115,8 @@ export const useGame = create<GameStore>((set, get) => ({
 
   setPlanTab: (planTab) => set({ planTab }),
 
-  addDish: (template, variant) => plan((game) => actions.addDish(game, template, variant)),
+  addDish: (template, variant, extras, name) =>
+    plan((game) => actions.addDish(game, template, variant, extras, name)),
   removeDish: (index) => plan((game) => actions.removeDish(game, index)),
   setDishPrice: (index, price) => plan((game) => actions.setDishPrice(game, index, price)),
   hire: (candidateId) => plan((game) => actions.hire(game, candidateId)),

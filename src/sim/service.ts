@@ -5,7 +5,7 @@ import { balance } from '../data/balance';
 import type { MenuDish } from '../data/dishes';
 import type { GroupId } from '../data/groups';
 import { dishAppeal } from './choice';
-import { templateOf } from './menu';
+import { pairingQuality, templateOf } from './menu';
 import { chance, nextFloat, type RngState } from './rng';
 import type { Party, Restaurant, Staff, Supplier } from './types';
 
@@ -89,7 +89,7 @@ export function orderQuality(order: MenuDish[], chef: Staff, supplier: Supplier 
   const dishQuality = (dish: MenuDish) => {
     const template = templateOf(dish);
     const specialty = chef.specialty !== undefined && chef.specialty === template.cuisine ? k.specialtyBonus : 0;
-    return template.baseQuality + skillBonus + specialty + supplierBonus;
+    return template.baseQuality + skillBonus + specialty + supplierBonus + pairingQuality(dish);
   };
   const quality = average(order.map(dishQuality), 0);
   return Math.max(0, Math.min(100, quality));
