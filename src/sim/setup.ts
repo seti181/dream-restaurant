@@ -32,7 +32,12 @@ export function createRivalRestaurant(id: RivalId): Restaurant {
 }
 
 /** The player's restaurant on day one. Menu and staff are chosen by the player (or a test strategy). */
-export function createPlayerRestaurant(name: string, menu: MenuDish[], chefs: Staff[], waiters: Staff[]): Restaurant {
+export function createPlayerRestaurant(
+  name: string,
+  menu: readonly MenuDish[],
+  chefs: readonly Staff[],
+  waiters: readonly Staff[],
+): Restaurant {
   const start = balance.start;
   return {
     id: 'player',

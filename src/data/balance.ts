@@ -12,6 +12,8 @@ export const balance = {
     /** Times of day used by the customer groups: lunch runs from opening until the afternoon starts. */
     afternoonStartHour: 15,
     eveningStartHour: 18,
+    /** Real seconds that one day (11:00 to 22:00) takes at 1× speed. */
+    realSecondsPerDay: 50,
   },
 
   menu: {
@@ -32,8 +34,21 @@ export const balance = {
   },
 
   start: {
+    name: 'Joana’s Kitchen',
     /** The player's first home. */
     location: 'ogarna',
+    /** A simple starter menu at typical prices, until the player builds their own. */
+    menu: [
+      { template: 'tomatoSoup', variant: 'noodles', price: 18 },
+      { template: 'zurek', variant: 'classic', price: 28 },
+      { template: 'pierogi', variant: 'ruskie', price: 36 },
+      { template: 'schabowy', variant: 'cabbage', price: 44 },
+      { template: 'golabki', variant: 'tomato', price: 38 },
+      { template: 'kompot', variant: 'strawberry', price: 9 },
+    ],
+    /** One average chef and one average waiter to begin with. */
+    chefs: [{ skill: 3, speed: 3 }],
+    waiters: [{ skill: 3, speed: 3 }],
     seats: 16,
     /** 0–100. A bare room before any decor. */
     ambiance: 30,

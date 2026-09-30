@@ -168,58 +168,85 @@ function lostOutcome(party: Party, restaurant: string | null, kind: 'noTable' | 
   };
 }
 
-/** Plays one day from opening until the last guest leaves. The input restaurants are not changed. */
-export function runDay(rng: RngState, day: number, restaurants: Restaurant[]): DayResult {
+/** A day being played, one tick at a time. It only lives while the day runs, so it is never saved. */
+export interface DayInProgress {
+  day: number;
+  /** The next tick to play. */
+  tick: number;
+  /** Working copies of the restaurants; reputations change as the day goes on. */
+  restaurants: Restaurant[];
+  floors: Floor[];
+  outcomes: PartyOutcome[];
+  /** True once the restaurants have closed and the last guest has left. */
+  done: boolean;
+}
+
+/** Sets up a day before opening. The input restaurants are not changed. */
+export function startDay(day: number, restaurants: Restaurant[]): DayInProgress {
   const working = restaurants.map((r) => ({ ...r, reputation: { ...r.reputation } }));
-  const floors: Floor[] = working.map((r) => ({
-    freeTables: r.tables,
-    visits: [],
-    queue: [],
-    chefFreeAt: r.chefs.map(() => 0),
-  }));
-  const outcomes: PartyOutcome[] = [];
-  const closingTick = ticksPerDay();
+  return {
+    day,
+    tick: 0,
+    restaurants: working,
+    floors: working.map((r) => ({
+      freeTables: r.tables,
+      visits: [],
+      queue: [],
+      chefFreeAt: r.chefs.map(() => 0),
+    })),
+    outcomes: [],
+    done: false,
+  };
+}
 
-  for (let tick = 0; ; tick++) {
-    const minute = minuteOfDay(tick);
-    working.forEach((restaurant, i) => progressRestaurant(restaurant, floors[i], minute, outcomes));
+/** Plays one tick of the day. */
+export function stepDay(rng: RngState, progress: DayInProgress): void {
+  if (progress.done) return;
+  const { day, tick, restaurants, floors, outcomes } = progress;
+  const minute = minuteOfDay(tick);
+  restaurants.forEach((restaurant, i) => progressRestaurant(restaurant, floors[i], minute, outcomes));
+  progress.tick++;
 
-    if (tick >= closingTick) {
-      // Closed: no new guests, but everyone inside finishes their visit.
-      if (floors.every((floor) => floor.visits.length === 0)) break;
-      continue;
-    }
-
-    const waits = working.map((restaurant, i) =>
-      expectedWait(restaurant, restaurant.tables - floors[i].freeTables, floors[i].queue.length),
-    );
-    for (const party of generateParties(rng, day, tick)) {
-      const index = chooseRestaurant(rng, party, working, waits);
-      if (index === null) {
-        outcomes.push(lostOutcome(party, null, 'elsewhere'));
-        continue;
-      }
-      const restaurant = working[index];
-      const floor = floors[index];
-      const tablesUsed = tablesNeeded(party.size);
-      if (floor.freeTables < tablesUsed) {
-        outcomes.push(lostOutcome(party, restaurant.id, 'noTable'));
-        continue;
-      }
-      floor.freeTables -= tablesUsed;
-      floor.visits.push({
-        party,
-        tablesUsed,
-        order: chooseOrder(rng, restaurant.menu, party),
-        seatedAt: minute,
-        orderedAt: minute + orderMinutes(restaurant, restaurant.tables - floor.freeTables),
-        readyAt: null,
-        quality: 0,
-        eating: false,
-        leaveAt: 0,
-      });
-    }
+  if (tick >= ticksPerDay()) {
+    // Closed: no new guests, but everyone inside finishes their visit.
+    if (floors.every((floor) => floor.visits.length === 0)) progress.done = true;
+    return;
   }
 
-  return { restaurants: working, outcomes };
+  const waits = restaurants.map((restaurant, i) =>
+    expectedWait(restaurant, restaurant.tables - floors[i].freeTables, floors[i].queue.length),
+  );
+  for (const party of generateParties(rng, day, tick)) {
+    const index = chooseRestaurant(rng, party, restaurants, waits);
+    if (index === null) {
+      outcomes.push(lostOutcome(party, null, 'elsewhere'));
+      continue;
+    }
+    const restaurant = restaurants[index];
+    const floor = floors[index];
+    const tablesUsed = tablesNeeded(party.size);
+    if (floor.freeTables < tablesUsed) {
+      outcomes.push(lostOutcome(party, restaurant.id, 'noTable'));
+      continue;
+    }
+    floor.freeTables -= tablesUsed;
+    floor.visits.push({
+      party,
+      tablesUsed,
+      order: chooseOrder(rng, restaurant.menu, party),
+      seatedAt: minute,
+      orderedAt: minute + orderMinutes(restaurant, restaurant.tables - floor.freeTables),
+      readyAt: null,
+      quality: 0,
+      eating: false,
+      leaveAt: 0,
+    });
+  }
+}
+
+/** Plays one day from opening until the last guest leaves. The input restaurants are not changed. */
+export function runDay(rng: RngState, day: number, restaurants: Restaurant[]): DayResult {
+  const progress = startDay(day, restaurants);
+  while (!progress.done) stepDay(rng, progress);
+  return { restaurants: progress.restaurants, outcomes: progress.outcomes };
 }

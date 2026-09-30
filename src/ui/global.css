@@ -3,7 +3,9 @@
   --amber: #e9a23b;
   --sea: #2f6f8f;
   --cream: #fbf3e4;
+  --sand: #f1e6d2;
   --ink: #3b2a22;
+  --leaf: #3c7a3a;
 
   font-family: 'Segoe UI', Roboto, system-ui, sans-serif;
   color: var(--ink);
@@ -25,25 +27,224 @@ body {
   height: 100%;
 }
 
-.hello {
+button {
+  font-family: inherit;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+/* ---------- Layout ---------- */
+
+.app {
   height: 100%;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding: 24px;
-  box-sizing: border-box;
 }
 
-.hello h1 {
-  margin: 0 0 12px;
-  font-size: 3rem;
+.screen {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  overflow: auto;
+}
+
+.card {
+  width: min(960px, 100%);
+  box-sizing: border-box;
+  padding: 32px 40px;
+  background: #fff;
+  border-radius: 24px;
+  box-shadow: 0 8px 24px rgba(59, 42, 34, 0.12);
+}
+
+.card h1 {
+  margin: 0 0 8px;
+  font-size: 2.25rem;
   color: var(--brick);
 }
 
-.hello p {
+.card h2 {
+  margin: 0 0 8px;
+  font-size: 1.1rem;
+}
+
+.eyebrow {
+  margin: 0 0 4px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--sea);
+}
+
+.columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+  margin: 24px 0;
+}
+
+.rows {
+  list-style: none;
   margin: 0;
+  padding: 0;
+}
+
+.rows li {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 8px 0;
+  border-bottom: 1px dashed var(--sand);
+  font-variant-numeric: tabular-nums;
+}
+
+.rows li.total {
+  font-weight: 700;
+  border-bottom: none;
+  border-top: 2px solid var(--ink);
+}
+
+.note {
+  margin: 0 0 20px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  background: #fdf0d8;
+}
+
+.primary {
+  min-height: 56px;
+  padding: 0 32px;
+  border: none;
+  border-radius: 16px;
+  background: var(--sea);
+  color: #fff;
   font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.primary:active {
+  transform: translateY(1px);
+}
+
+/* ---------- HUD ---------- */
+
+.hud {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  min-height: 72px;
+  padding: 8px 24px;
+  box-sizing: border-box;
+  background: var(--brick);
+  color: var(--cream);
+}
+
+.hud-date strong {
+  display: block;
+  font-size: 1.25rem;
+}
+
+.hud-date span {
+  font-size: 0.95rem;
+  opacity: 0.85;
+}
+
+.hud-clock {
+  font-size: 1.75rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.hud-spacer {
+  flex: 1;
+}
+
+.hud-stat {
+  font-size: 1.25rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.speed {
+  display: flex;
+  gap: 8px;
+}
+
+.speed button {
+  min-width: 56px;
+  min-height: 48px;
+  border: 2px solid var(--cream);
+  border-radius: 12px;
+  background: transparent;
+  color: var(--cream);
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.speed button[aria-pressed='true'] {
+  background: var(--cream);
+  color: var(--brick);
+}
+
+.speed button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+/* ---------- The day ---------- */
+
+.big-clock {
+  font-size: 5rem;
+  font-weight: 800;
+  text-align: center;
+  color: var(--brick);
+  font-variant-numeric: tabular-nums;
+}
+
+.day-progress {
+  height: 16px;
+  margin: 8px 0 24px;
+  overflow: hidden;
+  border-radius: 8px;
+  background: var(--sand);
+}
+
+.day-progress div {
+  height: 100%;
+  background: var(--amber);
+  transition: width 0.3s linear;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.stat {
+  padding: 16px;
+  border-radius: 16px;
+  background: var(--cream);
+  text-align: center;
+}
+
+.stat strong {
+  display: block;
+  font-size: 2rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat span {
+  font-size: 0.95rem;
+  color: var(--sea);
+}
+
+.paused {
+  margin: 20px 0 0;
+  text-align: center;
+  font-weight: 600;
   color: var(--sea);
 }
