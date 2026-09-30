@@ -43,7 +43,7 @@ npm run simulate   # headless full-season balance simulation
 - `src/sim/` is the pure simulation.
   - No React, no DOM, no browser APIs.
   - Deterministic given a seed: use the seeded RNG in `src/sim/rng.ts`, never `Math.random()`.
-- `src/data/` holds all content and tunable numbers (`balance.ts`, `dishes.ts`, `locations.ts`, `rivals.ts`, `events.ts`).
+- `src/data/` holds all content and tunable numbers (`balance.ts`, `dishes.ts`, `groups.ts`, `locations.ts`, `rivals.ts`, `events.ts`).
   - Never hard-code balance numbers in logic.
 - `src/ui/` holds React components and screens.
   - The UI reads simulation state and sends player actions.

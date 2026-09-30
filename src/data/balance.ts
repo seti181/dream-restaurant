@@ -9,6 +9,14 @@ export const balance = {
     openMinute: 11 * 60,
     /** Closing time, in minutes after midnight (22:00). */
     closeMinute: 22 * 60,
+    /** Times of day used by the customer groups: lunch runs from opening until the afternoon starts. */
+    afternoonStartHour: 15,
+    eveningStartHour: 18,
+  },
+
+  menu: {
+    /** Highest menu price allowed for any dessert, in złoty. */
+    maxDessertPrice: 50,
   },
 
   calendar: {
