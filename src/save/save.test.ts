@@ -85,3 +85,36 @@ describe('migrating saves', () => {
     expect(migrate(null)).toBeNull();
   });
 });
+
+describe('upgrading version 1 saves (from before M3)', () => {
+  /** What a version 1 save looked like: the same game without the M3 fields. */
+  function versionOneSave(game: ReturnType<typeof newGame>) {
+    const { terracePermitUntilDay: _permit, campaigns: _campaigns, ...rest } = game;
+    const restaurants = game.restaurants.map(
+      ({ supplier: _s, happyHour: _h, lunchSet: _l, terraceTables: _t, decor: _d, ...old }) => old,
+    );
+    return { saveVersion: 1, savedAt: '', game: { ...rest, restaurants } };
+  }
+
+  it('fills in the new fields with their starting values', () => {
+    const game = newGame(21);
+    expect(migrate(versionOneSave(game))).toEqual(game);
+  });
+
+  it('keeps the player’s progress', () => {
+    const game = { ...newGame(22), day: 9, cash: 12_345 };
+    const upgraded = migrate(versionOneSave(game))!;
+    expect(upgraded.day).toBe(9);
+    expect(upgraded.cash).toBe(12_345);
+    expect(upgraded.team).toEqual(game.team);
+  });
+
+  it('loads an old save from storage and plays on', () => {
+    const storage = fakeStorage();
+    storage.setItem('old-town-kitchen/save', JSON.stringify(versionOneSave(newGame(23))));
+    const loaded = loadGame(storage)!;
+    const open = openRestaurant(loaded);
+    while (!open.progress.done) playTick(open);
+    expect(closeDay(loaded, open).state.day).toBe(1);
+  });
+});

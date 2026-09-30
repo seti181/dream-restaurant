@@ -58,6 +58,14 @@ describe('a full day', () => {
     expect(walkedOut.length).toBeGreaterThan(0);
   });
 
+  it('never cooks for a table that walks out before the food is ready', () => {
+    const slowChef: Staff = { skill: 3, speed: 1 };
+    const { outcomes } = runDay(createRng(8), 5, oldTown(starterMenu, [slowChef]));
+    const walkedOut = forRestaurant(outcomes, 'player').filter((o) => o.kind === 'walkedOut');
+    expect(walkedOut.length).toBeGreaterThan(0);
+    expect(walkedOut.every((o) => o.ingredientCost === 0)).toBe(true);
+  });
+
   it('does not change the restaurants it was given', () => {
     const restaurants = oldTown();
     const before = JSON.stringify(restaurants);

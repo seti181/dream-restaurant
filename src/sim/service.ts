@@ -5,7 +5,7 @@ import { balance } from '../data/balance';
 import type { MenuDish } from '../data/dishes';
 import { GROUPS, type GroupId } from '../data/groups';
 import { dishAppeal } from './choice';
-import { lunchSetServing, pairingQuality, templateOf } from './menu';
+import { lunchSetServing, pairingQuality, priceMultiplier, templateOf } from './menu';
 import { chance, nextFloat, type RngState } from './rng';
 import type { Party, Restaurant, Staff, Supplier } from './types';
 
@@ -57,6 +57,7 @@ export function chooseOrder(rng: RngState, restaurant: Restaurant, party: Party,
   const drinks = inCategory('drink');
   const desserts = inCategory('dessert');
   const order: MenuDish[] = [];
+  const multiplier = priceMultiplier(restaurant, minute);
   for (let guest = 0; guest < party.size; guest++) {
     if (lunchSet && chance(rng, GROUPS[party.group].lunchSetAppeal)) {
       order.push(...lunchSetOrder(lunchSet));
@@ -70,7 +71,7 @@ export function chooseOrder(rng: RngState, restaurant: Restaurant, party: Party,
       order.push(pickByAppeal(rng, desserts, party.group));
     }
   }
-  return order;
+  return multiplier === 1 ? order : order.map((dish) => ({ ...dish, price: dish.price * multiplier }));
 }
 
 /** Minutes until a newly seated party's order reaches the kitchen. */

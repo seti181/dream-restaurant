@@ -107,6 +107,19 @@ export const balance = {
     appeal: { tourists: 1.5, students: 0.3, locals: 0.3, office: 0, foodies: 0.5 },
   },
 
+  marketing: {
+    /** Each day without a campaign, awareness loses this share of what it gained above the start. */
+    fadePerDay: 0.05,
+  },
+
+  happyHour: {
+    /** Everything is cheaper from 15:00 until 18:00... */
+    startHour: 15,
+    endHour: 18,
+    /** ...by this share. */
+    discount: 0.2,
+  },
+
   lunchSet: {
     /** "Obiad dnia" is served from 12:00 until 15:00. */
     startHour: 12,

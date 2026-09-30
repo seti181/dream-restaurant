@@ -781,3 +781,13 @@ h2.spaced {
 .shop-item.compact {
   padding: 6px 12px;
 }
+
+/* ---------- Marketing ---------- */
+
+.awareness .bar-cell {
+  width: 55%;
+}
+
+.awareness .meter {
+  margin: 0;
+}

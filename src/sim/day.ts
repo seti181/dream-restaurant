@@ -31,6 +31,8 @@ interface Visit {
   orderedAt: number;
   /** When the food is ready; null until a chef starts cooking. */
   readyAt: number | null;
+  /** True if the kitchen gave up on the order because the party would leave before it was ready. */
+  skipped: boolean;
   quality: number;
   eating: boolean;
   leaveAt: number;
@@ -65,9 +67,16 @@ function startCooking(restaurant: Restaurant, floor: Floor, minute: number): voi
     const visit = floor.queue.shift()!;
     const chef = restaurant.chefs[chefIndex];
     const start = Math.max(floor.chefFreeAt[chefIndex], visit.orderedAt);
-    visit.readyAt = start + prepMinutes(visit.order, chef, restaurant.menu.length);
+    const readyAt = start + prepMinutes(visit.order, chef, restaurant.menu.length);
+    // Don't cook for a table that will have given up before the food is ready;
+    // spend the time on guests who will still be there.
+    if (readyAt > visit.seatedAt + GROUPS[visit.party.group].patienceMinutes) {
+      visit.skipped = true;
+      continue;
+    }
+    visit.readyAt = readyAt;
     visit.quality = orderQuality(visit.order, chef, restaurant.supplier);
-    floor.chefFreeAt[chefIndex] = visit.readyAt;
+    floor.chefFreeAt[chefIndex] = readyAt;
   }
 }
 
@@ -80,7 +89,8 @@ function progressRestaurant(
 ): void {
   // Orders that waiters have taken reach the kitchen.
   for (const visit of floor.visits) {
-    if (!visit.eating && visit.readyAt === null && visit.orderedAt <= minute && !floor.queue.includes(visit)) {
+    const waitingForKitchen = !visit.eating && !visit.skipped && visit.readyAt === null;
+    if (waitingForKitchen && visit.orderedAt <= minute && !floor.queue.includes(visit)) {
       floor.queue.push(visit);
     }
   }
@@ -242,6 +252,7 @@ export function stepDay(rng: RngState, progress: DayInProgress): void {
       seatedAt: minute,
       orderedAt: minute + orderMinutes(restaurant, allTables(restaurant) - floor.freeTables),
       readyAt: null,
+      skipped: false,
       quality: 0,
       eating: false,
       leaveAt: 0,

@@ -4,7 +4,7 @@
 
 import type { GameState } from '../sim/game';
 
-export const SAVE_VERSION = 1;
+export const SAVE_VERSION = 2;
 const SAVE_KEY = 'old-town-kitchen/save';
 
 interface SaveFile {
@@ -56,6 +56,22 @@ function looksLikeGame(game: unknown): game is GameState {
 }
 
 /**
+ * Version 1 → 2 (M3): restaurants gain a supplier, happy hour, lunch set, terrace
+ * tables and decor; the game gains a terrace permit and marketing campaigns.
+ */
+function upgradeFrom1(game: Record<string, unknown>): Record<string, unknown> {
+  const restaurants = (game.restaurants as Record<string, unknown>[]).map((restaurant) => ({
+    supplier: 'market',
+    happyHour: false,
+    lunchSet: null,
+    terraceTables: 0,
+    decor: [],
+    ...restaurant,
+  }));
+  return { terracePermitUntilDay: null, campaigns: [], ...game, restaurants };
+}
+
+/**
  * Brings a save from any older version up to date, one version at a time.
  * Returns null for saves that can't be understood.
  */
@@ -64,8 +80,9 @@ export function migrate(data: unknown): GameState | null {
   const file = data as Partial<SaveFile>;
   if (typeof file.saveVersion !== 'number' || file.saveVersion > SAVE_VERSION) return null;
 
-  // When the save format changes, bump SAVE_VERSION and add a step here, e.g.
-  //   if (file.saveVersion === 1) { file.game = upgradeFrom1(file.game); file.saveVersion = 2; }
+  // When the save format changes, bump SAVE_VERSION and add a step here.
+  let game: unknown = file.game;
+  if (file.saveVersion === 1 && looksLikeGame(game)) game = upgradeFrom1(game as unknown as Record<string, unknown>);
 
-  return looksLikeGame(file.game) ? file.game : null;
+  return looksLikeGame(game) ? game : null;
 }

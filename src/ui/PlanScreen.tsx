@@ -3,6 +3,7 @@
 
 import { InteriorPanel } from './plan/InteriorPanel';
 import { KitchenPanel } from './plan/KitchenPanel';
+import { MarketingPanel } from './plan/MarketingPanel';
 import { MenuPanel } from './plan/MenuPanel';
 import { StaffPanel } from './plan/StaffPanel';
 import { TodayPanel } from './plan/TodayPanel';
@@ -14,6 +15,7 @@ const TABS: { tab: PlanTab; label: string }[] = [
   { tab: 'kitchen', label: 'Kitchen' },
   { tab: 'interior', label: 'Interior' },
   { tab: 'staff', label: 'Staff' },
+  { tab: 'marketing', label: 'Marketing' },
 ];
 
 export function PlanScreen() {
@@ -43,6 +45,7 @@ export function PlanScreen() {
           {planTab === 'kitchen' && <KitchenPanel />}
           {planTab === 'interior' && <InteriorPanel />}
           {planTab === 'staff' && <StaffPanel />}
+          {planTab === 'marketing' && <MarketingPanel />}
         </div>
         <footer className="plan-footer">
           <button type="button" className="primary" onClick={open}>

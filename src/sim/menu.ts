@@ -85,3 +85,11 @@ export function lunchSetServing(
   const main = restaurant.menu.find((dish) => recipeKey(dish) === set.main);
   return soup && main ? { soup, main, price: set.price } : null;
 }
+
+/** What share of menu prices guests pay at this minute: less during happy hour. */
+export function priceMultiplier(restaurant: Restaurant, minute: number): number {
+  if (!restaurant.happyHour) return 1;
+  const hour = minute / 60;
+  const { startHour, endHour, discount } = balance.happyHour;
+  return hour >= startHour && hour < endHour ? 1 - discount : 1;
+}

@@ -6,6 +6,7 @@ import { DISH_TEMPLATES, EXTRAS, type EquipmentId, type ExtraId, type MenuDish, 
 import { DECOR, type DecorId } from '../data/decor';
 import { EQUIPMENT } from '../data/equipment';
 import { LOCATIONS } from '../data/locations';
+import { CAMPAIGNS, type CampaignId } from '../data/marketing';
 import { playerOf, type GameState } from './game';
 import { dateOf, daysInMonth, nextDayOn } from './calendar';
 import { ambianceWith } from './interior';
@@ -216,4 +217,33 @@ export function buyTerracePermit(state: GameState): GameState {
   const lastMonth = balance.terrace.lastMonth;
   const untilDay = nextDayOn(lastMonth, daysInMonth(lastMonth), state.day);
   return { ...state, terracePermitUntilDay: untilDay, cash: state.cash - balance.terrace.permitCost };
+}
+
+// ---------- Marketing ----------
+
+export function campaignUnavailableReason(state: GameState, id: CampaignId): string | null {
+  if (state.campaigns.some((c) => c.id === id && c.untilDay >= state.day)) return 'Already running';
+  return cantAfford(state, CAMPAIGNS[id].cost);
+}
+
+/** Last day a campaign started today would run. */
+export function campaignEndDay(state: GameState, id: CampaignId): number {
+  const { days } = CAMPAIGNS[id];
+  if (days !== 'season') return state.day + days - 1;
+  const seasonEnd = balance.calendar.seasonLengthDays - 1;
+  // After the season, a "rest of the season" listing runs for a season's length.
+  return state.day <= seasonEnd ? seasonEnd : state.day + balance.calendar.seasonLengthDays - 1;
+}
+
+export function launchCampaign(state: GameState, id: CampaignId): GameState {
+  if (campaignUnavailableReason(state, id) !== null) return state;
+  return {
+    ...state,
+    cash: state.cash - CAMPAIGNS[id].cost,
+    campaigns: [...state.campaigns, { id, untilDay: campaignEndDay(state, id) }],
+  };
+}
+
+export function setHappyHour(state: GameState, on: boolean): GameState {
+  return withPlayer(state, { happyHour: on });
 }

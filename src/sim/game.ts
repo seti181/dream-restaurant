@@ -4,6 +4,7 @@
 import { balance } from '../data/balance';
 import type { MenuDish } from '../data/dishes';
 import { GROUP_IDS, type GroupId } from '../data/groups';
+import { CAMPAIGNS, type CampaignId } from '../data/marketing';
 import { LOCATIONS } from '../data/locations';
 import { RIVAL_IDS } from '../data/rivals';
 import { startDay, stepDay, type DayInProgress } from './day';
@@ -31,6 +32,8 @@ export interface GameState {
   nextEmployeeId: number;
   /** Last day the summer terrace permit is valid, or null without one. */
   terracePermitUntilDay: number | null;
+  /** Marketing campaigns running, each until the end of its last day. */
+  campaigns: { id: CampaignId; untilDay: number }[];
   /** The player's restaurant first, then the rivals. */
   restaurants: Restaurant[];
 }
@@ -96,6 +99,7 @@ export function newGame(seed: number): GameState {
     candidates,
     nextEmployeeId: team.length + candidates.length + 1,
     terracePermitUntilDay: null,
+    campaigns: [],
     restaurants: [
       createPlayerRestaurant(start.name, start.menu, staffOf(team, 'chef'), staffOf(team, 'waiter')),
       ...RIVAL_IDS.map(createRivalRestaurant),
@@ -129,12 +133,32 @@ export function terraceOpenOn(state: GameState, day: number): boolean {
   return inSeason && state.terracePermitUntilDay !== null && day <= state.terracePermitUntilDay;
 }
 
+/**
+ * Today's awareness: running campaigns raise it (less as it nears 100);
+ * without one, it slowly fades back towards where it started.
+ */
+export function awarenessToday(state: GameState): Record<GroupId, number> {
+  const { awareness } = playerOf(state);
+  const running = state.campaigns.filter((c) => c.untilDay >= state.day);
+  const start = balance.start.awareness;
+  const today = { ...awareness };
+  for (const group of GROUP_IDS) {
+    const boost = running.reduce((sum, c) => sum + (CAMPAIGNS[c.id].boost[group] ?? 0), 0);
+    today[group] =
+      boost > 0
+        ? awareness[group] + boost * (1 - awareness[group] / 100)
+        : awareness[group] - Math.max(0, awareness[group] - start) * balance.marketing.fadePerDay;
+  }
+  return today;
+}
+
 export function openRestaurant(state: GameState): OpenDay {
   const [player, ...rivals] = state.restaurants;
   const terraceTables = terraceOpenOn(state, state.day)
     ? Math.floor(LOCATIONS[player.location].terraceSeats / balance.service.seatsPerTable)
     : 0;
-  return { progress: startDay(state.day, [{ ...player, terraceTables }, ...rivals]), rng: { ...state.rng } };
+  const today = { ...player, terraceTables, awareness: awarenessToday(state) };
+  return { progress: startDay(state.day, [today, ...rivals]), rng: { ...state.rng } };
 }
 
 /** Plays one tick (five in-game minutes). */
@@ -252,6 +276,7 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
       rng,
       candidates,
       nextEmployeeId,
+      campaigns: state.campaigns.filter((c) => c.untilDay > state.day),
       restaurants: open.progress.restaurants,
     },
     summary: {

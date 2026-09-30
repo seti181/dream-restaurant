@@ -3,20 +3,25 @@ import { balance } from '../data/balance';
 import { DECOR } from '../data/decor';
 import { DISH_TEMPLATES, type ExtraId, type MenuDish } from '../data/dishes';
 import { EQUIPMENT } from '../data/equipment';
+import { CAMPAIGNS } from '../data/marketing';
 import {
   addDish,
   buyDecor,
   buyEquipment,
   buyTable,
   buyTerracePermit,
+  campaignEndDay,
+  campaignUnavailableReason,
   decorUnavailableReason,
   clearLunchSet,
   dishUnavailableReason,
   equipmentUnavailableReason,
   extraUnavailableReason,
+  launchCampaign,
   menuBoardUnavailableReason,
   removeDish,
   setDishPrice,
+  setHappyHour,
   setLunchSet,
   setLunchSetPrice,
   setSupplier,
@@ -24,9 +29,19 @@ import {
   terraceUnavailableReason,
   upgradeMenuBoard,
 } from './actions';
-import { newGame, openRestaurant, playerOf, terraceOpenOn } from './game';
+import { utility } from './choice';
+import {
+  awarenessToday,
+  closeDay,
+  newGame,
+  openRestaurant,
+  playerOf,
+  playTick,
+  terraceOpenOn,
+  type GameState,
+} from './game';
 import { decorStyleOf, interiorAppeal } from './interior';
-import { ingredientCostOf, pairingsOf, recipeKey, tagsOf } from './menu';
+import { ingredientCostOf, pairingsOf, priceMultiplier, recipeKey, tagsOf } from './menu';
 import { orderQuality } from './service';
 
 const fresh = () => newGame(1);
@@ -274,5 +289,67 @@ describe('interior and terrace', () => {
     expect(open.progress.restaurants[0].terraceTables).toBe(2);
     expect(open.progress.floors[0].freeTables).toBe(playerOf(inMay).tables + 2);
     expect(openRestaurant(fresh()).progress.restaurants[0].terraceTables).toBe(0);
+  });
+});
+
+describe('marketing', () => {
+  const rich = () => ({ ...fresh(), cash: 1_000_000 });
+  const playDay = (state: GameState) => {
+    const open = openRestaurant(state);
+    while (!open.progress.done) playTick(open);
+    return closeDay(state, open).state;
+  };
+
+  it('launches a campaign for its length, and pays for it', () => {
+    const state = launchCampaign(rich(), 'flyers');
+    expect(state.cash).toBe(1_000_000 - CAMPAIGNS.flyers.cost);
+    expect(state.campaigns).toEqual([{ id: 'flyers', untilDay: 2 }]);
+    expect(campaignUnavailableReason(state, 'flyers')).toBe('Already running');
+    expect(campaignEndDay(rich(), 'guideListing')).toBe(balance.calendar.seasonLengthDays - 1);
+  });
+
+  it('raises awareness with the targeted groups only', () => {
+    const state = launchCampaign(rich(), 'flyers');
+    const today = awarenessToday(state);
+    const before = playerOf(state).awareness;
+    expect(today.students).toBeGreaterThan(before.students);
+    expect(today.locals).toBeGreaterThan(before.locals);
+    expect(today.tourists).toBe(before.tourists);
+  });
+
+  it('keeps working for its days, then ends and slowly fades', () => {
+    let state = launchCampaign(rich(), 'flyers');
+    for (let i = 0; i < 3; i++) state = playDay(state);
+    expect(state.campaigns).toHaveLength(0);
+    const peak = playerOf(state).awareness.students;
+    expect(peak).toBeGreaterThan(balance.start.awareness + 10);
+    for (let i = 0; i < 10; i++) state = playDay(state);
+    const later = playerOf(state).awareness.students;
+    expect(later).toBeLessThan(peak);
+    expect(later).toBeGreaterThan(balance.start.awareness);
+  });
+
+  it('never pushes awareness past 100', () => {
+    let state = { ...rich(), campaigns: [{ id: 'radio' as const, untilDay: 10_000 }] };
+    for (let i = 0; i < 200; i++) {
+      const today = awarenessToday(state);
+      state = { ...state, restaurants: [{ ...playerOf(state), awareness: today }, ...state.restaurants.slice(1)] };
+    }
+    expect(Math.max(...Object.values(playerOf(state).awareness))).toBeLessThanOrEqual(100);
+  });
+
+  it('happy hour makes everything cheaper from 15:00 to 18:00 only', () => {
+    const player = playerOf(setHappyHour(fresh(), true));
+    expect(priceMultiplier(player, 16 * 60)).toBeCloseTo(1 - balance.happyHour.discount);
+    expect(priceMultiplier(player, 14 * 60)).toBe(1);
+    expect(priceMultiplier(player, 18 * 60)).toBe(1);
+    expect(priceMultiplier(playerOf(fresh()), 16 * 60)).toBe(1);
+  });
+
+  it('happy hour tempts price-sensitive students', () => {
+    const on = playerOf(setHappyHour(fresh(), true));
+    const off = playerOf(fresh());
+    const students = { group: 'students' as const, size: 2, origin: 'ogarna' as const, arrivalMinute: 16 * 60 };
+    expect(utility(on, students, 10)!).toBeGreaterThan(utility(off, students, 10)!);
   });
 });

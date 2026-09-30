@@ -7,7 +7,7 @@ import type { MenuDish } from '../data/dishes';
 import { GROUPS, type GroupId } from '../data/groups';
 import { LOCATIONS, type LocationId } from '../data/locations';
 import { interiorAppeal } from './interior';
-import { lunchSetServing, tagsOf, templateOf } from './menu';
+import { lunchSetServing, priceMultiplier, tagsOf, templateOf } from './menu';
 import { nextFloat, type RngState } from './rng';
 import type { Party, Restaurant } from './types';
 
@@ -57,7 +57,8 @@ export function utility(restaurant: Restaurant, party: Party, expectedWaitMinute
 
   const group = GROUPS[party.group];
   const w = group.choiceWeights;
-  const priceTerm = Math.max(-1, Math.min(1, 1 - priceLevel(restaurant.menu)));
+  const prices = priceLevel(restaurant.menu) * priceMultiplier(restaurant, party.arrivalMinute);
+  const priceTerm = Math.max(-1, Math.min(1, 1 - prices));
   const waitTerm = -Math.min(1, expectedWaitMinutes / group.patienceMinutes);
   const lunchSetTerm = lunchSetServing(restaurant, party.arrivalMinute)
     ? balance.lunchSet.appealBonus * group.lunchSetAppeal
