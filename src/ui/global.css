@@ -604,3 +604,77 @@ button {
 .save-note.warning {
   color: var(--brick);
 }
+
+/* ---------- Shops (kitchen, interior, marketing) ---------- */
+
+.shop {
+  display: grid;
+  gap: 10px;
+}
+
+.shop-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 16px;
+  border: 2px solid var(--sand);
+  border-radius: 16px;
+}
+
+.shop-item p {
+  margin: 2px 0 0;
+}
+
+.shop-item.owned {
+  background: #f3f8ef;
+  border-color: #cfe3c6;
+}
+
+.owned-mark {
+  color: var(--leaf);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.buy {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  text-align: right;
+}
+
+.secondary:disabled {
+  border-color: var(--sand);
+  color: #a8968a;
+  cursor: default;
+}
+
+.choice-cards {
+  display: grid;
+  gap: 10px;
+}
+
+.choice-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 48px;
+  padding: 12px 16px;
+  border: 2px solid var(--sand);
+  border-radius: 16px;
+  background: #fff;
+  color: var(--ink);
+  text-align: left;
+  font-size: 1rem;
+}
+
+.choice-card[aria-pressed='true'] {
+  border-color: var(--sea);
+  background: #eaf3f7;
+}
+
+h2.spaced {
+  margin-top: 24px;
+}

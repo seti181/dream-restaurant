@@ -21,15 +21,6 @@ export type Cuisine = 'polish' | 'italian' | 'grill' | 'pastry';
 
 export type EquipmentId = 'stove' | 'fryer' | 'grill' | 'pizzaOven' | 'espresso' | 'dessertDisplay';
 
-export const EQUIPMENT_NAMES: Record<EquipmentId, string> = {
-  stove: 'stove',
-  fryer: 'deep fryer',
-  grill: 'grill',
-  pizzaOven: 'pizza oven',
-  espresso: 'espresso machine',
-  dessertDisplay: 'dessert display',
-};
-
 export const CATEGORY_NAMES: Record<Category, string> = {
   soup: 'Soups',
   main: 'Mains',

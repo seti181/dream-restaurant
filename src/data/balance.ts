@@ -17,8 +17,12 @@ export const balance = {
   },
 
   menu: {
-    /** Dishes the menu can hold at the start (it can be upgraded later). */
+    /** Dishes the menu can hold at the start... */
     startingSlots: 6,
+    /** ...and at most, after upgrading the menu board. */
+    maxSlots: 12,
+    /** Each menu board upgrade adds this many slots, for this many złoty. */
+    slotUpgrade: { slots: 2, cost: 3_000 },
     /** Lowest menu price for any dish, in złoty. */
     minPrice: 1,
     /** Highest menu price allowed for any dessert, in złoty. */
@@ -75,6 +79,13 @@ export const balance = {
     menuMatchDishes: 3,
     /** Matching tags, categories or dishes needed for a dish to be a perfect match. */
     matchesForFullAppeal: 2,
+  },
+
+  supplier: {
+    /** Premium ingredients make every dish this much better (quality points)... */
+    premiumQualityBonus: 8,
+    /** ...and cost this many times as much as the market's. */
+    premiumCostMultiplier: 1.5,
   },
 
   orders: {

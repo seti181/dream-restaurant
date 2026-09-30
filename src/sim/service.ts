@@ -7,7 +7,7 @@ import type { GroupId } from '../data/groups';
 import { dishAppeal } from './choice';
 import { templateOf } from './menu';
 import { chance, nextFloat, type RngState } from './rng';
-import type { Party, Restaurant, Staff } from './types';
+import type { Party, Restaurant, Staff, Supplier } from './types';
 
 const average = (values: number[], fallback: number) =>
   values.length === 0 ? fallback : values.reduce((sum, v) => sum + v, 0) / values.length;
@@ -82,13 +82,14 @@ export function prepMinutes(order: MenuDish[], chef: Staff, menuSize: number): n
 }
 
 /** Average quality (0–100) of an order cooked by this chef. */
-export function orderQuality(order: MenuDish[], chef: Staff): number {
+export function orderQuality(order: MenuDish[], chef: Staff, supplier: Supplier = 'market'): number {
   const k = balance.kitchen;
+  const supplierBonus = supplier === 'premium' ? balance.supplier.premiumQualityBonus : 0;
   const skillBonus = (effectiveLevel(chef, 'skill') - balance.staff.averageLevel) * k.qualityPerSkillPoint;
   const dishQuality = (dish: MenuDish) => {
     const template = templateOf(dish);
     const specialty = chef.specialty !== undefined && chef.specialty === template.cuisine ? k.specialtyBonus : 0;
-    return template.baseQuality + skillBonus + specialty;
+    return template.baseQuality + skillBonus + specialty + supplierBonus;
   };
   const quality = average(order.map(dishQuality), 0);
   return Math.max(0, Math.min(100, quality));

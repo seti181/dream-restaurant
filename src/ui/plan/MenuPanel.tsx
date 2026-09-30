@@ -3,7 +3,7 @@
 import { CATEGORY_NAMES, DISH_TEMPLATES, TEMPLATE_IDS, type Category, type MenuDish } from '../../data/dishes';
 import { dishUnavailableReason, priceRange } from '../../sim/actions';
 import { playerOf } from '../../sim/game';
-import { tagsOf, templateOf, variantOf } from '../../sim/menu';
+import { ingredientCostOf, tagsOf, templateOf, variantOf } from '../../sim/menu';
 import { money } from '../format';
 import { useGame } from '../store';
 
@@ -63,7 +63,7 @@ function CurrentMenu() {
               <strong>{templateOf(dish).name}</strong> <span className="muted">{variantOf(dish).name}</span>
               <Tags dish={dish} />
               <span className="small muted">
-                Ingredients {money(variantOf(dish).ingredientCost)} · usually sells for{' '}
+                Ingredients {money(ingredientCostOf(dish, playerOf(game).supplier))} · usually sells for{' '}
                 {money(templateOf(dish).referencePrice)}
               </span>
             </div>

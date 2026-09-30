@@ -7,7 +7,7 @@ import { GROUPS } from '../data/groups';
 import { chooseRestaurant } from './choice';
 import { minuteOfDay, ticksPerDay } from './clock';
 import { generateParties } from './guests';
-import { templateOf, variantOf } from './menu';
+import { ingredientCostOf, templateOf } from './menu';
 import type { RngState } from './rng';
 import { satisfactionFactors, satisfactionScore, updatedReputation } from './satisfaction';
 import {
@@ -66,7 +66,7 @@ function startCooking(restaurant: Restaurant, floor: Floor, minute: number): voi
     const chef = restaurant.chefs[chefIndex];
     const start = Math.max(floor.chefFreeAt[chefIndex], visit.orderedAt);
     visit.readyAt = start + prepMinutes(visit.order, chef, restaurant.menu.length);
-    visit.quality = orderQuality(visit.order, chef);
+    visit.quality = orderQuality(visit.order, chef, restaurant.supplier);
     floor.chefFreeAt[chefIndex] = visit.readyAt;
   }
 }
@@ -123,7 +123,7 @@ function progressRestaurant(
         kind: 'served',
         order: visit.order,
         revenue: sum(visit.order, (dish) => dish.price),
-        ingredientCost: sum(visit.order, (dish) => variantOf(dish).ingredientCost),
+        ingredientCost: sum(visit.order, (dish) => ingredientCostOf(dish, restaurant.supplier)),
         waitMinutes: visit.readyAt! - visit.seatedAt,
         satisfaction,
         factors,
@@ -143,7 +143,7 @@ function progressRestaurant(
         kind: 'walkedOut',
         order: visit.order,
         revenue: 0,
-        ingredientCost: visit.readyAt === null ? 0 : sum(visit.order, (dish) => variantOf(dish).ingredientCost),
+        ingredientCost: visit.readyAt === null ? 0 : sum(visit.order, (dish) => ingredientCostOf(dish, restaurant.supplier)),
         waitMinutes: giveUpAt - visit.seatedAt,
         satisfaction,
         factors: null,

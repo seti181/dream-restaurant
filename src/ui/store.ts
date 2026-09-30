@@ -4,7 +4,7 @@
 
 import { create } from 'zustand';
 import { balance } from '../data/balance';
-import type { TemplateId } from '../data/dishes';
+import type { EquipmentId, TemplateId } from '../data/dishes';
 import { loadGame, saveGame } from '../save/save';
 import * as actions from '../sim/actions';
 import { minuteOfDay } from '../sim/clock';
@@ -19,6 +19,7 @@ import {
   type GameState,
   type OpenDay,
 } from '../sim/game';
+import type { Supplier } from '../sim/types';
 
 /** Plan: time paused, getting ready. Open: the day is playing. Day over: the results. */
 export type Phase = 'plan' | 'open' | 'dayOver';
@@ -27,7 +28,7 @@ export type Phase = 'plan' | 'open' | 'dayOver';
 export type Speed = 0 | 1 | 2 | 4;
 
 /** The tabs of the planning screen. */
-export type PlanTab = 'today' | 'menu' | 'staff';
+export type PlanTab = 'today' | 'menu' | 'kitchen' | 'staff';
 
 export interface LiveDay extends DayTally {
   minute: number;
@@ -57,6 +58,9 @@ interface GameStore {
   setDishPrice: (index: number, price: number) => void;
   hire: (candidateId: number) => void;
   letGo: (employeeId: number) => void;
+  buyEquipment: (id: EquipmentId) => void;
+  upgradeMenuBoard: () => void;
+  setSupplier: (supplier: Supplier) => void;
 }
 
 function liveFrom(openDay: OpenDay): LiveDay {
@@ -116,6 +120,9 @@ export const useGame = create<GameStore>((set, get) => ({
   setDishPrice: (index, price) => plan((game) => actions.setDishPrice(game, index, price)),
   hire: (candidateId) => plan((game) => actions.hire(game, candidateId)),
   letGo: (employeeId) => plan((game) => actions.letGo(game, employeeId)),
+  buyEquipment: (id) => plan((game) => actions.buyEquipment(game, id)),
+  upgradeMenuBoard: () => plan((game) => actions.upgradeMenuBoard(game)),
+  setSupplier: (supplier) => plan((game) => actions.setSupplier(game, supplier)),
 }));
 
 /** Applies a planning action. Plans can only change while time is paused before opening. */

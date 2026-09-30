@@ -7,6 +7,9 @@ import type { TraitId } from '../data/staff';
 
 export type Role = 'chef' | 'waiter';
 
+/** Where ingredients come from. Premium is better and dearer. */
+export type Supplier = 'market' | 'premium';
+
 /** What the simulation needs to know about a chef or waiter. Skill and speed run from 1 to 5. */
 export interface Staff {
   skill: number;
@@ -35,6 +38,7 @@ export interface Restaurant {
   menu: MenuDish[];
   /** Kitchen equipment owned; dishes that need other equipment can't be cooked. */
   equipment: EquipmentId[];
+  supplier: Supplier;
   tables: number;
   chefs: Staff[];
   waiters: Staff[];

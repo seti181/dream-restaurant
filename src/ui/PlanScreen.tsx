@@ -1,6 +1,7 @@
 // Planning: time is paused. Tabs for today's overview, the menu and the staff,
 // with the "Open the restaurant" button always at hand.
 
+import { KitchenPanel } from './plan/KitchenPanel';
 import { MenuPanel } from './plan/MenuPanel';
 import { StaffPanel } from './plan/StaffPanel';
 import { TodayPanel } from './plan/TodayPanel';
@@ -9,6 +10,7 @@ import { useGame, type PlanTab } from './store';
 const TABS: { tab: PlanTab; label: string }[] = [
   { tab: 'today', label: 'Today' },
   { tab: 'menu', label: 'Menu' },
+  { tab: 'kitchen', label: 'Kitchen' },
   { tab: 'staff', label: 'Staff' },
 ];
 
@@ -36,6 +38,7 @@ export function PlanScreen() {
         <div className="plan-body">
           {planTab === 'today' && <TodayPanel />}
           {planTab === 'menu' && <MenuPanel />}
+          {planTab === 'kitchen' && <KitchenPanel />}
           {planTab === 'staff' && <StaffPanel />}
         </div>
         <footer className="plan-footer">
