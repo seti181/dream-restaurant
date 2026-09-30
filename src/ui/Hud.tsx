@@ -1,5 +1,6 @@
 // The bar across the top: date, clock, cash, rating and speed controls.
 
+import { WEATHER } from '../data/weather';
 import { dateOf, formatDate, seasonWeek } from '../sim/calendar';
 import { formatTime } from '../sim/clock';
 import { playerOf, starRating } from '../sim/game';
@@ -44,6 +45,7 @@ export function Hud() {
 
   // While the day's results are showing, keep showing that day's date.
   const day = phase === 'dayOver' && summary ? summary.day : game.day;
+  const weather = WEATHER[phase === 'dayOver' && summary ? summary.weather : game.weather];
   const cash = game.cash + (live ? live.revenue - live.ingredientCost : 0);
 
   return (
@@ -51,6 +53,9 @@ export function Hud() {
       <div className="hud-date">
         <strong>{formatDate(dateOf(day))}</strong>
         <span>Week {seasonWeek(day)}</span>
+      </div>
+      <div className="hud-weather" aria-label="Weather">
+        {weather.icon} {weather.name}
       </div>
       {live && <div className="hud-clock">{formatTime(live.minute)}</div>}
       <div className="hud-spacer" />

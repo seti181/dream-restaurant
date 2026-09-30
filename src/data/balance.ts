@@ -72,6 +72,36 @@ export const balance = {
   rivals: {
     /** Rivals are well known in the Old Town from day one, 0–100. */
     awareness: 60,
+    /** Share of a price change when a rival nudges prices up or down. */
+    priceStep: 0.05,
+    /** Bigger cut when reacting to the player winning their favourite guests. */
+    reactionPriceCut: 0.08,
+    /** Rival prices stay between these multiples of their starting prices. */
+    minPriceFactor: 0.75,
+    maxPriceFactor: 1.3,
+    /** A rival reacts once the player serves this share of the guests the rival serves, among its favourite groups. */
+    playerThreatShare: 0.35,
+    /** A rival turning away more than this share of its guests wants more room or higher prices. */
+    crowdedShare: 0.15,
+    /** Awareness a promotion adds with the rival's favourite groups (it fades like the player's). */
+    promotionAwareness: 10,
+    /** Ambiance an upgrade adds, up to a maximum. */
+    upgradeAmbiance: 3,
+    maxAmbiance: 90,
+  },
+
+  events: {
+    /** Chance each evening that something unexpected happens tomorrow. */
+    randomChancePerDay: 0.2,
+  },
+
+  reviews: {
+    /** Chance that a party writes a review. */
+    chance: 0.12,
+    /** Chance that a review is about a pairing on their plate, if there is one. */
+    pairingMentionChance: 0.5,
+    /** A food critic's review moves reputation this many times as far as an ordinary visit, with every group. */
+    criticWeight: 10,
   },
 
   choice: {
@@ -83,6 +113,32 @@ export const balance = {
     menuMatchDishes: 3,
     /** Matching tags, categories or dishes needed for a dish to be a perfect match. */
     matchesForFullAppeal: 2,
+  },
+
+  weather: {
+    /**
+     * Chances of sunny, cloudy, rain and heatwave for each month, January first.
+     * Each row adds up to 1. Heatwaves only happen in high summer.
+     */
+    monthChances: [
+      [0.2, 0.45, 0.35, 0], // January
+      [0.2, 0.45, 0.35, 0],
+      [0.25, 0.4, 0.35, 0],
+      [0.35, 0.35, 0.3, 0], // April
+      [0.45, 0.3, 0.25, 0],
+      [0.5, 0.25, 0.2, 0.05],
+      [0.5, 0.2, 0.2, 0.1], // July
+      [0.5, 0.2, 0.2, 0.1],
+      [0.4, 0.3, 0.3, 0],
+      [0.3, 0.35, 0.35, 0],
+      [0.2, 0.4, 0.4, 0],
+      [0.2, 0.45, 0.35, 0], // December
+    ],
+    /** How many people are out and about in each kind of weather. */
+    traffic: { sunny: 1.1, cloudy: 1, rain: 0.7, heatwave: 1 },
+    /** How much more (or less) often guests order soups, and cold treats (ice cream, lemonade). */
+    soupOrders: { sunny: 1, cloudy: 1, rain: 1.4, heatwave: 0.5 },
+    coolTreatOrders: { sunny: 1.2, cloudy: 1, rain: 0.7, heatwave: 2 },
   },
 
   interior: {

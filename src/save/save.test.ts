@@ -89,7 +89,15 @@ describe('migrating saves', () => {
 describe('upgrading version 1 saves (from before M3)', () => {
   /** What a version 1 save looked like: the same game without the M3 fields. */
   function versionOneSave(game: ReturnType<typeof newGame>) {
-    const { terracePermitUntilDay: _permit, campaigns: _campaigns, ...rest } = game;
+    const {
+      terracePermitUntilDay: _permit,
+      campaigns: _campaigns,
+      weather: _weather,
+      events: _events,
+      news: _news,
+      week: _week,
+      ...rest
+    } = game;
     const restaurants = game.restaurants.map(
       ({ supplier: _s, happyHour: _h, lunchSet: _l, terraceTables: _t, decor: _d, ...old }) => old,
     );
@@ -98,7 +106,7 @@ describe('upgrading version 1 saves (from before M3)', () => {
 
   it('fills in the new fields with their starting values', () => {
     const game = newGame(21);
-    expect(migrate(versionOneSave(game))).toEqual(game);
+    expect(migrate(versionOneSave(game))).toEqual({ ...game, weather: 'cloudy' });
   });
 
   it('keeps the player’s progress', () => {
@@ -116,5 +124,16 @@ describe('upgrading version 1 saves (from before M3)', () => {
     const open = openRestaurant(loaded);
     while (!open.progress.done) playTick(open);
     expect(closeDay(loaded, open).state.day).toBe(1);
+  });
+});
+
+describe('upgrading version 2 saves (from before weather and events)', () => {
+  it('starts a cloudy day with no events or news', () => {
+    const { weather: _w, events: _e, news: _n, week: _k, ...old } = newGame(31);
+    const upgraded = migrate({ saveVersion: 2, savedAt: '', game: old })!;
+    expect(upgraded.weather).toBe('cloudy');
+    expect(upgraded.events).toEqual([]);
+    expect(upgraded.news).toEqual([]);
+    expect(upgraded.week).toEqual({ served: {}, turnedAway: {} });
   });
 });

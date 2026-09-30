@@ -3,18 +3,40 @@
 
 import { balance } from '../data/balance';
 import type { MenuDish } from '../data/dishes';
+import { CALENDAR_EVENTS, RANDOM_EVENTS, type RandomEventId } from '../data/events';
 import { GROUP_IDS, type GroupId } from '../data/groups';
 import { CAMPAIGNS, type CampaignId } from '../data/marketing';
 import { LOCATIONS } from '../data/locations';
 import { RIVAL_IDS } from '../data/rivals';
+import type { Weather } from '../data/weather';
 import { startDay, stepDay, type DayInProgress } from './day';
 import { dateOf, isMonday } from './calendar';
+import {
+  calendarEventsOn,
+  calendarEventsStarting,
+  conditionsFor,
+  rollRandomEvent,
+  rollWeather,
+} from './events';
 import { weeklyBillsDue } from './finance';
 import { pairingsOf } from './menu';
+import { planRivalWeek, rivalAwarenessToday } from './rivalAi';
 import { createRng, type RngState } from './rng';
 import { createPlayerRestaurant, createRivalRestaurant } from './setup';
 import { generateCandidates, starterTeam, staffOf } from './staff';
-import type { Employee, PartyOutcome, Restaurant, SatisfactionFactors } from './types';
+import type { Employee, PartyOutcome, Restaurant, Review, SatisfactionFactors } from './types';
+
+/** A line of news for the morning: an event starting, a surprise, or a rival's move. */
+export interface NewsItem {
+  title: string;
+  text: string;
+}
+
+/** Guests each restaurant served (by group) and turned away this week. The rivals study it on Mondays. */
+export interface WeekTally {
+  served: Record<string, Partial<Record<GroupId, number>>>;
+  turnedAway: Record<string, number>;
+}
 
 /** Everything that makes up a game in progress. Plain data, so it can be saved. */
 export interface GameState {
@@ -34,6 +56,13 @@ export interface GameState {
   terracePermitUntilDay: number | null;
   /** Marketing campaigns running, each until the end of its last day. */
   campaigns: { id: CampaignId; untilDay: number }[];
+  /** Today's weather. */
+  weather: Weather;
+  /** Surprise events, from their first to their last day. */
+  events: { id: RandomEventId; fromDay: number; untilDay: number }[];
+  /** This morning's news. */
+  news: NewsItem[];
+  week: WeekTally;
   /** The player's restaurant first, then the rivals. */
   restaurants: Restaurant[];
 }
@@ -83,6 +112,11 @@ export interface DaySummary extends DayTally {
   lunchSetsSold: number;
   /** What guests said about pairings they tasted: hints for the dish creator. */
   pairingComments: { comment: string; happy: boolean }[];
+  weather: Weather;
+  /** Events that were on today. */
+  events: string[];
+  /** Reviews written today, the critic's first. */
+  reviews: Review[];
 }
 
 export function newGame(seed: number): GameState {
@@ -100,6 +134,10 @@ export function newGame(seed: number): GameState {
     nextEmployeeId: team.length + candidates.length + 1,
     terracePermitUntilDay: null,
     campaigns: [],
+    weather: rollWeather(rng, 0),
+    events: [],
+    news: [],
+    week: { served: {}, turnedAway: {} },
     restaurants: [
       createPlayerRestaurant(start.name, start.menu, staffOf(team, 'chef'), staffOf(team, 'waiter')),
       ...RIVAL_IDS.map(createRivalRestaurant),
@@ -126,11 +164,20 @@ export function starRating(restaurant: Restaurant): number {
   return total / GROUP_IDS.length / 20;
 }
 
-/** True if the player's terrace is open on this day: a valid permit, in terrace season. */
+/** True if the player's terrace is open on this day: a valid permit, in terrace season, and no rain today. */
 export function terraceOpenOn(state: GameState, day: number): boolean {
   const { month } = dateOf(day);
   const inSeason = month >= balance.terrace.firstMonth && month <= balance.terrace.lastMonth;
-  return inSeason && state.terracePermitUntilDay !== null && day <= state.terracePermitUntilDay;
+  const dry = day !== state.day || state.weather !== 'rain';
+  return inSeason && dry && state.terracePermitUntilDay !== null && day <= state.terracePermitUntilDay;
+}
+
+/** Names of every event on today, calendar and surprise. */
+export function eventsToday(state: GameState): string[] {
+  const surprises = state.events
+    .filter((e) => e.fromDay <= state.day && e.untilDay >= state.day)
+    .map((e) => RANDOM_EVENTS[e.id].name);
+  return [...calendarEventsOn(state.day).map((id) => CALENDAR_EVENTS[id].name), ...surprises];
 }
 
 /**
@@ -158,7 +205,11 @@ export function openRestaurant(state: GameState): OpenDay {
     ? Math.floor(LOCATIONS[player.location].terraceSeats / balance.service.seatsPerTable)
     : 0;
   const today = { ...player, terraceTables, awareness: awarenessToday(state) };
-  return { progress: startDay(state.day, [today, ...rivals]), rng: { ...state.rng } };
+  const rivalsToday = rivals.map((rival) => ({ ...rival, awareness: rivalAwarenessToday(rival) }));
+  return {
+    progress: startDay(state.day, [today, ...rivalsToday], conditionsFor(state)),
+    rng: { ...state.rng },
+  };
 }
 
 /** Plays one tick (five in-game minutes). */
@@ -250,6 +301,24 @@ function pairingComments(outcomes: PartyOutcome[], restaurantId: string): { comm
   return [...comments].map(([comment, happy]) => ({ comment, happy })).sort((a, b) => Number(b.happy) - Number(a.happy));
 }
 
+/** Adds a day's guests to the week's tally. */
+function addToWeek(week: WeekTally, outcomes: PartyOutcome[]): WeekTally {
+  const served: WeekTally['served'] = Object.fromEntries(
+    Object.entries(week.served).map(([id, groups]) => [id, { ...groups }]),
+  );
+  const turnedAway = { ...week.turnedAway };
+  for (const o of outcomes) {
+    if (o.restaurant === null) continue;
+    if (o.kind === 'served') {
+      const groups = (served[o.restaurant] ??= {});
+      groups[o.group] = (groups[o.group] ?? 0) + o.size;
+    } else if (o.kind === 'noTable') {
+      turnedAway[o.restaurant] = (turnedAway[o.restaurant] ?? 0) + o.size;
+    }
+  }
+  return { served, turnedAway };
+}
+
 /** Ends the day: pays wages and any weekly bills, and moves on to the next day. */
 export function closeDay(state: GameState, open: OpenDay): { state: GameState; summary: DaySummary } {
   const playerBefore = playerOf(state);
@@ -261,23 +330,58 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
 
   const rng = { ...open.rng };
   const nextDay = state.day + 1;
+  const news: NewsItem[] = [];
+  const week = addToWeek(state.week, open.progress.outcomes);
+  let restaurants = open.progress.restaurants;
   let { candidates, nextEmployeeId } = state;
+  let cash = state.cash + profit;
+  let nextWeek = week;
+
   if (isMonday(nextDay)) {
-    // A new week brings new faces looking for work.
+    // A new week brings new faces looking for work...
     candidates = generateCandidates(rng, nextEmployeeId, namesOf(state.team));
     nextEmployeeId += candidates.length;
+    // ...and the rivals make their moves, having studied last week.
+    const planned = planRivalWeek({ ...state, restaurants, week }, rng);
+    restaurants = planned.restaurants;
+    planned.news.forEach((text, i) => news.push({ title: restaurants[i + 1].name, text }));
+    nextWeek = { served: {}, turnedAway: {} };
+  }
+
+  for (const id of calendarEventsStarting(nextDay)) {
+    news.push({ title: CALENDAR_EVENTS[id].name, text: CALENDAR_EVENTS[id].description });
+  }
+
+  // Maybe something unexpected happens tomorrow.
+  const events = state.events.filter((e) => e.untilDay >= nextDay);
+  const surprise = events.length === 0 ? rollRandomEvent(rng) : null;
+  if (surprise) {
+    const event = RANDOM_EVENTS[surprise];
+    events.push({ id: surprise, fromDay: nextDay, untilDay: nextDay + event.days - 1 });
+    news.push({ title: event.name, text: event.description });
+    if (event.cash) cash += event.cash;
+    if (event.awareness) {
+      const [player, ...rivals] = restaurants;
+      const awareness = { ...player.awareness };
+      for (const g of GROUP_IDS) awareness[g] = Math.min(100, awareness[g] + event.awareness!);
+      restaurants = [{ ...player, awareness }, ...rivals];
+    }
   }
 
   return {
     state: {
       ...state,
       day: nextDay,
-      cash: state.cash + profit,
+      cash,
       rng,
       candidates,
       nextEmployeeId,
       campaigns: state.campaigns.filter((c) => c.untilDay > state.day),
-      restaurants: open.progress.restaurants,
+      weather: rollWeather(rng, nextDay),
+      events,
+      news,
+      week: nextWeek,
+      restaurants,
     },
     summary: {
       ...tally,
@@ -300,6 +404,12 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
         name: rival.name,
         guestsServed: tallyFor(open.progress.outcomes, rival.id).guestsServed,
       })),
+      weather: state.weather,
+      events: eventsToday(state),
+      reviews: open.progress.outcomes
+        .filter((o) => o.restaurant === playerBefore.id && o.review !== null)
+        .map((o) => o.review!)
+        .sort((a, b) => Number(b.critic) - Number(a.critic)),
     },
   };
 }

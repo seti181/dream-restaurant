@@ -5,7 +5,7 @@ import { GROUP_IDS, GROUPS } from '../data/groups';
 import { dateOf, formatDate } from '../sim/calendar';
 import type { DaySummary } from '../sim/game';
 import type { SatisfactionFactors } from '../sim/types';
-import { dishName, money, signedMoney, stars } from './format';
+import { dishName, money, signedMoney, starRow, stars } from './format';
 import { useGame } from './store';
 
 type Factor = keyof SatisfactionFactors;
@@ -78,7 +78,10 @@ export function DayOverScreen() {
     <main className="screen">
       <div className="card plan-card">
         <div className="plan-body">
-          <p className="eyebrow">{formatDate(dateOf(summary.day))} · day over</p>
+          <p className="eyebrow">
+            {formatDate(dateOf(summary.day))} · day over
+            {summary.events.length > 0 && ` · ${summary.events.join(' · ')}`}
+          </p>
           <h1>{headline(summary)}</h1>
           <p className="said">💬 {guestsSaid(summary.feedback)}</p>
           {summary.pairingComments.slice(0, 3).map(({ comment, happy }) => (
@@ -86,6 +89,21 @@ export function DayOverScreen() {
               {happy ? '😋' : '🤔'} “{comment}”
             </p>
           ))}
+
+          {summary.reviews.length > 0 && (
+            <div className="reviews">
+              {summary.reviews.slice(0, 4).map((review, i) => (
+                <blockquote key={i} className={review.critic ? 'review critic' : 'review'}>
+                  <span className="review-stars">{starRow(review.stars)}</span>
+                  <p>“{review.text}”</p>
+                  <footer>
+                    {review.critic ? '🖋️ ' : '— '}
+                    {review.reviewer}
+                  </footer>
+                </blockquote>
+              ))}
+            </div>
+          )}
 
           <div className="report">
             <section>

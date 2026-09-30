@@ -3,6 +3,7 @@
 
 import { balance } from '../data/balance';
 import type { MenuDish } from '../data/dishes';
+import type { Weather } from '../data/weather';
 import { GROUPS, type GroupId } from '../data/groups';
 import { dishAppeal } from './choice';
 import { lunchSetServing, pairingQuality, priceMultiplier, templateOf } from './menu';
@@ -27,9 +28,23 @@ export function tablesNeeded(partySize: number): number {
   return Math.ceil(partySize / balance.service.seatsPerTable);
 }
 
-/** Picks a dish, favouring the ones this group likes. */
-export function pickByAppeal(rng: RngState, dishes: MenuDish[], group: GroupId): MenuDish {
-  const weights = dishes.map((dish) => balance.orders.baseDishWeight + dishAppeal(dish, group));
+/** How the weather changes the appetite for a dish: soup on a rainy day, ice cream in a heatwave. */
+export function weatherAppetite(dish: MenuDish, weather: Weather): number {
+  if (templateOf(dish).category === 'soup') return balance.weather.soupOrders[weather];
+  if (dish.template === 'iceCream' || dish.template === 'lemonade') return balance.weather.coolTreatOrders[weather];
+  return 1;
+}
+
+/** Picks a dish, favouring the ones this group likes and the weather suits. */
+export function pickByAppeal(
+  rng: RngState,
+  dishes: MenuDish[],
+  group: GroupId,
+  weather: Weather = 'cloudy',
+): MenuDish {
+  const weights = dishes.map(
+    (dish) => (balance.orders.baseDishWeight + dishAppeal(dish, group)) * weatherAppetite(dish, weather),
+  );
   let roll = nextFloat(rng) * weights.reduce((sum, w) => sum + w, 0);
   for (let i = 0; i < dishes.length; i++) {
     roll -= weights[i];
@@ -48,7 +63,13 @@ function lunchSetOrder(set: { soup: MenuDish; main: MenuDish; price: number }): 
  * Each guest orders a soup or main (or the lunch set, if it's lunchtime and they
  * fancy it), and maybe a drink and a dessert.
  */
-export function chooseOrder(rng: RngState, restaurant: Restaurant, party: Party, minute: number): MenuDish[] {
+export function chooseOrder(
+  rng: RngState,
+  restaurant: Restaurant,
+  party: Party,
+  minute: number,
+  weather: Weather = 'cloudy',
+): MenuDish[] {
   const { menu } = restaurant;
   const lunchSet = lunchSetServing(restaurant, minute);
   const inCategory = (...categories: string[]) =>
@@ -62,13 +83,13 @@ export function chooseOrder(rng: RngState, restaurant: Restaurant, party: Party,
     if (lunchSet && chance(rng, GROUPS[party.group].lunchSetAppeal)) {
       order.push(...lunchSetOrder(lunchSet));
     } else {
-      order.push(pickByAppeal(rng, food.length > 0 ? food : menu, party.group));
+      order.push(pickByAppeal(rng, food.length > 0 ? food : menu, party.group, weather));
     }
     if (drinks.length > 0 && chance(rng, balance.orders.drinkChance)) {
-      order.push(pickByAppeal(rng, drinks, party.group));
+      order.push(pickByAppeal(rng, drinks, party.group, weather));
     }
     if (desserts.length > 0 && chance(rng, balance.orders.dessertChance)) {
-      order.push(pickByAppeal(rng, desserts, party.group));
+      order.push(pickByAppeal(rng, desserts, party.group, weather));
     }
   }
   return multiplier === 1 ? order : order.map((dish) => ({ ...dish, price: dish.price * multiplier }));

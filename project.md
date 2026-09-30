@@ -356,7 +356,7 @@ All numbers live in `src/data/` (`balance.ts`, `dishes.ts`, `locations.ts`, `riv
 - Places in Gdańsk that mean something to you both (cameos on the map or in events): **[Mariacka ]**
 - Inside jokes to hide in reviews, staff bios or rival messages: **[ ]**
 - A regular guest based on you: **[give me cytrynowka to my dish ]**
-- Ending: after winning the Golden Neptune, a personal message / credits: **[Parabens! Now you are ready to open your dream restaurant ]**
+- Ending: after winning the Golden Neptune, a personal message / credits: **[Parabens! Now you are ready to open your dream restaurant in real WORLD!!! ]**
 
 ## 11. Scope
 
@@ -425,7 +425,7 @@ Work in small steps, and test each step in the browser before moving on.
 **M3 – MVP systems**
 
 - [x] Dish creator, lunch set, equipment, interior and terrace, marketing
-- [ ] Rival AI, events, weather, reviews
+- [x] Rival AI, events, weather, reviews
 - [ ] Map and relocation
 - [ ] Tutorial, weekly goals, Golden Neptune ending
 - [ ] Settings: difficulty, save export/import

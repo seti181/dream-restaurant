@@ -1,14 +1,15 @@
 // Headless balance simulation: plays whole seasons with scripted strategies and
 // prints the results. Run with `npm run simulate`. See project.md section 13.
+// It uses the real game loop, so weather, events and the rivals' weekly moves all play their part.
 
-import { balance } from '../src/data/balance';
 import { RIVAL_IDS, RIVALS, type RivalId } from '../src/data/rivals';
 import { isInSeason, isMonday } from '../src/sim/calendar';
-import { runDay } from '../src/sim/day';
-import { dailyWages, weeklyBillsDue } from '../src/sim/finance';
+import { wageOf } from '../src/sim/finance';
+import { closeDay, newGame, openRestaurant, playTick, type GameState } from '../src/sim/game';
 import { isFairDay, neptuneScore } from '../src/sim/neptune';
-import { createRng } from '../src/sim/rng';
-import { createPlayerRestaurant, createRivalRestaurant } from '../src/sim/setup';
+import { createPlayerRestaurant } from '../src/sim/setup';
+import { staffOf } from '../src/sim/staff';
+import type { Employee, Role, Staff } from '../src/sim/types';
 import { STRATEGIES, type Strategy } from './strategies';
 
 /** Each strategy plays one season per seed; results are averaged. */
@@ -28,18 +29,29 @@ interface SeasonResult {
   neptune: Record<string, number>;
 }
 
+/** A new game where the player's menu and team are the strategy's. */
+function startingGame(strategy: Strategy, seed: number): GameState {
+  const game = newGame(seed);
+  const hire = (role: Role) => (person: Staff, i: number): Employee => ({
+    ...person,
+    id: 1000 + i + (role === 'chef' ? 0 : 100),
+    role,
+    name: `${role} ${i + 1}`,
+    bio: '',
+    wage: wageOf(role, person),
+  });
+  const team = [...strategy.chefs.map(hire('chef')), ...strategy.waiters.map(hire('waiter'))];
+  const player = createPlayerRestaurant('Test Kitchen', strategy.menu, staffOf(team, 'chef'), staffOf(team, 'waiter'));
+  return { ...game, team, candidates: [], restaurants: [player, ...game.restaurants.slice(1)] };
+}
+
 function playSeason(strategy: Strategy, seed: number): SeasonResult {
-  const rng = createRng(seed);
-  let restaurants = [
-    createPlayerRestaurant('Test Kitchen', strategy.menu, strategy.chefs, strategy.waiters),
-    ...RIVAL_IDS.map(createRivalRestaurant),
-  ];
-  let cash = balance.finance.startingCash;
+  let state = startingGame(strategy, seed);
   let weekProfit = 0;
   const result: SeasonResult = {
     weeklyCash: [],
     weeklyProfit: [],
-    lowestCash: cash,
+    lowestCash: state.cash,
     daysInDebt: 0,
     guestsServed: 0,
     guestsLost: 0,
@@ -51,20 +63,17 @@ function playSeason(strategy: Strategy, seed: number): SeasonResult {
   const fairGuests = new Map<string, number>();
   let allFairGuests = 0;
 
-  for (let day = 0; isInSeason(day); day++) {
+  while (isInSeason(state.day)) {
+    const day = state.day;
     if (day > 0 && isMonday(day)) {
-      result.weeklyCash.push(cash);
+      result.weeklyCash.push(state.cash);
       result.weeklyProfit.push(weekProfit);
       weekProfit = 0;
     }
 
-    const bills = weeklyBillsDue(restaurants[0], day);
-    const { restaurants: after, outcomes } = runDay(rng, day, restaurants);
-    restaurants = after;
-
-    let revenue = 0;
-    let ingredients = 0;
-    for (const o of outcomes) {
+    const open = openRestaurant(state);
+    while (!open.progress.done) playTick(open);
+    for (const o of open.progress.outcomes) {
       if (o.restaurant === null) continue;
       if (o.satisfaction !== null) {
         const r = ratings.get(o.restaurant) ?? { total: 0, count: 0 };
@@ -77,20 +86,18 @@ function playSeason(strategy: Strategy, seed: number): SeasonResult {
         allFairGuests += o.size;
       }
       if (o.restaurant === 'player') {
-        revenue += o.revenue;
-        ingredients += o.ingredientCost;
         if (o.kind === 'served') result.guestsServed += o.size;
         else result.guestsLost += o.size;
       }
     }
 
-    const profit = revenue - ingredients - dailyWages(restaurants[0]) - bills.rent - bills.utilities;
-    cash += profit;
-    weekProfit += profit;
-    result.lowestCash = Math.min(result.lowestCash, cash);
-    if (cash < 0) result.daysInDebt++;
+    const next = closeDay(state, open).state;
+    weekProfit += next.cash - state.cash;
+    state = next;
+    result.lowestCash = Math.min(result.lowestCash, state.cash);
+    if (state.cash < 0) result.daysInDebt++;
   }
-  result.weeklyCash.push(cash);
+  result.weeklyCash.push(state.cash);
   result.weeklyProfit.push(weekProfit);
 
   for (const id of ['player', ...RIVAL_IDS]) {

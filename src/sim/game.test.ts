@@ -32,8 +32,11 @@ describe('a new game', () => {
 
 describe('a day played tick by tick', () => {
   it('ends exactly as if it had been played in one go', () => {
-    const { state, open } = playWholeDay(4);
-    const inOneGo = runDay({ ...state.rng }, state.day, state.restaurants);
+    const state = newGame(4);
+    const open = openRestaurant(state);
+    const atOpening = structuredClone(open.progress.restaurants);
+    while (!open.progress.done) playTick(open);
+    const inOneGo = runDay({ ...state.rng }, state.day, atOpening, open.progress.conditions);
     expect(open.progress.outcomes).toEqual(inOneGo.outcomes);
     expect(open.progress.restaurants).toEqual(inOneGo.restaurants);
   });

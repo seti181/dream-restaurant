@@ -283,7 +283,7 @@ describe('interior and terrace', () => {
   });
 
   it('puts terrace tables out on open days', () => {
-    const inMay = { ...buyTerracePermit(rich()), day: 30 };
+    const inMay = { ...buyTerracePermit(rich()), day: 30, weather: 'sunny' as const };
     const open = openRestaurant(inMay);
     // Ogarna's terrace has 8 seats: 2 tables.
     expect(open.progress.restaurants[0].terraceTables).toBe(2);
@@ -323,7 +323,10 @@ describe('marketing', () => {
     expect(state.campaigns).toHaveLength(0);
     const peak = playerOf(state).awareness.students;
     expect(peak).toBeGreaterThan(balance.start.awareness + 10);
-    for (let i = 0; i < 10; i++) state = playDay(state);
+    // With no campaign running, awareness fades a little each day.
+    for (let i = 0; i < 10; i++) {
+      state = { ...state, restaurants: [{ ...playerOf(state), awareness: awarenessToday(state) }, ...state.restaurants.slice(1)] };
+    }
     const later = playerOf(state).awareness.students;
     expect(later).toBeLessThan(peak);
     expect(later).toBeGreaterThan(balance.start.awareness);

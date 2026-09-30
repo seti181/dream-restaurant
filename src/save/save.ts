@@ -4,7 +4,7 @@
 
 import type { GameState } from '../sim/game';
 
-export const SAVE_VERSION = 2;
+export const SAVE_VERSION = 3;
 const SAVE_KEY = 'old-town-kitchen/save';
 
 interface SaveFile {
@@ -71,6 +71,11 @@ function upgradeFrom1(game: Record<string, unknown>): Record<string, unknown> {
   return { terracePermitUntilDay: null, campaigns: [], ...game, restaurants };
 }
 
+/** Version 2 → 3 (M3 events): the game gains weather, surprise events, news and the week's tally. */
+function upgradeFrom2(game: Record<string, unknown>): Record<string, unknown> {
+  return { weather: 'cloudy', events: [], news: [], week: { served: {}, turnedAway: {} }, ...game };
+}
+
 /**
  * Brings a save from any older version up to date, one version at a time.
  * Returns null for saves that can't be understood.
@@ -82,7 +87,15 @@ export function migrate(data: unknown): GameState | null {
 
   // When the save format changes, bump SAVE_VERSION and add a step here.
   let game: unknown = file.game;
-  if (file.saveVersion === 1 && looksLikeGame(game)) game = upgradeFrom1(game as unknown as Record<string, unknown>);
+  let version = file.saveVersion;
+  if (version === 1 && looksLikeGame(game)) {
+    game = upgradeFrom1(game as unknown as Record<string, unknown>);
+    version = 2;
+  }
+  if (version === 2 && looksLikeGame(game)) {
+    game = upgradeFrom2(game as unknown as Record<string, unknown>);
+    version = 3;
+  }
 
   return looksLikeGame(game) ? game : null;
 }

@@ -5,6 +5,7 @@ import type { DecorId } from '../data/decor';
 import type { GroupId } from '../data/groups';
 import type { LocationId } from '../data/locations';
 import type { TraitId } from '../data/staff';
+import type { Weather } from '../data/weather';
 
 export type Role = 'chef' | 'waiter';
 
@@ -67,6 +68,44 @@ export interface Party {
   origin: LocationId;
   /** Minutes after midnight. */
   arrivalMinute: number;
+  /** For a party that booked ahead: the restaurant it goes straight to. */
+  bookedAt?: string;
+  /** A food critic, whose review counts for much more. */
+  critic?: boolean;
+}
+
+/** A review left by a guest. */
+export interface Review {
+  /** 1 to 5. */
+  stars: number;
+  text: string;
+  /** "a student", "a local family"... */
+  reviewer: string;
+  critic: boolean;
+}
+
+/** A party that booked ahead, e.g. a tour bus or a wedding. */
+export interface Booking {
+  restaurant: string;
+  group: GroupId;
+  size: number;
+  /** Minutes after midnight. */
+  minute: number;
+  critic: boolean;
+}
+
+/** Everything about a day that isn't the restaurants: weather, events and bookings. */
+export interface DayConditions {
+  weather: Weather;
+  /** Multiplies foot traffic everywhere. */
+  traffic: number;
+  /** Multiplies foot traffic of each group (1 if missing). */
+  groups: Partial<Record<GroupId, number>>;
+  /** Multiplies foot traffic on each street (1 if missing). */
+  locations: Partial<Record<LocationId, number>>;
+  bookings: Booking[];
+  /** Multiplies ingredient costs for a restaurant id (1 if missing). */
+  ingredientCost: Record<string, number>;
 }
 
 /** Each factor runs from -1 (awful) through 0 (fine) to +1 (wonderful). */
@@ -97,4 +136,6 @@ export interface PartyOutcome {
   satisfaction: number | null;
   /** Only for served parties. */
   factors: SatisfactionFactors | null;
+  /** Some parties leave a review. */
+  review: Review | null;
 }

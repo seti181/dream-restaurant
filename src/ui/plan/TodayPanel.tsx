@@ -1,8 +1,9 @@
 // Planning overview: where you are, what's on, and anything that needs attention.
 
 import { LOCATIONS } from '../../data/locations';
+import { WEATHER } from '../../data/weather';
 import { weeklyBillsDue } from '../../sim/finance';
-import { playerOf, teamWages, type GameState } from '../../sim/game';
+import { eventsToday, playerOf, teamWages, type GameState } from '../../sim/game';
 import { dishName, money } from '../format';
 import { useGame } from '../store';
 
@@ -29,6 +30,23 @@ export function TodayPanel() {
       <p>
         {player.name} on {LOCATIONS[player.location].name} is ready when you are.
       </p>
+
+      <section className="today-news">
+        <h2>Today in Gdańsk</h2>
+        <p>
+          {WEATHER[game.weather].icon} {WEATHER[game.weather].forecast}
+        </p>
+        {eventsToday(game).length > 0 && (
+          <p>
+            🎪 <strong>On today:</strong> {eventsToday(game).join(' · ')}
+          </p>
+        )}
+        {game.news.map((item) => (
+          <p key={item.title + item.text} className="news-item">
+            <strong>{item.title}:</strong> {item.text}
+          </p>
+        ))}
+      </section>
 
       {planWarnings(game).map((warning) => (
         <p key={warning} className="note warning">

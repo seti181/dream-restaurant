@@ -57,7 +57,11 @@ export function satisfactionScore(factors: SatisfactionFactors): number {
   return 50 + 50 * weighted;
 }
 
-/** Reputation drifts a little towards each party's satisfaction. */
-export function updatedReputation(reputation: number, satisfaction: number): number {
-  return reputation + balance.reputation.smoothing * (satisfaction - reputation);
+/**
+ * Reputation drifts a little towards each party's satisfaction.
+ * @param weight how much this visit counts; a food critic counts for many
+ */
+export function updatedReputation(reputation: number, satisfaction: number, weight = 1): number {
+  const step = Math.min(1, balance.reputation.smoothing * weight);
+  return reputation + step * (satisfaction - reputation);
 }
