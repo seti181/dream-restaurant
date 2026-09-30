@@ -12,9 +12,15 @@ import type { Party, Restaurant, Staff } from './types';
 const average = (values: number[], fallback: number) =>
   values.length === 0 ? fallback : values.reduce((sum, v) => sum + v, 0) / values.length;
 
+/** Someone's skill or speed at work, including their trait. */
+export function effectiveLevel(person: Staff, stat: 'skill' | 'speed'): number {
+  const change = person.trait ? balance.staff.traitEffects[person.trait][stat] : 0;
+  return Math.max(balance.staff.minEffectiveLevel, person[stat] + change);
+}
+
 export function averageLevel(staff: Staff[], stat: 'skill' | 'speed'): number {
   // With nobody on the job, it is as if the least able person were doing it.
-  return average(staff.map((person) => person[stat]), 1);
+  return average(staff.map((person) => effectiveLevel(person, stat)), 1);
 }
 
 export function tablesNeeded(partySize: number): number {
@@ -71,14 +77,20 @@ export function menuSlowdown(menuSize: number): number {
 export function prepMinutes(order: MenuDish[], chef: Staff, menuSize: number): number {
   const longest = Math.max(...order.map((dish) => templateOf(dish).prepMinutes));
   const base = longest + balance.kitchen.extraPortionMinutes * (order.length - 1);
-  const speedFactor = chef.speed / balance.staff.averageLevel;
+  const speedFactor = effectiveLevel(chef, 'speed') / balance.staff.averageLevel;
   return (base / speedFactor) * menuSlowdown(menuSize);
 }
 
 /** Average quality (0–100) of an order cooked by this chef. */
 export function orderQuality(order: MenuDish[], chef: Staff): number {
-  const skillBonus = (chef.skill - balance.staff.averageLevel) * balance.kitchen.qualityPerSkillPoint;
-  const quality = average(order.map((dish) => templateOf(dish).baseQuality + skillBonus), 0);
+  const k = balance.kitchen;
+  const skillBonus = (effectiveLevel(chef, 'skill') - balance.staff.averageLevel) * k.qualityPerSkillPoint;
+  const dishQuality = (dish: MenuDish) => {
+    const template = templateOf(dish);
+    const specialty = chef.specialty !== undefined && chef.specialty === template.cuisine ? k.specialtyBonus : 0;
+    return template.baseQuality + skillBonus + specialty;
+  };
+  const quality = average(order.map(dishQuality), 0);
   return Math.max(0, Math.min(100, quality));
 }
 

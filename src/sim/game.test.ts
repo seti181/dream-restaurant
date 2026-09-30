@@ -1,8 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { balance } from '../data/balance';
 import { runDay } from './day';
-import { dailyWages } from './finance';
-import { closeDay, newGame, openRestaurant, playerOf, playTick, starRating, tallyFor } from './game';
+import { closeDay, newGame, openRestaurant, playerOf, playTick, starRating, tallyFor, teamWages } from './game';
 
 function playWholeDay(seed: number) {
   const state = newGame(seed);
@@ -54,7 +53,7 @@ describe('closing the day', () => {
     const { state: next, summary } = closeDay(state, open);
     const tally = tallyFor(open.progress.outcomes, 'player');
     expect(summary.revenue).toBe(tally.revenue);
-    expect(summary.wages).toBe(dailyWages(playerOf(state)));
+    expect(summary.wages).toBe(teamWages(state));
     expect(summary.profit).toBeCloseTo(
       summary.revenue - summary.ingredientCost - summary.wages - summary.rent - summary.utilities,
     );
@@ -70,5 +69,25 @@ describe('closing the day', () => {
     const tuesdayOpen = openRestaurant(monday.state);
     while (!tuesdayOpen.progress.done) playTick(tuesdayOpen);
     expect(closeDay(monday.state, tuesdayOpen).summary.rent).toBe(0);
+  });
+});
+
+describe('the daily report', () => {
+  it('adds up the groups, dishes and rivals', () => {
+    const { state, open } = playWholeDay(8);
+    const { summary } = closeDay(state, open);
+    const groupServed = Object.values(summary.groups).reduce((sum, g) => sum + g.served, 0);
+    const groupLost = Object.values(summary.groups).reduce((sum, g) => sum + g.lost, 0);
+    expect(groupServed).toBe(summary.guestsServed);
+    expect(groupLost).toBe(summary.guestsWalkedOut + summary.guestsTurnedAway);
+    expect(summary.groups.locals.reputationAfter).toBe(open.progress.restaurants[0].reputation.locals);
+
+    const portions = summary.dishesSold.reduce((sum, d) => sum + d.count, 0);
+    expect(portions).toBeGreaterThanOrEqual(summary.guestsServed);
+    const counts = summary.dishesSold.map((d) => d.count);
+    expect(counts).toEqual([...counts].sort((a, b) => b - a));
+
+    expect(summary.rivals).toHaveLength(4);
+    expect(summary.feedback).not.toBeNull();
   });
 });

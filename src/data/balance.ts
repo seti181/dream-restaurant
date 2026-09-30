@@ -17,6 +17,10 @@ export const balance = {
   },
 
   menu: {
+    /** Dishes the menu can hold at the start (it can be upgraded later). */
+    startingSlots: 6,
+    /** Lowest menu price for any dish, in złoty. */
+    minPrice: 1,
     /** Highest menu price allowed for any dessert, in złoty. */
     maxDessertPrice: 50,
   },
@@ -46,9 +50,8 @@ export const balance = {
       { template: 'golabki', variant: 'tomato', price: 38 },
       { template: 'kompot', variant: 'strawberry', price: 9 },
     ],
-    /** One average chef and one average waiter to begin with. */
-    chefs: [{ skill: 3, speed: 3 }],
-    waiters: [{ skill: 3, speed: 3 }],
+    /** The kitchen comes with a stove. */
+    equipment: ['stove'],
     seats: 16,
     /** 0–100. A bare room before any decor. */
     ambiance: 30,
@@ -90,6 +93,20 @@ export const balance = {
     waiterWage: 250,
     /** Each skill or speed point above average adds this share to the wage (and below, takes it off). */
     wageStepPerLevel: 0.1,
+    /** How each trait changes a person's skill and speed while they work. */
+    traitEffects: {
+      cheerful: { skill: 0.5, speed: 0 },
+      perfectionist: { skill: 1, speed: -1 },
+      speedy: { skill: -0.5, speed: 1 },
+      chatty: { skill: 0.5, speed: -0.5 },
+      calm: { skill: 0, speed: 0.5 },
+    },
+    /** Nobody works at less than this skill or speed, whatever their trait. */
+    minEffectiveLevel: 0.5,
+    /** Job candidates each Monday. */
+    candidatePool: { min: 3, max: 4 },
+    /** How common each level (1 to 5) is among candidates. */
+    candidateLevelWeights: [1, 3, 4, 3, 1],
   },
 
   finance: {
@@ -114,6 +131,8 @@ export const balance = {
     slowdownPerExtraDish: 0.03,
     /** Dish quality gained for each chef skill point above average (lost below). */
     qualityPerSkillPoint: 5,
+    /** Extra quality when a dish matches the chef's specialty. */
+    specialtyBonus: 8,
   },
 
   service: {

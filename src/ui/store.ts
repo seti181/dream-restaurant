@@ -4,6 +4,8 @@
 
 import { create } from 'zustand';
 import { balance } from '../data/balance';
+import type { TemplateId } from '../data/dishes';
+import * as actions from '../sim/actions';
 import { minuteOfDay } from '../sim/clock';
 import {
   closeDay,
@@ -23,6 +25,9 @@ export type Phase = 'plan' | 'open' | 'dayOver';
 /** 0 = paused. */
 export type Speed = 0 | 1 | 2 | 4;
 
+/** The tabs of the planning screen. */
+export type PlanTab = 'today' | 'menu' | 'staff';
+
 export interface LiveDay extends DayTally {
   minute: number;
   /** True after 22:00, while the last guests finish. */
@@ -36,11 +41,19 @@ interface GameStore {
   openDay: OpenDay | null;
   live: LiveDay | null;
   summary: DaySummary | null;
+  planTab: PlanTab;
 
   open: () => void;
   tick: () => void;
   setSpeed: (speed: Speed) => void;
   planNextDay: () => void;
+  setPlanTab: (tab: PlanTab) => void;
+
+  addDish: (template: TemplateId, variant: string) => void;
+  removeDish: (index: number) => void;
+  setDishPrice: (index: number, price: number) => void;
+  hire: (candidateId: number) => void;
+  letGo: (employeeId: number) => void;
 }
 
 function liveFrom(openDay: OpenDay): LiveDay {
@@ -60,6 +73,7 @@ export const useGame = create<GameStore>((set, get) => ({
   openDay: null,
   live: null,
   summary: null,
+  planTab: 'today',
 
   open: () => {
     const openDay = openRestaurant(get().game);
@@ -85,5 +99,20 @@ export const useGame = create<GameStore>((set, get) => ({
 
   setSpeed: (speed) => set({ speed }),
 
-  planNextDay: () => set({ phase: 'plan', summary: null }),
+  planNextDay: () => set({ phase: 'plan', summary: null, planTab: 'today' }),
+
+  setPlanTab: (planTab) => set({ planTab }),
+
+  addDish: (template, variant) => plan((game) => actions.addDish(game, template, variant)),
+  removeDish: (index) => plan((game) => actions.removeDish(game, index)),
+  setDishPrice: (index, price) => plan((game) => actions.setDishPrice(game, index, price)),
+  hire: (candidateId) => plan((game) => actions.hire(game, candidateId)),
+  letGo: (employeeId) => plan((game) => actions.letGo(game, employeeId)),
 }));
+
+/** Applies a planning action. Plans can only change while time is paused before opening. */
+function plan(action: (game: GameState) => GameState): void {
+  const { phase, game } = useGame.getState();
+  if (phase !== 'plan') return;
+  useGame.setState({ game: action(game) });
+}

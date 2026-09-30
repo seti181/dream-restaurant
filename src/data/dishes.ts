@@ -16,7 +16,26 @@ export type Tag =
   | 'cheap'
   | 'homemade';
 
+/** A chef's specialty; dishes of that cuisine come out better. */
+export type Cuisine = 'polish' | 'italian' | 'grill' | 'pastry';
+
 export type EquipmentId = 'stove' | 'fryer' | 'grill' | 'pizzaOven' | 'espresso' | 'dessertDisplay';
+
+export const EQUIPMENT_NAMES: Record<EquipmentId, string> = {
+  stove: 'stove',
+  fryer: 'deep fryer',
+  grill: 'grill',
+  pizzaOven: 'pizza oven',
+  espresso: 'espresso machine',
+  dessertDisplay: 'dessert display',
+};
+
+export const CATEGORY_NAMES: Record<Category, string> = {
+  soup: 'Soups',
+  main: 'Mains',
+  dessert: 'Desserts',
+  drink: 'Drinks',
+};
 
 export type TemplateId =
   | 'zurek'
@@ -50,6 +69,8 @@ export interface Variant {
 export interface DishTemplate {
   name: string;
   category: Category;
+  /** Which chef specialty suits it best, or null if none does. */
+  cuisine: Cuisine | null;
   /** Equipment needed to cook it, or null if none is needed. */
   equipment: EquipmentId | null;
   /** Minutes an average chef needs for one portion. */
@@ -82,6 +103,7 @@ export const DISH_TEMPLATES: Record<TemplateId, DishTemplate> = {
   zurek: {
     name: 'Żurek',
     category: 'soup',
+    cuisine: 'polish',
     equipment: 'stove',
     prepMinutes: 4,
     baseQuality: 60,
@@ -95,6 +117,7 @@ export const DISH_TEMPLATES: Record<TemplateId, DishTemplate> = {
   barszcz: {
     name: 'Barszcz',
     category: 'soup',
+    cuisine: 'polish',
     equipment: 'stove',
     prepMinutes: 4,
     baseQuality: 58,
@@ -108,6 +131,7 @@ export const DISH_TEMPLATES: Record<TemplateId, DishTemplate> = {
   fishSoup: {
     name: 'Baltic fish soup',
     category: 'soup',
+    cuisine: 'polish',
     equipment: 'stove',
     prepMinutes: 5,
     baseQuality: 62,
@@ -121,6 +145,7 @@ export const DISH_TEMPLATES: Record<TemplateId, DishTemplate> = {
   tomatoSoup: {
     name: 'Tomato soup',
     category: 'soup',
+    cuisine: 'polish',
     equipment: 'stove',
     prepMinutes: 3,
     baseQuality: 50,
@@ -136,6 +161,7 @@ export const DISH_TEMPLATES: Record<TemplateId, DishTemplate> = {
   pierogi: {
     name: 'Pierogi',
     category: 'main',
+    cuisine: 'polish',
     equipment: 'stove',
     prepMinutes: 10,
     baseQuality: 62,
@@ -151,6 +177,7 @@ export const DISH_TEMPLATES: Record<TemplateId, DishTemplate> = {
   pizza: {
     name: 'Pizza',
     category: 'main',
+    cuisine: 'italian',
     equipment: 'pizzaOven',
     prepMinutes: 12,
     baseQuality: 58,
@@ -165,6 +192,7 @@ export const DISH_TEMPLATES: Record<TemplateId, DishTemplate> = {
   pasta: {
     name: 'Pasta',
     category: 'main',
+    cuisine: 'italian',
     equipment: 'stove',
     prepMinutes: 9,
     baseQuality: 55,
@@ -179,6 +207,7 @@ export const DISH_TEMPLATES: Record<TemplateId, DishTemplate> = {
   burger: {
     name: 'Burger',
     category: 'main',
+    cuisine: 'grill',
     equipment: 'grill',
     prepMinutes: 10,
     baseQuality: 58,
@@ -192,6 +221,7 @@ export const DISH_TEMPLATES: Record<TemplateId, DishTemplate> = {
   friedCod: {
     name: 'Fried Baltic cod with fries',
     category: 'main',
+    cuisine: 'grill',
     equipment: 'fryer',
     prepMinutes: 12,
     baseQuality: 60,
@@ -202,6 +232,7 @@ export const DISH_TEMPLATES: Record<TemplateId, DishTemplate> = {
   schabowy: {
     name: 'Schabowy',
     category: 'main',
+    cuisine: 'polish',
     equipment: 'stove',
     prepMinutes: 14,
     baseQuality: 60,
@@ -215,6 +246,7 @@ export const DISH_TEMPLATES: Record<TemplateId, DishTemplate> = {
   golabki: {
     name: 'Gołąbki',
     category: 'main',
+    cuisine: 'polish',
     equipment: 'stove',
     prepMinutes: 11,
     baseQuality: 58,
@@ -229,6 +261,7 @@ export const DISH_TEMPLATES: Record<TemplateId, DishTemplate> = {
   saladBowl: {
     name: 'Salad bowl',
     category: 'main',
+    cuisine: null,
     equipment: null,
     prepMinutes: 5,
     baseQuality: 52,
@@ -245,6 +278,7 @@ export const DISH_TEMPLATES: Record<TemplateId, DishTemplate> = {
   szarlotka: {
     name: 'Szarlotka',
     category: 'dessert',
+    cuisine: 'pastry',
     equipment: 'dessertDisplay',
     prepMinutes: 2,
     baseQuality: 60,
@@ -258,6 +292,7 @@ export const DISH_TEMPLATES: Record<TemplateId, DishTemplate> = {
   sernik: {
     name: 'Sernik',
     category: 'dessert',
+    cuisine: 'pastry',
     equipment: 'dessertDisplay',
     prepMinutes: 2,
     baseQuality: 60,
@@ -268,6 +303,7 @@ export const DISH_TEMPLATES: Record<TemplateId, DishTemplate> = {
   iceCream: {
     name: 'Ice cream',
     category: 'dessert',
+    cuisine: 'pastry',
     equipment: 'dessertDisplay',
     prepMinutes: 2,
     baseQuality: 50,
@@ -283,6 +319,7 @@ export const DISH_TEMPLATES: Record<TemplateId, DishTemplate> = {
   coffee: {
     name: 'Coffee',
     category: 'drink',
+    cuisine: null,
     equipment: 'espresso',
     prepMinutes: 2,
     baseQuality: 55,
@@ -296,6 +333,7 @@ export const DISH_TEMPLATES: Record<TemplateId, DishTemplate> = {
   kompot: {
     name: 'Kompot',
     category: 'drink',
+    cuisine: null,
     equipment: null,
     prepMinutes: 1,
     baseQuality: 55,
@@ -309,6 +347,7 @@ export const DISH_TEMPLATES: Record<TemplateId, DishTemplate> = {
   lemonade: {
     name: 'Lemonade',
     category: 'drink',
+    cuisine: null,
     equipment: null,
     prepMinutes: 2,
     baseQuality: 52,

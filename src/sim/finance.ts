@@ -3,9 +3,7 @@
 import { balance } from '../data/balance';
 import { LOCATIONS } from '../data/locations';
 import { isMonday } from './calendar';
-import type { Restaurant, Staff } from './types';
-
-export type Role = 'chef' | 'waiter';
+import type { Restaurant, Role, Staff } from './types';
 
 /** Daily wage: better and faster people cost more. */
 export function wageOf(role: Role, person: Staff): number {

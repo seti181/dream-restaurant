@@ -1,13 +1,29 @@
 // Shapes of the simulation's state. Everything here is plain data so it can be saved as JSON.
 
-import type { MenuDish } from '../data/dishes';
+import type { Cuisine, EquipmentId, MenuDish } from '../data/dishes';
 import type { GroupId } from '../data/groups';
 import type { LocationId } from '../data/locations';
+import type { TraitId } from '../data/staff';
 
-/** A chef or waiter. Skill and speed run from 1 to 5. Names, traits and wages arrive with hiring in M2. */
+export type Role = 'chef' | 'waiter';
+
+/** What the simulation needs to know about a chef or waiter. Skill and speed run from 1 to 5. */
 export interface Staff {
   skill: number;
   speed: number;
+  trait?: TraitId;
+  /** Chefs only. */
+  specialty?: Cuisine;
+}
+
+/** One of the player's staff, or a job candidate. */
+export interface Employee extends Staff {
+  id: number;
+  role: Role;
+  name: string;
+  bio: string;
+  /** Złoty per day. */
+  wage: number;
 }
 
 /** The player's restaurant or a rival. Both follow exactly the same rules. */
@@ -17,6 +33,8 @@ export interface Restaurant {
   name: string;
   location: LocationId;
   menu: MenuDish[];
+  /** Kitchen equipment owned; dishes that need other equipment can't be cooked. */
+  equipment: EquipmentId[];
   tables: number;
   chefs: Staff[];
   waiters: Staff[];

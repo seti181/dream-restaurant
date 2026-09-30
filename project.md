@@ -419,7 +419,7 @@ Work in small steps, and test each step in the browser before moving on.
 **M2 – Playable prototype**
 
 - [x] HUD, speed controls, day start and end flow
-- [ ] Menu and price screen, staff hiring, daily report
+- [x] Menu and price screen, staff hiring, daily report
 - [ ] Autosave and load
 
 **M3 – MVP systems**
