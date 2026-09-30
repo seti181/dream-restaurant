@@ -405,12 +405,12 @@ Work in small steps, and test each step in the browser before moving on.
 
 - [x] Install Node.js, create the Vite + React + TypeScript project, add Vitest
 - [x] Add PWA support (manifest, icons, offline service worker)
-- [ ] Deploy a "Hello Gdańsk" page to GitHub Pages
-- [ ] Install it on the tablet via Chrome → "Add to Home screen", and confirm it opens full screen and offline
+- [x] Deploy a "Hello Gdańsk" page to GitHub Pages
+- [x] Install it on the tablet via Chrome → "Add to Home screen", and confirm it opens full screen and offline
 
 **M1 – Simulation core (no UI)**
 
-- [ ] Seeded RNG, game clock, calendar
+- [x] Seeded RNG, game clock, calendar
 - [ ] Data files: locations, groups, a few dishes, rivals
 - [ ] Guest generation, choice model, kitchen queue, satisfaction
 - [ ] `npm run simulate`: plays a whole season headless with simple strategies and prints results
@@ -475,3 +475,4 @@ Work in small steps, and test each step in the browser before moving on.
 ## 16. Decision log
 
 - 2026-09-30: Restaurant simulator (not pizza only). Cozy tone, no crime. English. Season about 3–5 hours. Web/PWA on Android tablet. TypeScript + React + Vite.
+- 2026-09-30: Fictional calendar: no leap years, 1 April is a Monday, and the season lasts exactly 20 weeks, ending on Sunday 18 August (the last day of St. Dominic's Fair).
