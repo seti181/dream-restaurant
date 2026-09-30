@@ -414,7 +414,7 @@ Work in small steps, and test each step in the browser before moving on.
 - [x] Data files: locations, groups, a few dishes, rivals
 - [x] Guest generation, choice model, kitchen queue, satisfaction
 - [x] `npm run simulate`: plays a whole season headless with simple strategies and prints results
-- [ ] Unit tests for the core formulas
+- [x] Unit tests for the core formulas
 
 **M2 – Playable prototype**
 

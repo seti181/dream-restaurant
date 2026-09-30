@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { balance } from '../data/balance';
 import type { MenuDish } from '../data/dishes';
-import { chooseRestaurant, dishAppeal, menuMatch, priceLevel, utility } from './choice';
+import { chooseRestaurant, distanceMetres, dishAppeal, menuMatch, priceLevel, utility } from './choice';
 import { createRng } from './rng';
 import { createPlayerRestaurant } from './setup';
 import type { Party, Restaurant } from './types';
@@ -57,7 +58,29 @@ describe('utility', () => {
   });
 });
 
+describe('distance', () => {
+  it('is zero on the same street and the same in both directions', () => {
+    expect(distanceMetres('piwna', 'piwna')).toBe(0);
+    expect(distanceMetres('ogarna', 'dluga')).toBeCloseTo(distanceMetres('dluga', 'ogarna'));
+    expect(distanceMetres('ogarna', 'spichrzow')).toBeGreaterThan(distanceMetres('ogarna', 'dluga'));
+  });
+});
+
 describe('choosing a restaurant', () => {
+  it('follows the softmax odds against going somewhere else', () => {
+    const rng = createRng(20);
+    const restaurant = restaurantAt('ogarna');
+    const score = utility(restaurant, localsOnOgarna, 10)!;
+    const elsewhere = balance.choice.noRestaurantUtility;
+    const expected = Math.exp(score) / (Math.exp(score) + Math.exp(elsewhere));
+    let chosen = 0;
+    const draws = 5_000;
+    for (let i = 0; i < draws; i++) {
+      if (chooseRestaurant(rng, localsOnOgarna, [restaurant], [10]) === 0) chosen++;
+    }
+    expect(chosen / draws).toBeCloseTo(expected, 1);
+  });
+
   it('picks the more attractive restaurant more often', () => {
     const rng = createRng(21);
     const restaurants = [restaurantAt('ogarna'), restaurantAt('mariacka')];

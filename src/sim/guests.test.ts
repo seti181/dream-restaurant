@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { GROUPS } from '../data/groups';
+import { balance } from '../data/balance';
+import { GROUP_IDS, GROUPS } from '../data/groups';
+import { LOCATIONS } from '../data/locations';
 import { expectedGuests, generateParties } from './guests';
 import { createRng } from './rng';
 
@@ -26,6 +28,22 @@ describe('guest generation', () => {
     expect(expectedGuests('dluga', 'tourists', firstOfAugust, NOON)).toBeGreaterThan(
       expectedGuests('dluga', 'tourists', MONDAY, NOON),
     );
+  });
+
+  it('multiplies street and group weekend factors on Saturdays', () => {
+    const SATURDAY = 5; // same month as MONDAY, so only the weekend differs
+    const ratio = expectedGuests('ogarna', 'locals', SATURDAY, NOON) / expectedGuests('ogarna', 'locals', MONDAY, NOON);
+    expect(ratio).toBeCloseTo(LOCATIONS.ogarna.weekendFactor * GROUPS.locals.weekendFactor);
+  });
+
+  it('matches the street’s peak traffic at its busiest hour', () => {
+    // 13:00 is Ogarna's peak hour. Summing every group gives the whole street.
+    const ONE_PM = 24;
+    const total = GROUP_IDS.reduce((sum, g) => {
+      const people = GROUPS[g];
+      return sum + expectedGuests('ogarna', g, MONDAY, ONE_PM) / (people.timeOfDay.lunch * people.monthFactors[3]);
+    }, 0);
+    expect(total).toBeCloseTo(LOCATIONS.ogarna.peakGuestsPerHour * (balance.clock.tickMinutes / 60));
   });
 
   it('makes the same parties from the same seed', () => {
