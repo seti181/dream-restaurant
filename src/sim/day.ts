@@ -168,6 +168,11 @@ function lostOutcome(party: Party, restaurant: string | null, kind: 'noTable' | 
   };
 }
 
+/** Tables inside plus any terrace tables open today. */
+function allTables(restaurant: Restaurant): number {
+  return restaurant.tables + restaurant.terraceTables;
+}
+
 /** A day being played, one tick at a time. It only lives while the day runs, so it is never saved. */
 export interface DayInProgress {
   day: number;
@@ -189,7 +194,7 @@ export function startDay(day: number, restaurants: Restaurant[]): DayInProgress 
     tick: 0,
     restaurants: working,
     floors: working.map((r) => ({
-      freeTables: r.tables,
+      freeTables: allTables(r),
       visits: [],
       queue: [],
       chefFreeAt: r.chefs.map(() => 0),
@@ -214,7 +219,7 @@ export function stepDay(rng: RngState, progress: DayInProgress): void {
   }
 
   const waits = restaurants.map((restaurant, i) =>
-    expectedWait(restaurant, restaurant.tables - floors[i].freeTables, floors[i].queue.length),
+    expectedWait(restaurant, allTables(restaurant) - floors[i].freeTables, floors[i].queue.length),
   );
   for (const party of generateParties(rng, day, tick)) {
     const index = chooseRestaurant(rng, party, restaurants, waits);
@@ -235,7 +240,7 @@ export function stepDay(rng: RngState, progress: DayInProgress): void {
       tablesUsed,
       order: chooseOrder(rng, restaurant, party, minute),
       seatedAt: minute,
-      orderedAt: minute + orderMinutes(restaurant, restaurant.tables - floor.freeTables),
+      orderedAt: minute + orderMinutes(restaurant, allTables(restaurant) - floor.freeTables),
       readyAt: null,
       quality: 0,
       eating: false,

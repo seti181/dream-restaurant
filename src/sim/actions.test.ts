@@ -1,10 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import { balance } from '../data/balance';
+import { DECOR } from '../data/decor';
 import { DISH_TEMPLATES, type ExtraId, type MenuDish } from '../data/dishes';
 import { EQUIPMENT } from '../data/equipment';
 import {
   addDish,
+  buyDecor,
   buyEquipment,
+  buyTable,
+  buyTerracePermit,
+  decorUnavailableReason,
   clearLunchSet,
   dishUnavailableReason,
   equipmentUnavailableReason,
@@ -15,9 +20,12 @@ import {
   setLunchSet,
   setLunchSetPrice,
   setSupplier,
+  tableUnavailableReason,
+  terraceUnavailableReason,
   upgradeMenuBoard,
 } from './actions';
-import { newGame, playerOf } from './game';
+import { newGame, openRestaurant, playerOf, terraceOpenOn } from './game';
+import { decorStyleOf, interiorAppeal } from './interior';
 import { ingredientCostOf, pairingsOf, recipeKey, tagsOf } from './menu';
 import { orderQuality } from './service';
 
@@ -217,5 +225,54 @@ describe('the lunch set', () => {
     const state = setLunchSet(fresh(), 0, 2);
     expect(playerOf(removeDish(state, 4)).lunchSet).not.toBeNull();
     expect(playerOf(removeDish(state, 2)).lunchSet).toBeNull();
+  });
+});
+
+describe('interior and terrace', () => {
+  const rich = () => ({ ...fresh(), cash: 1_000_000 });
+
+  it('adds tables until the room is full', () => {
+    let state = rich();
+    const start = playerOf(state).tables;
+    state = buyTable(state);
+    expect(playerOf(state).tables).toBe(start + 1);
+    expect(state.cash).toBe(1_000_000 - balance.interior.tableCost);
+    for (let i = 0; i < 20; i++) state = buyTable(state);
+    // Ogarna holds 24 seats: 6 tables of 4.
+    expect(playerOf(state).tables).toBe(6);
+    expect(tableUnavailableReason(state)).toBe('The room is full');
+  });
+
+  it('makes the room cosier with decor, and gives it a style', () => {
+    let state = buyDecor(rich(), 'shipsInBottles');
+    expect(playerOf(state).ambiance).toBe(balance.start.ambiance + DECOR.shipsInBottles.ambiance);
+    expect(decorStyleOf(playerOf(state).decor)).toBeNull(); // one item isn't a style yet
+    expect(decorUnavailableReason(state, 'shipsInBottles')).toBe('Already in your dining room');
+
+    state = buyDecor(state, 'lanterns');
+    expect(decorStyleOf(playerOf(state).decor)).toBe('maritime');
+    expect(interiorAppeal(playerOf(state), 'tourists')).toBe(balance.decor.styleBonus);
+    expect(interiorAppeal(playerOf(state), 'office')).toBe(0);
+  });
+
+  it('opens the terrace from May to the end of September with a permit', () => {
+    const state = buyTerracePermit(rich());
+    const FIRST_OF_MAY = 30;
+    const LAST_OF_SEPTEMBER = 182;
+    expect(state.terracePermitUntilDay).toBe(LAST_OF_SEPTEMBER);
+    expect(terraceOpenOn(state, 0)).toBe(false); // April
+    expect(terraceOpenOn(state, FIRST_OF_MAY)).toBe(true);
+    expect(terraceOpenOn(state, LAST_OF_SEPTEMBER)).toBe(true);
+    expect(terraceOpenOn(state, LAST_OF_SEPTEMBER + 1)).toBe(false);
+    expect(terraceUnavailableReason(state)).toBe('You already have this season’s permit');
+  });
+
+  it('puts terrace tables out on open days', () => {
+    const inMay = { ...buyTerracePermit(rich()), day: 30 };
+    const open = openRestaurant(inMay);
+    // Ogarna's terrace has 8 seats: 2 tables.
+    expect(open.progress.restaurants[0].terraceTables).toBe(2);
+    expect(open.progress.floors[0].freeTables).toBe(playerOf(inMay).tables + 2);
+    expect(openRestaurant(fresh()).progress.restaurants[0].terraceTables).toBe(0);
   });
 });

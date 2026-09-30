@@ -1,6 +1,7 @@
 // Planning: time is paused. Tabs for today's overview, the menu and the staff,
 // with the "Open the restaurant" button always at hand.
 
+import { InteriorPanel } from './plan/InteriorPanel';
 import { KitchenPanel } from './plan/KitchenPanel';
 import { MenuPanel } from './plan/MenuPanel';
 import { StaffPanel } from './plan/StaffPanel';
@@ -11,6 +12,7 @@ const TABS: { tab: PlanTab; label: string }[] = [
   { tab: 'today', label: 'Today' },
   { tab: 'menu', label: 'Menu' },
   { tab: 'kitchen', label: 'Kitchen' },
+  { tab: 'interior', label: 'Interior' },
   { tab: 'staff', label: 'Staff' },
 ];
 
@@ -39,6 +41,7 @@ export function PlanScreen() {
           {planTab === 'today' && <TodayPanel />}
           {planTab === 'menu' && <MenuPanel />}
           {planTab === 'kitchen' && <KitchenPanel />}
+          {planTab === 'interior' && <InteriorPanel />}
           {planTab === 'staff' && <StaffPanel />}
         </div>
         <footer className="plan-footer">

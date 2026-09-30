@@ -6,6 +6,7 @@ import { balance } from '../data/balance';
 import type { MenuDish } from '../data/dishes';
 import { GROUPS, type GroupId } from '../data/groups';
 import { LOCATIONS, type LocationId } from '../data/locations';
+import { interiorAppeal } from './interior';
 import { lunchSetServing, tagsOf, templateOf } from './menu';
 import { nextFloat, type RngState } from './rng';
 import type { Party, Restaurant } from './types';
@@ -70,7 +71,8 @@ export function utility(restaurant: Restaurant, party: Party, expectedWaitMinute
     w.proximity * (1 - distance / range) +
     w.ambiance * (restaurant.ambiance / 100) +
     w.wait * waitTerm +
-    lunchSetTerm
+    lunchSetTerm +
+    interiorAppeal(restaurant, party.group)
   );
 }
 

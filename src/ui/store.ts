@@ -4,6 +4,7 @@
 
 import { create } from 'zustand';
 import { balance } from '../data/balance';
+import type { DecorId } from '../data/decor';
 import type { EquipmentId, ExtraId, TemplateId } from '../data/dishes';
 import { loadGame, saveGame } from '../save/save';
 import * as actions from '../sim/actions';
@@ -28,7 +29,7 @@ export type Phase = 'plan' | 'open' | 'dayOver';
 export type Speed = 0 | 1 | 2 | 4;
 
 /** The tabs of the planning screen. */
-export type PlanTab = 'today' | 'menu' | 'kitchen' | 'staff';
+export type PlanTab = 'today' | 'menu' | 'kitchen' | 'interior' | 'staff';
 
 export interface LiveDay extends DayTally {
   minute: number;
@@ -62,6 +63,9 @@ interface GameStore {
   setLunchSetPrice: (price: number) => void;
   clearLunchSet: () => void;
   buyEquipment: (id: EquipmentId) => void;
+  buyTable: () => void;
+  buyDecor: (id: DecorId) => void;
+  buyTerracePermit: () => void;
   upgradeMenuBoard: () => void;
   setSupplier: (supplier: Supplier) => void;
 }
@@ -128,6 +132,9 @@ export const useGame = create<GameStore>((set, get) => ({
   setLunchSetPrice: (price) => plan((game) => actions.setLunchSetPrice(game, price)),
   clearLunchSet: () => plan((game) => actions.clearLunchSet(game)),
   buyEquipment: (id) => plan((game) => actions.buyEquipment(game, id)),
+  buyTable: () => plan((game) => actions.buyTable(game)),
+  buyDecor: (id) => plan((game) => actions.buyDecor(game, id)),
+  buyTerracePermit: () => plan((game) => actions.buyTerracePermit(game)),
   upgradeMenuBoard: () => plan((game) => actions.upgradeMenuBoard(game)),
   setSupplier: (supplier) => plan((game) => actions.setSupplier(game, supplier)),
 }));

@@ -75,3 +75,16 @@ export function isInSeason(day: number): boolean {
 export function formatDate(date: GameDate): string {
   return `${WEEKDAY_NAMES[date.weekday]} ${date.dayOfMonth} ${MONTH_NAMES[date.month - 1]}`;
 }
+
+/** The first day, from `fromDay` on, that falls on this date. */
+export function nextDayOn(month: number, dayOfMonth: number, fromDay: number): number {
+  for (let day = fromDay; day < fromDay + DAYS_PER_YEAR; day++) {
+    const date = dateOf(day);
+    if (date.month === month && date.dayOfMonth === dayOfMonth) return day;
+  }
+  throw new Error(`No ${dayOfMonth}/${month} in the calendar`);
+}
+
+export function daysInMonth(month: number): number {
+  return MONTH_LENGTHS[month - 1];
+}

@@ -1,6 +1,7 @@
 // Shapes of the simulation's state. Everything here is plain data so it can be saved as JSON.
 
 import type { Cuisine, EquipmentId, MenuDish } from '../data/dishes';
+import type { DecorId } from '../data/decor';
 import type { GroupId } from '../data/groups';
 import type { LocationId } from '../data/locations';
 import type { TraitId } from '../data/staff';
@@ -42,6 +43,10 @@ export interface Restaurant {
   /** "Obiad dnia": a soup and a main (identified by recipe key) at one price, or null. */
   lunchSet: { soup: string; main: string; price: number } | null;
   tables: number;
+  /** Terrace tables in use today (0 when closed). Set each morning when the restaurant opens. */
+  terraceTables: number;
+  /** Decor items bought. */
+  decor: DecorId[];
   chefs: Staff[];
   waiters: Staff[];
   /** 0–100. */

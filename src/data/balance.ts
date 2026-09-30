@@ -85,6 +85,28 @@ export const balance = {
     matchesForFullAppeal: 2,
   },
 
+  interior: {
+    /** One more table (seatsPerTable seats), in złoty. */
+    tableCost: 1_500,
+  },
+
+  decor: {
+    /** Decor items of one style needed before the room counts as that style. */
+    itemsForStyle: 2,
+    /** How much a matching style tempts the groups that like it. */
+    styleBonus: 0.8,
+  },
+
+  terrace: {
+    /** The summer terrace permit, for one season, in złoty. */
+    permitCost: 3_000,
+    /** The terrace is open from May to September. */
+    firstMonth: 5,
+    lastMonth: 9,
+    /** How much an open terrace tempts each group. Tourists love it. */
+    appeal: { tourists: 1.5, students: 0.3, locals: 0.3, office: 0, foodies: 0.5 },
+  },
+
   lunchSet: {
     /** "Obiad dnia" is served from 12:00 until 15:00. */
     startHour: 12,

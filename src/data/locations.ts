@@ -20,6 +20,8 @@ export interface Location {
   groupMix: Record<GroupId, number>;
   /** Most seats the room can hold. */
   maxSeats: number;
+  /** Outdoor seats with a summer terrace permit. */
+  terraceSeats: number;
   /** Pieces of kitchen equipment that fit, including the stove. */
   equipmentSlots: number;
   /** Position on the Old Town map in metres (x = east, y = north). */
@@ -53,6 +55,7 @@ export const LOCATIONS: Record<LocationId, Location> = {
     monthFactors: STEADY_YEAR,
     groupMix: { tourists: 0.1, students: 0.35, locals: 0.45, office: 0.05, foodies: 0.05 },
     maxSeats: 24,
+    terraceSeats: 8,
     equipmentSlots: 3,
     mapPosition: { x: 300, y: -100 },
   },
@@ -68,6 +71,7 @@ export const LOCATIONS: Record<LocationId, Location> = {
     monthFactors: STEADY_YEAR,
     groupMix: { tourists: 0.35, students: 0.1, locals: 0.35, office: 0.1, foodies: 0.1 },
     maxSeats: 32,
+    terraceSeats: 12,
     equipmentSlots: 4,
     mapPosition: { x: 250, y: 200 },
   },
@@ -83,6 +87,7 @@ export const LOCATIONS: Record<LocationId, Location> = {
     monthFactors: STEADY_YEAR,
     groupMix: { tourists: 0.4, students: 0.05, locals: 0.15, office: 0.05, foodies: 0.35 },
     maxSeats: 24,
+    terraceSeats: 20,
     equipmentSlots: 3,
     mapPosition: { x: 650, y: 220 },
   },
@@ -98,6 +103,7 @@ export const LOCATIONS: Record<LocationId, Location> = {
     monthFactors: STEADY_YEAR,
     groupMix: { tourists: 0.6, students: 0.1, locals: 0.15, office: 0.1, foodies: 0.05 },
     maxSeats: 48,
+    terraceSeats: 16,
     equipmentSlots: 6,
     mapPosition: { x: 450, y: 0 },
   },
@@ -113,6 +119,7 @@ export const LOCATIONS: Record<LocationId, Location> = {
     monthFactors: WATERFRONT_YEAR,
     groupMix: { tourists: 0.6, students: 0.05, locals: 0.2, office: 0.05, foodies: 0.1 },
     maxSeats: 40,
+    terraceSeats: 24,
     equipmentSlots: 5,
     mapPosition: { x: 800, y: 150 },
   },
@@ -128,6 +135,7 @@ export const LOCATIONS: Record<LocationId, Location> = {
     monthFactors: STEADY_YEAR,
     groupMix: { tourists: 0.05, students: 0.25, locals: 0.1, office: 0.35, foodies: 0.25 },
     maxSeats: 40,
+    terraceSeats: 16,
     equipmentSlots: 5,
     mapPosition: { x: 950, y: -80 },
   },

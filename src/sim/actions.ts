@@ -3,9 +3,12 @@
 
 import { balance } from '../data/balance';
 import { DISH_TEMPLATES, EXTRAS, type EquipmentId, type ExtraId, type MenuDish, type TemplateId } from '../data/dishes';
+import { DECOR, type DecorId } from '../data/decor';
 import { EQUIPMENT } from '../data/equipment';
 import { LOCATIONS } from '../data/locations';
 import { playerOf, type GameState } from './game';
+import { dateOf, daysInMonth, nextDayOn } from './calendar';
+import { ambianceWith } from './interior';
 import { recipeKey } from './menu';
 import { staffOf } from './staff';
 import type { Employee, Restaurant, Supplier } from './types';
@@ -169,4 +172,48 @@ export function setLunchSetPrice(state: GameState, price: number): GameState {
 
 export function clearLunchSet(state: GameState): GameState {
   return withPlayer(state, { lunchSet: null });
+}
+
+// ---------- Interior and terrace ----------
+
+export function tableUnavailableReason(state: GameState): string | null {
+  const player = playerOf(state);
+  const maxTables = Math.floor(LOCATIONS[player.location].maxSeats / balance.service.seatsPerTable);
+  if (player.tables >= maxTables) return 'The room is full';
+  return cantAfford(state, balance.interior.tableCost);
+}
+
+/** One more table of four seats. */
+export function buyTable(state: GameState): GameState {
+  if (tableUnavailableReason(state) !== null) return state;
+  const bought = withPlayer(state, { tables: playerOf(state).tables + 1 });
+  return { ...bought, cash: state.cash - balance.interior.tableCost };
+}
+
+export function decorUnavailableReason(state: GameState, id: DecorId): string | null {
+  if (playerOf(state).decor.includes(id)) return 'Already in your dining room';
+  return cantAfford(state, DECOR[id].cost);
+}
+
+export function buyDecor(state: GameState, id: DecorId): GameState {
+  if (decorUnavailableReason(state, id) !== null) return state;
+  const decor = [...playerOf(state).decor, id];
+  const bought = withPlayer(state, { decor, ambiance: ambianceWith(decor) });
+  return { ...bought, cash: state.cash - DECOR[id].cost };
+}
+
+export function terraceUnavailableReason(state: GameState): string | null {
+  if (state.terracePermitUntilDay !== null && state.day <= state.terracePermitUntilDay) {
+    return 'You already have this season’s permit';
+  }
+  if (dateOf(state.day).month > balance.terrace.lastMonth) return 'Terrace season is over for this year';
+  return cantAfford(state, balance.terrace.permitCost);
+}
+
+/** A permit for this year's terrace season, valid until its last day. */
+export function buyTerracePermit(state: GameState): GameState {
+  if (terraceUnavailableReason(state) !== null) return state;
+  const lastMonth = balance.terrace.lastMonth;
+  const untilDay = nextDayOn(lastMonth, daysInMonth(lastMonth), state.day);
+  return { ...state, terracePermitUntilDay: untilDay, cash: state.cash - balance.terrace.permitCost };
 }

@@ -4,9 +4,10 @@
 import { balance } from '../data/balance';
 import type { MenuDish } from '../data/dishes';
 import { GROUP_IDS, type GroupId } from '../data/groups';
+import { LOCATIONS } from '../data/locations';
 import { RIVAL_IDS } from '../data/rivals';
 import { startDay, stepDay, type DayInProgress } from './day';
-import { isMonday } from './calendar';
+import { dateOf, isMonday } from './calendar';
 import { weeklyBillsDue } from './finance';
 import { pairingsOf } from './menu';
 import { createRng, type RngState } from './rng';
@@ -28,6 +29,8 @@ export interface GameState {
   candidates: Employee[];
   /** The id the next new person will get. */
   nextEmployeeId: number;
+  /** Last day the summer terrace permit is valid, or null without one. */
+  terracePermitUntilDay: number | null;
   /** The player's restaurant first, then the rivals. */
   restaurants: Restaurant[];
 }
@@ -92,6 +95,7 @@ export function newGame(seed: number): GameState {
     team,
     candidates,
     nextEmployeeId: team.length + candidates.length + 1,
+    terracePermitUntilDay: null,
     restaurants: [
       createPlayerRestaurant(start.name, start.menu, staffOf(team, 'chef'), staffOf(team, 'waiter')),
       ...RIVAL_IDS.map(createRivalRestaurant),
@@ -118,8 +122,19 @@ export function starRating(restaurant: Restaurant): number {
   return total / GROUP_IDS.length / 20;
 }
 
+/** True if the player's terrace is open on this day: a valid permit, in terrace season. */
+export function terraceOpenOn(state: GameState, day: number): boolean {
+  const { month } = dateOf(day);
+  const inSeason = month >= balance.terrace.firstMonth && month <= balance.terrace.lastMonth;
+  return inSeason && state.terracePermitUntilDay !== null && day <= state.terracePermitUntilDay;
+}
+
 export function openRestaurant(state: GameState): OpenDay {
-  return { progress: startDay(state.day, state.restaurants), rng: { ...state.rng } };
+  const [player, ...rivals] = state.restaurants;
+  const terraceTables = terraceOpenOn(state, state.day)
+    ? Math.floor(LOCATIONS[player.location].terraceSeats / balance.service.seatsPerTable)
+    : 0;
+  return { progress: startDay(state.day, [{ ...player, terraceTables }, ...rivals]), rng: { ...state.rng } };
 }
 
 /** Plays one tick (five in-game minutes). */
