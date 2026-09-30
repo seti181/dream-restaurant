@@ -1,25 +1,18 @@
 // The four friendly rival restaurants. See project.md section 6.9.
 // Their weekly decisions (prices, promotions, upgrades) arrive with the rival AI in M3.
 
-import type { TemplateId } from './dishes';
+import type { MenuDish } from './dishes';
 import type { GroupId } from './groups';
 import type { LocationId } from './locations';
 
 export type RivalId = 'nonnaRosa' | 'blyskawica' | 'karczma' | 'spichlerz';
-
-export interface RivalDish {
-  template: TemplateId;
-  /** A variant id from that template in dishes.ts. */
-  variant: string;
-  price: number;
-}
 
 export interface Rival {
   name: string;
   location: LocationId;
   owner: string;
   personality: string;
-  menu: RivalDish[];
+  menu: MenuDish[];
   seats: number;
   chefs: number;
   /** 1–5, like the player's staff. */
@@ -80,7 +73,7 @@ export const RIVALS: Record<RivalId, Rival> = {
     chefs: 3,
     chefSkill: 2,
     chefSpeed: 5,
-    waiters: 1,
+    waiters: 3,
     ambiance: 30,
     startingReputation: { tourists: 35, students: 60, locals: 45, office: 60, foodies: 20 },
   },
@@ -102,7 +95,7 @@ export const RIVALS: Record<RivalId, Rival> = {
       { template: 'kompot', variant: 'cherry', price: 11 },
     ],
     seats: 40,
-    chefs: 2,
+    chefs: 3,
     chefSkill: 3,
     chefSpeed: 3,
     waiters: 3,

@@ -28,4 +28,85 @@ export const balance = {
     /** 20 weeks: 1 April to Sunday 18 August, the last day of St. Dominic's Fair. */
     seasonLengthDays: 140,
   },
+
+  start: {
+    /** The player's first home. */
+    location: 'ogarna',
+    seats: 16,
+    /** 0–100. A bare room before any decor. */
+    ambiance: 30,
+    /** Starting reputation with every group, 0–100. */
+    reputation: 30,
+    /** How many people of each group have heard of the player at the start, 0–100. */
+    awareness: 10,
+  },
+
+  rivals: {
+    /** Rivals are well known in the Old Town from day one, 0–100. */
+    awareness: 60,
+  },
+
+  choice: {
+    /** How tempting "somewhere else" is (a kebab, home, a picnic). Higher = fewer guests eat out. */
+    noRestaurantUtility: 6,
+    /** Restaurants further away than this (metres) are out of walking range. */
+    walkRangeMetres: 700,
+    /** How many of a menu's best-matching dishes decide how tempting it looks. */
+    menuMatchDishes: 3,
+    /** Matching tags, categories or dishes needed for a dish to be a perfect match. */
+    matchesForFullAppeal: 2,
+  },
+
+  orders: {
+    /** Every dish gets some orders; dishes a group likes get up to this much more again. */
+    baseDishWeight: 0.5,
+    /** Chance that each guest also orders a drink or a dessert, if the menu has one. */
+    drinkChance: 0.6,
+    dessertChance: 0.3,
+  },
+
+  staff: {
+    /** Skill and speed of an average worker (the scale is 1–5). */
+    averageLevel: 3,
+  },
+
+  kitchen: {
+    /** Extra minutes for each additional portion in the same order. */
+    extraPortionMinutes: 1,
+    /** Menus bigger than this slow the kitchen a little... */
+    menuSizeBeforeSlowdown: 6,
+    /** ...by this fraction per extra dish. */
+    slowdownPerExtraDish: 0.03,
+    /** Dish quality gained for each chef skill point above average (lost below). */
+    qualityPerSkillPoint: 5,
+  },
+
+  service: {
+    seatsPerTable: 4,
+    /** Minutes from sitting down to the order reaching the kitchen, with an average waiter. */
+    orderMinutes: 5,
+    /** Occupied tables one waiter can look after before service slows down. */
+    tablesPerWaiter: 4,
+    eatingMinutes: 30,
+    /** Order-taking this slow feels like no service at all. */
+    slowOrderMinutes: 10,
+    /** Service score gained for each waiter skill point above average (lost below). */
+    serviceBonusPerSkillPoint: 0.15,
+  },
+
+  satisfaction: {
+    /** How much each factor counts. They add up to 1. */
+    weights: { quality: 0.4, value: 0.25, wait: 0.2, ambiance: 0.1, service: 0.05 },
+    /** Quality points above (or below) a group's expectation for full delight (or disappointment). */
+    qualityRange: 30,
+    /** How strongly paying more or less than the usual price changes happiness. */
+    valueSlope: 2,
+    /** Satisfaction (0–100) of a party that gave up waiting and walked out. */
+    walkoutScore: 10,
+  },
+
+  reputation: {
+    /** How far reputation moves towards each party's satisfaction. Small = slow and steady. */
+    smoothing: 0.02,
+  },
 } as const;

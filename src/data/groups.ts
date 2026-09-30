@@ -4,7 +4,19 @@ import type { Category, Tag, TemplateId } from './dishes';
 
 export type GroupId = 'tourists' | 'students' | 'locals' | 'office' | 'foodies';
 
+/** How much each thing matters when a party picks a restaurant. See project.md section 7. */
+export interface ChoiceWeights {
+  taste: number;
+  price: number;
+  reputation: number;
+  awareness: number;
+  proximity: number;
+  ambiance: number;
+  wait: number;
+}
+
 export interface Group {
+  choiceWeights: ChoiceWeights;
   name: string;
   /** Taste tags, dish categories and dishes this group is drawn to. */
   likes: { tags: Tag[]; categories: Category[]; templates: TemplateId[] };
@@ -27,6 +39,8 @@ export const GROUP_IDS: readonly GroupId[] = ['tourists', 'students', 'locals', 
 
 export const GROUPS: Record<GroupId, Group> = {
   tourists: {
+    // Location first, then Polish classics.
+    choiceWeights: { taste: 2.5, price: 1, reputation: 1.5, awareness: 1.5, proximity: 3, ambiance: 1, wait: 1 },
     name: 'Tourists',
     likes: { tags: ['polish', 'seafood'], categories: ['dessert'], templates: [] },
     priceSensitivity: 0.35,
@@ -38,6 +52,8 @@ export const GROUPS: Record<GroupId, Group> = {
     monthFactors: [0.3, 0.3, 0.4, 0.6, 0.8, 1, 1.4, 1.5, 1, 0.7, 0.4, 0.6],
   },
   students: {
+    // Price above all.
+    choiceWeights: { taste: 2, price: 3.5, reputation: 1, awareness: 1, proximity: 1.5, ambiance: 0.5, wait: 1 },
     name: 'Students',
     likes: { tags: ['hearty', 'cheap'], categories: [], templates: ['pizza', 'burger'] },
     priceSensitivity: 0.9,
@@ -50,6 +66,8 @@ export const GROUPS: Record<GroupId, Group> = {
     monthFactors: [1, 1, 1, 1, 1, 0.9, 0.5, 0.5, 0.8, 1, 1, 0.9],
   },
   locals: {
+    // Quality and familiarity.
+    choiceWeights: { taste: 2.5, price: 1.5, reputation: 3, awareness: 1.5, proximity: 1.5, ambiance: 1, wait: 1 },
     name: 'Locals and families',
     likes: { tags: ['polish', 'homemade'], categories: ['dessert'], templates: [] },
     priceSensitivity: 0.6,
@@ -61,6 +79,8 @@ export const GROUPS: Record<GroupId, Group> = {
     monthFactors: [0.9, 0.9, 1, 1, 1, 1, 0.9, 0.85, 1, 1, 1, 1.1],
   },
   office: {
+    // Speed, and not walking far on a lunch break.
+    choiceWeights: { taste: 2, price: 1.5, reputation: 1, awareness: 1, proximity: 2.5, ambiance: 0.3, wait: 3.5 },
     name: 'Office workers',
     likes: { tags: ['quick'], categories: ['soup'], templates: [] },
     priceSensitivity: 0.6,
@@ -73,6 +93,8 @@ export const GROUPS: Record<GroupId, Group> = {
     monthFactors: [1, 1, 1, 1, 1, 1, 0.85, 0.8, 1, 1, 1, 0.9],
   },
   foodies: {
+    // Creativity, quality and ambiance; happy to walk and wait.
+    choiceWeights: { taste: 3, price: 0.5, reputation: 2.5, awareness: 1, proximity: 0.5, ambiance: 2.5, wait: 0.5 },
     name: 'Foodies',
     likes: { tags: ['premium', 'creative', 'seafood'], categories: [], templates: [] },
     priceSensitivity: 0.2,

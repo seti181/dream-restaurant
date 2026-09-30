@@ -62,6 +62,14 @@ export interface DishTemplate {
   variants: Variant[];
 }
 
+/** One line on a restaurant's menu. */
+export interface MenuDish {
+  template: TemplateId;
+  /** A variant id from that template. */
+  variant: string;
+  price: number;
+}
+
 export const TEMPLATE_IDS: readonly TemplateId[] = [
   'zurek', 'barszcz', 'fishSoup', 'tomatoSoup',
   'pierogi', 'pizza', 'pasta', 'burger', 'friedCod', 'schabowy', 'golabki', 'saladBowl',

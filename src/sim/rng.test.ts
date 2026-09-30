@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { chance, createRng, nextFloat, nextInt, pick } from './rng';
+import { chance, createRng, nextFloat, nextInt, pick, poisson } from './rng';
 
 function firstFloats(seed: number, count: number): number[] {
   const rng = createRng(seed);
@@ -43,6 +43,15 @@ describe('rng', () => {
       expect(chance(rng, 1)).toBe(true);
       expect(chance(rng, 0)).toBe(false);
     }
+  });
+
+  it('gives Poisson counts that average out to the mean', () => {
+    const rng = createRng(11);
+    const draws = Array.from({ length: 10_000 }, () => poisson(rng, 2.5));
+    const mean = draws.reduce((a, b) => a + b, 0) / draws.length;
+    expect(mean).toBeCloseTo(2.5, 1);
+    expect(draws.every((n) => Number.isInteger(n) && n >= 0)).toBe(true);
+    expect(poisson(rng, 0)).toBe(0);
   });
 
   it('picks items from the list and refuses an empty list', () => {

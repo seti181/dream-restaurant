@@ -412,7 +412,7 @@ Work in small steps, and test each step in the browser before moving on.
 
 - [x] Seeded RNG, game clock, calendar
 - [x] Data files: locations, groups, a few dishes, rivals
-- [ ] Guest generation, choice model, kitchen queue, satisfaction
+- [x] Guest generation, choice model, kitchen queue, satisfaction
 - [ ] `npm run simulate`: plays a whole season headless with simple strategies and prints results
 - [ ] Unit tests for the core formulas
 

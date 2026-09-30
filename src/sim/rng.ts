@@ -30,6 +30,19 @@ export function chance(rng: RngState, probability: number): boolean {
   return nextFloat(rng) < probability;
 }
 
+/** A random whole number that averages `mean` over many draws (Poisson distribution). */
+export function poisson(rng: RngState, mean: number): number {
+  if (mean <= 0) return 0;
+  const limit = Math.exp(-mean);
+  let count = 0;
+  let product = nextFloat(rng);
+  while (product > limit) {
+    count++;
+    product *= nextFloat(rng);
+  }
+  return count;
+}
+
 /** A random item from a non-empty list. */
 export function pick<T>(rng: RngState, items: readonly T[]): T {
   if (items.length === 0) throw new Error('pick() needs at least one item');
