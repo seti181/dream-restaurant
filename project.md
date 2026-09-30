@@ -413,7 +413,7 @@ Work in small steps, and test each step in the browser before moving on.
 - [x] Seeded RNG, game clock, calendar
 - [x] Data files: locations, groups, a few dishes, rivals
 - [x] Guest generation, choice model, kitchen queue, satisfaction
-- [ ] `npm run simulate`: plays a whole season headless with simple strategies and prints results
+- [x] `npm run simulate`: plays a whole season headless with simple strategies and prints results
 - [ ] Unit tests for the core formulas
 
 **M2 – Playable prototype**
@@ -478,3 +478,4 @@ Work in small steps, and test each step in the browser before moving on.
 - 2026-09-30: Fictional calendar: no leap years, 1 April is a Monday, and the season lasts exactly 20 weeks, ending on Sunday 18 August (the last day of St. Dominic's Fair).
 - 2026-09-30: Game-wide settings live in `balance.ts`. Numbers that belong to one item (a street's rent, a dish's cost, a rival's prices) live next to that item in its own data file.
 - 2026-09-30: All desserts, including ice cream, need the dessert display. Dessert menu prices are capped at 50 zł.
+- 2026-09-30: `npm run simulate` runs through `tsx`, a dev-only tool that runs TypeScript directly. It never ships to the tablet.

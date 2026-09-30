@@ -27,6 +27,8 @@ export const balance = {
     seasonStartWeekday: 0,
     /** 20 weeks: 1 April to Sunday 18 August, the last day of St. Dominic's Fair. */
     seasonLengthDays: 140,
+    /** St. Dominic's Fair: the last 23 days of the season, Saturday 27 July to Sunday 18 August. */
+    fairLengthDays: 23,
   },
 
   start: {
@@ -68,6 +70,24 @@ export const balance = {
   staff: {
     /** Skill and speed of an average worker (the scale is 1–5). */
     averageLevel: 3,
+    /** Daily wages of an average chef and waiter, in złoty. */
+    chefWage: 350,
+    waiterWage: 250,
+    /** Each skill or speed point above average adds this share to the wage (and below, takes it off). */
+    wageStepPerLevel: 0.1,
+  },
+
+  finance: {
+    /** Starting cash on Normal. */
+    startingCash: 40_000,
+    /** Paid every Monday, together with the week's rent. */
+    weeklyUtilities: 400,
+  },
+
+  neptune: {
+    /** Neptune Score = 60% average rating + 40% share of Old Town guests during the Fair. */
+    ratingWeight: 0.6,
+    shareWeight: 0.4,
   },
 
   kitchen: {
