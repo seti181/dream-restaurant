@@ -192,11 +192,60 @@ const STREETS: Street[] = [
   { x0: 0, x1: QUAY.x0, y: 166, w: 7 }, // Ogarna
 ];
 
+/** Granary Island: a street down the middle and three across it, two of them carried over the river by bridges. */
+const ISLAND = { x0: RIVER.x1, x1: NEW_RIVER.x0 };
+const ISLAND_SPINE = { x: 301, w: 5 };
+const ISLAND_STREETS: Street[] = [
+  { x0: ISLAND.x0, x1: ISLAND.x1, y: 46, w: 9 },
+  { x0: ISLAND.x0, x1: ISLAND.x1, y: 88, w: 7 },
+  { x0: ISLAND.x0, x1: ISLAND.x1, y: 128, w: 11 },
+  { x0: ISLAND.x0, x1: ISLAND.x1, y: 166, w: 7 },
+];
+/** The Green Bridge, straight on from the Green Gate, and a second bridge in line with Mariacka. */
+const BRIDGES = [
+  { y: 128, w: 9 },
+  { y: 46, w: 7 },
+];
+
 /** St. Mary's sits in the block north of Piwna. */
 const CHURCH = { x0: 72, x1: 162, y0: 22, y1: 50 };
 
 function streetAt(x: number, y: number): Street | undefined {
-  return STREETS.find((s) => x >= s.x0 && x < s.x1 && Math.abs(y - s.y) <= s.w / 2);
+  return [...STREETS, ...ISLAND_STREETS].find((s) => x >= s.x0 && x < s.x1 && Math.abs(y - s.y) <= s.w / 2);
+}
+
+/** The island's blocks: either side of its middle street, between the streets across it. */
+function islandBlocks(): { x0: number; x1: number; y0: number; y1: number }[] {
+  const columns: [number, number][] = [
+    [ISLAND.x0 + 2, ISLAND_SPINE.x - Math.ceil(ISLAND_SPINE.w / 2) - 1],
+    [ISLAND_SPINE.x + Math.ceil(ISLAND_SPINE.w / 2) + 1, ISLAND.x1 - 2],
+  ];
+  const result: { x0: number; x1: number; y0: number; y1: number }[] = [];
+  for (const [x0, x1] of columns) {
+    let top = 0;
+    for (const s of ISLAND_STREETS) {
+      result.push({ x0, x1, y0: top + 1, y1: Math.floor(s.y - s.w / 2) });
+      top = Math.ceil(s.y + s.w / 2);
+    }
+    result.push({ x0, x1, y0: top + 1, y1: MAP_HEIGHT + 4 });
+  }
+  return result;
+}
+
+/** A bridge across the Motława: a stone deck with wooden railings, and its shadow on the water. */
+function drawBridge(img: Pixels, y: number, w: number): void {
+  const top = Math.floor(y - w / 2);
+  const bottom = Math.ceil(y + w / 2);
+  for (let x = RIVER.x0 - 1; x <= RIVER.x1; x++) {
+    for (let yy = top; yy < bottom; yy++) img.set(x, yy, (x + yy) % 7 === 0 ? C.cobbleDark : C.stone);
+    img.set(x, top - 1, C.timber);
+    img.set(x, bottom, C.timber);
+    img.set(x, bottom + 1, C.waterDark);
+    if (x % 3 === 0) {
+      img.set(x, top - 2, C.timber);
+      img.set(x, bottom - 1, mix(C.stone, C.timber, 0.4));
+    }
+  }
 }
 
 /** The blocks of houses: everything between streets and lanes. */
@@ -256,7 +305,11 @@ export function drawOldTown(): Pixels {
       img.set(river.x0, y, C.quayDark);
     }
   }
-  fill(img, RIVER.x1, 0, NEW_RIVER.x0, MAP_HEIGHT, C.courtyardDark);
+  for (let y = 0; y < MAP_HEIGHT; y++) {
+    for (let x = ISLAND.x0; x < ISLAND.x1; x++) img.set(x, y, (x * 3 + y * 7) % 11 === 0 ? C.cobbleDark : C.cobble);
+  }
+  for (const river of [RIVER, NEW_RIVER]) for (let y = 0; y < MAP_HEIGHT; y++) img.set(river.x1, y, C.quayDark);
+  for (const bridge of BRIDGES) drawBridge(img, bridge.y, bridge.w);
 
   const buildings: Building[] = [];
   const trees: { x: number; y: number; r: number }[] = [];
@@ -327,12 +380,33 @@ export function drawOldTown(): Pixels {
   // Trees along the quay.
   for (let y = 12; y < MAP_HEIGHT; y += 23) if (y < 60 || y > 84) trees.push({ x: QUAY.x1 - 3, y, r: 2 });
 
-  // Granary Island: tall brick granaries with stepped gables, and trees.
-  for (const gy of [30, 70, 110, 150, 190]) {
-    for (let gx = RIVER.x1 + 3; gx < NEW_RIVER.x0 - 8; gx += 11) {
-      buildings.push({ x0: gx, x1: gx + 9, y0: gy - 12, y1: gy, height: 9, wall: rnd.pick([C.brick, C.brickDark, hex('#b5523a')]), roof: C.brickRoof, gable: 'stepped', windows: true });
+  // Granary Island: tall brick granaries with stepped gables along its streets, green yards behind.
+  const granaryWalls = [C.brick, C.brickDark, hex('#b5523a'), hex('#9c5a3c')];
+  for (const block of islandBlocks()) {
+    const depth = block.y1 - block.y0;
+    if (depth < 8) continue;
+    fill(img, block.x0, block.y0, block.x1, Math.min(block.y1, MAP_HEIGHT), C.courtyardDark);
+    for (const side of ['south', 'north'] as const) {
+      for (let x = block.x0; x < block.x1 - 3; ) {
+        const w = Math.min(rnd.int(6, 8), block.x1 - x);
+        const d = rnd.int(4, 6);
+        const height = rnd.int(6, 8);
+        const [y0, y1] = side === 'south' ? [block.y1 - d, block.y1] : [block.y0, block.y0 + d];
+        buildings.push({
+          x0: x,
+          x1: x + w,
+          y0,
+          y1,
+          height: side === 'south' ? height : height - 1,
+          wall: rnd.pick(granaryWalls),
+          roof: C.brickRoof,
+          gable: side === 'south' ? 'stepped' : null,
+          windows: true,
+        });
+        x += w + 1;
+      }
     }
-    trees.push({ x: NEW_RIVER.x0 - 4, y: gy - 16, r: 2 });
+    if (depth > 20) trees.push({ x: block.x0 + Math.floor((block.x1 - block.x0) / 2), y: block.y0 + Math.floor(depth / 2) + 3, r: 2 });
   }
 
   // Draw everything from north to south, so nearer things cover those behind.
