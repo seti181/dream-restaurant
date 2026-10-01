@@ -23,8 +23,9 @@ import {
   prepMinutes,
   tablesNeeded,
 } from './service';
-import type { DayConditions, Party, PartyOutcome, Restaurant, SatisfactionFactors } from './types';
+import type { DayConditions, Party, PartyOutcome, Restaurant, SatisfactionFactors, Staff } from './types';
 import type { GroupId } from '../data/groups';
+import type { Visitor } from '../data/moments';
 import type { SpecialStaffId } from '../data/personal';
 
 /** A party sitting in a restaurant. Only exists during the day, so it is never saved. */
@@ -48,8 +49,10 @@ export interface Visit {
   satisfaction: number | null;
   /** Points added to (or taken off) how happy they end up, from things that happened during their visit. */
   mood: number;
-  /** A merry group that only came for cytrynówka shots. */
-  merry?: boolean;
+  /** Special guests who came for something other than the food (see data/moments.ts). */
+  visitor?: Visitor;
+  /** Reputation multipliers that apply when they leave. */
+  reputationAfterwards?: Partial<Record<GroupId, number>>;
 }
 
 /** A party that gave up and left, remembered briefly so the restaurant view can show them going. */
@@ -68,8 +71,17 @@ export interface Floor {
   /** When each chef finishes their current order. */
   chefFreeAt: number[];
   walkouts: Walkout[];
-  /** Until this minute new guests stay away (a noisy group is in); guests who booked still come. */
-  closedUntil: number;
+  /** While special guests are in, new guests stay away: walk-ins only, or everyone. */
+  closed: { until: number; everyone: boolean } | null;
+  /** Quality points added to everything cooked for the rest of the day. */
+  qualityBonus: number;
+  /** Waiters off the floor for a while, and when they're back. */
+  away: { waiter: Staff; back: number }[];
+}
+
+/** True while special guests keep new guests out. */
+export function doorClosed(floor: Floor, minute: number): boolean {
+  return floor.closed !== null && floor.closed.until > minute;
 }
 
 export interface DayResult {
@@ -104,7 +116,7 @@ function startCooking(restaurant: Restaurant, floor: Floor, minute: number): voi
       continue;
     }
     visit.readyAt = readyAt;
-    visit.quality = orderQuality(visit.order, chef, restaurant.supplier);
+    visit.quality = orderQuality(visit.order, chef, restaurant.supplier) + floor.qualityBonus;
     floor.chefFreeAt[chefIndex] = readyAt;
   }
 }
@@ -155,6 +167,12 @@ function progressRestaurant(
   outcomes: PartyOutcome[],
   conditions: DayConditions,
 ): void {
+  // Waiters who were off the floor come back.
+  for (const away of [...floor.away]) {
+    if (away.back > minute) continue;
+    restaurant.waiters = [...restaurant.waiters, away.waiter];
+    floor.away.splice(floor.away.indexOf(away), 1);
+  }
   // Orders that waiters have taken reach the kitchen.
   for (const visit of floor.visits) {
     const waitingForKitchen = !visit.eating && !visit.skipped && visit.readyAt === null;
@@ -174,6 +192,11 @@ function progressRestaurant(
     const leave = () => {
       floor.freeTables += visit.tablesUsed;
       floor.visits.splice(floor.visits.indexOf(visit), 1);
+      // A visit people talk about afterwards.
+      for (const [group, times] of Object.entries(visit.reputationAfterwards ?? {})) {
+        const g = group as GroupId;
+        restaurant.reputation[g] = Math.min(100, restaurant.reputation[g] * times);
+      }
     };
 
     if (visit.eating) {
@@ -287,7 +310,9 @@ export function startDay(
       queue: [],
       chefFreeAt: r.chefs.map(() => 0),
       walkouts: [],
-      closedUntil: 0,
+      closed: null,
+      qualityBonus: 0,
+      away: [],
     })),
     outcomes: [],
     conditions,
@@ -317,8 +342,10 @@ export function seat(
 ): void {
   const restaurant = progress.restaurants[index];
   const floor = progress.floors[index];
-  // With a noisy group in, people peek through the door and go somewhere else.
-  if (!party.bookedAt && floor.closedUntil > minute) {
+  // With special guests in, people peek through the door and go somewhere else.
+  // Only Pan Cytrynówka always gets in: everybody knows him, security included.
+  const keptOut = !party.bookedAt || floor.closed?.everyone;
+  if (doorClosed(floor, minute) && keptOut && !party.regular) {
     progress.outcomes.push(lostOutcome(party, restaurant.id, 'noTable'));
     return;
   }
@@ -427,8 +454,8 @@ export interface TableGuests {
   eatingFor: number;
   critic: boolean;
   regular: boolean;
-  /** The merry group, here for cytrynówka shots. */
-  merry: boolean;
+  /** Special guests: the merry group, a footballer, Lech Wałęsa... */
+  visitor: Visitor | null;
   /** When they sat down: tells one party at this table from the next. */
   since: number;
 }
@@ -475,7 +502,7 @@ export function floorView(progress: DayInProgress, index: number, recentMinutes 
         eatingFor: visit.eating && visit.readyAt !== null ? minute - visit.readyAt : 0,
         critic: party.critic ?? false,
         regular: party.regular ?? false,
-        merry: visit.merry ?? false,
+        visitor: visit.visitor ?? null,
         since: visit.seatedAt,
       };
     });

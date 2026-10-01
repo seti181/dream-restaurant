@@ -13,12 +13,28 @@ export type MomentId =
   | 'stoLat'
   | 'busker'
   | 'merryTourists'
-  | 'brazilianCouple';
+  | 'brazilianCouple'
+  | 'proposal'
+  | 'inspector'
+  | 'nonnaBasil'
+  | 'footballer'
+  | 'herring'
+  | 'babcia'
+  | 'dineAndDash'
+  | 'tramStrike'
+  | 'blackout'
+  | 'shantyChoir'
+  | 'walesa';
+
+/** Special guests who sit at a table for a while without ordering from the kitchen. */
+export type Visitor = 'merry' | 'footballer' | 'walesa';
 
 /** What has to be true right now for a moment to happen. The simulation checks these. */
 export type MomentNeed =
   /** A dessert on the menu. */
   | 'dessertOnMenu'
+  /** A soup on the menu. */
+  | 'soupOnMenu'
   /** At least one party waiting for its food. */
   | 'guestsWaiting'
   /** At least two parties inside. */
@@ -33,9 +49,9 @@ export type MomentNeed =
   | 'adrianAway'
   /** Tomek is working today. */
   | 'tomekWorking'
-  /** Two free tables. */
+  /** Two free tables, and the door open to new guests. */
   | 'roomForSix'
-  /** A free table. */
+  /** A free table, and the door open to new guests. */
   | 'freeTable';
 
 /** What an answer does. Everything is optional; `result` says what happened. */
@@ -59,10 +75,23 @@ export interface MomentEffect {
   /** A group walks in right now. */
   walkIn?: { group: GroupId; size: number };
   /**
-   * A noisy group takes a table for a while, orders nothing from the kitchen, and keeps
-   * new guests away until they leave (guests who booked still come in).
+   * Special guests take a table for a while (until closing at the latest) and order nothing
+   * from the kitchen. They can keep new guests away until they leave: walk-ins only, or
+   * everyone (except Pan Cytrynówka, whom everybody knows). Leaving, they can multiply
+   * reputation with some groups.
    */
-  noisyGroup?: { group: GroupId; size: number; minutes: number };
+  visitors?: {
+    who: Visitor;
+    group: GroupId;
+    size: number;
+    minutes: number;
+    closesDoor?: 'walkIns' | 'everyone';
+    reputationAfterwards?: Partial<Record<GroupId, number>>;
+  };
+  /** Quality points added to everything cooked for the rest of the day. */
+  qualityBoost?: number;
+  /** One waiter leaves the floor for this many minutes. */
+  waiterAway?: number;
   /** Terrace guests move to free tables inside. */
   moveInside?: boolean;
   /** A review for the day report: one of the texts, by one of the reviewers. */
@@ -87,6 +116,8 @@ export interface Moment {
   at?: { hour: number; minute: number };
   /** How likely a random moment is to be picked, compared with the others. */
   weight: number;
+  /** For a rare moment: the fewest days before it can come again. */
+  cooldownDays?: number;
   /** The first answer is the "yes"; the second is what a player who doesn't help would choose. */
   choices: [MomentChoice, MomentChoice];
 }
@@ -102,7 +133,20 @@ export const MOMENT_IDS: readonly MomentId[] = [
   'busker',
   'merryTourists',
   'brazilianCouple',
+  'proposal',
+  'inspector',
+  'nonnaBasil',
+  'footballer',
+  'herring',
+  'babcia',
+  'dineAndDash',
+  'tramStrike',
+  'blackout',
+  'shantyChoir',
+  'walesa',
 ];
+
+const EVERYONE = (points: number) => ({ tourists: points, students: points, locals: points, office: points, foodies: points });
 
 export const MOMENTS: Record<MomentId, Moment> = {
   blogger: {
@@ -296,7 +340,7 @@ export const MOMENTS: Record<MomentId, Moment> = {
         effect: {
           cash: 500,
           mood: { who: 'waiting', amount: -10 },
-          noisyGroup: { group: 'tourists', size: 4, minutes: 45 },
+          visitors: { who: 'merry', group: 'tourists', size: 4, minutes: 45, closesDoor: 'walkIns' },
           result:
             'They sing, they toast everyone and they tip 500 zł. The other guests stare at their plates, ' +
             'and people outside decide to come back another time.',
@@ -335,6 +379,267 @@ export const MOMENTS: Record<MomentId, Moment> = {
       {
         label: 'Sorry, not today',
         effect: { result: 'They laugh, order two coffees and wave goodbye. Tchau!' },
+      },
+    ],
+  },
+  proposal: {
+    title: 'A secret proposal',
+    text: 'A very nervous young man asks if the kitchen could hide an engagement ring in his girlfriend’s dessert.',
+    needs: ['dessertOnMenu'],
+    weight: 2,
+    choices: [
+      {
+        label: 'Let’s do it!',
+        effect: {
+          kitchenPause: 5,
+          mood: { who: 'waiting', amount: 8 },
+          review: {
+            stars: 5,
+            texts: [
+              'She found the ring in her dessert and said YES! We will celebrate every anniversary here.',
+              'The best night of our lives, and the dessert was perfect too. Thank you for keeping the secret!',
+            ],
+            reviewers: ['a newly engaged couple', 'a very happy fiancée'],
+          },
+          result: 'She finds the ring, she says YES, and the whole room applauds!',
+        },
+      },
+      {
+        label: 'Too risky',
+        effect: { result: 'He proposes over coffee instead. She still says yes.' },
+      },
+    ],
+  },
+  inspector: {
+    title: 'Sanepid!',
+    text: 'A health inspector walks in unannounced, clipboard in hand. She would like to see the kitchen.',
+    needs: [],
+    weight: 2,
+    choices: [
+      {
+        label: 'Full tour of the kitchen',
+        effect: {
+          chance: 0.8,
+          kitchenPause: 10,
+          reputation: { locals: 2, office: 1 },
+          result: 'Spotless! Word gets around that yours is the cleanest kitchen in the Old Town.',
+          otherwise: {
+            kitchenPause: 10,
+            cash: -300,
+            result: 'One cracked tile behind the fridge. A 300 zł fine, and a promise to fix it.',
+          },
+        },
+      },
+      {
+        label: 'Come back after lunch?',
+        effect: {
+          chance: 0.5,
+          result: 'She nods and comes back at four. All fine.',
+          otherwise: {
+            reputation: EVERYONE(-1),
+            result: 'She writes something in her notebook. Word gets around.',
+          },
+        },
+      },
+    ],
+  },
+  nonnaBasil: {
+    title: 'Nonna Rosa needs basil',
+    text: 'Nonna Rosa from the trattoria rushes in, flour on her apron: “Mamma mia, I have no basil left! Can you help me?”',
+    needs: ['freeTable'],
+    weight: 2,
+    choices: [
+      {
+        label: 'Of course, take some',
+        effect: {
+          cash: -20,
+          walkIn: { group: 'locals', size: 3 },
+          result: 'She hugs you, and sends three of her guests over: “Go next door, they are good people.”',
+        },
+      },
+      {
+        label: 'Sorry, we need it',
+        effect: { result: 'She hurries off. She’ll remember that.' },
+      },
+    ],
+  },
+  footballer: {
+    title: 'A Lechia Gdańsk star',
+    text: 'A footballer from Lechia Gdańsk and a friend ask for a quiet corner table. “No fuss, please.”',
+    needs: ['freeTable'],
+    weight: 2,
+    choices: [
+      {
+        label: 'Right this way',
+        effect: {
+          cash: 120,
+          visitors: { who: 'footballer', group: 'locals', size: 2, minutes: 60 },
+          awareness: { students: 5, locals: 4 },
+          result: 'Somebody spots him and posts a photo. By the evening half of Gdańsk knows where Lechia eats.',
+        },
+      },
+      {
+        label: 'Sorry, we’re full',
+        effect: { result: 'He tries the place next door. Their photo is everywhere tomorrow.' },
+      },
+    ],
+  },
+  herring: {
+    title: 'Herring at half price',
+    text: 'Your fishmonger at the Hala Targowa calls: twenty kilos of fresh Baltic herring at half price, if you take it now.',
+    needs: [],
+    weight: 2,
+    choices: [
+      {
+        label: 'We’ll take it all!',
+        effect: {
+          cash: -300,
+          qualityBoost: 5,
+          result: 'The kitchen smells of the sea. Everything tastes a little fresher for the rest of the day.',
+        },
+      },
+      {
+        label: 'Not today, thanks',
+        effect: { result: 'He sells it to the rivals down the street instead.' },
+      },
+    ],
+  },
+  babcia: {
+    title: 'Babcia’s secret',
+    text: 'An elderly lady puts down her spoon: “Your soup is good, but not like my mother’s. Shall I show your chef the secret?”',
+    needs: ['soupOnMenu'],
+    weight: 2,
+    choices: [
+      {
+        label: 'Yes please, show us!',
+        effect: {
+          kitchenPause: 15,
+          qualityBoost: 5,
+          reputation: { locals: 2 },
+          result: 'A pinch of this, a splash of that. The chef takes notes, and the food is better already.',
+        },
+      },
+      {
+        label: 'We like our recipe',
+        effect: { result: 'She tuts politely, and finishes every drop anyway.' },
+      },
+    ],
+  },
+  dineAndDash: {
+    title: 'Dine and dash!',
+    text: 'A guest in a hurry slips out of the door without paying!',
+    needs: ['guestsIn'],
+    weight: 2,
+    choices: [
+      {
+        label: 'Run after him!',
+        effect: {
+          chance: 0.7,
+          waiterAway: 10,
+          cash: 20,
+          result: 'Your waiter catches him on Długa. He goes red, pays, and leaves a 20 zł tip.',
+          otherwise: {
+            waiterAway: 10,
+            cash: -80,
+            result: 'He’s too fast. Your waiter comes back out of breath, and the 80 zł bill is gone.',
+          },
+        },
+      },
+      {
+        label: 'Let him go',
+        effect: { cash: -80, result: 'Gone, with an 80 zł bill. At least he looked like he enjoyed it.' },
+      },
+    ],
+  },
+  tramStrike: {
+    title: 'Tram strike',
+    text: 'The trams have stopped all over Gdańsk! Four office workers are stuck in the Old Town and need somewhere to sit.',
+    needs: ['freeTable'],
+    weight: 2,
+    choices: [
+      {
+        label: 'Squeeze them in',
+        effect: {
+          walkIn: { group: 'office', size: 4 },
+          result: 'They take a table and order like they haven’t eaten in days.',
+        },
+      },
+      {
+        label: 'Sorry, we’re busy',
+        effect: { result: 'They walk on, grumbling about the trams.' },
+      },
+    ],
+  },
+  blackout: {
+    title: 'Blackout!',
+    text: 'Pop! The fuses blow and the lights go out all over the dining room.',
+    needs: ['guestsIn'],
+    weight: 2,
+    choices: [
+      {
+        label: 'Candles everywhere!',
+        effect: {
+          cash: -50,
+          mood: { who: 'waiting', amount: 5 },
+          result: 'Candlelight on every table, and the gas stoves keep cooking. The guests think it’s on purpose, and very romantic.',
+        },
+      },
+      {
+        label: 'Wait for the electrician',
+        effect: { kitchenPause: 10, result: 'He comes after ten minutes. The kitchen waits in the dark until then.' },
+      },
+    ],
+  },
+  shantyChoir: {
+    title: 'A sea shanty choir',
+    text: 'A choir of sailors off the tall ships on the Motława offers to sing for their supper.',
+    needs: ['guestsIn'],
+    weight: 2,
+    choices: [
+      {
+        label: 'Sing for us!',
+        effect: {
+          cash: -120,
+          mood: { who: 'waiting', amount: 8 },
+          awareness: { tourists: 3 },
+          result: '“Hej, ha! Kolejkę nalej!” The whole room sings along, and tourists stop outside to listen.',
+        },
+      },
+      {
+        label: 'Maybe another time',
+        effect: { result: 'They sing outside anyway. Quite loudly.' },
+      },
+    ],
+  },
+  walesa: {
+    title: 'A very famous guest',
+    text:
+      'Three men in black suits and sunglasses check every corner. Then in walks Lech Wałęsa himself, moustache and all, ' +
+      'asking for a table. Security says nobody else may come in while he’s here.',
+    needs: ['freeTable'],
+    weight: 1,
+    cooldownDays: 28,
+    choices: [
+      {
+        label: 'It’s an honour, Panie Prezydencie!',
+        effect: {
+          cash: 2500,
+          visitors: {
+            who: 'walesa',
+            group: 'locals',
+            size: 4,
+            minutes: 180,
+            closesDoor: 'everyone',
+            reputationAfterwards: { locals: 1.1 },
+          },
+          result:
+            'He stays for three hours, signs the menu and tips 2,500 zł. Nobody else gets in, ' +
+            'but once he leaves, every local family will be talking about it.',
+        },
+      },
+      {
+        label: 'We can’t close the doors',
+        effect: { result: 'He understands completely, makes a V sign and heads off towards Długa.' },
       },
     ],
   },

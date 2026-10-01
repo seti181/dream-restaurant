@@ -5,6 +5,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { balance } from '../data/balance';
 import { LOCATIONS } from '../data/locations';
+import type { Visitor } from '../data/moments';
 import type { Weather } from '../data/weather';
 import type { FloorView, TableGuests } from '../sim/day';
 import { project } from './pixel/iso';
@@ -49,12 +50,14 @@ function urlOf(pixels: Pixels): string {
 /** Stacking order on screen: pieces and walkers share one scale, so walkers pass between tables. */
 const zOf = (depth: number) => Math.round(depth * 2) + 1000;
 
+const VISITOR_BUBBLES: Record<Visitor, string> = { merry: '🥃', footballer: '⚽', walesa: '✌️' };
+
 /** How a table feels, as an emoji bubble, or null for no bubble. */
 function bubbleFor(guests: TableGuests): string | null {
   // The Friday regular wants one thing, and the whole room knows it.
   if (guests.regular && guests.stage !== 'eating') return '🍋';
-  // The merry group is here for the shots, all the way through.
-  if (guests.merry) return '🥃';
+  // Special guests show why they're here, all the way through.
+  if (guests.visitor) return VISITOR_BUBBLES[guests.visitor];
   if (guests.stage === 'ordering') return '💬';
   if (guests.stage === 'waiting') {
     if (guests.impatience > 0.8) return '😤';
@@ -185,7 +188,7 @@ function useWalkers(layout: RoomLayout, floor: FloorView) {
         if (path.length < 2) continue;
         started.push({
           id: `${table}:${guests.since}:${i}:${leaving ? 'out' : 'in'}`,
-          kind: guestKind(guests),
+          kind: guestKind(guests, i),
           variant: table * 4 + i,
           path: leaving ? [...path].reverse() : path,
           delay: i * STAGGER,

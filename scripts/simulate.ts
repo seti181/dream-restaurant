@@ -16,6 +16,8 @@ import { manage, STRATEGIES, type Strategy, type WeekReport } from './strategies
 /** Quick runs can pick their own seeds: `SEEDS=1 npm run simulate`. */
 const seedsFromEnv = (globalThis as { process?: { env: Record<string, string | undefined> } }).process?.env.SEEDS;
 const SEEDS = seedsFromEnv ? seedsFromEnv.split(',').map(Number) : [1, 2, 3];
+/** `NO_CARDS=1 npm run simulate` plays without choice cards, to compare against. */
+const NO_CARDS = (globalThis as { process?: { env: Record<string, string | undefined> } }).process?.env.NO_CARDS === '1';
 
 interface SeasonResult {
   /** Cash at the end of each week. */
@@ -92,7 +94,7 @@ function playSeason(strategy: Strategy, seed: number): SeasonResult {
     const open = openRestaurant(state);
     while (!open.progress.done) {
       // A player who only watches: every choice card gets the answer that doesn't help.
-      if (momentDue(open)) answerTheMoment(open, 1);
+      if (!NO_CARDS && momentDue(open)) answerTheMoment(open, 1);
       playTick(open);
     }
     for (const o of open.progress.outcomes) {

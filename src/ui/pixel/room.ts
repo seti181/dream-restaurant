@@ -257,8 +257,10 @@ export function walkStrip(kind: S.PersonKind, facing: Facing, variant: number, c
   return result;
 }
 
-/** Who sits at a table: the critic and the regular have their own looks. */
-export function guestKind(guests: TableGuests): S.PersonKind {
+/** Who sits in a seat at a table: the critic, the regular and some special guests have their own looks. */
+export function guestKind(guests: TableGuests, seat = 0): S.PersonKind {
+  if (guests.visitor === 'walesa') return seat === 0 ? 'walesa' : 'guard';
+  if (guests.visitor === 'footballer' && seat === 0) return 'footballer';
   return guests.critic ? 'critic' : guests.regular ? 'regular' : guests.group;
 }
 
@@ -622,7 +624,7 @@ export function scenePieces(
     // The guests, each on their chair.
     if (guests && seated > 0) {
       around.slice(0, seated).forEach((seat, i) => {
-        const image = personImage(guestKind(guests), seat.facing, 'sit', tableIndex * 4 + i);
+        const image = personImage(guestKind(guests, i), seat.facing, 'sit', tableIndex * 4 + i);
         const p = piece(o, `guest${slot.x},${slot.y},${i}`, image, seat.x, seat.y, SEAT_Z, seatDepth(seat));
         // Only the first sitter carries the table's bubble.
         pieces.push(i === 0 ? { ...p, guests, kind: 'guest' } : p);

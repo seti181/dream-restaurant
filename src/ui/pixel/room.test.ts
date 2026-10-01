@@ -3,10 +3,10 @@ import { balance } from '../../data/balance';
 import { LOCATION_IDS, LOCATIONS } from '../../data/locations';
 import { floorView, startDay, stepDay } from '../../sim/day';
 import * as actions from '../../sim/actions';
-import { newGame, openRestaurant, playTick, type GameState } from '../../sim/game';
+import { answerTheMoment, newGame, openRestaurant, playTick, type GameState } from '../../sim/game';
 import { specialCandidate } from '../../sim/staff';
 import { drawStreet } from './street';
-import { drawRoom, roomLayout, scenePieces, seatsAt, servePath, waiterSpot, walkPath, type RoomLook } from './room';
+import { drawRoom, guestKind, roomLayout, scenePieces, seatsAt, servePath, waiterSpot, walkPath, type RoomLook } from './room';
 import { HEADROOM, PERSON, personPixels, SEATED_ROWS, type PersonKind } from './sprites';
 
 const look = (insideTables: number): RoomLook => ({ decor: [], equipment: ['stove'], weather: 'sunny', dusk: false, insideTables });
@@ -52,6 +52,15 @@ describe('the pixel-art room layout', () => {
     expect(room.width).toBe(layout.width);
     expect(room.height).toBe(layout.height);
     expect(room.get(0, 0)).toBeNull();
+  });
+
+  it('dresses special guests: Wałęsa with his three bodyguards, and a footballer', () => {
+    const open = openRestaurant(newGame(17));
+    open.moments.pending = { id: 'walesa', minute: 11 * 60, table: null };
+    answerTheMoment(open, 0);
+    const table = floorView(open.progress, 0).tables.find((t) => t?.visitor === 'walesa')!;
+    expect([0, 1, 2, 3].map((seat) => guestKind(table, seat))).toEqual(['walesa', 'guard', 'guard', 'guard']);
+    for (const kind of ['walesa', 'guard', 'footballer'] as const) expect(personPixels(kind, 'front', 'sit').width).toBe(PERSON[0].length);
   });
 
   it('draws the street big enough to fill the frame, with the room in its place', () => {

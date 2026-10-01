@@ -6,7 +6,7 @@ import { FIRST_GOAL } from '../data/mewa';
 import type { GameState } from '../sim/game';
 import { startGoal } from '../sim/goals';
 
-export const SAVE_VERSION = 7;
+export const SAVE_VERSION = 8;
 const SAVE_KEY = 'old-town-kitchen/save';
 
 interface SaveFile {
@@ -104,6 +104,11 @@ function upgradeFrom6(game: Record<string, unknown>): Record<string, unknown> {
   return { secretRecipe: false, ...game };
 }
 
+function upgradeFrom7(game: Record<string, unknown>): Record<string, unknown> {
+  // Version 8 remembers which choice cards came up recently; older games start with a clean slate.
+  return { momentsSeen: {}, ...game };
+}
+
 /**
  * Brings a save from any older version up to date, one version at a time.
  * Returns null for saves that can't be understood.
@@ -139,6 +144,10 @@ export function migrate(data: unknown): GameState | null {
   if (version === 6 && looksLikeGame(game)) {
     game = upgradeFrom6(game as unknown as Record<string, unknown>);
     version = 7;
+  }
+  if (version === 7) {
+    game = upgradeFrom7(game as unknown as Record<string, unknown>);
+    version = 8;
   }
 
   return looksLikeGame(game) ? game : null;

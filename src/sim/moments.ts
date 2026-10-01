@@ -8,7 +8,7 @@ import { balance } from '../data/balance';
 import { GROUP_IDS, type GroupId } from '../data/groups';
 import { MOMENT_IDS, MOMENTS, type MomentEffect, type MomentId, type MomentNeed } from '../data/moments';
 import { minuteOfDay, ticksPerDay } from './clock';
-import { seat, type DayInProgress, type Visit } from './day';
+import { doorClosed, seat, type DayInProgress, type Visit } from './day';
 import { templateOf } from './menu';
 import { chance, createRng, nextFloat, nextInt, pick, type RngState } from './rng';
 import type { Review } from './types';
@@ -38,6 +38,9 @@ export interface MomentResult {
 /** Today's moments. Only lives while the day runs, so it is never saved. */
 export interface MomentsToday {
   rng: RngState;
+  day: number;
+  /** The last day each card was shown, before today. */
+  lastSeen: Partial<Record<MomentId, number>>;
   /** Minutes when a random moment is due, earliest first. */
   slots: number[];
   /** Moments already shown today; each comes at most once a day. */
@@ -55,18 +58,30 @@ export interface MomentContext {
   adrianAway: boolean;
 }
 
-/** Picks today's times for the random moments. */
-export function planMoments(seed: number): MomentsToday {
+/** Picks how many random cards come today, and when: anywhere in the day, but not on top of each other. */
+export function planMoments(seed: number, day: number, lastSeen: Partial<Record<MomentId, number>>): MomentsToday {
   const rng = createRng(seed);
-  const { perDay, firstMinute, lastMinute } = balance.moments;
+  const { perDay, firstMinute, lastMinute, minGapMinutes } = balance.moments;
   const count = nextInt(rng, perDay.min, perDay.max);
-  // One in each equal part of the day, so they don't bunch up.
-  const part = (lastMinute - firstMinute) / count;
+  const times = [...Array(count)].map(() => firstMinute + nextFloat(rng) * (lastMinute - firstMinute)).sort((a, b) => a - b);
   const step = balance.clock.tickMinutes;
-  const slots = [...Array(count).keys()].map(
-    (i) => Math.round((firstMinute + (i + nextFloat(rng)) * part) / step) * step,
-  );
-  return { rng, slots, seen: [], pending: null, results: [], cash: 0 };
+  const slots: number[] = [];
+  for (const time of times) {
+    const earliest = slots.length > 0 ? slots[slots.length - 1] + minGapMinutes : firstMinute;
+    const minute = Math.round(Math.max(time, earliest) / step) * step;
+    if (minute <= lastMinute) slots.push(minute);
+  }
+  return { rng, day, lastSeen, slots, seen: [], pending: null, results: [], cash: 0 };
+}
+
+/** How likely a random card is today: less if it came up recently, not at all while a rare one rests. */
+export function weightToday(today: MomentsToday, id: MomentId): number {
+  const moment = MOMENTS[id];
+  const last = today.lastSeen[id];
+  if (last === undefined) return moment.weight;
+  const daysAgo = today.day - last;
+  if (moment.cooldownDays && daysAgo < moment.cooldownDays) return 0;
+  return daysAgo <= balance.moments.recentDays ? moment.weight * balance.moments.recentWeight : moment.weight;
 }
 
 const waiting = (visit: Visit) => !visit.eating && !visit.skipped;
@@ -75,9 +90,12 @@ const outside = (visit: Visit, insideTables: number) => visit.tables.some((table
 function needMet(need: MomentNeed, { progress, adrianAway }: MomentContext): boolean {
   const restaurant = progress.restaurants[0];
   const floor = progress.floors[0];
+  const open = !doorClosed(floor, minuteOfDay(progress.tick));
   switch (need) {
     case 'dessertOnMenu':
       return restaurant.menu.some((dish) => templateOf(dish).category === 'dessert');
+    case 'soupOnMenu':
+      return restaurant.menu.some((dish) => templateOf(dish).category === 'soup');
     case 'guestsWaiting':
       return floor.visits.some((visit) => waiting(visit) && visit.tables.length > 0);
     case 'guestsIn':
@@ -93,9 +111,9 @@ function needMet(need: MomentNeed, { progress, adrianAway }: MomentContext): boo
     case 'tomekWorking':
       return restaurant.waiters.some((waiter) => waiter.special === 'tomek');
     case 'roomForSix':
-      return floor.freeTables >= 2;
+      return open && floor.freeTables >= 2;
     case 'freeTable':
-      return floor.freeTables >= 1;
+      return open && floor.freeTables >= 1;
   }
 }
 
@@ -131,7 +149,9 @@ export function checkMoments(today: MomentsToday, context: MomentContext): boole
   }
 
   if (today.slots.length === 0 || today.slots[0] > minute) return false;
-  const possible = MOMENT_IDS.filter((id) => !MOMENTS[id].at && !today.seen.includes(id) && canHappen(id, context));
+  const possible = MOMENT_IDS.filter(
+    (id) => !MOMENTS[id].at && !today.seen.includes(id) && weightToday(today, id) > 0 && canHappen(id, context),
+  );
   if (possible.length === 0) {
     // Nothing fits right now: try again a little later, if there's still time today.
     today.slots[0] += balance.moments.retryMinutes;
@@ -139,8 +159,8 @@ export function checkMoments(today: MomentsToday, context: MomentContext): boole
     return false;
   }
   today.slots.shift();
-  let roll = nextFloat(today.rng) * possible.reduce((sum, id) => sum + MOMENTS[id].weight, 0);
-  const id = possible.find((option) => (roll -= MOMENTS[option].weight) < 0) ?? possible[possible.length - 1];
+  let roll = nextFloat(today.rng) * possible.reduce((sum, id) => sum + weightToday(today, id), 0);
+  const id = possible.find((option) => (roll -= weightToday(today, option)) < 0) ?? possible[possible.length - 1];
   show(today, id, minute, context);
   return true;
 }
@@ -200,16 +220,24 @@ function apply(
   if (effect.kitchenPause) {
     floor.chefFreeAt = floor.chefFreeAt.map((freeAt) => Math.max(freeAt, minute) + effect.kitchenPause!);
   }
-  if (effect.noisyGroup) {
-    const { group, size, minutes } = effect.noisyGroup;
+  if (effect.visitors) {
+    const { who, group, size, minutes, closesDoor, reputationAfterwards } = effect.visitors;
     const party = { group, size, origin: restaurant.location, arrivalMinute: minute, bookedAt: restaurant.id };
     seat(today.rng, progress, 0, party, minute);
-    // They only drink: nothing for the kitchen, and they leave when the bottle is empty.
+    // They didn't come for the kitchen. They stay their time, until closing at the latest.
     const visit = floor.visits.find((v) => v.party === party);
     if (visit) {
-      Object.assign(visit, { order: [], eating: true, readyAt: minute, leaveAt: minute + minutes, merry: true });
-      floor.closedUntil = minute + minutes;
+      const leaveAt = Math.min(minute + minutes, balance.clock.closeMinute);
+      Object.assign(visit, { order: [], eating: true, readyAt: minute, leaveAt, visitor: who, reputationAfterwards });
+      if (closesDoor) floor.closed = { until: leaveAt, everyone: closesDoor === 'everyone' };
     }
+  }
+  if (effect.qualityBoost) floor.qualityBonus += effect.qualityBoost;
+  if (effect.waiterAway && restaurant.waiters.length > 0) {
+    // The last waiter in the list goes; they're back after a while.
+    const waiter = restaurant.waiters[restaurant.waiters.length - 1];
+    restaurant.waiters = restaurant.waiters.slice(0, -1);
+    floor.away.push({ waiter, back: minute + effect.waiterAway });
   }
   if (effect.walkIn) {
     const { group, size } = effect.walkIn;

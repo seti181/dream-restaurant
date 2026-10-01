@@ -180,13 +180,17 @@ export const balance = {
   },
 
   moments: {
-    /** Choice cards that come at random times each day (moments tied to a time of day come on top)... */
-    perDay: { min: 2, max: 3 },
-    /** ...between these times... */
+    /** Choice cards that come at random times each day (a card tied to a time of day takes one's place)... */
+    perDay: { min: 1, max: 4 },
+    /** ...between these times, at least this far apart... */
     firstMinute: 11 * 60 + 45,
     lastMinute: 20 * 60 + 30,
+    minGapMinutes: 45,
     /** ...and if none can happen when one is due, it tries again this many minutes later. */
     retryMinutes: 30,
+    /** A card seen in the last few days is this much less likely to be picked again. */
+    recentDays: 3,
+    recentWeight: 0.25,
   },
 
   lunchSet: {

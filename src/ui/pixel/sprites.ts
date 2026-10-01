@@ -267,9 +267,32 @@ const KOMPOT_STAIN: Overlay = { x: 9, y: 15, facing: 'front', rows: ['r'] };
 const SPIKY_HAIR: Overlay = { x: 0, y: -2, rows: ['....o..o..o.....', '...ohoohoohoo...'] };
 const SUNGLASSES: Overlay = { x: 3, y: 6, facing: 'front', rows: ['KKKKooKKKK', 'KKKK..KKKK'] };
 const CHEF_HAT_OVERLAY: Overlay = { x: 0, y: -5, rows: CHEF_HAT };
+/** A big white walrus moustache, drooping at the ends. */
+const MOUSTACHE: Overlay = {
+  x: 2,
+  y: 7,
+  facing: 'front',
+  rows: ['...oooooo...', '.ooWWWWWWoo.', 'oWWWWWWWWWWo', 'oWWWoooWWWWo', 'oWWo....oWWo', '.oo......oo.'],
+};
+/** A little red-and-white Solidarność badge on the lapel. */
+const BADGE: Overlay = { x: 4, y: 12, facing: 'front', rows: ['r', 'z'] };
+/** Security's earpiece wire. */
+const EARPIECE: Overlay = { x: 13, y: 8, facing: 'front', rows: ['L', 'L', 'L'] };
+/** Lechia Gdańsk's green and white stripes. */
+const STRIPES: Overlay = { x: 3, y: 11, facing: 'front', rows: ['.z.z.z.z.', '.z.z.z.z.', '.z.z.z.z.'] };
 
 /** Everyone who can appear in the restaurant. */
-export type PersonKind = GroupId | 'critic' | 'regular' | 'waiter' | 'tomek' | 'adrian' | 'chef';
+export type PersonKind =
+  | GroupId
+  | 'critic'
+  | 'regular'
+  | 'waiter'
+  | 'tomek'
+  | 'adrian'
+  | 'chef'
+  | 'walesa'
+  | 'guard'
+  | 'footballer';
 
 export interface Look {
   palette: Palette;
@@ -327,6 +350,21 @@ export function lookOf(kind: PersonKind, variant = 0): Look {
       return {
         palette: withAccessories({ ...GUEST_PALETTES.foodies, h: '#c9c4bd', H: '#a39e97', c: '#2e2a33', C: '#1f1c23', d: '#2e2a33' }),
         overlays: [BERET],
+      };
+    case 'walesa':
+      return {
+        palette: withAccessories({ ...GUEST_PALETTES.locals, h: '#d9d6cf', H: '#b3aea6', c: '#4a4a55', C: '#36363f', d: '#b5452f', p: '#4a4a55', P: '#36363f', W: '#fbfaf6' }),
+        overlays: [MOUSTACHE, BADGE],
+      };
+    case 'guard':
+      return {
+        palette: withAccessories({ ...GUEST_PALETTES.office, h: '#7a5a3e', H: '#5e4430', c: '#1f1c23', C: '#141217', d: '#f4f1ea', p: '#1f1c23', P: '#141217' }),
+        overlays: [SUNGLASSES, EARPIECE],
+      };
+    case 'footballer':
+      return {
+        palette: withAccessories({ ...GUEST_PALETTES.students, h: '#4a3426', H: '#2e2018', c: '#1f7a3a', C: '#16602d', d: '#ffffff', p: '#ffffff', P: '#d6d0c4', z: '#ffffff' }),
+        overlays: [STRIPES],
       };
     case 'regular':
       return {

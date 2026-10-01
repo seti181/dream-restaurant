@@ -181,8 +181,16 @@ describe('upgrading version 5 saves (from before game over)', () => {
 describe('upgrading version 6 saves (from before the secret recipe)', () => {
   it('starts without the recipe card', () => {
     const game = newGame(53);
-    const { secretRecipe: _s, ...old } = game;
+    const { secretRecipe: _s, momentsSeen: _m, ...old } = game;
     expect(migrate({ saveVersion: 6, savedAt: '', game: old })).toEqual(game);
+  });
+});
+
+describe('upgrading version 7 saves (from before choice cards were remembered)', () => {
+  it('starts with no cards seen', () => {
+    const game = newGame(54);
+    const { momentsSeen: _m, ...old } = game;
+    expect(migrate({ saveVersion: 7, savedAt: '', game: old })).toEqual(game);
   });
 });
 

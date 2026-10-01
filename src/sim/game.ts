@@ -4,6 +4,7 @@
 import { balance } from '../data/balance';
 import type { MenuDish } from '../data/dishes';
 import { CALENDAR_EVENTS, RANDOM_EVENTS, type RandomEventId } from '../data/events';
+import type { MomentId } from '../data/moments';
 import { GROUP_IDS, type GroupId } from '../data/groups';
 import { CAMPAIGNS, type CampaignId } from '../data/marketing';
 import { FIRST_GOAL, type TipId } from '../data/mewa';
@@ -81,6 +82,8 @@ export interface GameState {
   trophies: number;
   /** True once Mewa has found the secret recipe card. */
   secretRecipe: boolean;
+  /** The last day each choice card came up, so the same ones don't keep coming back. */
+  momentsSeen: Partial<Record<MomentId, number>>;
   /** True once the money ran out at the end of a day: the restaurant has closed for good. */
   gameOver: boolean;
   /** The player's restaurant first, then the rivals. */
@@ -180,6 +183,7 @@ export function newGame(seed: number, difficulty: Difficulty = 'normal'): GameSt
     season: { ratings: {}, fairGuests: {} },
     trophies: 0,
     secretRecipe: false,
+    momentsSeen: {},
     gameOver: false,
     restaurants: [
       createPlayerRestaurant(start.name, start.menu, staffOf(team, 'chef'), staffOf(team, 'waiter')),
@@ -297,7 +301,7 @@ export function openRestaurant(state: GameState): OpenDay {
     rng,
     absent,
     // Moments get their own generator, so they never change who comes in or what they order.
-    moments: planMoments((state.rng.s ^ Math.imul(state.day + 1, 0x9e3779b1)) >>> 0),
+    moments: planMoments((state.rng.s ^ Math.imul(state.day + 1, 0x9e3779b1)) >>> 0, state.day, state.momentsSeen),
     terraceBuilt: terraceTablesBuilt(state),
   };
 }
@@ -576,6 +580,7 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
       season,
       trophies,
       secretRecipe,
+      momentsSeen: { ...state.momentsSeen, ...Object.fromEntries(open.moments.seen.map((id) => [id, state.day])) },
       // Running out of money ends the game.
       gameOver: state.gameOver || cash <= 0,
       restaurants,
