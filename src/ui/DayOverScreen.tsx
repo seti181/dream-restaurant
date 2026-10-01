@@ -1,6 +1,7 @@
 // The daily report: who came, what they thought, where the money went,
 // and how the rest of the Old Town did.
 
+import type { ReactNode } from 'react';
 import { GROUP_IDS, GROUPS } from '../data/groups';
 import { dateOf, formatDate } from '../sim/calendar';
 import type { DaySummary } from '../sim/game';
@@ -8,6 +9,7 @@ import type { SatisfactionFactors } from '../sim/types';
 import { dishName, money, signedMoney, stars } from './format';
 import { Confetti, StarRow } from './Juice';
 import { MewaTip } from './Mewa';
+import { FoodIcon } from './PixelIcon';
 import { useGame } from './store';
 
 type Factor = keyof SatisfactionFactors;
@@ -51,10 +53,22 @@ function headline(summary: DaySummary): string {
   return 'A quiet day.';
 }
 
-function Row({ label, value, total = false }: { label: string; value: string | number; total?: boolean }) {
+function Row({
+  label,
+  value,
+  total = false,
+  icon,
+}: {
+  label: string;
+  value: string | number;
+  total?: boolean;
+  icon?: ReactNode;
+}) {
   return (
     <li className={total ? 'total' : undefined}>
-      <span>{label}</span>
+      <span>
+        {icon} {label}
+      </span>
       <span>{value}</span>
     </li>
   );
@@ -184,7 +198,12 @@ export function DayOverScreen() {
               ) : (
                 <ul className="rows">
                   {summary.dishesSold.slice(0, 5).map(({ dish, count }) => (
-                    <Row key={`${dish.template}/${dish.variant}`} label={dishName(dish)} value={`× ${count}`} />
+                    <Row
+                      key={`${dish.template}/${dish.variant}`}
+                      icon={<FoodIcon template={dish.template} />}
+                      label={dishName(dish)}
+                      value={`× ${count}`}
+                    />
                   ))}
                 </ul>
               )}

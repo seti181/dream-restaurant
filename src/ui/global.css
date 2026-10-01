@@ -1418,3 +1418,15 @@ h2.spaced {
   left: 50%;
   top: 4px;
 }
+
+/* Pixel-art icons in the interface. */
+.pixel-icon {
+  display: inline-block;
+  vertical-align: middle;
+  image-rendering: pixelated;
+}
+
+.dish-row > .pixel-icon {
+  flex: none;
+  margin-right: 10px;
+}

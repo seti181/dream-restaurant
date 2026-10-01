@@ -7,6 +7,8 @@ import { weeklyBillsDue } from '../../sim/finance';
 import { eventsToday, playerOf, teamWages, type GameState } from '../../sim/game';
 import { dishName, money } from '../format';
 import { GoalCard } from '../Mewa';
+import { WEATHER_ICONS } from '../pixel/icons';
+import { FoodIcon, PixelIcon } from '../PixelIcon';
 import { useGame } from '../store';
 
 const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? '' : 's'}`;
@@ -42,7 +44,7 @@ export function TodayPanel() {
       <section className="today-news">
         <h2>Today in Gdańsk</h2>
         <p>
-          {WEATHER[game.weather].icon} {WEATHER[game.weather].forecast}
+          <PixelIcon art={WEATHER_ICONS[game.weather]} name={`weather:${game.weather}`} /> {WEATHER[game.weather].forecast}
         </p>
         {eventsToday(game).length > 0 && (
           <p>
@@ -76,7 +78,9 @@ export function TodayPanel() {
           <ul className="rows">
             {player.menu.map((dish) => (
               <li key={`${dish.template}-${dish.variant}`}>
-                <span>{dishName(dish)}</span>
+                <span>
+                  <FoodIcon template={dish.template} /> {dishName(dish)}
+                </span>
                 <span>{money(dish.price)}</span>
               </li>
             ))}

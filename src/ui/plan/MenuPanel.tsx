@@ -17,6 +17,7 @@ import { dishUnavailableReason, extraUnavailableReason, priceRange } from '../..
 import { playerOf } from '../../sim/game';
 import { ingredientCostOf, recipeKey, tagsOf, templateOf } from '../../sim/menu';
 import { money, recipeText } from '../format';
+import { FoodIcon } from '../PixelIcon';
 import { useGame } from '../store';
 
 const CATEGORIES: Category[] = ['soup', 'main', 'dessert', 'drink'];
@@ -71,6 +72,7 @@ function CurrentMenu() {
       <ul className="dish-list">
         {player.menu.map((dish, index) => (
           <li key={index} className="dish-row">
+            <FoodIcon template={dish.template} scale={3} />
             <div className="dish-info">
               <strong>{dish.name ?? templateOf(dish).name}</strong>
               <Tags dish={dish} />
@@ -242,9 +244,8 @@ function DishCreator() {
                   disabled={locked}
                   onClick={() => chooseTemplate(id)}
                 >
-                  {locked && '🔒 '}
-                  {DISH_TEMPLATES[id].secret && '⭐ '}
-                  {DISH_TEMPLATES[id].name}
+                  {locked ? '🔒 ' : <FoodIcon template={id} />}
+                  {DISH_TEMPLATES[id].secret && ' ⭐'} {DISH_TEMPLATES[id].name}
                 </button>
               );
             })}

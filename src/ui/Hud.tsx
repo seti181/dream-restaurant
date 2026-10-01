@@ -4,7 +4,9 @@ import { WEATHER } from '../data/weather';
 import { dateOf, formatDate, seasonWeek } from '../sim/calendar';
 import { formatTime } from '../sim/clock';
 import { playerOf, starRating } from '../sim/game';
-import { money, stars } from './format';
+import { money } from './format';
+import { COIN, STAR, WEATHER_ICONS } from './pixel/icons';
+import { PixelIcon } from './PixelIcon';
 import { setSoundPrefs, useSoundPrefs } from './sound';
 import { useGame, type Speed } from './store';
 
@@ -62,7 +64,8 @@ export function Hud() {
 
   // While the day's results are showing, keep showing that day's date.
   const day = phase === 'dayOver' && summary ? summary.day : game.day;
-  const weather = WEATHER[phase === 'dayOver' && summary ? summary.weather : game.weather];
+  const weatherId = phase === 'dayOver' && summary ? summary.weather : game.weather;
+  const weather = WEATHER[weatherId];
   const cash = game.cash + (live ? live.revenue - live.ingredientCost : 0);
 
   return (
@@ -72,15 +75,15 @@ export function Hud() {
         <span>Week {seasonWeek(day)}</span>
       </div>
       <div className="hud-weather" aria-label="Weather">
-        {weather.icon} {weather.name}
+        <PixelIcon art={WEATHER_ICONS[weatherId]} name={`weather:${weatherId}`} /> {weather.name}
       </div>
       {live && <div className="hud-clock">{formatTime(live.minute)}</div>}
       <div className="hud-spacer" />
       <div className="hud-stat" aria-label="Cash">
-        💰 {money(cash)}
+        <PixelIcon art={COIN} name="coin" /> {money(cash)}
       </div>
       <div className="hud-stat" aria-label="Rating">
-        {stars(starRating(playerOf(game)))}
+        {starRating(playerOf(game)).toFixed(1)} <PixelIcon art={STAR} name="star" label="stars" />
       </div>
       <MuteButton />
       <SpeedControls />
