@@ -5,6 +5,7 @@ import { floorView, startDay, stepDay } from '../../sim/day';
 import * as actions from '../../sim/actions';
 import { newGame, openRestaurant, playTick, type GameState } from '../../sim/game';
 import { specialCandidate } from '../../sim/staff';
+import { drawStreet } from './street';
 import { drawRoom, roomLayout, scenePieces, seatsAt, servePath, waiterSpot, walkPath, type RoomLook } from './room';
 import { HEADROOM, PERSON, personPixels, SEATED_ROWS, type PersonKind } from './sprites';
 
@@ -45,12 +46,20 @@ describe('the pixel-art room layout', () => {
     for (const s of [...layout.inside, ...layout.terrace]) expect((s.x + s.y) % 2).toBe(0);
   });
 
-  it('draws a room picture of the promised size, framed by the dark backdrop', () => {
+  it('draws a room picture of the promised size, see-through around the room so the street shows', () => {
     const layout = roomLayout(6, 2);
     const room = drawRoom(layout, look(4));
     expect(room.width).toBe(layout.width);
     expect(room.height).toBe(layout.height);
-    expect(room.get(0, 0)).toEqual([0x2a, 0x1d, 0x26]);
+    expect(room.get(0, 0)).toBeNull();
+  });
+
+  it('draws the street big enough to fill the frame, with the room in its place', () => {
+    const layout = roomLayout(6, 2);
+    const street = drawStreet(layout, look(4), layout.width + 80, layout.height + 40, 40, 20);
+    expect(street.width).toBe(layout.width + 80);
+    // Every pixel is filled: sky, houses or cobbles.
+    for (let y = 0; y < street.height; y += 7) for (let x = 0; x < street.width; x += 7) expect(street.get(x, y)).not.toBeNull();
   });
 
   it('turns a real moment of the day into furniture and people, back to front', () => {
