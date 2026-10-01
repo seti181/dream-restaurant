@@ -4,6 +4,7 @@ import * as actions from './actions';
 import { runDay } from './day';
 import {
   closeDay,
+  dayBreakdown,
   happyHourToday,
   newGame,
   openRestaurant,
@@ -198,5 +199,22 @@ describe('changes made during the day', () => {
     const cheaper = actions.setDishPrice(state, 0, 5);
     updateToday(open, cheaper);
     expect(open.progress.restaurants[0].menu[0].price).toBe(5);
+  });
+});
+
+describe('the day broken down', () => {
+  it('adds up to the day’s numbers: guests by group, and takings by dish', () => {
+    const state = newGame(46);
+    const open = openRestaurant(state);
+    while (!open.progress.done) playTick(open);
+    const tally = tallyFor(open.progress.outcomes, 'player');
+    const parts = dayBreakdown(open.progress.outcomes, 'player');
+    const sum = (counts: Record<string, number | undefined>) => Object.values(counts).reduce((a, n) => a! + (n ?? 0), 0);
+    expect(sum(parts.served)).toBe(tally.guestsServed);
+    expect(sum(parts.walkedOut)).toBe(tally.guestsWalkedOut);
+    expect(sum(parts.turnedAway)).toBe(tally.guestsTurnedAway);
+    expect(parts.dishes.reduce((a, d) => a + d.revenue, 0)).toBeCloseTo(tally.revenue);
+    // Best sellers first.
+    parts.dishes.forEach((d, i) => i > 0 && expect(d.revenue).toBeLessThanOrEqual(parts.dishes[i - 1].revenue));
   });
 });

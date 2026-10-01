@@ -454,6 +454,39 @@ export function answerTheMoment(open: OpenDay, choice: 0 | 1): MomentResult | nu
   return answerMoment(open.moments, open.progress, choice);
 }
 
+/** The day's numbers, broken down: which groups were served, walked out or found no table, and what sold. */
+export interface DayBreakdown {
+  served: Partial<Record<GroupId, number>>;
+  walkedOut: Partial<Record<GroupId, number>>;
+  turnedAway: Partial<Record<GroupId, number>>;
+  /** Each dish sold, with how many portions and what they brought in, best sellers first. */
+  dishes: { dish: MenuDish; count: number; revenue: number }[];
+}
+
+export function dayBreakdown(outcomes: PartyOutcome[], restaurantId: string): DayBreakdown {
+  const result: DayBreakdown = { served: {}, walkedOut: {}, turnedAway: {}, dishes: [] };
+  const add = (counts: Partial<Record<GroupId, number>>, group: GroupId, n: number) => {
+    counts[group] = (counts[group] ?? 0) + n;
+  };
+  const dishes = new Map<string, { dish: MenuDish; count: number; revenue: number }>();
+  for (const o of outcomes) {
+    if (o.restaurant !== restaurantId) continue;
+    if (o.kind === 'served') {
+      add(result.served, o.group, o.size);
+      for (const dish of o.order) {
+        const key = `${dish.template}/${dish.variant}/${dish.name ?? ''}`;
+        const entry = dishes.get(key) ?? { dish, count: 0, revenue: 0 };
+        entry.count++;
+        entry.revenue += dish.price;
+        dishes.set(key, entry);
+      }
+    } else if (o.kind === 'walkedOut') add(result.walkedOut, o.group, o.size);
+    else if (o.kind === 'noTable') add(result.turnedAway, o.group, o.size);
+  }
+  result.dishes = [...dishes.values()].sort((a, b) => b.revenue - a.revenue);
+  return result;
+}
+
 /** The player's results from a list of party outcomes. */
 export function tallyFor(outcomes: PartyOutcome[], restaurantId: string): DayTally {
   const tally: DayTally = {

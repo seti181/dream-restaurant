@@ -18,6 +18,7 @@ import {
   answerTheMoment,
   apologiesLeft,
   closeDay,
+  dayBreakdown,
   drinkCost,
   happyHourToday,
   helpGuests,
@@ -30,6 +31,7 @@ import {
   openRestaurant,
   playTick,
   tallyFor,
+  type DayBreakdown,
   type DaySummary,
   type DayTally,
   type Difficulty,
@@ -111,6 +113,8 @@ interface GameStore {
   drinkCostAt: (table: number) => number | null;
   /** Shoos the gull off the terrace. */
   shooGull: () => void;
+  /** The day so far, broken down by group and by dish. */
+  breakdown: () => DayBreakdown | null;
   /** Starts today's happy hour now. */
   startHappyHour: () => void;
   /** Shows the guests at one table to another; true if it's one of their favourite spots. */
@@ -268,6 +272,11 @@ export const useGame = create<GameStore>((set, get) => ({
     if (!openDay || !startHappyHour(openDay)) return;
     play('goal');
     set({ live: liveFrom(openDay) });
+  },
+
+  breakdown: () => {
+    const { openDay } = get();
+    return openDay ? dayBreakdown(openDay.progress.outcomes, 'player') : null;
   },
 
   shooGull: () => {

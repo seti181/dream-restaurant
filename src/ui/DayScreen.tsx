@@ -4,7 +4,9 @@ import { useEffect, useState } from 'react';
 import type { TableGuests } from '../sim/day';
 import { balance } from '../data/balance';
 import { formatTime, ticksPerDay } from '../sim/clock';
-import { money } from './format';
+import { dishName, money } from './format';
+import { FoodIcon } from './PixelIcon';
+import type { GroupId } from '../data/groups';
 import { MewaTip } from './Mewa';
 import { MomentCard, MomentResultNote } from './MomentCard';
 import { GROUP_COLOURS } from './pixel/sprites';
@@ -15,14 +17,111 @@ import { FAVOURITE_SPOTS, GROUP_IDS, GROUPS, SPOT_NAMES } from '../data/groups';
 import { GULLS } from '../data/gulls';
 import { useGame } from './store';
 
-function Stat({ label, value }: { label: string; value: string | number }) {
+type StatId = 'served' | 'takings' | 'walkedOut' | 'turnedAway';
+
+/** One of the day's numbers. Tapping it opens the list behind it. */
+function Stat({
+  label,
+  value,
+  open,
+  onToggle,
+}: {
+  label: string;
+  value: string | number;
+  open: boolean;
+  onToggle: () => void;
+}) {
   return (
-    <div className="stat">
+    <button type="button" className={`stat${open ? ' open' : ''}`} aria-expanded={open} onClick={onToggle}>
       {/* A new key each time the number changes replays the little bump. */}
       <strong key={value} className="bump">
         {value}
       </strong>
       <span>{label}</span>
+    </button>
+  );
+}
+
+/** Groups listed with how many of each, biggest first, each with a bar. */
+function GroupRows({ counts }: { counts: Partial<Record<GroupId, number>> }) {
+  const rows = GROUP_IDS.map((g) => ({ g, n: counts[g] ?? 0 }))
+    .filter((r) => r.n > 0)
+    .sort((a, b) => b.n - a.n);
+  const most = Math.max(1, ...rows.map((r) => r.n));
+  return (
+    <ul className="stat-rows">
+      {rows.map(({ g, n }) => (
+        <li key={g}>
+          <span className="swatch" style={{ background: GROUP_COLOURS[g] }} />
+          <span className="stat-name">{GROUPS[g].name}</span>
+          <span className="stat-bar">
+            <span style={{ width: `${(n / most) * 100}%`, background: GROUP_COLOURS[g] }} />
+          </span>
+          <strong>{n}</strong>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+/** The list behind one of the day's numbers, live as the day goes on. */
+function StatPanel({ stat, onClose }: { stat: StatId; onClose: () => void }) {
+  // Re-reads on every tick, while the day runs.
+  useGame((s) => s.live?.minute);
+  const breakdown = useGame((s) => s.breakdown)();
+  if (!breakdown) return null;
+  const titles: Record<StatId, string> = {
+    served: 'Guests served today',
+    takings: 'Takings by dish',
+    walkedOut: 'Walked out: waited too long for their food',
+    turnedAway: 'No free table: went somewhere else',
+  };
+  const empty = (counts: Partial<Record<GroupId, number>>) => Object.values(counts).every((n) => !n);
+  return (
+    <div className="stat-panel" role="dialog" aria-label={titles[stat]}>
+      <header>
+        <h2>{titles[stat]}</h2>
+        <button type="button" className="secondary" onClick={onClose} aria-label="Close">
+          ✕
+        </button>
+      </header>
+      {stat === 'served' &&
+        (empty(breakdown.served) ? <p className="muted">Nobody has been served yet.</p> : <GroupRows counts={breakdown.served} />)}
+      {stat === 'takings' &&
+        (breakdown.dishes.length === 0 ? (
+          <p className="muted">Nothing sold yet.</p>
+        ) : (
+          <ul className="stat-rows">
+            {breakdown.dishes.slice(0, 10).map(({ dish, count, revenue }) => (
+              <li key={`${dish.template}/${dish.variant}/${dish.name ?? ''}`}>
+                <FoodIcon template={dish.template} />
+                <span className="stat-name">{dishName(dish)}</span>
+                <span className="muted">× {count}</span>
+                <strong>{money(revenue)}</strong>
+              </li>
+            ))}
+          </ul>
+        ))}
+      {stat === 'walkedOut' &&
+        (empty(breakdown.walkedOut) ? (
+          <p className="muted">Nobody has walked out today. 🎉</p>
+        ) : (
+          <>
+            <GroupRows counts={breakdown.walkedOut} />
+            <p className="small muted">
+              More chefs or a faster kitchen help, and so does a free drink or the chef’s apology for a waiting table.
+            </p>
+          </>
+        ))}
+      {stat === 'turnedAway' &&
+        (empty(breakdown.turnedAway) ? (
+          <p className="muted">Everyone has found a table so far.</p>
+        ) : (
+          <>
+            <GroupRows counts={breakdown.turnedAway} />
+            <p className="small muted">Every table was taken. More tables in the Interior tab, or a bigger street on the Map.</p>
+          </>
+        ))}
     </div>
   );
 }
@@ -136,6 +235,7 @@ export function DayScreen() {
   const shooGull = useGame((s) => s.shooGull);
   const [selected, setSelected] = useState<{ table: number; since: number } | null>(null);
   const [choosing, setChoosing] = useState(false);
+  const [stat, setStat] = useState<StatId | null>(null);
   const [seatNote, setSeatNote] = useState<{ text: string; at: number } | null>(null);
   const location = useGame((s) => playerOf(s.game).location);
   const moveGuests = useGame((s) => s.moveGuests);
@@ -193,10 +293,16 @@ export function DayScreen() {
           <HappyHourButton />
           <ManageButton />
           <div className="stats">
-            <Stat label="Guests served" value={live.guestsServed} />
-            <Stat label="Takings" value={money(live.revenue)} />
-            <Stat label="Walked out" value={live.guestsWalkedOut} />
-            <Stat label="No free table" value={live.guestsTurnedAway} />
+            {(
+              [
+                ['served', 'Guests served', live.guestsServed],
+                ['takings', 'Takings', money(live.revenue)],
+                ['walkedOut', 'Walked out', live.guestsWalkedOut],
+                ['turnedAway', 'No free table', live.guestsTurnedAway],
+              ] as const
+            ).map(([id, label, value]) => (
+              <Stat key={id} label={label} value={value} open={stat === id} onToggle={() => setStat(stat === id ? null : id)} />
+            ))}
           </div>
         </div>
         {live.absent.map((excuse) => (
@@ -231,7 +337,7 @@ export function DayScreen() {
               close();
             }}
           />
-          {seatNote && !live.moment && <p className="gull-warning good">🪑 {seatNote.text}</p>}
+          {stat && !live.moment && <StatPanel stat={stat} onClose={() => setStat(null)} />}
           {choosing && stillThere && !live.moment && (
             <div className="help-panel" role="dialog" aria-label="Choose a table">
               <p>
@@ -244,13 +350,19 @@ export function DayScreen() {
               </div>
             </div>
           )}
-          {live.floor.gull && !live.moment && <p className="gull-warning">🐦 {GULLS.warning}</p>}
-          {!live.floor.gull && !live.moment && <GullNote />}
           {stillThere && !choosing && !live.moment && (
             <HelpPanel table={selected!.table} freeTables={free.length} onMove={() => setChoosing(true)} onClose={close} />
           )}
-          {speed === 0 && !live.moment && <p className="paused">Paused. Tap 1× to carry on.</p>}
-          {!live.moment && <MomentResultNote />}
+          {/* Short notes at the top of the scene, stacked so they never sit on top of each other. */}
+          {!live.moment && (
+            <div className="scene-notes">
+              {live.floor.gull && <p className="gull-warning">🐦 {GULLS.warning}</p>}
+              {!live.floor.gull && <GullNote />}
+              {seatNote && <p className="gull-warning good">🪑 {seatNote.text}</p>}
+              <MomentResultNote />
+              {speed === 0 && <p className="paused">Paused. Tap 1× to carry on.</p>}
+            </div>
+          )}
           <MomentCard />
         </div>
         <ul className="legend" aria-label="Who is who">
