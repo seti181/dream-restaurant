@@ -113,6 +113,11 @@ export function conditionsFor(state: GameState): DayConditions {
       });
     }
   }
+  // Word of mouth from earlier answers (a blogger's post, say) brings more of some groups.
+  for (const u of state.upcoming ?? []) {
+    if (u.fromDay > state.day || u.untilDay < state.day || !u.groups) continue;
+    applyEffects(conditions, { groups: u.groups });
+  }
   // The Friday regular comes in for dinner, as always.
   if (weekdayOf(state.day) === REGULAR.weekday) {
     conditions.bookings.push({

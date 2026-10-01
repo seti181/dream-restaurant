@@ -182,7 +182,7 @@ describe('upgrading version 5 saves (from before game over)', () => {
 describe('upgrading version 6 saves (from before the secret recipe)', () => {
   it('starts without the recipe card', () => {
     const game = newGame(53);
-    const { secretRecipe: _s, momentsSeen: _m, ...old } = game;
+    const { secretRecipe: _s, momentsSeen: _m, momentDeck: _d, upcoming: _u, ...old } = game;
     expect(migrate({ saveVersion: 6, savedAt: '', game: old })).toEqual(game);
   });
 });
@@ -190,7 +190,7 @@ describe('upgrading version 6 saves (from before the secret recipe)', () => {
 describe('upgrading version 7 saves (from before choice cards were remembered)', () => {
   it('starts with no cards seen', () => {
     const game = newGame(54);
-    const { momentsSeen: _m, ...old } = game;
+    const { momentsSeen: _m, momentDeck: _d, upcoming: _u, ...old } = game;
     expect(migrate({ saveVersion: 7, savedAt: '', game: old })).toEqual(game);
   });
 });
@@ -200,6 +200,14 @@ describe('upgrading version 8 saves (from before the live happy hour)', () => {
     const game = newGame(55);
     const old = { ...game, restaurants: game.restaurants.map((r) => ({ ...r, happyHour: true })) };
     expect(migrate({ saveVersion: 8, savedAt: '', game: old })).toEqual(game);
+  });
+});
+
+describe('upgrading version 9 saves (from before the shuffled deck of cards)', () => {
+  it('starts with a fresh deck and nothing coming up', () => {
+    const game = newGame(56);
+    const { momentDeck: _d, upcoming: _u, ...old } = game;
+    expect(migrate({ saveVersion: 9, savedAt: '', game: old })).toEqual(game);
   });
 });
 

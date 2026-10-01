@@ -191,9 +191,13 @@ export const balance = {
     minGapMinutes: 45,
     /** ...and if none can happen when one is due, it tries again this many minutes later. */
     retryMinutes: 30,
-    /** A card seen in the last few days is this much less likely to be picked again. */
-    recentDays: 3,
-    recentWeight: 0.25,
+    /** How often cards of each rarity turn up, compared with each other. */
+    rarityWeights: { common: 4, uncommon: 2, rare: 1, veryRare: 0.3 },
+    /**
+     * Cards come from a shuffled deck: one that has come up waits until this share of the
+     * others have had their turn too, then the deck is shuffled again.
+     */
+    deckRefill: 0.8,
   },
 
   gulls: {

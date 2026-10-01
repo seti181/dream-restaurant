@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { balance } from '../data/balance';
 import { MOMENT_IDS, MOMENTS, type MomentId } from '../data/moments';
-import { weightToday } from './moments';
+import { checkNeed, weightToday } from './moments';
+import { conditionsFor } from './events';
+import { nextDayOn } from './calendar';
 import { minuteOfDay } from './clock';
 import { floorView, seat } from './day';
 import { specialCandidate } from './staff';
@@ -57,12 +59,103 @@ describe('choice cards', () => {
     expect(counts.size).toBeGreaterThan(2);
   });
 
-  it('come back less often if they were seen in the last few days, and Wałęsa only every few weeks', () => {
+  it('turn up by rarity, and Wałęsa only every few weeks', () => {
     const today = (momentsSeen: GameState['momentsSeen']) => openRestaurant({ ...newGame(1), day: 30, momentsSeen }).moments;
-    expect(weightToday(today({ busker: 29 }), 'busker')).toBeLessThan(weightToday(today({}), 'busker'));
-    expect(weightToday(today({ busker: 20 }), 'busker')).toBe(MOMENTS.busker.weight);
+    const { rarityWeights } = balance.moments;
+    expect(weightToday(today({}), 'busker')).toBe(rarityWeights.common);
+    expect(weightToday(today({}), 'proposal')).toBe(rarityWeights.rare);
+    expect(rarityWeights.common).toBeGreaterThan(rarityWeights.uncommon);
+    expect(rarityWeights.rare).toBeGreaterThan(rarityWeights.veryRare);
     expect(weightToday(today({ walesa: 20 }), 'walesa')).toBe(0);
-    expect(weightToday(today({ walesa: 1 }), 'walesa')).toBe(MOMENTS.walesa.weight);
+    expect(weightToday(today({ walesa: 1 }), 'walesa')).toBe(rarityWeights.veryRare);
+  });
+
+  it('come from a shuffled deck: a card waits until most of the others have had their turn', () => {
+    // Draw card after card on a busy June-like day, as if every slot were a new day.
+    const open = openRestaurant({ ...newGame(2), weather: 'cloudy' });
+    playUntil(open, 13 * 60);
+    show(open, 'tourGroup');
+    answerTheMoment(open, 0);
+    const drawn: MomentId[] = [];
+    for (let i = 0; i < 6; i++) {
+      open.moments.seen = [];
+      open.moments.slots = [minuteOfDay(open.progress.tick)];
+      if (!momentDue(open)) continue;
+      drawn.push(open.moments.pending!.id);
+      open.moments.pending = null;
+    }
+    expect(drawn.length).toBeGreaterThan(3);
+    expect(new Set(drawn).size).toBe(drawn.length);
+  });
+
+  it('shuffle the deck again once most cards have come up', () => {
+    const today = openRestaurant(newGame(3)).moments;
+    const random = MOMENT_IDS.filter((id) => !MOMENTS[id].at && !MOMENTS[id].followUpOnly);
+    today.deck = random.slice(0, Math.ceil(random.length * balance.moments.deckRefill) - 1);
+    expect(today.deck.length).toBeGreaterThan(0);
+    // One more card drawn: the deck starts over.
+    const open = openRestaurant({ ...newGame(3), momentDeck: today.deck });
+    playUntil(open, 13 * 60);
+    show(open, 'tourGroup');
+    answerTheMoment(open, 0);
+    open.moments.slots = [minuteOfDay(open.progress.tick)];
+    const before = open.moments.deck.length;
+    expect(momentDue(open)).toBe(true);
+    // A fresh card was drawn, which filled the deck to the refill mark: it starts over empty.
+    expect(open.moments.deck.length).toBeLessThan(before + 1);
+    expect(open.moments.deck).toEqual([]);
+  });
+
+  it('some only come at the right time: the shanty choir in the tall ships week, the stall at the Fair', () => {
+    const can = (day: number, id: MomentId, weather: GameState['weather'] = 'cloudy') => {
+      const open = openRestaurant({ ...newGame(4), day, weather });
+      playUntil(open, 13 * 60);
+      show(open, 'tourGroup');
+      answerTheMoment(open, 0);
+      show(open, 'stoLat');
+      answerTheMoment(open, 1);
+      open.moments.seen = [];
+      return MOMENTS[id].needs.every((need) => {
+        open.moments.pending = null;
+        return checkNeed(open, need);
+      });
+    };
+    const tallShips = nextDayOn(7, 12, 0);
+    const fair = nextDayOn(8, 5, 0);
+    expect(can(tallShips, 'shantyChoir')).toBe(true);
+    expect(can(fair, 'shantyChoir')).toBe(false);
+    expect(can(fair, 'fairStallholder')).toBe(true);
+    expect(can(tallShips, 'fairStallholder')).toBe(false);
+    expect(can(fair, 'heatwaveKompot', 'heatwave')).toBe(true);
+    expect(can(fair, 'heatwaveKompot', 'sunny')).toBe(false);
+  });
+
+  it('can have follow-ups: the blogger’s post brings foodies the next day', () => {
+    const state = newGame(5);
+    const open = openRestaurant(state);
+    show(open, 'blogger');
+    answerTheMoment(open, 0);
+    while (!open.progress.done) playTick(open);
+    const { state: next } = closeDay(state, open);
+    expect(next.news.map((n) => n.title)).toContain('Your dessert is famous');
+    expect(conditionsFor(next).groups.foodies).toBeGreaterThan(1);
+    // ...for one day only.
+    expect(conditionsFor({ ...next, day: next.day + 1 }).groups.foodies ?? 1).toBe(1);
+  });
+
+  it('can bring a card back: the proposal couple return a week later for their engagement dinner', () => {
+    const state = newGame(6);
+    const open = openRestaurant(state);
+    show(open, 'proposal');
+    answerTheMoment(open, 0);
+    while (!open.progress.done) playTick(open);
+    const { state: next } = closeDay(state, open);
+    const later = { ...next, day: state.day + 7 };
+    const dinner = openRestaurant(later);
+    expect(dinner.moments.queued).toEqual(['engagementDinner']);
+    // It never comes at random.
+    expect(openRestaurant(next).moments.queued).toEqual([]);
+    expect(MOMENTS.engagementDinner.followUpOnly).toBe(true);
   });
 
   it('are remembered at the end of the day', () => {

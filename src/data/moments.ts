@@ -14,6 +14,10 @@ export type MomentId =
   | 'busker'
   | 'merryTourists'
   | 'brazilianCouple'
+  | 'heatwaveKompot'
+  | 'balticStorm'
+  | 'fairStallholder'
+  | 'engagementDinner'
   | 'proposal'
   | 'inspector'
   | 'nonnaBasil'
@@ -52,7 +56,18 @@ export type MomentNeed =
   /** Two free tables, and the door open to new guests. */
   | 'roomForSix'
   /** A free table, and the door open to new guests. */
-  | 'freeTable';
+  | 'freeTable'
+  /** During St. Dominic's Fair. */
+  | 'duringFair'
+  /** During the tall ships festival. */
+  | 'tallShipsWeek'
+  /** A heatwave today. */
+  | 'heatwave'
+  /** Rain today. */
+  | 'rainy';
+
+/** How often a card turns up, compared with the others. The weights are in balance.ts. */
+export type Rarity = 'common' | 'uncommon' | 'rare' | 'veryRare';
 
 /** What an answer does. Everything is optional; `result` says what happened. */
 export interface MomentEffect {
@@ -101,6 +116,17 @@ export interface MomentEffect {
   /** A gamble: the chance this answer works out, and what happens if it doesn't. */
   chance?: number;
   otherwise?: MomentEffect;
+  /**
+   * Something that comes of it later: in `inDays` days, more of some groups for `days` days
+   * (with a line in the morning news), or another card that comes back that day.
+   */
+  followUp?: {
+    inDays: number;
+    days?: number;
+    groups?: Partial<Record<GroupId, number>>;
+    news?: { title: string; text: string };
+    card?: MomentId;
+  };
 }
 
 export interface MomentChoice {
@@ -114,8 +140,10 @@ export interface Moment {
   needs: MomentNeed[];
   /** A moment that belongs to one time of day comes then (if its needs are met); the others come at random times. */
   at?: { hour: number; minute: number };
-  /** How likely a random moment is to be picked, compared with the others. */
-  weight: number;
+  /** How often it turns up, compared with the others. */
+  rarity: Rarity;
+  /** Only ever comes as the follow-up of another card, never at random. */
+  followUpOnly?: boolean;
   /** For a rare moment: the fewest days before it can come again. */
   cooldownDays?: number;
   /** The first answer is the "yes"; the second is what a player who doesn't help would choose. */
@@ -133,6 +161,10 @@ export const MOMENT_IDS: readonly MomentId[] = [
   'busker',
   'merryTourists',
   'brazilianCouple',
+  'heatwaveKompot',
+  'balticStorm',
+  'fairStallholder',
+  'engagementDinner',
   'proposal',
   'inspector',
   'nonnaBasil',
@@ -153,13 +185,22 @@ export const MOMENTS: Record<MomentId, Moment> = {
     title: 'A food blogger',
     text: 'A food blogger with a very big camera asks if she could have a dessert on the house, “just for the photos”.',
     needs: ['dessertOnMenu'],
-    weight: 3,
+    rarity: 'common',
     choices: [
       {
         label: 'Of course!',
         effect: {
           cash: -30,
           awareness: { foodies: 4, students: 2 },
+          followUp: {
+            inDays: 1,
+            days: 1,
+            groups: { foodies: 1.4, students: 1.2 },
+            news: {
+              title: 'Your dessert is famous',
+              text: 'The food blogger’s photos are everywhere this morning. Expect a few more foodies and students today!',
+            },
+          },
           result: 'Your dessert is all over social media tonight. Foodies and students have heard of you.',
         },
       },
@@ -173,7 +214,7 @@ export const MOMENTS: Record<MomentId, Moment> = {
     title: 'Clouds over the Motława',
     text: 'Dark clouds are rolling in, and the first drops are falling on the terrace!',
     needs: ['terraceGuests', 'cloudy'],
-    weight: 4,
+    rarity: 'common',
     choices: [
       {
         label: 'Bring them inside',
@@ -205,7 +246,7 @@ export const MOMENTS: Record<MomentId, Moment> = {
       'He has forgotten his wallet. Again.',
     needs: ['regularHere'],
     at: { hour: 19, minute: 30 },
-    weight: 0,
+    rarity: 'common',
     choices: [
       {
         label: 'On the house!',
@@ -227,7 +268,7 @@ export const MOMENTS: Record<MomentId, Moment> = {
     text: '“almost there!! 5 min 🏃” The lunch rush is about to start. A friend could cover for him, for 250 zł.',
     needs: ['adrianAway'],
     at: { hour: 12, minute: 0 },
-    weight: 0,
+    rarity: 'common',
     choices: [
       {
         label: 'Call in a friend',
@@ -247,7 +288,7 @@ export const MOMENTS: Record<MomentId, Moment> = {
     title: 'CRASH!',
     text: 'Tomek has dropped a tray of kompot all over a table’s tablecloth. And a little bit on the guests.',
     needs: ['tomekWorking', 'guestsWaiting'],
-    weight: 4,
+    rarity: 'uncommon',
     choices: [
       {
         label: 'Dessert on the house',
@@ -270,7 +311,7 @@ export const MOMENTS: Record<MomentId, Moment> = {
     title: 'A tour group',
     text: 'A tour guide with a little flag pops in: “Can you fit six hungry tourists, right now?”',
     needs: ['roomForSix'],
-    weight: 3,
+    rarity: 'common',
     choices: [
       {
         label: 'Come in!',
@@ -289,7 +330,7 @@ export const MOMENTS: Record<MomentId, Moment> = {
     title: 'A birthday',
     text: 'A family asks if the whole room could sing “Sto lat” for their grandma’s 80th birthday.',
     needs: ['guestsIn'],
-    weight: 3,
+    rarity: 'common',
     choices: [
       {
         label: 'Everyone sing!',
@@ -310,7 +351,7 @@ export const MOMENTS: Record<MomentId, Moment> = {
     title: 'An accordion player',
     text: 'An accordion player offers to play outside your door for the afternoon, for 150 zł.',
     needs: [],
-    weight: 2,
+    rarity: 'common',
     choices: [
       {
         label: 'Play us something!',
@@ -333,7 +374,7 @@ export const MOMENTS: Record<MomentId, Moment> = {
       'Four tourists stumble in, already very cheerful, singing something about Gdańsk. ' +
       'They don’t want food, only shots of cytrynówka. Lots of them. They promise a big tip.',
     needs: ['freeTable'],
-    weight: 3,
+    rarity: 'uncommon',
     choices: [
       {
         label: 'Pour the cytrynówka!',
@@ -358,7 +399,7 @@ export const MOMENTS: Record<MomentId, Moment> = {
       'A Brazilian couple on their honeymoon ask, with the biggest smiles in Gdańsk, ' +
       'if they could try a dessert on the house. “Só um pouquinho?”',
     needs: ['dessertOnMenu'],
-    weight: 3,
+    rarity: 'uncommon',
     choices: [
       {
         label: 'Com certeza!',
@@ -386,7 +427,7 @@ export const MOMENTS: Record<MomentId, Moment> = {
     title: 'A secret proposal',
     text: 'A very nervous young man asks if the kitchen could hide an engagement ring in his girlfriend’s dessert.',
     needs: ['dessertOnMenu'],
-    weight: 2,
+    rarity: 'rare',
     choices: [
       {
         label: 'Let’s do it!',
@@ -401,6 +442,7 @@ export const MOMENTS: Record<MomentId, Moment> = {
             ],
             reviewers: ['a newly engaged couple', 'a very happy fiancée'],
           },
+          followUp: { inDays: 7, card: 'engagementDinner' },
           result: 'She finds the ring, she says YES, and the whole room applauds!',
         },
       },
@@ -414,7 +456,7 @@ export const MOMENTS: Record<MomentId, Moment> = {
     title: 'Sanepid!',
     text: 'A health inspector walks in unannounced, clipboard in hand. She would like to see the kitchen.',
     needs: [],
-    weight: 2,
+    rarity: 'uncommon',
     choices: [
       {
         label: 'Full tour of the kitchen',
@@ -447,7 +489,7 @@ export const MOMENTS: Record<MomentId, Moment> = {
     title: 'Nonna Rosa needs basil',
     text: 'Nonna Rosa from the trattoria rushes in, flour on her apron: “Mamma mia, I have no basil left! Can you help me?”',
     needs: ['freeTable'],
-    weight: 2,
+    rarity: 'uncommon',
     choices: [
       {
         label: 'Of course, take some',
@@ -467,7 +509,7 @@ export const MOMENTS: Record<MomentId, Moment> = {
     title: 'A Lechia Gdańsk star',
     text: 'A footballer from Lechia Gdańsk and a friend ask for a quiet corner table. “No fuss, please.”',
     needs: ['freeTable'],
-    weight: 2,
+    rarity: 'rare',
     choices: [
       {
         label: 'Right this way',
@@ -488,7 +530,7 @@ export const MOMENTS: Record<MomentId, Moment> = {
     title: 'Herring at half price',
     text: 'Your fishmonger at the Hala Targowa calls: twenty kilos of fresh Baltic herring at half price, if you take it now.',
     needs: [],
-    weight: 2,
+    rarity: 'uncommon',
     choices: [
       {
         label: 'We’ll take it all!',
@@ -508,7 +550,7 @@ export const MOMENTS: Record<MomentId, Moment> = {
     title: 'Babcia’s secret',
     text: 'An elderly lady puts down her spoon: “Your soup is good, but not like my mother’s. Shall I show your chef the secret?”',
     needs: ['soupOnMenu'],
-    weight: 2,
+    rarity: 'uncommon',
     choices: [
       {
         label: 'Yes please, show us!',
@@ -529,7 +571,7 @@ export const MOMENTS: Record<MomentId, Moment> = {
     title: 'Dine and dash!',
     text: 'A guest in a hurry slips out of the door without paying!',
     needs: ['guestsIn'],
-    weight: 2,
+    rarity: 'uncommon',
     choices: [
       {
         label: 'Run after him!',
@@ -555,7 +597,7 @@ export const MOMENTS: Record<MomentId, Moment> = {
     title: 'Tram strike',
     text: 'The trams have stopped all over Gdańsk! Four office workers are stuck in the Old Town and need somewhere to sit.',
     needs: ['freeTable'],
-    weight: 2,
+    rarity: 'uncommon',
     choices: [
       {
         label: 'Squeeze them in',
@@ -574,7 +616,7 @@ export const MOMENTS: Record<MomentId, Moment> = {
     title: 'Blackout!',
     text: 'Pop! The fuses blow and the lights go out all over the dining room.',
     needs: ['guestsIn'],
-    weight: 2,
+    rarity: 'uncommon',
     choices: [
       {
         label: 'Candles everywhere!',
@@ -593,8 +635,8 @@ export const MOMENTS: Record<MomentId, Moment> = {
   shantyChoir: {
     title: 'A sea shanty choir',
     text: 'A choir of sailors off the tall ships on the Motława offers to sing for their supper.',
-    needs: ['guestsIn'],
-    weight: 2,
+    needs: ['guestsIn', 'tallShipsWeek'],
+    rarity: 'common',
     choices: [
       {
         label: 'Sing for us!',
@@ -617,7 +659,7 @@ export const MOMENTS: Record<MomentId, Moment> = {
       'Three men in black suits and sunglasses check every corner. Then in walks Lech Wałęsa himself, moustache and all, ' +
       'asking for a table. Security says nobody else may come in while he’s here.',
     needs: ['freeTable'],
-    weight: 1,
+    rarity: 'veryRare',
     cooldownDays: 28,
     choices: [
       {
@@ -640,6 +682,97 @@ export const MOMENTS: Record<MomentId, Moment> = {
       {
         label: 'We can’t close the doors',
         effect: { result: 'He understands completely, makes a V sign and heads off towards Długa.' },
+      },
+    ],
+  },
+  heatwaveKompot: {
+    title: 'A scorcher on Długa',
+    text: 'It’s 33 degrees and the people walking past look like melting ice cream. Hand out free cups of cold kompot at the door?',
+    needs: ['heatwave'],
+    rarity: 'common',
+    choices: [
+      {
+        label: 'Kompot for everyone!',
+        effect: {
+          cash: -60,
+          mood: { who: 'waiting', amount: 4 },
+          awareness: { tourists: 3, locals: 3 },
+          result: 'Cold strawberry kompot in paper cups. Half of Długa now knows where to find you.',
+        },
+      },
+      {
+        label: 'Too busy today',
+        effect: { result: 'People fan themselves with your menu and walk on.' },
+      },
+    ],
+  },
+  balticStorm: {
+    title: 'A Baltic storm',
+    text: 'The sky goes black over the Motława and the rain comes sideways. Four soaked tourists run for your door.',
+    needs: ['rainy', 'freeTable'],
+    rarity: 'common',
+    choices: [
+      {
+        label: 'Towels and hot tea!',
+        effect: {
+          cash: -40,
+          walkIn: { group: 'tourists', size: 4 },
+          mood: { who: 'waiting', amount: 3 },
+          result: 'Dry towels, hot tea with lemon, and four very grateful tourists who stay for dinner.',
+        },
+      },
+      {
+        label: 'Sorry, we’re full',
+        effect: { result: 'They run on down the street, splashing through the puddles.' },
+      },
+    ],
+  },
+  fairStallholder: {
+    title: 'A stall at the Fair',
+    text: 'A stallholder from St. Dominic’s Fair offers to sell your pierogi at his stand on Długi Targ, for a share of the takings.',
+    needs: ['duringFair'],
+    rarity: 'uncommon',
+    choices: [
+      {
+        label: 'Let’s do it',
+        effect: {
+          cash: 300,
+          awareness: { tourists: 5, locals: 3 },
+          result: 'Your pierogi sell out by the evening, and the stall has your name on a little board.',
+        },
+      },
+      {
+        label: 'We’re busy enough',
+        effect: { result: 'He sells oscypek instead. The Fair smells of smoked cheese.' },
+      },
+    ],
+  },
+  engagementDinner: {
+    title: 'An engagement dinner',
+    text: 'Remember the ring in the dessert? The happy couple are back, with both families, for their engagement dinner. Eight of them!',
+    needs: ['roomForSix'],
+    rarity: 'common',
+    followUpOnly: true,
+    choices: [
+      {
+        label: 'Welcome back!',
+        effect: {
+          walkIn: { group: 'locals', size: 8 },
+          reputation: { locals: 2 },
+          review: {
+            stars: 5,
+            texts: [
+              'We celebrated our engagement where it all began. Both families are coming back for the wedding cake tasting!',
+              'Where he proposed, we celebrated. The staff remembered us. Perfect.',
+            ],
+            reviewers: ['a newly engaged couple and their families'],
+          },
+          result: 'Two families, eight toasts, and a very happy couple. They promise to come back for every anniversary.',
+        },
+      },
+      {
+        label: 'Sorry, not tonight',
+        effect: { result: 'They go to Nonna Rosa’s instead. She gives them a free tiramisu.' },
       },
     ],
   },

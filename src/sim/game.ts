@@ -85,12 +85,27 @@ export interface GameState {
   trophies: number;
   /** True once Mewa has found the secret recipe card. */
   secretRecipe: boolean;
-  /** The last day each choice card came up, so the same ones don't keep coming back. */
+  /** The last day each choice card came up (for rare cards that rest for a while). */
   momentsSeen: Partial<Record<MomentId, number>>;
+  /** Cards drawn since the deck was last shuffled. */
+  momentDeck: MomentId[];
+  /** Things coming up because of earlier answers: more of some groups for a while, or a card coming back. */
+  upcoming: Upcoming[];
   /** True once the money ran out at the end of a day: the restaurant has closed for good. */
   gameOver: boolean;
   /** The player's restaurant first, then the rivals. */
   restaurants: Restaurant[];
+}
+
+/** Something coming up because of an answer to a choice card. */
+export interface Upcoming {
+  fromDay: number;
+  untilDay: number;
+  /** Multiplies how many of each group come out. */
+  groups?: Partial<Record<GroupId, number>>;
+  /** A card that comes back on `fromDay`. */
+  card?: MomentId;
+  news?: NewsItem;
 }
 
 /** A day that is currently being played. */
@@ -203,6 +218,8 @@ export function newGame(seed: number, difficulty: Difficulty = 'normal'): GameSt
     trophies: 0,
     secretRecipe: false,
     momentsSeen: {},
+    momentDeck: [],
+    upcoming: [],
     gameOver: false,
     restaurants: [
       createPlayerRestaurant(start.name, start.menu, staffOf(team, 'chef'), staffOf(team, 'waiter')),
@@ -322,7 +339,13 @@ export function openRestaurant(state: GameState): OpenDay {
     absent,
     team: state.team,
     // Moments get their own generator, so they never change who comes in or what they order.
-    moments: planMoments((state.rng.s ^ Math.imul(state.day + 1, 0x9e3779b1)) >>> 0, state.day, state.momentsSeen),
+    moments: planMoments(
+      (state.rng.s ^ Math.imul(state.day + 1, 0x9e3779b1)) >>> 0,
+      state.day,
+      state.momentsSeen,
+      state.momentDeck,
+      state.upcoming.filter((u) => u.card && u.fromDay === state.day).map((u) => u.card!),
+    ),
     terraceBuilt: terraceTablesBuilt(state),
     help: { drinks: 0, apologies: 0, cash: 0 },
     seating: { moved: 0, favourites: 0 },
@@ -603,6 +626,18 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
     nextWeek = { served: {}, turnedAway: {} };
   }
 
+  // What today's answers set in motion, and the news of anything starting tomorrow.
+  const upcoming: Upcoming[] = [
+    ...state.upcoming.filter((u) => u.untilDay >= nextDay),
+    ...open.moments.results.flatMap((r) => {
+      if (!r.followUp) return [];
+      const fromDay = state.day + r.followUp.inDays;
+      const { groups, card, news } = r.followUp;
+      return [{ fromDay, untilDay: fromDay + (r.followUp.days ?? 1) - 1, groups, card, news }];
+    }),
+  ];
+  for (const u of upcoming) if (u.news && u.fromDay === nextDay) news.push(u.news);
+
   for (const id of calendarEventsStarting(nextDay)) {
     news.push({ title: CALENDAR_EVENTS[id].name, text: CALENDAR_EVENTS[id].description });
   }
@@ -690,6 +725,8 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
       trophies,
       secretRecipe,
       momentsSeen: { ...state.momentsSeen, ...Object.fromEntries(open.moments.seen.map((id) => [id, state.day])) },
+      momentDeck: open.moments.deck,
+      upcoming,
       // Running out of money ends the game.
       gameOver: state.gameOver || cash <= 0,
       restaurants,

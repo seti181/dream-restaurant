@@ -9,6 +9,8 @@ import { GROUP_IDS, type GroupId } from '../data/groups';
 import { MOMENT_IDS, MOMENTS, type MomentEffect, type MomentId, type MomentNeed } from '../data/moments';
 import { minuteOfDay, ticksPerDay } from './clock';
 import { doorClosed, seat, type DayInProgress, type Visit } from './day';
+import { calendarEventsOn } from './events';
+import { isFairDay } from './neptune';
 import { templateOf } from './menu';
 import { chance, createRng, nextFloat, nextInt, pick, type RngState } from './rng';
 import type { Review } from './types';
@@ -33,6 +35,8 @@ export interface MomentResult {
   minute: number;
   /** A review the answer earned, for the day report. */
   review: Review | null;
+  /** Something that comes of the answer later. */
+  followUp?: MomentEffect['followUp'];
 }
 
 /** Today's moments. Only lives while the day runs, so it is never saved. */
@@ -41,6 +45,10 @@ export interface MomentsToday {
   day: number;
   /** The last day each card was shown, before today. */
   lastSeen: Partial<Record<MomentId, number>>;
+  /** Cards drawn from the deck since it was last shuffled; they wait until most others have come up. */
+  deck: MomentId[];
+  /** Follow-up cards due today (from answers on earlier days); they come before random ones. */
+  queued: MomentId[];
   /** Minutes when a random moment is due, earliest first. */
   slots: number[];
   /** Moments already shown today; each comes at most once a day. */
@@ -59,7 +67,13 @@ export interface MomentContext {
 }
 
 /** Picks how many random cards come today, and when: anywhere in the day, but not on top of each other. */
-export function planMoments(seed: number, day: number, lastSeen: Partial<Record<MomentId, number>>): MomentsToday {
+export function planMoments(
+  seed: number,
+  day: number,
+  lastSeen: Partial<Record<MomentId, number>>,
+  deck: MomentId[] = [],
+  queued: MomentId[] = [],
+): MomentsToday {
   const rng = createRng(seed);
   const { perDay, firstMinute, lastMinute, minGapMinutes } = balance.moments;
   const count = nextInt(rng, perDay.min, perDay.max);
@@ -71,17 +85,25 @@ export function planMoments(seed: number, day: number, lastSeen: Partial<Record<
     const minute = Math.round(Math.max(time, earliest) / step) * step;
     if (minute <= lastMinute) slots.push(minute);
   }
-  return { rng, day, lastSeen, slots, seen: [], pending: null, results: [], cash: 0 };
+  return { rng, day, lastSeen, deck: [...deck], queued: [...queued], slots, seen: [], pending: null, results: [], cash: 0 };
 }
 
-/** How likely a random card is today: less if it came up recently, not at all while a rare one rests. */
+/** Cards that can come at random (not tied to a time of day, and not only a follow-up). */
+const RANDOM_CARDS = MOMENT_IDS.filter((id) => !MOMENTS[id].at && !MOMENTS[id].followUpOnly);
+
+/** How likely a random card is today: by its rarity, and not at all while a rare one rests. */
 export function weightToday(today: MomentsToday, id: MomentId): number {
   const moment = MOMENTS[id];
   const last = today.lastSeen[id];
-  if (last === undefined) return moment.weight;
-  const daysAgo = today.day - last;
-  if (moment.cooldownDays && daysAgo < moment.cooldownDays) return 0;
-  return daysAgo <= balance.moments.recentDays ? moment.weight * balance.moments.recentWeight : moment.weight;
+  if (moment.cooldownDays && last !== undefined && today.day - last < moment.cooldownDays) return 0;
+  return balance.moments.rarityWeights[moment.rarity];
+}
+
+/** Takes a card out of the deck; once most cards have come up, the deck is shuffled again. */
+function draw(today: MomentsToday, id: MomentId): void {
+  today.deck.push(id);
+  const drawn = RANDOM_CARDS.filter((card) => today.deck.includes(card)).length;
+  if (drawn >= Math.ceil(RANDOM_CARDS.length * balance.moments.deckRefill)) today.deck = [];
 }
 
 const waiting = (visit: Visit) => !visit.eating && !visit.skipped;
@@ -114,10 +136,23 @@ function needMet(need: MomentNeed, { progress, adrianAway }: MomentContext): boo
       return open && floor.freeTables >= 2;
     case 'freeTable':
       return open && floor.freeTables >= 1;
+    case 'duringFair':
+      return isFairDay(progress.day);
+    case 'tallShipsWeek':
+      return calendarEventsOn(progress.day).includes('tallShips');
+    case 'heatwave':
+      return progress.conditions.weather === 'heatwave';
+    case 'rainy':
+      return progress.conditions.weather === 'rain';
   }
 }
 
 const canHappen = (id: MomentId, context: MomentContext) => MOMENTS[id].needs.every((need) => needMet(need, context));
+
+/** Whether one of a card's needs is met right now in an open day (for tests and tools). */
+export function checkNeed(open: { progress: DayInProgress; absent: { special?: string }[] }, need: MomentNeed): boolean {
+  return needMet(need, { progress: open.progress, adrianAway: open.absent.some((a) => a.special === 'adrian') });
+}
 
 function show(today: MomentsToday, id: MomentId, minute: number, context: MomentContext): void {
   today.seen.push(id);
@@ -149,9 +184,18 @@ export function checkMoments(today: MomentsToday, context: MomentContext): boole
   }
 
   if (today.slots.length === 0 || today.slots[0] > minute) return false;
-  const possible = MOMENT_IDS.filter(
-    (id) => !MOMENTS[id].at && !today.seen.includes(id) && weightToday(today, id) > 0 && canHappen(id, context),
-  );
+  // A follow-up due today comes first, if it can.
+  const followUp = today.queued.find((id) => !today.seen.includes(id) && canHappen(id, context));
+  if (followUp) {
+    today.queued = today.queued.filter((id) => id !== followUp);
+    today.slots.shift();
+    show(today, followUp, minute, context);
+    return true;
+  }
+  const fitting = RANDOM_CARDS.filter((id) => !today.seen.includes(id) && weightToday(today, id) > 0 && canHappen(id, context));
+  // Fresh cards from the deck first; only if none fits right now can one come round again.
+  const fresh = fitting.filter((id) => !today.deck.includes(id));
+  const possible = fresh.length > 0 ? fresh : fitting;
   if (possible.length === 0) {
     // Nothing fits right now: try again a little later, if there's still time today.
     today.slots[0] += balance.moments.retryMinutes;
@@ -161,6 +205,7 @@ export function checkMoments(today: MomentsToday, context: MomentContext): boole
   today.slots.shift();
   let roll = nextFloat(today.rng) * possible.reduce((sum, id) => sum + weightToday(today, id), 0);
   const id = possible.find((option) => (roll -= weightToday(today, option)) < 0) ?? possible[possible.length - 1];
+  draw(today, id);
   show(today, id, minute, context);
   return true;
 }
@@ -191,7 +236,7 @@ function apply(
   today: MomentsToday,
   progress: DayInProgress,
   pending: PendingMoment,
-): { result: string; cash: number; review: Review | null } {
+): { result: string; cash: number; review: Review | null; followUp?: MomentEffect['followUp'] } {
   if (effect.chance !== undefined && effect.otherwise && !chance(today.rng, effect.chance)) {
     return apply(effect.otherwise, today, progress, pending);
   }
@@ -257,7 +302,7 @@ function apply(
         critic: false,
       }
     : null;
-  return { result: effect.result, cash, review };
+  return { result: effect.result, cash, review, followUp: effect.followUp };
 }
 
 /** Answers the moment on screen with its first (0) or second (1) choice. */
@@ -265,7 +310,7 @@ export function answerMoment(today: MomentsToday, progress: DayInProgress, choic
   const pending = today.pending;
   if (!pending) return null;
   const moment = MOMENTS[pending.id];
-  const { result, cash, review } = apply(moment.choices[choice].effect, today, progress, pending);
+  const { result, cash, review, followUp } = apply(moment.choices[choice].effect, today, progress, pending);
   const entry: MomentResult = {
     id: pending.id,
     title: moment.title,
@@ -274,6 +319,7 @@ export function answerMoment(today: MomentsToday, progress: DayInProgress, choic
     cash,
     minute: pending.minute,
     review,
+    followUp,
   };
   today.results.push(entry);
   today.cash += cash;
