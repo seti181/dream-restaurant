@@ -495,7 +495,7 @@ Work in small steps, and test each step in the browser before moving on.
 - [x] Pixel art: restaurant view (rooms, furniture, decor, equipment, terrace)
 - [x] Pixel art: characters (guests, staff, Mewa, special characters) with animations, and guests walking in and out
 - [x] Pixel art: Old Town map, food icons and UI icons
-- [ ] Restaurant view while planning: a tab next to the Map that shows the restaurant before opening
+- [x] Restaurant view while planning: a tab next to the Map that shows the restaurant before opening
 - [ ] Balancing with the simulator plus playtests on the real tablet
 - [ ] Performance check on the tablet
 

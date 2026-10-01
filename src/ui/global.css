@@ -1437,3 +1437,19 @@ h2.spaced {
   right: 46px;
   pointer-events: none;
 }
+
+/* The restaurant view while planning. */
+.restaurant-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.restaurant-panel p {
+  margin: 0;
+}
+
+.restaurant-panel-view {
+  display: flex;
+  height: min(52vh, 520px);
+}

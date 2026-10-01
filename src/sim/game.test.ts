@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { balance } from '../data/balance';
 import { runDay } from './day';
-import { closeDay, newGame, openRestaurant, playerOf, playTick, starRating, tallyFor, teamWages } from './game';
+import { closeDay, newGame, openRestaurant, playerOf, playTick, restingFloor, starRating, tallyFor, teamWages } from './game';
 
 function playWholeDay(seed: number) {
   const state = newGame(seed);
@@ -100,5 +100,26 @@ describe('the daily report', () => {
 
     expect(summary.rivals).toHaveLength(4);
     expect(summary.feedback).not.toBeNull();
+  });
+});
+
+describe('the restaurant before opening', () => {
+  it('shows the tables, the team and what was bought, with no guests yet', () => {
+    const state = newGame(12);
+    const floor = restingFloor(state);
+    const player = playerOf(state);
+    expect(floor.location).toBe(player.location);
+    expect(floor.insideTables).toBe(player.tables);
+    expect(floor.tables.every((t) => t === null)).toBe(true);
+    expect(floor.chefsBusy).toHaveLength(player.chefs.length);
+    expect(floor.waiters).toHaveLength(player.waiters.length);
+    expect(floor.decor).toEqual(player.decor);
+  });
+
+  it('includes the terrace on days it is open', () => {
+    const june = { ...newGame(13), day: 62, weather: 'sunny' as const, terracePermitUntilDay: 200 };
+    const floor = restingFloor(june);
+    expect(floor.tables.length).toBeGreaterThan(floor.insideTables);
+    expect(restingFloor({ ...june, weather: 'rain' }).tables).toHaveLength(floor.insideTables);
   });
 });

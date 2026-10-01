@@ -11,7 +11,7 @@ import { LOCATIONS } from '../data/locations';
 import { SECRET_RECIPE, SPECIAL_STAFF } from '../data/personal';
 import { RIVAL_IDS } from '../data/rivals';
 import type { Weather } from '../data/weather';
-import { startDay, stepDay, type DayInProgress } from './day';
+import { startDay, stepDay, type DayInProgress, type FloorView } from './day';
 import { dateOf, isMonday } from './calendar';
 import {
   calendarEventsOn,
@@ -231,6 +231,28 @@ export function awarenessToday(state: GameState): Record<GroupId, number> {
         : awareness[group] - Math.max(0, awareness[group] - start) * balance.marketing.fadePerDay;
   }
   return today;
+}
+
+/**
+ * The restaurant before opening: the tables (and the terrace, if it's open today), decor and
+ * equipment, and the team in place, but no guests yet. Drawn by the restaurant view while planning.
+ */
+export function restingFloor(state: GameState): FloorView {
+  const player = playerOf(state);
+  const terraceTables = terraceOpenOn(state, state.day)
+    ? Math.floor(LOCATIONS[player.location].terraceSeats / balance.service.seatsPerTable)
+    : 0;
+  return {
+    location: player.location,
+    tables: Array<null>(player.tables + terraceTables).fill(null),
+    insideTables: player.tables,
+    chefsBusy: state.team.filter((person) => person.role === 'chef').map(() => false),
+    waiters: state.team.filter((person) => person.role === 'waiter').map((person) => person.special ?? null),
+    ordersWaiting: 0,
+    walkouts: [],
+    decor: player.decor,
+    equipment: player.equipment,
+  };
 }
 
 export function openRestaurant(state: GameState): OpenDay {

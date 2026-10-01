@@ -45,6 +45,7 @@ export type PlanTab =
   | 'interior'
   | 'staff'
   | 'marketing'
+  | 'restaurant'
   | 'map'
   | 'mewa'
   | 'settings';

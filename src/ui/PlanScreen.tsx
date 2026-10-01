@@ -5,6 +5,7 @@ import type { ReactNode } from 'react';
 import { InteriorPanel } from './plan/InteriorPanel';
 import { KitchenPanel } from './plan/KitchenPanel';
 import { MapPanel } from './plan/MapPanel';
+import { RestaurantPanel } from './plan/RestaurantPanel';
 import { MarketingPanel } from './plan/MarketingPanel';
 import { MewaPanel } from './plan/MewaPanel';
 import { SettingsPanel } from './plan/SettingsPanel';
@@ -22,6 +23,7 @@ const TABS: { tab: PlanTab; label: ReactNode }[] = [
   { tab: 'interior', label: 'Interior' },
   { tab: 'staff', label: 'Staff' },
   { tab: 'marketing', label: 'Marketing' },
+  { tab: 'restaurant', label: 'Restaurant' },
   { tab: 'map', label: 'Map' },
   {
     tab: 'mewa',
@@ -63,6 +65,7 @@ export function PlanScreen() {
           {planTab === 'interior' && <InteriorPanel />}
           {planTab === 'staff' && <StaffPanel />}
           {planTab === 'marketing' && <MarketingPanel />}
+          {planTab === 'restaurant' && <RestaurantPanel />}
           {planTab === 'map' && <MapPanel />}
           {planTab === 'mewa' && <MewaPanel />}
           {planTab === 'settings' && <SettingsPanel />}
