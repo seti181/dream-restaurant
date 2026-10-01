@@ -438,7 +438,19 @@ Since 2026-10-01 the restaurant view sits in an Old Town street: cobbles, paveme
 3. **A Gdańsk przedproże for the terrace.** Instead of tables on the bare street, the terrace becomes a raised stone platform in front of the door with a few steps down to the street and a carved stone balustrade, like the ones on ul. Mariacka. Very Gdańsk, and it explains why the terrace sits above the cobbles.
 4. **The house in its row.** Neighbouring houses continue the building line on both sides, so the restaurant reads as one house in a street, with the pavement and the cobbled road running in front. The big empty cobbled square to the right of the kitchen becomes a narrow side lane.
 
-**Recommendation:** A1, A2 and A3 for the weather (A4 later, with the "shoo the gulls" item in M5b), and B1 + B2 + B3 for the building. B4 needs care so the neighbouring house never hides the kitchen.
+**C. Street life** (the street now looks like bare concrete)
+
+1. **Street furniture:** cast-iron lamp posts (lit after 19:30), wooden benches, linden trees in round iron grates, flower tubs, a bike rack, and an A-frame menu board by the door ("Dziś: pierogi!"). Placed along the pavement, never in the way of guests walking in.
+2. **People passing by:** a few pedestrians (at most about 8 at once) strolling along the street in both directions, in their group colours, so the player can see who is around: tourists with cameras at lunch, office workers at noon, students in the evening, more on festival days. They reuse the walking-guest sprites and animation, so they cost little.
+3. **Later (not now): attracting passers-by.** Making the street interactive, for example tapping a passer-by to hand them a flyer, the menu board tempting a group to come in, or a waiter offering samples at the door. To be designed once the street life is in; it fits M5b ("Interactive service").
+
+**D. Guests come in from the street** (they now walk in from the opposite side)
+
+1. Guests for inside tables arrive along the pavement and come in through a **front door on the street side**. The door on the back wall becomes the kitchen's back door (or a window).
+2. Terrace guests come up the przedproże steps (B3) from the street.
+3. Guests who leave walk out of the door and off along the street, instead of disappearing.
+
+**Recommendation:** A1, A2 and A3 for the weather (A4 later, with the "shoo the gulls" item in M5b), B1 + B2 + B3 for the building, C1 + C2 for street life, and all of D, since D comes naturally with B2 (the front wall gets its door). B4 needs care so the neighbouring house never hides the kitchen. C3 is for later.
 
 ### 9.2 Audio and juice
 
@@ -567,6 +579,16 @@ Each item is tested in the browser and on the tablet before the next one starts.
   - "balanced" becomes profitable by week 3–4
   - a thoughtful player wins the Golden Neptune on the first try, with some tension in the final weeks
 - **Pace target:** about 50 seconds per day at 1× speed, which makes a season about 3–5 hours including planning.
+
+**Known issue (playtest, 2026-10-01): too many lost guests.** After a few days the "No free table" counter climbs into the hundreds (for example 179 turned away against 138 served on a June day), which feels unnatural. The simulator shows the same: the balanced strategy turns away about eight people for every one it serves over a season.
+
+- **Why:** when choosing a restaurant, people don't notice that it is full. The expected wait they compare only counts order-taking and cooking, not waiting for a table to free up. So a busy, well-liked restaurant keeps attracting far more people than it can seat, and every one of them is counted as turned away. (Turned-away guests don't cost reputation, so it is mostly a numbers and realism problem, but it makes the counter meaningless.)
+- **Proposed fix:**
+  1. **People see it's full.** A restaurant with no free table looks less tempting: its expected wait includes the time until the next table frees up, so most people pick somewhere else (or nowhere) before walking over.
+  2. **A short queue at the door.** Up to 2–3 parties can wait at the door for a few minutes (within their patience) and are seated when a table frees up; the rest go elsewhere. Visible as people standing by the door, which also fits "Seat guests yourself" (M5b) later.
+  3. **Count only who came to the door.** "No free table" then counts parties who actually came and found it full, so it stays a useful hint to buy tables. Target: on the busiest days, turned away stays well below the number served.
+  4. Walk-outs (waited too long for food) get the same check in the next simulator run, in case they also pile up on long days.
+- Re-run `npm run simulate` before and after, and report the change.
 
 ## 14. Installing on the tablet (summary)
 
