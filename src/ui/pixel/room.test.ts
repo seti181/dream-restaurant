@@ -6,7 +6,7 @@ import * as actions from '../../sim/actions';
 import { answerTheMoment, newGame, openRestaurant, playTick, type GameState } from '../../sim/game';
 import { specialCandidate } from '../../sim/staff';
 import { drawCloud, drawSky, drawStreet } from './street';
-import { PLINTH, drawRoom, guestKind, roomLayout, scenePieces, seatsAt, servePath, waiterSpot, walkPath, type RoomLook } from './room';
+import { PLINTH, drawRoom, guestKind, passerByPath, streetFurniture, roomLayout, scenePieces, seatsAt, servePath, waiterSpot, walkPath, type RoomLook } from './room';
 import { HEADROOM, PERSON, personPixels, SEATED_ROWS, type PersonKind } from './sprites';
 
 const look = (insideTables: number): RoomLook => ({ decor: [], equipment: ['stove'], weather: 'sunny', dusk: false, insideTables });
@@ -161,6 +161,28 @@ describe('walking in and out', () => {
       const seat = seatsAt(layout, 6, table)[2]; // the left-hand seat, beside the aisle
       expect(Math.abs(last.y - seat.y)).toBeLessThanOrEqual(1);
       expect(last.x).toBeLessThan(seat.x);
+    }
+  });
+
+  it('keeps the street furniture off every route guests and passers-by take', () => {
+    for (const [tables, terrace] of [[12, 4], [6, 0], [9, 2]]) {
+      const layout = roomLayout(tables, terrace);
+      const routes = [
+        ...Array.from({ length: tables + terrace }, (_, t) => seatsAt(layout, tables, t).map((seat) => walkPath(layout, tables, t, seat))).flat(),
+        ...[0, 1, 2].flatMap((lane) => [passerByPath(layout, lane, true, 400), passerByPath(layout, lane, false, 400)]),
+      ];
+      for (const route of routes) {
+        for (let i = 1; i < route.length; i++) {
+          const [a, b] = [route[i - 1], route[i]];
+          // Only the outdoor part of each route, on the street.
+          if ((a.z ?? 0) >= 0 && (b.z ?? 0) >= 0) continue;
+          for (let k = 0; k <= 20; k++) {
+            const x = a.x + ((b.x - a.x) * k) / 20;
+            const y = a.y + ((b.y - a.y) * k) / 20;
+            for (const thing of streetFurniture(layout)) expect(Math.hypot(thing.x - x, thing.y - y), thing.thing).toBeGreaterThan(3);
+          }
+        }
+      }
     }
   });
 

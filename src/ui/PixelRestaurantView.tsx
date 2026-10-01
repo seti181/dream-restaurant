@@ -2,9 +2,10 @@
 // stacked on top, back to front. Guests walk in from the door to their table and back
 // out when they leave. Bubbles and coins float above them.
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { balance } from '../data/balance';
 import { LOCATIONS } from '../data/locations';
+import type { GroupId } from '../data/groups';
 import type { Visitor } from '../data/moments';
 import type { Weather } from '../data/weather';
 import type { FloorView, TableGuests } from '../sim/day';
@@ -14,6 +15,7 @@ import {
   depthAt,
   drawRoom,
   guestKind,
+  passerByPath,
   roomLayout,
   scenePieces,
   seatsAt,
@@ -30,7 +32,7 @@ import { drawCloud, drawRainTile, drawSky, drawStreet } from './pixel/street';
 import { useFittingScale } from './useFittingScale';
 
 /** World units a guest walks per second at 1× speed. */
-const WALK_SPEED = 60;
+const WALK_SPEED = 90;
 /** Seconds between people of the same party setting off. */
 const STAGGER = 0.25;
 /** Seconds a waiter stands at the table putting the plates down. */
@@ -148,7 +150,7 @@ function Walker({
     <div
       ref={ref}
       className="pixel-walker"
-      data-walker={walk.waiter !== undefined ? 'waiter' : 'guest'}
+      data-walker={walk.waiter !== undefined ? 'waiter' : walk.id.startsWith('passer') ? 'passer' : 'guest'}
       style={{
         width: (strip.pixels.width / 2) * scale,
         height: strip.pixels.height * scale,
@@ -275,6 +277,8 @@ export function PixelRestaurantView({
     [roomKey],
   );
   const background = useMemo(() => imageUrl(drawRoom(layout, look)), [layout, look]);
+  // How far out of sight people passing by start and finish, in art pixels.
+  const passers = usePassersBy(layout, minute, layout.width + 120);
   useEffect(() => () => URL.revokeObjectURL(background), [background]);
 
   const { walks, done, arriving, busyWaiters } = useWalkers(layout, floor);
@@ -324,6 +328,9 @@ export function PixelRestaurantView({
         {walks.map((walk) => (
           <Walker key={walk.id} walk={walk} layout={layout} scale={scale} speed={speed} onDone={done} />
         ))}
+        {passers.walks.map((walk) => (
+          <Walker key={walk.id} walk={walk} layout={layout} scale={scale} speed={speed} onDone={passers.done} />
+        ))}
         {/* Bubbles and coins above the seated guests, on top of everything. */}
         {pieces.map((p) => {
           if (p.kind !== 'guest' || !p.guests) return null;
@@ -354,6 +361,52 @@ export function PixelRestaurantView({
       {look.weather === 'rain' && <Rain scale={scale} />}
     </div>
   );
+}
+
+// ---------- People passing by ----------
+
+/** Who is out and about at each time of day: tourists at lunch, office workers at noon, students in the evening. */
+const STROLLERS: { until: number; groups: GroupId[] }[] = [
+  { until: 12 * 60, groups: ['locals', 'tourists', 'office', 'locals'] },
+  { until: 15 * 60, groups: ['office', 'office', 'tourists', 'tourists', 'locals', 'students'] },
+  { until: 18 * 60, groups: ['tourists', 'tourists', 'locals', 'students', 'foodies'] },
+  { until: 24 * 60, groups: ['students', 'students', 'foodies', 'tourists', 'locals'] },
+];
+
+/** At most this many people passing by at once, so the street feels alive but the tablet stays smooth. */
+const MOST_PASSERS = 8;
+
+/**
+ * People strolling past along the street, in their group colours. Purely for show: one may set off
+ * every few in-game minutes while the day runs, and they never come in.
+ */
+function usePassersBy(layout: RoomLayout, minute: number, reach: number) {
+  const [walks, setWalks] = useState<Walk[]>([]);
+  const count = useRef(0);
+  useEffect(() => {
+    setWalks((now) => {
+      if (now.length >= MOST_PASSERS) return now;
+      const n = count.current++;
+      // A little hash instead of Math.random, so it never touches the game's dice.
+      const roll = (n * 2654435761 + minute * 40503) >>> 0;
+      if (roll % 3 !== 0) return now;
+      const groups = (STROLLERS.find((s) => minute < s.until) ?? STROLLERS[STROLLERS.length - 1]).groups;
+      const kind = groups[(roll >>> 4) % groups.length];
+      return [
+        ...now,
+        {
+          id: `passer:${n}`,
+          kind,
+          variant: (roll >>> 8) % 12,
+          path: passerByPath(layout, (roll >>> 12) % 3, ((roll >>> 14) & 1) === 0, reach),
+          delay: 0,
+          angry: false,
+        },
+      ];
+    });
+  }, [minute, layout, reach]);
+  const done = useCallback((walk: Walk) => setWalks((now) => now.filter((w) => w.id !== walk.id)), []);
+  return { walks, done };
 }
 
 // ---------- Weather in the sky ----------

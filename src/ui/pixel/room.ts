@@ -98,6 +98,13 @@ const C = {
   sandstoneShade: hex('#d8ccb3'),
   sandstoneDark: hex('#c4b698'),
   plaster: hex('#e8c07a'),
+  iron: hex('#2e2a33'),
+  ironLight: hex('#4a4656'),
+  bark: hex('#6b4a2e'),
+  barkDark: hex('#4f3520'),
+  chalk: hex('#2f3b33'),
+  terracotta: hex('#c97a4a'),
+  terracottaDark: hex('#9c5a33'),
   plasterShade: hex('#d2a862'),
   stoveBlue: hex('#2f6f8f'),
   brick: hex('#a9472f'),
@@ -697,7 +704,7 @@ export function scenePieces(
     addTable(slot, floor.tables[floor.insideTables + i] ?? null, true, floor.insideTables + i),
   );
 
-  pieces.push(...buildingPieces(layout, floor));
+  pieces.push(...buildingPieces(layout, floor), ...streetPieces(layout, look));
 
   // The kitchen: chefs behind the island, a pot each, the pizza oven at the side.
   const k = layout.kitchenX;
@@ -825,7 +832,7 @@ export function walkPath(layout: RoomLayout, insideTables: number, table: number
   const door = (layout.door.x0 + layout.door.x1) / 2;
   // Along the street from one side or the other, up the steps, and in.
   const fromLeft = Math.round(seat.x + seat.y) % 2 === 0;
-  const along = { x: fromLeft ? -30 : layout.edgeX + 30, y: layout.streetY, z: -PLINTH };
+  const along = { x: door + (fromLeft ? -30 : 30), y: layout.streetY, z: -PLINTH };
   const foot = { x: door, y: layout.streetY, z: -PLINTH };
   const top = { x: door, y: layout.edgeY - 5, z: 0 };
   const aisle = found.slot.x - 5;
@@ -922,4 +929,132 @@ function buildingPieces(layout: RoomLayout, floor: FloorView): ScenePiece[] {
     pieces.push(piece(o, `queue${n}`, image, spot.x, spot.y, spot.z, spot.x + spot.y));
   });
   return pieces;
+}
+
+// ---------- Street life: lamp posts, benches, trees, flower tubs and the menu board ----------
+
+export type StreetThing = 'lamp' | 'bench' | 'tree' | 'tub' | 'menuBoard';
+
+/**
+ * Where the street furniture stands: on the pavements beside the restaurant and on the open
+ * cobbles to either side, never in front of the room and never on the way in.
+ */
+export function streetFurniture(layout: RoomLayout): { thing: StreetThing; x: number; y: number }[] {
+  const { edgeX, edgeY, streetY } = layout;
+  const frontY = layout.roomY + LOW_WALL.thick;
+  const { x1: d1 } = layout.door;
+  return [
+    // The pavement on the right, along the houses behind.
+    { thing: 'lamp', x: edgeX + 12, y: 8 },
+    { thing: 'tree', x: edgeX + 34, y: 4 },
+    { thing: 'bench', x: edgeX + 52, y: 4 },
+    { thing: 'tub', x: edgeX + 74, y: 4 },
+    { thing: 'lamp', x: edgeX + 96, y: 8 },
+    { thing: 'tree', x: edgeX + 118, y: 4 },
+    // A little square of trees and benches to the right of the restaurant.
+    { thing: 'tree', x: edgeX + 36, y: 44 },
+    { thing: 'bench', x: edgeX + 30, y: 60 },
+    { thing: 'tree', x: edgeX + 70, y: 76 },
+    { thing: 'lamp', x: edgeX + 56, y: 52 },
+    // The pavement on the left, in front of next door.
+    { thing: 'lamp', x: -14, y: frontY + 8 },
+    { thing: 'bench', x: -44, y: frontY + 3 },
+    { thing: 'tree', x: -66, y: frontY + 4 },
+    { thing: 'tub', x: -88, y: frontY + 4 },
+    { thing: 'lamp', x: -112, y: frontY + 8 },
+    { thing: 'tree', x: -138, y: frontY + 4 },
+    // Across the street, to the left.
+    { thing: 'tree', x: -40, y: streetY + 22 },
+    { thing: 'lamp', x: -70, y: streetY + 18 },
+    { thing: 'bench', x: -104, y: streetY + 20 },
+    // The menu board at the foot of the steps.
+    { thing: 'menuBoard', x: d1 + 3, y: edgeY + 4 },
+  ];
+}
+
+function streetThing(thing: StreetThing, lit: boolean): SpriteImage {
+  return drawn(`street:${thing}:${lit}`, (img, lo) => {
+    const iron: Faces = { top: C.ironLight, left: C.iron, right: C.iron };
+    switch (thing) {
+      case 'lamp': {
+        // A cast-iron Old Town lamp post, its lantern lit after dusk.
+        box(img, lo, { x0: -1.5, x1: 1.5, y0: -1.5, y1: 1.5, z0: 0, z1: 3 }, iron);
+        box(img, lo, { x0: -0.5, x1: 0.5, y0: -0.5, y1: 0.5, z0: 3, z1: 28 }, iron);
+        const glass = lit ? solid(C.lit) : { top: C.glass, left: C.glass, right: mix(C.glass, C.steelLeft, 0.4) };
+        box(img, lo, { x0: -1.5, x1: 1.5, y0: -1.5, y1: 1.5, z0: 28, z1: 33 }, glass);
+        box(img, lo, { x0: -2, x1: 2, y0: -2, y1: 2, z0: 33, z1: 34 }, iron);
+        box(img, lo, { x0: -0.5, x1: 0.5, y0: -0.5, y1: 0.5, z0: 34, z1: 36 }, iron);
+        return;
+      }
+      case 'bench': {
+        const slats: Faces = { top: C.tableTop, left: C.tableLeft, right: C.tableRight };
+        for (const x of [0.5, 10.5]) box(img, lo, { x0: x, x1: x + 1, y0: 0, y1: 4, z0: 0, z1: 4 }, iron);
+        box(img, lo, { x0: 0, x1: 12, y0: 0, y1: 4, z0: 4, z1: 5 }, slats);
+        box(img, lo, { x0: 0, x1: 12, y0: 0, y1: 1, z0: 5, z1: 10 }, slats);
+        return;
+      }
+      case 'tree': {
+        // A linden in an iron grate.
+        box(img, lo, { x0: -4, x1: 4, y0: -4, y1: 4, z0: 0, z1: 0.5 }, iron);
+        box(img, lo, { x0: -1, x1: 1, y0: -1, y1: 1, z0: 0.5, z1: 14 }, { top: C.bark, left: C.bark, right: C.barkDark });
+        const leaves = (shade: number): Faces => ({
+          top: mix(C.leafLight, C.leaf, shade),
+          left: mix(C.leaf, C.leafLight, 0.2 - shade / 5),
+          right: mix(C.leaf, C.outline, 0.15 + shade / 5),
+        });
+        box(img, lo, { x0: -7, x1: 7, y0: -7, y1: 7, z0: 12, z1: 22 }, leaves(0.3));
+        box(img, lo, { x0: -5, x1: 5, y0: -5, y1: 5, z0: 22, z1: 28 }, leaves(0.1));
+        box(img, lo, { x0: -2, x1: 3, y0: -3, y1: 2, z0: 28, z1: 31 }, leaves(0));
+        return;
+      }
+      case 'tub': {
+        box(img, lo, { x0: -3, x1: 3, y0: -3, y1: 3, z0: 0, z1: 5 }, { top: C.terracottaDark, left: C.terracotta, right: C.terracottaDark });
+        for (let f = 0; f < 5; f++) {
+          const fx = -2 + (f % 3) * 1.6;
+          const fy = -2 + Math.floor(f / 3) * 2;
+          box(img, lo, { x0: fx, x1: fx + 1.2, y0: fy, y1: fy + 1.2, z0: 5, z1: 7 }, solid(f % 2 ? C.leaf : C.leafLight));
+          box(img, lo, { x0: fx, x1: fx + 1, y0: fy, y1: fy + 1, z0: 7, z1: 8 }, solid(C.flowers[f % 4]));
+        }
+        return;
+      }
+      case 'menuBoard': {
+        // An A-frame chalkboard: "Dziś: pierogi!"
+        const frame: Faces = { top: C.trim, left: C.chalk, right: C.trimDark };
+        box(img, lo, { x0: 0, x1: 7, y0: 0, y1: 1.5, z0: 0, z1: 12 }, frame);
+        for (const [x, z] of [[1.5, 9], [2.5, 9], [3.5, 9], [1.5, 6.5], [2.5, 6.5], [4.5, 6.5], [5.5, 6.5], [2, 4], [3, 4], [4, 4]]) {
+          box(img, lo, { x0: x, x1: x + 0.8, y0: 1.5, y1: 1.6, z0: z, z1: z + 0.8 }, solid(C.cloth));
+        }
+        return;
+      }
+    }
+  });
+}
+
+function streetPieces(layout: RoomLayout, look: RoomLook): ScenePiece[] {
+  const o = layout.origin;
+  return streetFurniture(layout).map(({ thing, x, y }, i) =>
+    piece(o, `street${i}`, streetThing(thing, look.dusk && thing === 'lamp'), x, y, -PLINTH, x + y),
+  );
+}
+
+/**
+ * Where people passing by walk: down the pavement on the left, along the street in front
+ * (a little further out than guests coming in), and up the side street on the right, or the
+ * other way round. They start and finish out of sight.
+ */
+export function passerByPath(layout: RoomLayout, lane: number, leftToRight: boolean, reach: number): Point[] {
+  const z = -PLINTH;
+  const left = layout.roomY + LOW_WALL.thick + 13 + lane * 3;
+  const front = layout.streetY + 6 + lane * 4;
+  const right = 14 + lane * 3;
+  const side = { left: -12 - lane * 3, right: layout.edgeX + 12 + lane * 3 };
+  const route = [
+    { x: -reach, y: left, z },
+    { x: side.left, y: left, z },
+    { x: side.left, y: front, z },
+    { x: side.right, y: front, z },
+    { x: side.right, y: right, z },
+    { x: reach, y: right, z },
+  ];
+  return leftToRight ? route : [...route].reverse();
 }
