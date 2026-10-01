@@ -6,7 +6,7 @@ import { FIRST_GOAL } from '../data/mewa';
 import type { GameState } from '../sim/game';
 import { startGoal } from '../sim/goals';
 
-export const SAVE_VERSION = 8;
+export const SAVE_VERSION = 9;
 const SAVE_KEY = 'old-town-kitchen/save';
 
 interface SaveFile {
@@ -109,6 +109,12 @@ function upgradeFrom7(game: Record<string, unknown>): Record<string, unknown> {
   return { momentsSeen: {}, ...game };
 }
 
+function upgradeFrom8(game: Record<string, unknown>): Record<string, unknown> {
+  // Version 9 starts the happy hour with a button during the day, so the old daily setting goes.
+  const restaurants = (game.restaurants as Record<string, unknown>[]).map(({ happyHour: _old, ...restaurant }) => restaurant);
+  return { ...game, restaurants };
+}
+
 /**
  * Brings a save from any older version up to date, one version at a time.
  * Returns null for saves that can't be understood.
@@ -148,6 +154,10 @@ export function migrate(data: unknown): GameState | null {
   if (version === 7) {
     game = upgradeFrom7(game as unknown as Record<string, unknown>);
     version = 8;
+  }
+  if (version === 8) {
+    game = upgradeFrom8(game as unknown as Record<string, unknown>) as unknown as GameState;
+    version = 9;
   }
 
   return looksLikeGame(game) ? game : null;

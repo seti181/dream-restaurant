@@ -4,6 +4,7 @@
 import type { ReactNode } from 'react';
 import { GROUP_IDS, GROUPS } from '../data/groups';
 import { dateOf, formatDate } from '../sim/calendar';
+import { formatTime } from '../sim/clock';
 import type { DaySummary } from '../sim/game';
 import type { SatisfactionFactors } from '../sim/types';
 import { dishName, money, signedMoney, stars } from './format';
@@ -125,6 +126,11 @@ export function DayOverScreen() {
                 `🥤 ${summary.help.drinks} free ${summary.help.drinks === 1 ? 'drink' : 'drinks'} for waiting tables (${money(-summary.help.cash)}). `}
               {summary.help.apologies > 0 &&
                 `👨‍🍳 The chef came out to apologise ${summary.help.apologies === 1 ? 'once' : `${summary.help.apologies} times`}.`}
+            </p>
+          )}
+          {summary.happyHour && (
+            <p className="said small">
+              🍹 Happy hour from {formatTime(summary.happyHour.from)} to {formatTime(summary.happyHour.until)}.
             </p>
           )}
           {(summary.gulls.shooed > 0 || summary.gulls.stolen > 0) && (

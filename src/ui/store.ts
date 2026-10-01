@@ -19,8 +19,10 @@ import {
   apologiesLeft,
   closeDay,
   drinkCost,
+  happyHourToday,
   helpGuests,
   shooTheGull,
+  startHappyHour,
   momentDue,
   newGame,
   openRestaurant,
@@ -74,6 +76,8 @@ export interface LiveDay extends DayTally {
   apologiesLeft: number;
   /** What the last gull did, for a note on screen. */
   lastGull: { minute: number; text: string; shooed: boolean } | null;
+  /** Today's happy hour, once started. */
+  happyHour: { from: number; until: number } | null;
 }
 
 interface GameStore {
@@ -97,6 +101,8 @@ interface GameStore {
   drinkCostAt: (table: number) => number | null;
   /** Shoos the gull off the terrace. */
   shooGull: () => void;
+  /** Starts today's happy hour now. */
+  startHappyHour: () => void;
   setSpeed: (speed: Speed) => void;
   planNextDay: () => void;
   setPlanTab: (tab: PlanTab) => void;
@@ -114,7 +120,6 @@ interface GameStore {
   buyDecor: (id: DecorId) => void;
   buyTerracePermit: () => void;
   launchCampaign: (id: CampaignId) => void;
-  setHappyHour: (on: boolean) => void;
   relocate: (to: LocationId) => void;
   dismissTip: (tip: TipId) => void;
   skipTips: () => void;
@@ -146,6 +151,7 @@ function liveFrom(openDay: OpenDay): LiveDay {
     lastMoment: moments.results[moments.results.length - 1] ?? null,
     apologiesLeft: apologiesLeft(openDay),
     lastGull: openDay.gulls.last,
+    happyHour: happyHourToday(openDay),
   };
 }
 
@@ -224,6 +230,13 @@ export const useGame = create<GameStore>((set, get) => ({
     set({ live: liveFrom(openDay) });
   },
 
+  startHappyHour: () => {
+    const { openDay } = get();
+    if (!openDay || !startHappyHour(openDay)) return;
+    play('goal');
+    set({ live: liveFrom(openDay) });
+  },
+
   shooGull: () => {
     const { openDay } = get();
     if (!openDay || !shooTheGull(openDay)) return;
@@ -264,7 +277,6 @@ export const useGame = create<GameStore>((set, get) => ({
   buyDecor: (id) => plan((game) => actions.buyDecor(game, id)),
   buyTerracePermit: () => plan((game) => actions.buyTerracePermit(game)),
   launchCampaign: (id) => plan((game) => actions.launchCampaign(game, id)),
-  setHappyHour: (on) => plan((game) => actions.setHappyHour(game, on)),
   relocate: (to) => plan((game) => actions.relocate(game, to)),
   // Mewa's tips can be dismissed on any screen, even mid-day.
   dismissTip: (tip) => set({ game: actions.dismissTip(get().game, tip) }),

@@ -5,7 +5,7 @@ import { GROUP_IDS, GROUPS } from '../../data/groups';
 import { CAMPAIGN_IDS, CAMPAIGNS, type CampaignId } from '../../data/marketing';
 import { campaignUnavailableReason } from '../../sim/actions';
 import { dateOf, formatDate } from '../../sim/calendar';
-import { awarenessToday, playerOf } from '../../sim/game';
+import { awarenessToday } from '../../sim/game';
 import { money } from '../format';
 import { useGame } from '../store';
 
@@ -24,10 +24,8 @@ function duration(id: CampaignId): string {
 export function MarketingPanel() {
   const game = useGame((s) => s.game);
   const launchCampaign = useGame((s) => s.launchCampaign);
-  const setHappyHour = useGame((s) => s.setHappyHour);
-  const player = playerOf(game);
   const today = awarenessToday(game);
-  const { startHour, endHour, discount } = balance.happyHour;
+  const { minutes, discount } = balance.happyHour;
 
   return (
     <div className="two-panels even">
@@ -89,18 +87,11 @@ export function MarketingPanel() {
         </table>
 
         <h2 className="spaced">Happy hour</h2>
-        <button
-          type="button"
-          className="choice-card"
-          aria-pressed={player.happyHour}
-          onClick={() => setHappyHour(!player.happyHour)}
-        >
-          <strong>{player.happyHour ? '✓ Happy hour is on' : 'Happy hour is off'}</strong>
-          <span className="small">
-            {Math.round(discount * 100)}% off everything from {startHour}:00 to {endHour}:00. Fills the quiet afternoon,
-            especially with students, but you earn less per dish. Tap to turn it {player.happyHour ? 'off' : 'on'}.
-          </span>
-        </button>
+        <p className="small">
+          🍹 Start a happy hour any time during the day with the button above the restaurant: {minutes} minutes,{' '}
+          {Math.round(discount * 100)}% off everything, and a board outside that tempts passers-by. Once a day, so pick
+          your moment: a quiet afternoon fills up, a full lunch just earns less.
+        </p>
       </section>
     </div>
   );

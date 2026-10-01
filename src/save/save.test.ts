@@ -104,7 +104,7 @@ describe('upgrading version 1 saves (from before M3)', () => {
       ...rest
     } = game;
     const restaurants = game.restaurants.map(
-      ({ supplier: _s, happyHour: _h, lunchSet: _l, terraceTables: _t, decor: _d, ...old }) => old,
+      ({ supplier: _s, lunchSet: _l, terraceTables: _t, decor: _d, ...old }) => old,
     );
     return { saveVersion: 1, savedAt: '', game: { ...rest, restaurants } };
   }
@@ -192,6 +192,14 @@ describe('upgrading version 7 saves (from before choice cards were remembered)',
     const game = newGame(54);
     const { momentsSeen: _m, ...old } = game;
     expect(migrate({ saveVersion: 7, savedAt: '', game: old })).toEqual(game);
+  });
+});
+
+describe('upgrading version 8 saves (from before the live happy hour)', () => {
+  it('drops the old daily happy hour setting', () => {
+    const game = newGame(55);
+    const old = { ...game, restaurants: game.restaurants.map((r) => ({ ...r, happyHour: true })) };
+    expect(migrate({ saveVersion: 8, savedAt: '', game: old })).toEqual(game);
   });
 });
 

@@ -44,8 +44,8 @@ export interface Restaurant {
   /** Kitchen equipment owned; dishes that need other equipment can't be cooked. */
   equipment: EquipmentId[];
   supplier: Supplier;
-  /** Afternoon discount on everything; see balance.happyHour. */
-  happyHour: boolean;
+  /** When today's happy hour started (minutes after midnight); only set while a day runs. See balance.happyHour. */
+  happyHourFrom?: number;
   /** "Obiad dnia": a soup and a main (identified by recipe key) at one price, or null. */
   lunchSet: { soup: string; main: string; price: number } | null;
   tables: number;

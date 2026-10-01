@@ -1690,3 +1690,46 @@ h2.spaced {
 .gull-warning.bad {
   font-weight: normal;
 }
+
+/* The happy hour button on the day screen. */
+.happy-hour {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 150px;
+  min-height: 56px;
+  padding: 4px 14px;
+  border: 2px solid var(--amber);
+  border-radius: 14px;
+  background: #fff7e8;
+  color: var(--ink);
+  font-size: 1rem;
+  line-height: 1.2;
+}
+
+.happy-hour span {
+  font-size: 0.8rem;
+  color: #8a7466;
+}
+
+.happy-hour:disabled {
+  opacity: 0.55;
+}
+
+.happy-hour.on {
+  background: var(--amber);
+  border-color: var(--amber);
+  color: #fff;
+  animation: happy-glow 1.6s ease-in-out infinite;
+}
+
+.happy-hour.on span {
+  color: #fff;
+}
+
+@keyframes happy-glow {
+  50% {
+    box-shadow: 0 0 0 5px rgba(233, 162, 59, 0.3);
+  }
+}

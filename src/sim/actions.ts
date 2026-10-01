@@ -247,10 +247,6 @@ export function launchCampaign(state: GameState, id: CampaignId): GameState {
   };
 }
 
-export function setHappyHour(state: GameState, on: boolean): GameState {
-  return withPlayer(state, { happyHour: on });
-}
-
 // ---------- Relocation ----------
 
 export function relocateUnavailableReason(state: GameState, to: LocationId): string | null {

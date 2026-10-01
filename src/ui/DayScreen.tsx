@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { balance } from '../data/balance';
-import { ticksPerDay } from '../sim/clock';
+import { formatTime, ticksPerDay } from '../sim/clock';
 import { money } from './format';
 import { MewaTip } from './Mewa';
 import { MomentCard, MomentResultNote } from './MomentCard';
@@ -55,6 +55,29 @@ function HelpPanel({ table, onClose }: { table: number; onClose: () => void }) {
   );
 }
 
+/** Today's happy hour: a button to start it, then how long is left, then done. */
+function HappyHourButton() {
+  const hour = useGame((s) => s.live?.happyHour ?? null);
+  const minute = useGame((s) => s.live?.minute ?? 0);
+  const closing = useGame((s) => s.live?.closing ?? false);
+  const start = useGame((s) => s.startHappyHour);
+  const { minutes, discount } = balance.happyHour;
+  if (hour && minute < hour.until) {
+    return (
+      <div className="happy-hour on" role="status">
+        🍹 <strong>Happy hour!</strong>
+        <span>until {formatTime(hour.until)}</span>
+      </div>
+    );
+  }
+  return (
+    <button type="button" className="happy-hour" disabled={hour !== null || closing} onClick={start}>
+      🍹 <strong>{hour ? 'Happy hour done' : 'Start happy hour'}</strong>
+      <span>{hour ? 'see you tomorrow' : `${minutes} min, ${Math.round(discount * 100)}% off`}</span>
+    </button>
+  );
+}
+
 /** What the last gull did, for a few seconds. */
 function GullNote() {
   const last = useGame((s) => s.live?.lastGull ?? null);
@@ -102,6 +125,7 @@ export function DayScreen() {
         <MewaTip screen="open" />
         <div className="day-header">
           <p className="eyebrow day-status">{live.closing ? 'Closed · last orders' : 'Open for business'}</p>
+          <HappyHourButton />
           <div className="stats">
             <Stat label="Guests served" value={live.guestsServed} />
             <Stat label="Takings" value={money(live.revenue)} />

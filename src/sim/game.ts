@@ -14,6 +14,7 @@ import { RIVAL_IDS } from '../data/rivals';
 import type { Weather } from '../data/weather';
 import { helpTable, startDay, stepDay, type DayInProgress, type FloorView, type Help } from './day';
 import { dateOf, isMonday } from './calendar';
+import { minuteOfDay, ticksPerDay } from './clock';
 import {
   calendarEventsOn,
   calendarEventsStarting,
@@ -165,6 +166,8 @@ export interface DaySummary extends DayTally {
   help: { drinks: number; apologies: number; cash: number };
   /** Gulls on the terrace: shooed away, and plates they got. */
   gulls: { shooed: number; stolen: number };
+  /** Today's happy hour, if there was one. */
+  happyHour: { from: number; until: number } | null;
 }
 
 export function newGame(seed: number, difficulty: Difficulty = 'normal'): GameState {
@@ -340,6 +343,20 @@ export function momentDue(open: OpenDay): boolean {
   });
 }
 
+/** Starts today's happy hour now. Returns false if it was already used today, or the day is over. */
+export function startHappyHour(open: OpenDay): boolean {
+  const player = open.progress.restaurants[0];
+  if (player.happyHourFrom !== undefined || open.progress.tick >= ticksPerDay()) return false;
+  player.happyHourFrom = minuteOfDay(open.progress.tick);
+  return true;
+}
+
+/** Today's happy hour: when it started and ends, or null if it hasn't been started. */
+export function happyHourToday(open: OpenDay): { from: number; until: number } | null {
+  const from = open.progress.restaurants[0].happyHourFrom;
+  return from === undefined ? null : { from, until: from + balance.happyHour.minutes };
+}
+
 /** The chef's apologies left today. */
 export function apologiesLeft(open: OpenDay): number {
   return Math.max(0, balance.help.apologiesPerDay - open.help.apologies);
@@ -500,7 +517,9 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
 
   // What the team got up to: who didn't come in, and any mishaps that cost reputation.
   const staffNews = open.absent.map((a) => a.excuse);
-  let playerAfter = { ...open.progress.restaurants[0], chefs: playerBefore.chefs, waiters: playerBefore.waiters };
+  // Today's team and happy hour belong to today; the restaurant keeps its own.
+  const { happyHourFrom: _today, ...workingCopy } = open.progress.restaurants[0];
+  let playerAfter = { ...workingCopy, chefs: playerBefore.chefs, waiters: playerBefore.waiters };
   for (const person of state.team) {
     const special = person.special && SPECIAL_STAFF[person.special];
     const working = !open.absent.some((a) => a.id === person.id);
@@ -659,6 +678,7 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
       momentsCash,
       help: open.help,
       gulls: { shooed: open.gulls.shooed, stolen: open.gulls.stolen },
+      happyHour: happyHourToday(open),
     },
   };
 }

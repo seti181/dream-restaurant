@@ -2,7 +2,19 @@ import { describe, expect, it } from 'vitest';
 import { balance } from '../data/balance';
 import * as actions from './actions';
 import { runDay } from './day';
-import { closeDay, newGame, openRestaurant, playerOf, playTick, restingFloor, starRating, tallyFor, teamWages } from './game';
+import {
+  closeDay,
+  happyHourToday,
+  newGame,
+  openRestaurant,
+  playerOf,
+  playTick,
+  restingFloor,
+  starRating,
+  startHappyHour,
+  tallyFor,
+  teamWages,
+} from './game';
 
 function playWholeDay(seed: number) {
   const state = newGame(seed);
@@ -134,5 +146,24 @@ describe('the restaurant before opening', () => {
     const floor = restingFloor(june);
     expect(floor.tables.length).toBeGreaterThan(floor.insideTables);
     expect(restingFloor({ ...june, weather: 'rain' }).tables).toHaveLength(floor.insideTables);
+  });
+});
+
+describe('the live happy hour', () => {
+  it('starts when the player taps it, once a day, and lasts an hour', () => {
+    const state = newGame(40);
+    const open = openRestaurant(state);
+    expect(happyHourToday(open)).toBeNull();
+    while (open.progress.tick < 30) playTick(open);
+    expect(startHappyHour(open)).toBe(true);
+    const hour = happyHourToday(open)!;
+    expect(hour.until - hour.from).toBe(balance.happyHour.minutes);
+    expect(startHappyHour(open)).toBe(false);
+    while (!open.progress.done) playTick(open);
+    const { state: next, summary } = closeDay(state, open);
+    expect(summary.happyHour).toEqual(hour);
+    // Tomorrow starts without one.
+    expect(playerOf(next).happyHourFrom).toBeUndefined();
+    expect(happyHourToday(openRestaurant(next))).toBeNull();
   });
 });

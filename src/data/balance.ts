@@ -174,11 +174,12 @@ export const balance = {
   },
 
   happyHour: {
-    /** Everything is cheaper from 15:00 until 18:00... */
-    startHour: 15,
-    endHour: 18,
-    /** ...by this share. */
+    /** Started with a button during the day, once a day: it lasts this many minutes... */
+    minutes: 60,
+    /** ...everything is cheaper by this share... */
     discount: 0.2,
+    /** ...and the board outside makes the restaurant this much more tempting to passers-by. */
+    appealBonus: 1,
   },
 
   moments: {

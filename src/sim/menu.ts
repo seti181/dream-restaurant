@@ -93,8 +93,11 @@ export function lunchSetServing(
 
 /** What share of menu prices guests pay at this minute: less during happy hour. */
 export function priceMultiplier(restaurant: Restaurant, minute: number): number {
-  if (!restaurant.happyHour) return 1;
-  const hour = minute / 60;
-  const { startHour, endHour, discount } = balance.happyHour;
-  return hour >= startHour && hour < endHour ? 1 - discount : 1;
+  return happyHourOn(restaurant, minute) ? 1 - balance.happyHour.discount : 1;
+}
+
+/** True during the hour after the player started today's happy hour. */
+export function happyHourOn(restaurant: Restaurant, minute: number): boolean {
+  const from = restaurant.happyHourFrom;
+  return from !== undefined && minute >= from && minute < from + balance.happyHour.minutes;
 }

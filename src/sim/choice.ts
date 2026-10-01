@@ -7,7 +7,7 @@ import type { MenuDish } from '../data/dishes';
 import { GROUPS, type GroupId } from '../data/groups';
 import { LOCATIONS, type LocationId } from '../data/locations';
 import { interiorAppeal } from './interior';
-import { lunchSetServing, priceMultiplier, tagsOf, templateOf } from './menu';
+import { happyHourOn, lunchSetServing, priceMultiplier, tagsOf, templateOf } from './menu';
 import { nextFloat, type RngState } from './rng';
 import type { Party, Restaurant } from './types';
 
@@ -73,6 +73,8 @@ export function utility(restaurant: Restaurant, party: Party, expectedWaitMinute
     w.ambiance * (restaurant.ambiance / 100) +
     w.wait * waitTerm +
     lunchSetTerm +
+    // The happy hour board outside.
+    (happyHourOn(restaurant, party.arrivalMinute) ? balance.happyHour.appealBonus : 0) +
     interiorAppeal(restaurant, party.group) -
     // Through the window, people can see when every table is taken.
     (full ? balance.choice.fullPenalty : 0)

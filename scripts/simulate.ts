@@ -5,7 +5,17 @@
 import { RIVAL_IDS, RIVALS, type RivalId } from '../src/data/rivals';
 import { isInSeason, isMonday } from '../src/sim/calendar';
 import { wageOf } from '../src/sim/finance';
-import { answerTheMoment, closeDay, momentDue, newGame, openRestaurant, playTick, type GameState } from '../src/sim/game';
+import { minuteOfDay } from '../src/sim/clock';
+import {
+  answerTheMoment,
+  closeDay,
+  momentDue,
+  newGame,
+  openRestaurant,
+  playTick,
+  startHappyHour,
+  type GameState,
+} from '../src/sim/game';
 import { isFairDay, neptuneScore } from '../src/sim/neptune';
 import { createPlayerRestaurant } from '../src/sim/setup';
 import { staffOf } from '../src/sim/staff';
@@ -95,6 +105,8 @@ function playSeason(strategy: Strategy, seed: number): SeasonResult {
     while (!open.progress.done) {
       // A player who only watches: every choice card gets the answer that doesn't help.
       if (!NO_CARDS && momentDue(open)) answerTheMoment(open, 1);
+      const happyHourAt = strategy.plan?.happyHourAt;
+      if (happyHourAt !== undefined && minuteOfDay(open.progress.tick) >= happyHourAt) startHappyHour(open);
       playTick(open);
     }
     for (const o of open.progress.outcomes) {

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import type { GroupId } from '../data/groups';
 import { balance } from '../data/balance';
 import { DECOR } from '../data/decor';
 import { DISH_TEMPLATES, type ExtraId, type MenuDish } from '../data/dishes';
@@ -23,7 +24,6 @@ import {
   relocateUnavailableReason,
   removeDish,
   setDishPrice,
-  setHappyHour,
   setLunchSet,
   setLunchSetPrice,
   setSupplier,
@@ -343,19 +343,24 @@ describe('marketing', () => {
     expect(Math.max(...Object.values(playerOf(state).awareness))).toBeLessThanOrEqual(100);
   });
 
-  it('happy hour makes everything cheaper from 15:00 to 18:00 only', () => {
-    const player = playerOf(setHappyHour(fresh(), true));
-    expect(priceMultiplier(player, 16 * 60)).toBeCloseTo(1 - balance.happyHour.discount);
-    expect(priceMultiplier(player, 14 * 60)).toBe(1);
-    expect(priceMultiplier(player, 18 * 60)).toBe(1);
+  it('happy hour makes everything cheaper for one hour from when it starts', () => {
+    const player = { ...playerOf(fresh()), happyHourFrom: 15 * 60 + 20 };
+    expect(priceMultiplier(player, 15 * 60 + 20)).toBeCloseTo(1 - balance.happyHour.discount);
+    expect(priceMultiplier(player, 16 * 60 + 15)).toBeCloseTo(1 - balance.happyHour.discount);
+    expect(priceMultiplier(player, 15 * 60)).toBe(1);
+    expect(priceMultiplier(player, 16 * 60 + 20)).toBe(1);
     expect(priceMultiplier(playerOf(fresh()), 16 * 60)).toBe(1);
   });
 
-  it('happy hour tempts price-sensitive students', () => {
-    const on = playerOf(setHappyHour(fresh(), true));
+  it('happy hour tempts passers-by, and price-sensitive students most', () => {
+    const on = { ...playerOf(fresh()), happyHourFrom: 16 * 60 };
     const off = playerOf(fresh());
-    const students = { group: 'students' as const, size: 2, origin: 'ogarna' as const, arrivalMinute: 16 * 60 };
-    expect(utility(on, students, 10)!).toBeGreaterThan(utility(off, students, 10)!);
+    const party = (group: GroupId) => ({ group, size: 2, origin: 'ogarna' as const, arrivalMinute: 16 * 60 + 10 });
+    const students = party('students');
+    const office = party('office');
+    const gain = (p: ReturnType<typeof party>) => utility(on, p, 10)! - utility(off, p, 10)!;
+    expect(gain(students)).toBeGreaterThan(balance.happyHour.appealBonus);
+    expect(gain(students)).toBeGreaterThan(gain(office));
   });
 });
 

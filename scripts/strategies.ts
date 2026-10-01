@@ -42,7 +42,8 @@ interface Plan {
   campaigns?: CampaignId[];
   terrace?: boolean;
   premiumSupplier?: boolean;
-  happyHour?: boolean;
+  /** Starts the happy hour at this time every day (minutes after midnight). */
+  happyHourAt?: number;
   /** Menu positions of a soup and a main for the lunch set. */
   lunchSet?: [number, number];
 }
@@ -84,7 +85,6 @@ export function manage(strategy: Strategy, state: GameState, week: WeekReport | 
   if (week === null) {
     // Opening day: settle the running choices.
     if (plan.premiumSupplier) s = actions.setSupplier(s, 'premium');
-    if (plan.happyHour) s = actions.setHappyHour(s, true);
     if (plan.lunchSet) s = actions.setLunchSet(s, ...plan.lunchSet);
   }
 
@@ -176,7 +176,7 @@ export const STRATEGIES: Strategy[] = [
       decorStyle: 'modern',
       decorItems: 2,
       campaigns: ['flyers'],
-      happyHour: true,
+      happyHourAt: 15 * 60,
       lunchSet: [0, 2],
     },
   },
