@@ -4,7 +4,7 @@
 
 import type { Weather } from '../../data/weather';
 import { hex, mix, Pixels, type Rgb } from './raster';
-import type { RoomLayout, RoomLook } from './room';
+import { LOW_WALL, PLINTH, type RoomLayout, type RoomLook } from './room';
 
 const C = {
   cobbleA: hex('#a99d91'),
@@ -130,7 +130,9 @@ const mod = (value: number, by: number) => ((value % by) + by) % by;
 
 /** The ground at a world point: pavement along the house fronts, cobbles on the street. */
 function ground(layout: RoomLayout, x: number, y: number): Rgb {
-  const { roomX, roomY } = layout;
+  const { edgeX: roomX } = layout;
+  // The pavement runs along the house fronts; the przedproże and its steps stand on it.
+  const roomY = layout.roomY + LOW_WALL.thick;
   const pavement = (x < 0 && y >= roomY && y < roomY + 10) || (x >= roomX && y >= 0 && y < 10);
   const curb = (x < 0 && y >= roomY + 10 && y < roomY + 11.5) || (x >= roomX && y >= 10 && y < 11.5 && x > roomX + 1);
   if (curb) return C.curb;
@@ -151,9 +153,12 @@ function ground(layout: RoomLayout, x: number, y: number): Rgb {
  */
 export function drawStreet(layout: RoomLayout, look: RoomLook, width: number, height: number, marginX: number, marginY: number): Pixels {
   const img = new Pixels(width, height);
-  const { roomX, roomY } = layout;
+  const { roomX } = layout;
+  // Next door's houses line up with the restaurant's front wall.
+  const roomY = layout.roomY + LOW_WALL.thick;
   const ox = layout.origin.ox + marginX;
-  const oy = layout.origin.oy + marginY;
+  // Everything outside stands on the street, a plinth lower than the restaurant's floor.
+  const oy = layout.origin.oy + marginY + PLINTH;
   // Three rows of houses: behind the back wall, above the left wall, and next door on the left.
   const behind = rowOfHouses(1997, width + 40, 62, 80);
   // The Town Hall tower, further back on the right, its green spire peeking over the roofs.

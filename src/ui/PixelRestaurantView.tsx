@@ -121,7 +121,7 @@ function Walker({
       return;
     }
     const corner = (p: Point) => {
-      const { sx, sy } = project(layout.origin, p.x, p.y, 0);
+      const { sx, sy } = project(layout.origin, p.x, p.y, p.z ?? 0);
       return `translate(${(sx + strip.dx) * scale}px, ${(sy + strip.dy) * scale}px)`;
     };
     const seconds = Math.hypot(to.x - from.x, to.y - from.y) / WALK_SPEED;

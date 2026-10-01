@@ -11,6 +11,12 @@ import { hex, mix, Pixels, type Rgb } from './raster';
 import * as S from './sprites';
 
 export const WALL_HEIGHT = 52;
+/** The floor stands this high above the street, on a stone plinth (like a cut-away dollhouse). */
+export const PLINTH = 6;
+/** The cut-away front and side walls: this thick and this high. */
+export const LOW_WALL = { thick: 4, high: 10 };
+/** The steps down from the door (or the przedproże) reach this far into the street. */
+const STEPS = 8;
 /** A table top is 16 × 16 world units. */
 const TABLE = 16;
 /** The kitchen corner reaches this far from the back wall. */
@@ -82,6 +88,17 @@ const C = {
   potClay: hex('#c97a4a'),
   potDark: hex('#9c5a33'),
   stoveTile: hex('#ffffff'),
+  stoneA: hex('#cfc3b0'),
+  stoneB: hex('#c2b59f'),
+  mortar: hex('#9d927f'),
+  slabA: hex('#e3d8c4'),
+  slabB: hex('#d8ccb6'),
+  slabGap: hex('#b9ab93'),
+  sandstone: hex('#efe6d2'),
+  sandstoneShade: hex('#d8ccb3'),
+  sandstoneDark: hex('#c4b698'),
+  plaster: hex('#e8c07a'),
+  plasterShade: hex('#d2a862'),
   stoveBlue: hex('#2f6f8f'),
   brick: hex('#a9472f'),
   brickDark: hex('#7a3322'),
@@ -108,6 +125,11 @@ export interface RoomLayout {
   roomX: number;
   roomY: number;
   terraceDepth: number;
+  /** The outer edges of the floor: the room with its low walls, and the przedproże in front. */
+  edgeX: number;
+  edgeY: number;
+  /** Where people walk along the street, in front of the steps. */
+  streetY: number;
   /** Picture size in art pixels, and where world (0, 0, 0) lands in it. */
   width: number;
   height: number;
@@ -132,22 +154,31 @@ export function roomLayout(maxTables: number, terraceTables: number): RoomLayout
   const inside: Slot[] = [];
   for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) inside.push({ x: 8 + c * 36, y: 56 + r * 36 });
 
+  // The terrace is a przedproże: a stone platform in front of the house, with a balustrade.
   const terraceRows = terraceTables > 3 ? 2 : terraceTables > 0 ? 1 : 0;
-  const terraceDepth = terraceRows * 36 + (terraceRows > 0 ? 8 : 0);
+  const terraceDepth = terraceRows * 36 + (terraceRows > 0 ? 12 : 0);
   const perRow = Math.ceil(terraceTables / Math.max(1, terraceRows));
+  const frontY = roomY + LOW_WALL.thick;
   const terrace: Slot[] = Array.from({ length: terraceTables }, (_, i) => ({
     x: 8 + (i % perRow) * 36,
-    y: roomY + 16 + Math.floor(i / perRow) * 36,
+    y: frontY + 16 + Math.floor(i / perRow) * 36,
   }));
 
-  const totalY = roomY + terraceDepth;
+  const edgeX = roomX + LOW_WALL.thick;
+  const edgeY = frontY + terraceDepth;
+  const streetY = edgeY + STEPS + 6;
+  // The picture ends just past the steps; people on the street walk over the street picture around it.
+  const totalY = edgeY + STEPS + 2;
   const origin = { ox: totalY + 8, oy: WALL_HEIGHT + 10 };
   return {
     roomX,
     roomY,
     terraceDepth,
-    width: roomX + totalY + 16,
-    height: origin.oy + (roomX + totalY) / 2 + 8,
+    edgeX,
+    edgeY,
+    streetY,
+    width: edgeX + totalY + 16,
+    height: origin.oy + (edgeX + totalY) / 2 + PLINTH + 8,
     origin,
     inside,
     terrace,
@@ -420,20 +451,31 @@ function windowView(look: RoomLook, u: number, z: number, w: number, h: number):
   return z > h - 10 ? sky : mix(sky, C.cloud, 0.25);
 }
 
+/** Granite blocks of the plinth: `u` along the side, `z` below the floor (negative). */
+function plinth(u: number, z: number, side: boolean): Rgb {
+  const row = Math.floor(-z / 3);
+  const shift = row % 2 === 0 ? 0 : 4;
+  const colour = (-z) % 3 < 0.6 || (u + shift) % 8 < 0.6 ? C.mortar : (Math.floor((u + shift) / 8) + row) % 2 === 0 ? C.stoneA : C.stoneB;
+  return side ? mix(colour, C.outline, 0.15) : colour;
+}
+
 function floorColour(layout: RoomLayout, x: number, y: number): Rgb {
-  // The terrace: cobbles.
+  // The przedproże: big sandstone slabs.
   if (y >= layout.roomY) {
-    const row = Math.floor((y - layout.roomY) / 5);
-    const shift = row % 2 === 0 ? 0 : 3;
-    if ((y - layout.roomY) % 5 < 0.6 || (x + shift) % 6 < 0.6) return C.cobbleGap;
-    return (Math.floor((x + shift) / 6) + row) % 3 === 0 ? C.cobbleB : C.cobbleA;
+    const v = y - layout.roomY;
+    const row = Math.floor(v / 9);
+    const shift = row % 2 === 0 ? 0 : 6;
+    if (v % 9 < 0.6 || (x + shift) % 12 < 0.6) return C.slabGap;
+    return (Math.floor((x + shift) / 12) + row) % 2 === 0 ? C.slabA : C.slabB;
   }
+  // Under the low side wall.
+  if (x >= layout.roomX) return C.stoneB;
   // The kitchen corner: a checkered floor, like reference 2.
   if (x >= layout.kitchenX && y < KITCHEN_DEPTH) {
     return (Math.floor(x / 8) + Math.floor(y / 8)) % 2 === 0 ? C.checkLight : C.checkDark;
   }
-  // Cream tiles in front of the door, like reference 3.
-  if (x >= layout.door.x0 + 2 && x < layout.door.x1 - 2 && y < 40) {
+  // Cream tiles inside the front door, like reference 3.
+  if (x >= layout.door.x0 + 2 && x < layout.door.x1 - 2 && y > layout.roomY - 16) {
     if (x % 6 < 0.6 || y % 6 < 0.6) return C.tileB;
     return (Math.floor(x / 6) + Math.floor(y / 6)) % 2 === 0 ? C.tileA : C.tileB;
   }
@@ -463,7 +505,6 @@ export function lampSpots(layout: RoomLayout, look: RoomLook): { x: number; y: n
 export function drawRoom(layout: RoomLayout, look: RoomLook): Pixels {
   const { width, height, origin: o, roomX, roomY } = layout;
   const img = new Pixels(width, height);
-  const floorY = roomY + layout.terraceDepth;
   const glows = lampSpots(layout, look).filter((l) => l.kind !== 'lantern');
 
   for (let py = 0; py < height; py++) {
@@ -472,7 +513,7 @@ export function drawRoom(layout: RoomLayout, look: RoomLook): Pixels {
       const sy = py + 0.5 - o.oy;
       const fx = (sx + 2 * sy) / 2;
       const fy = (2 * sy - sx) / 2;
-      if (fx >= 0 && fx < roomX && fy >= 0 && fy < floorY) {
+      if (fx >= 0 && fx < layout.edgeX && fy >= 0 && fy < layout.edgeY) {
         let colour = floorColour(layout, fx, fy);
         // Warm pools of light under the lamps, in two soft bands.
         if (fy < roomY) {
@@ -490,9 +531,28 @@ export function drawRoom(layout: RoomLayout, look: RoomLook): Pixels {
       }
       const ly = -sx;
       const lz = ly / 2 - sy;
-      if (ly >= 0 && ly < roomY && lz >= 0 && lz < WALL_HEIGHT) img.set(px, py, leftWall(layout, look, ly, lz));
+      if (ly >= 0 && ly < roomY && lz >= 0 && lz < WALL_HEIGHT) {
+        img.set(px, py, leftWall(layout, look, ly, lz));
+        continue;
+      }
+      // The stone plinth under the floor, seen along the two open sides.
+      const front = sx + layout.edgeY;
+      const frontZ = (front + layout.edgeY) / 2 - sy;
+      if (front >= 0 && front < layout.edgeX && frontZ >= -PLINTH && frontZ < 0) {
+        img.set(px, py, plinth(front, frontZ, false));
+        continue;
+      }
+      const side = layout.edgeX - sx;
+      const sideZ = (layout.edgeX + side) / 2 - sy;
+      if (side >= 0 && side < layout.edgeY && sideZ >= -PLINTH && sideZ < 0) img.set(px, py, plinth(side, sideZ, true));
     }
   }
+
+  // Steps down from the door to the street.
+  const stone: Faces = { top: C.sandstone, left: C.sandstoneShade, right: C.sandstoneDark };
+  const { x0: d0, x1: d1 } = layout.door;
+  box(img, o, { x0: d0 + 1, x1: d1 - 1, y0: layout.edgeY, y1: layout.edgeY + STEPS / 2, z0: -PLINTH, z1: -PLINTH / 3 }, stone);
+  box(img, o, { x0: d0 + 1, x1: d1 - 1, y0: layout.edgeY + STEPS / 2, y1: layout.edgeY + STEPS, z0: -PLINTH, z1: (-2 * PLINTH) / 3 }, stone);
 
   // Things against the back walls, drawn back to front onto the room.
   const things: { depth: number; draw: (l: Pixels) => void }[] = [];
@@ -637,20 +697,7 @@ export function scenePieces(
     addTable(slot, floor.tables[floor.insideTables + i] ?? null, true, floor.insideTables + i),
   );
 
-  // A row of flower boxes along the edge of the terrace. Each is its own piece, so that
-  // chairs and tables in front of a box are drawn over it, and the boxes over things behind.
-  if (layout.terraceDepth > 0) {
-    const planter = drawn('planter', (img, lo) => {
-      box(img, lo, { x0: 0, x1: 16, y0: 0, y1: 4, z0: 0, z1: 5 }, cabinet);
-      for (let f = 1; f < 15; f += 3) {
-        box(img, lo, { x0: f, x1: f + 2, y0: 1, y1: 3, z0: 5, z1: 7 }, solid(f % 2 ? C.leaf : C.leafLight));
-        box(img, lo, { x0: f, x1: f + 1, y0: 1.5, y1: 2.5, z0: 7, z1: 8 }, solid(C.flowers[f % 4]));
-      }
-    });
-    for (let x = 2; x < layout.roomX - 2; x += 20) {
-      pieces.push(piece(o, `planter${x}`, planter, x, layout.roomY + 2, 0, x + 8 + layout.roomY + 6));
-    }
-  }
+  pieces.push(...buildingPieces(layout, floor));
 
   // The kitchen: chefs behind the island, a pot each, the pizza oven at the side.
   const k = layout.kitchenX;
@@ -750,6 +797,8 @@ function cord(lamp: ScenePiece, ceiling: number): ScenePiece {
 export interface Point {
   x: number;
   y: number;
+  /** Height above the floor; the street is below it. */
+  z?: number;
 }
 
 /** The table spot for table number `table` (inside tables first, then the terrace). */
@@ -773,28 +822,21 @@ export function seatsAt(layout: RoomLayout, insideTables: number, table: number)
 export function walkPath(layout: RoomLayout, insideTables: number, table: number, seat: Point): Point[] {
   const found = slotOf(layout, insideTables, table);
   if (!found) return [];
+  const door = (layout.door.x0 + layout.door.x1) / 2;
+  // Along the street from one side or the other, up the steps, and in.
+  const fromLeft = Math.round(seat.x + seat.y) % 2 === 0;
+  const along = { x: fromLeft ? -30 : layout.edgeX + 30, y: layout.streetY, z: -PLINTH };
+  const foot = { x: door, y: layout.streetY, z: -PLINTH };
+  const top = { x: door, y: layout.edgeY - 5, z: 0 };
   const aisle = found.slot.x - 5;
   const end = { x: seat.x, y: seat.y };
   if (found.outdoor) {
-    const street = layout.roomY + layout.terraceDepth + 6;
-    return [
-      { x: aisle, y: street },
-      { x: aisle, y: seat.y },
-      end,
-    ];
+    return [along, foot, top, { x: aisle, y: top.y }, { x: aisle, y: seat.y }, end];
   }
-  const door = (layout.door.x0 + layout.door.x1) / 2;
-  const corridor = 46;
-  return [
-    { x: door, y: 2 },
-    { x: door, y: corridor },
-    { x: aisle, y: corridor },
-    { x: aisle, y: seat.y },
-    end,
-  ];
+  const inside = layout.roomY - 5;
+  return [along, foot, top, { x: door, y: inside }, { x: aisle, y: inside }, { x: aisle, y: seat.y }, end];
 }
 
-/** The stacking order of something standing at a point, matching the scene's pieces. */
 export function depthAt(point: Point): number {
   return point.x + point.y;
 }
@@ -811,4 +853,73 @@ export function servePath(layout: RoomLayout, insideTables: number, table: numbe
   const start = waiterSpot(layout, waiter);
   const aisle = found.slot.x - 5;
   return [start, { x: aisle, y: start.y }, { x: aisle, y: found.slot.y + TABLE / 2 }];
+}
+
+// ---------- The building: low walls, the przedproże balustrade, the queue at the door ----------
+
+/** Splits a run from `from` to `to` into pieces no longer than `most`, so each can stack on its own. */
+function runs(from: number, to: number, most = 16): [number, number][] {
+  const result: [number, number][] = [];
+  for (let a = from; a < to; a += most) result.push([a, Math.min(to, a + most)]);
+  return result;
+}
+
+function buildingPieces(layout: RoomLayout, floor: FloorView): ScenePiece[] {
+  const o = layout.origin;
+  const pieces: ScenePiece[] = [];
+  const { roomX, roomY, edgeX, edgeY } = layout;
+  const { thick, high } = LOW_WALL;
+  const { x0: d0, x1: d1 } = layout.door;
+  const plaster: Faces = { top: C.trim, left: C.plaster, right: C.plasterShade };
+
+  // The front wall, cut away at knee height, with the door opening onto the street.
+  for (const [a, b] of [...runs(0, d0), ...runs(d1, edgeX)]) {
+    const image = drawn(`wall:front:${b - a}`, (img, lo) => {
+      box(img, lo, { x0: 0, x1: b - a, y0: 0, y1: thick, z0: 0, z1: high - 1 }, plaster);
+      box(img, lo, { x0: 0, x1: b - a, y0: 0, y1: thick, z0: high - 1, z1: high }, { top: C.trim, left: C.trimDark, right: C.trimDark });
+    });
+    pieces.push(piece(o, `wall:front:${a}`, image, a, roomY, 0, (a + b) / 2 + roomY + thick));
+  }
+  // The side wall, the same.
+  for (const [a, b] of runs(0, roomY)) {
+    const image = drawn(`wall:side:${b - a}`, (img, lo) => {
+      box(img, lo, { x0: 0, x1: thick, y0: 0, y1: b - a, z0: 0, z1: high - 1 }, plaster);
+      box(img, lo, { x0: 0, x1: thick, y0: 0, y1: b - a, z0: high - 1, z1: high }, { top: C.trim, left: C.trimDark, right: C.trimDark });
+    });
+    pieces.push(piece(o, `wall:side:${a}`, image, roomX, a, 0, roomX + thick + (a + b) / 2));
+  }
+
+  // The przedproże's stone balustrade: along the front (with a gap for the steps) and down the side.
+  if (layout.terraceDepth > 0) {
+    const stone: Faces = { top: C.sandstone, left: C.sandstoneShade, right: C.sandstoneDark };
+    const rail = (along: 'x' | 'y', length: number) =>
+      drawn(`balustrade:${along}:${length}`, (img, lo) => {
+        const span = (a: number, b: number, z0: number, z1: number) =>
+          along === 'x' ? { x0: a, x1: b, y0: 0, y1: 2, z0, z1 } : { x0: 0, x1: 2, y0: a, y1: b, z0, z1 };
+        box(img, lo, span(0, length, 0, 1.5), stone);
+        for (let u = 2; u < length - 1; u += 3) box(img, lo, span(u, u + 1, 1.5, 7), stone);
+        box(img, lo, span(0, 2, 0, 9), stone);
+        box(img, lo, span(length - 2, length, 0, 9), stone);
+        box(img, lo, span(0, length, 7, 8.5), stone);
+      });
+    for (const [a, b] of [...runs(0, d0), ...runs(d1, edgeX)]) {
+      pieces.push(piece(o, `balustrade:front:${a}`, rail('x', b - a), a, edgeY - 2, 0, (a + b) / 2 + edgeY));
+    }
+    for (const [a, b] of runs(roomY + thick, edgeY - 2)) {
+      pieces.push(piece(o, `balustrade:side:${a}`, rail('y', b - a), edgeX - 2, a, 0, edgeX + (a + b) / 2));
+    }
+  }
+
+  // People waiting at the door for a table, facing it: on the przedproże, or on the street below the steps.
+  const door = (d0 + d1) / 2;
+  const waiting = floor.atTheDoor.flatMap((party, p) => Array.from({ length: party.size }, (_, i) => ({ group: party.group, p, i })));
+  waiting.slice(0, 6).forEach(({ group, p, i }, n) => {
+    const image = personImage(group, 'back', 'stand', p * 4 + i);
+    const spot =
+      layout.terraceDepth > 0
+        ? { x: door - 3 + (n % 2) * 6, y: roomY + thick + 5 + Math.floor(n / 2) * 6, z: 0 }
+        : { x: door + 10 + n * 6, y: layout.streetY - 2, z: -PLINTH };
+    pieces.push(piece(o, `queue${n}`, image, spot.x, spot.y, spot.z, spot.x + spot.y));
+  });
+  return pieces;
 }

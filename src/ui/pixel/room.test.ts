@@ -6,7 +6,7 @@ import * as actions from '../../sim/actions';
 import { answerTheMoment, newGame, openRestaurant, playTick, type GameState } from '../../sim/game';
 import { specialCandidate } from '../../sim/staff';
 import { drawStreet } from './street';
-import { drawRoom, guestKind, roomLayout, scenePieces, seatsAt, servePath, waiterSpot, walkPath, type RoomLook } from './room';
+import { PLINTH, drawRoom, guestKind, roomLayout, scenePieces, seatsAt, servePath, waiterSpot, walkPath, type RoomLook } from './room';
 import { HEADROOM, PERSON, personPixels, SEATED_ROWS, type PersonKind } from './sprites';
 
 const look = (insideTables: number): RoomLook => ({ decor: [], equipment: ['stove'], weather: 'sunny', dusk: false, insideTables });
@@ -105,18 +105,26 @@ describe('the pixel-art room layout', () => {
 });
 
 describe('walking in and out', () => {
-  it('takes inside guests from the front door to their seat, without leaving the room', () => {
+  it('brings inside guests along the street, up the steps and in through the front door', () => {
     const layout = roomLayout(12, 4);
+    const door = (layout.door.x0 + layout.door.x1) / 2;
     for (let table = 0; table < 12; table++) {
       for (const seat of seatsAt(layout, 12, table)) {
         const path = walkPath(layout, 12, table, seat);
-        expect(path[0]).toEqual({ x: (layout.door.x0 + layout.door.x1) / 2, y: 2 });
+        expect(path[0]).toMatchObject({ y: layout.streetY, z: -PLINTH });
+        expect(path[1]).toEqual({ x: door, y: layout.streetY, z: -PLINTH });
         expect(path.at(-1)).toEqual({ x: seat.x, y: seat.y });
-        for (const p of path) {
+        // Once through the door, they stay inside the room.
+        const inside = path.slice(path.findIndex((p) => p.y < layout.roomY));
+        for (const p of inside) {
           expect(p.x).toBeGreaterThanOrEqual(0);
           expect(p.x).toBeLessThanOrEqual(layout.roomX);
           expect(p.y).toBeLessThanOrEqual(layout.roomY);
         }
+        // Through the door's opening, not the wall.
+        const crossing = path.findIndex((p) => p.y < layout.roomY);
+        expect(path[crossing].x).toBe(door);
+        expect(path[crossing - 1].x).toBe(door);
       }
     }
   });
