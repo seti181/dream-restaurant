@@ -6,6 +6,7 @@ import type { MenuDish } from '../data/dishes';
 import { CALENDAR_EVENTS, RANDOM_EVENTS, type RandomEventId } from '../data/events';
 import { GROUP_IDS, type GroupId } from '../data/groups';
 import { CAMPAIGNS, type CampaignId } from '../data/marketing';
+import { FIRST_GOAL, type TipId } from '../data/mewa';
 import { LOCATIONS } from '../data/locations';
 import { RIVAL_IDS } from '../data/rivals';
 import type { Weather } from '../data/weather';
@@ -19,7 +20,9 @@ import {
   rollWeather,
 } from './events';
 import { weeklyBillsDue } from './finance';
+import { goalOf, goalText, nextGoal, startGoal, trackGoal, type GoalState } from './goals';
 import { pairingsOf } from './menu';
+import { isFairDay, isNeptuneDay, neptuneResult, type NeptuneResult, type SeasonTally } from './neptune';
 import { planRivalWeek, rivalAwarenessToday } from './rivalAi';
 import { createRng, type RngState } from './rng';
 import { createPlayerRestaurant, createRivalRestaurant } from './setup';
@@ -63,6 +66,14 @@ export interface GameState {
   /** This morning's news. */
   news: NewsItem[];
   week: WeekTally;
+  /** Mewa's tutorial tips already seen, or all of them switched off. */
+  mewa: { seenTips: TipId[]; tipsOff: boolean };
+  /** This week's goal from Mewa. */
+  goal: GoalState;
+  /** Ratings and Fair guests since the last Golden Neptune. */
+  season: SeasonTally;
+  /** Golden Neptunes won. */
+  trophies: number;
   /** The player's restaurant first, then the rivals. */
   restaurants: Restaurant[];
 }
@@ -117,6 +128,10 @@ export interface DaySummary extends DayTally {
   events: string[];
   /** Reviews written today, the critic's first. */
   reviews: Review[];
+  /** Mewa's goal, if it was completed today. */
+  goalCompleted: { text: string; reward: number } | null;
+  /** The Golden Neptune, on the day it is awarded. */
+  neptune: NeptuneResult | null;
 }
 
 export function newGame(seed: number): GameState {
@@ -138,6 +153,10 @@ export function newGame(seed: number): GameState {
     events: [],
     news: [],
     week: { served: {}, turnedAway: {} },
+    mewa: { seenTips: [], tipsOff: false },
+    goal: startGoal(FIRST_GOAL),
+    season: { ratings: {}, fairGuests: {} },
+    trophies: 0,
     restaurants: [
       createPlayerRestaurant(start.name, start.menu, staffOf(team, 'chef'), staffOf(team, 'waiter')),
       ...RIVAL_IDS.map(createRivalRestaurant),
@@ -301,6 +320,25 @@ function pairingComments(outcomes: PartyOutcome[], restaurantId: string): { comm
   return [...comments].map(([comment, happy]) => ({ comment, happy })).sort((a, b) => Number(b.happy) - Number(a.happy));
 }
 
+/** Adds a day's ratings, and any Fair guests, to the season's tally. */
+function addToSeason(season: SeasonTally, outcomes: PartyOutcome[], day: number): SeasonTally {
+  const ratings: SeasonTally['ratings'] = Object.fromEntries(
+    Object.entries(season.ratings).map(([id, r]) => [id, { ...r }]),
+  );
+  const fairGuests = { ...season.fairGuests };
+  const fair = isFairDay(day);
+  for (const o of outcomes) {
+    if (o.restaurant === null) continue;
+    if (o.satisfaction !== null) {
+      const r = (ratings[o.restaurant] ??= { total: 0, count: 0 });
+      r.total += o.satisfaction;
+      r.count++;
+    }
+    if (fair && o.kind === 'served') fairGuests[o.restaurant] = (fairGuests[o.restaurant] ?? 0) + o.size;
+  }
+  return { ratings, fairGuests };
+}
+
 /** Adds a day's guests to the week's tally. */
 function addToWeek(week: WeekTally, outcomes: PartyOutcome[]): WeekTally {
   const served: WeekTally['served'] = Object.fromEntries(
@@ -368,6 +406,47 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
     }
   }
 
+  const outcomes = open.progress.outcomes;
+  const groups = groupDays(outcomes, playerBefore, playerAfter);
+  const reviews = outcomes
+    .filter((o) => o.restaurant === playerBefore.id && o.review !== null)
+    .map((o) => o.review!)
+    .sort((a, b) => Number(b.critic) - Number(a.critic));
+  const lunchSetsSold = outcomes
+    .filter((o) => o.restaurant === playerBefore.id && o.kind === 'served')
+    .reduce((sum, o) => sum + o.order.filter((d) => d.fromLunchSet).length / 2, 0);
+
+  // Mewa's goal: count today, and pay the reward the moment it's done.
+  let goal = trackGoal(state.goal, {
+    guestsServed: tally.guestsServed,
+    servedByGroup: Object.fromEntries(GROUP_IDS.map((g) => [g, groups[g].served])),
+    fiveStarReviews: reviews.filter((r) => r.stars === 5).length,
+    profit,
+    lunchSetsSold,
+    averageSatisfaction: tally.averageSatisfaction,
+    player: restaurants[0],
+  });
+  let goalCompleted: DaySummary['goalCompleted'] = null;
+  if (goal.done && !state.goal.done) {
+    const reward = goalOf(goal).reward;
+    cash += reward;
+    goalCompleted = { text: goalText(goalOf(goal)), reward };
+  }
+  if (isMonday(nextDay)) {
+    goal = nextGoal(rng, state.goal.index);
+    news.push({ title: 'Mewa’s goal for the week', text: `${goalText(goalOf(goal))}. Reward: ${goalOf(goal).reward} zł.` });
+  }
+
+  // The Golden Neptune, on the last day of the Fair.
+  let season = addToSeason(state.season, outcomes, state.day);
+  let neptune: NeptuneResult | null = null;
+  let { trophies } = state;
+  if (isNeptuneDay(state.day)) {
+    neptune = neptuneResult(season, open.progress.restaurants);
+    if (neptune.playerWon) trophies += 1;
+    season = { ratings: {}, fairGuests: {} };
+  }
+
   return {
     state: {
       ...state,
@@ -381,6 +460,9 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
       events,
       news,
       week: nextWeek,
+      goal,
+      season,
+      trophies,
       restaurants,
     },
     summary: {
@@ -392,24 +474,21 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
       profit,
       ratingBefore: starRating(playerBefore),
       ratingAfter: starRating(playerAfter),
-      groups: groupDays(open.progress.outcomes, playerBefore, playerAfter),
-      feedback: averageFeedback(open.progress.outcomes, playerBefore.id),
-      dishesSold: dishesSold(open.progress.outcomes, playerBefore.id),
-      pairingComments: pairingComments(open.progress.outcomes, playerBefore.id),
-      lunchSetsSold: open.progress.outcomes
-        .filter((o) => o.restaurant === playerBefore.id && o.kind === 'served')
-        .reduce((sum, o) => sum + o.order.filter((d) => d.fromLunchSet).length / 2, 0),
+      groups,
+      feedback: averageFeedback(outcomes, playerBefore.id),
+      dishesSold: dishesSold(outcomes, playerBefore.id),
+      pairingComments: pairingComments(outcomes, playerBefore.id),
+      lunchSetsSold,
       rivals: open.progress.restaurants.slice(1).map((rival) => ({
         id: rival.id,
         name: rival.name,
-        guestsServed: tallyFor(open.progress.outcomes, rival.id).guestsServed,
+        guestsServed: tallyFor(outcomes, rival.id).guestsServed,
       })),
       weather: state.weather,
       events: eventsToday(state),
-      reviews: open.progress.outcomes
-        .filter((o) => o.restaurant === playerBefore.id && o.review !== null)
-        .map((o) => o.review!)
-        .sort((a, b) => Number(b.critic) - Number(a.critic)),
+      reviews,
+      goalCompleted,
+      neptune,
     },
   };
 }

@@ -5,6 +5,8 @@ import { InteriorPanel } from './plan/InteriorPanel';
 import { KitchenPanel } from './plan/KitchenPanel';
 import { MapPanel } from './plan/MapPanel';
 import { MarketingPanel } from './plan/MarketingPanel';
+import { MewaPanel } from './plan/MewaPanel';
+import { MewaTip } from './Mewa';
 import { MenuPanel } from './plan/MenuPanel';
 import { StaffPanel } from './plan/StaffPanel';
 import { TodayPanel } from './plan/TodayPanel';
@@ -18,6 +20,7 @@ const TABS: { tab: PlanTab; label: string }[] = [
   { tab: 'staff', label: 'Staff' },
   { tab: 'marketing', label: 'Marketing' },
   { tab: 'map', label: 'Map' },
+  { tab: 'mewa', label: '🐦 Mewa' },
 ];
 
 export function PlanScreen() {
@@ -42,6 +45,7 @@ export function PlanScreen() {
           ))}
         </nav>
         <div className="plan-body">
+          <MewaTip screen="plan" />
           {planTab === 'today' && <TodayPanel />}
           {planTab === 'menu' && <MenuPanel />}
           {planTab === 'kitchen' && <KitchenPanel />}
@@ -49,6 +53,7 @@ export function PlanScreen() {
           {planTab === 'staff' && <StaffPanel />}
           {planTab === 'marketing' && <MarketingPanel />}
           {planTab === 'map' && <MapPanel />}
+          {planTab === 'mewa' && <MewaPanel />}
         </div>
         <footer className="plan-footer">
           <button type="button" className="primary" onClick={open}>

@@ -1,3 +1,4 @@
+import { CeremonyScreen } from './CeremonyScreen';
 import { DayOverScreen } from './DayOverScreen';
 import { DayScreen } from './DayScreen';
 import { Hud } from './Hud';
@@ -12,6 +13,7 @@ export function App() {
       {phase === 'plan' && <PlanScreen />}
       {phase === 'open' && <DayScreen />}
       {phase === 'dayOver' && <DayOverScreen />}
+      {phase === 'ceremony' && <CeremonyScreen />}
     </div>
   );
 }

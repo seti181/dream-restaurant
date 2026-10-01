@@ -8,6 +8,7 @@ import { EQUIPMENT } from '../data/equipment';
 import { GROUP_IDS } from '../data/groups';
 import { LOCATIONS, type LocationId } from '../data/locations';
 import { CAMPAIGNS, type CampaignId } from '../data/marketing';
+import type { TipId } from '../data/mewa';
 import { playerOf, type GameState } from './game';
 import { dateOf, daysInMonth, nextDayOn } from './calendar';
 import { ambianceWith } from './interior';
@@ -285,4 +286,17 @@ export function relocate(state: GameState, to: LocationId): GameState {
   if (relocateUnavailableReason(state, to) !== null) return state;
   const moved = withPlayer(state, afterMove(state, to));
   return { ...moved, cash: state.cash - balance.relocation.fee };
+}
+
+// ---------- Mewa ----------
+
+/** Marks one of Mewa's tips as read. */
+export function dismissTip(state: GameState, tip: TipId): GameState {
+  if (state.mewa.seenTips.includes(tip)) return state;
+  return { ...state, mewa: { ...state.mewa, seenTips: [...state.mewa.seenTips, tip] } };
+}
+
+/** Switches all of Mewa's tutorial tips off. */
+export function skipTips(state: GameState): GameState {
+  return { ...state, mewa: { ...state.mewa, tipsOff: true } };
 }

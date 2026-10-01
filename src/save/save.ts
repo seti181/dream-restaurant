@@ -2,9 +2,11 @@
 // Every save carries a version number, so saves made by older versions of the
 // game can be upgraded by `migrate` instead of being lost.
 
+import { FIRST_GOAL } from '../data/mewa';
 import type { GameState } from '../sim/game';
+import { startGoal } from '../sim/goals';
 
-export const SAVE_VERSION = 3;
+export const SAVE_VERSION = 4;
 const SAVE_KEY = 'old-town-kitchen/save';
 
 interface SaveFile {
@@ -76,6 +78,17 @@ function upgradeFrom2(game: Record<string, unknown>): Record<string, unknown> {
   return { weather: 'cloudy', events: [], news: [], week: { served: {}, turnedAway: {} }, ...game };
 }
 
+/** Version 3 → 4 (M3 Mewa): tutorial tips, weekly goals, the season's tally and trophies. */
+function upgradeFrom3(game: Record<string, unknown>): Record<string, unknown> {
+  return {
+    mewa: { seenTips: [], tipsOff: false },
+    goal: startGoal(FIRST_GOAL),
+    season: { ratings: {}, fairGuests: {} },
+    trophies: 0,
+    ...game,
+  };
+}
+
 /**
  * Brings a save from any older version up to date, one version at a time.
  * Returns null for saves that can't be understood.
@@ -95,6 +108,10 @@ export function migrate(data: unknown): GameState | null {
   if (version === 2 && looksLikeGame(game)) {
     game = upgradeFrom2(game as unknown as Record<string, unknown>);
     version = 3;
+  }
+  if (version === 3 && looksLikeGame(game)) {
+    game = upgradeFrom3(game as unknown as Record<string, unknown>);
+    version = 4;
   }
 
   return looksLikeGame(game) ? game : null;

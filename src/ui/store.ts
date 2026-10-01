@@ -8,6 +8,7 @@ import type { DecorId } from '../data/decor';
 import type { EquipmentId, ExtraId, TemplateId } from '../data/dishes';
 import type { LocationId } from '../data/locations';
 import type { CampaignId } from '../data/marketing';
+import type { TipId } from '../data/mewa';
 import { loadGame, saveGame } from '../save/save';
 import * as actions from '../sim/actions';
 import { minuteOfDay } from '../sim/clock';
@@ -24,14 +25,17 @@ import {
 } from '../sim/game';
 import type { Supplier } from '../sim/types';
 
-/** Plan: time paused, getting ready. Open: the day is playing. Day over: the results. */
-export type Phase = 'plan' | 'open' | 'dayOver';
+/**
+ * Plan: time paused, getting ready. Open: the day is playing. Day over: the results.
+ * Ceremony: the Golden Neptune, after the Fair's last day.
+ */
+export type Phase = 'plan' | 'open' | 'dayOver' | 'ceremony';
 
 /** 0 = paused. */
 export type Speed = 0 | 1 | 2 | 4;
 
 /** The tabs of the planning screen. */
-export type PlanTab = 'today' | 'menu' | 'kitchen' | 'interior' | 'staff' | 'marketing' | 'map';
+export type PlanTab = 'today' | 'menu' | 'kitchen' | 'interior' | 'staff' | 'marketing' | 'map' | 'mewa';
 
 export interface LiveDay extends DayTally {
   minute: number;
@@ -71,6 +75,8 @@ interface GameStore {
   launchCampaign: (id: CampaignId) => void;
   setHappyHour: (on: boolean) => void;
   relocate: (to: LocationId) => void;
+  dismissTip: (tip: TipId) => void;
+  skipTips: () => void;
   upgradeMenuBoard: () => void;
   setSupplier: (supplier: Supplier) => void;
 }
@@ -123,7 +129,11 @@ export const useGame = create<GameStore>((set, get) => ({
 
   setSpeed: (speed) => set({ speed }),
 
-  planNextDay: () => set({ phase: 'plan', summary: null, planTab: 'today' }),
+  planNextDay: () => {
+    // After the Fair's last report comes the Golden Neptune ceremony.
+    if (get().phase === 'dayOver' && get().summary?.neptune) set({ phase: 'ceremony' });
+    else set({ phase: 'plan', summary: null, planTab: 'today' });
+  },
 
   setPlanTab: (planTab) => set({ planTab }),
 
@@ -143,6 +153,9 @@ export const useGame = create<GameStore>((set, get) => ({
   launchCampaign: (id) => plan((game) => actions.launchCampaign(game, id)),
   setHappyHour: (on) => plan((game) => actions.setHappyHour(game, on)),
   relocate: (to) => plan((game) => actions.relocate(game, to)),
+  // Mewa's tips can be dismissed on any screen, even mid-day.
+  dismissTip: (tip) => set({ game: actions.dismissTip(get().game, tip) }),
+  skipTips: () => set({ game: actions.skipTips(get().game) }),
   upgradeMenuBoard: () => plan((game) => actions.upgradeMenuBoard(game)),
   setSupplier: (supplier) => plan((game) => actions.setSupplier(game, supplier)),
 }));

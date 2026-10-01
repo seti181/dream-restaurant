@@ -6,6 +6,7 @@ import { dateOf, formatDate } from '../sim/calendar';
 import type { DaySummary } from '../sim/game';
 import type { SatisfactionFactors } from '../sim/types';
 import { dishName, money, signedMoney, starRow, stars } from './format';
+import { MewaTip } from './Mewa';
 import { useGame } from './store';
 
 type Factor = keyof SatisfactionFactors;
@@ -78,11 +79,18 @@ export function DayOverScreen() {
     <main className="screen">
       <div className="card plan-card">
         <div className="plan-body">
+          <MewaTip screen="dayOver" />
           <p className="eyebrow">
             {formatDate(dateOf(summary.day))} · day over
             {summary.events.length > 0 && ` · ${summary.events.join(' · ')}`}
           </p>
           <h1>{headline(summary)}</h1>
+          {summary.goalCompleted && (
+            <p className="note goal-complete">
+              🎉 Goal complete: {summary.goalCompleted.text}! Mewa drops {money(summary.goalCompleted.reward)} at your
+              door.
+            </p>
+          )}
           <p className="said">💬 {guestsSaid(summary.feedback)}</p>
           {summary.pairingComments.slice(0, 3).map(({ comment, happy }) => (
             <p key={comment} className="said small">
@@ -187,7 +195,7 @@ export function DayOverScreen() {
             {saved ? '✓ Progress saved' : 'Couldn’t save this time. Your browser may be blocking storage.'}
           </span>
           <button type="button" className="primary" onClick={planNextDay}>
-            Plan tomorrow
+            {summary.neptune ? 'To the Golden Neptune ceremony!' : 'Plan tomorrow'}
           </button>
         </footer>
       </div>

@@ -325,6 +325,7 @@ button {
 
 .tabs {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   padding-bottom: 12px;
   border-bottom: 2px solid var(--sand);
@@ -332,7 +333,7 @@ button {
 
 .tab {
   min-height: 48px;
-  padding: 0 24px;
+  padding: 0 18px;
   border: none;
   border-radius: 12px;
   background: transparent;
@@ -930,4 +931,138 @@ h2.spaced {
 
 .move p {
   margin: 0 0 10px;
+}
+
+/* ---------- Mewa ---------- */
+
+.mewa {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.mewa-face {
+  font-size: 2.5rem;
+  line-height: 1;
+}
+
+.mewa-bubble {
+  flex: 1;
+  position: relative;
+  padding: 12px 16px;
+  border: 2px solid var(--sea);
+  border-radius: 18px;
+  background: #fff;
+}
+
+.mewa-bubble p {
+  margin: 0 0 10px;
+}
+
+.mewa-buttons {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.link-button {
+  min-height: 48px;
+  padding: 0 8px;
+  border: none;
+  background: none;
+  color: var(--sea);
+  font-size: 0.95rem;
+  text-decoration: underline;
+}
+
+.goal-card {
+  margin: 0 0 16px;
+  padding: 12px 16px;
+  border-radius: 16px;
+  background: #fdf6ea;
+}
+
+.goal-card h2 {
+  margin: 0 0 4px;
+}
+
+.goal-card p {
+  margin: 4px 0;
+}
+
+.goal-card.done {
+  background: #f3f8ef;
+}
+
+.goal-done {
+  color: var(--leaf);
+  font-weight: 700;
+}
+
+.note.goal-complete {
+  background: #f3f8ef;
+}
+
+.trophies {
+  font-size: 1.1rem;
+}
+
+.help-book {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 12px;
+}
+
+.help-entry {
+  padding: 12px 16px;
+  border-radius: 14px;
+  background: var(--cream);
+}
+
+.help-entry h3 {
+  margin: 0 0 4px;
+  color: var(--sea);
+}
+
+.help-entry p {
+  margin: 0;
+}
+
+/* ---------- The Golden Neptune ---------- */
+
+.ceremony {
+  text-align: center;
+}
+
+.ceremony .neptune-table {
+  margin: 20px auto 8px;
+  max-width: 760px;
+  text-align: right;
+}
+
+.trophy {
+  font-size: 5rem;
+}
+
+.ending-title {
+  margin: 8px 0 0;
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: var(--amber);
+}
+
+.ending-message {
+  margin: 4px 0 8px;
+  font-size: 1.4rem;
+}
+
+.neptune-table tr.you th,
+.neptune-table tr.you td {
+  font-weight: 700;
+  color: var(--brick);
+}
+
+.neptune-table .bar-cell {
+  width: 35%;
 }

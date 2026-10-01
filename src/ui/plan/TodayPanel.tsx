@@ -5,6 +5,7 @@ import { WEATHER } from '../../data/weather';
 import { weeklyBillsDue } from '../../sim/finance';
 import { eventsToday, playerOf, teamWages, type GameState } from '../../sim/game';
 import { dishName, money } from '../format';
+import { GoalCard } from '../Mewa';
 import { useGame } from '../store';
 
 const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? '' : 's'}`;
@@ -47,6 +48,8 @@ export function TodayPanel() {
           </p>
         ))}
       </section>
+
+      <GoalCard />
 
       {planWarnings(game).map((warning) => (
         <p key={warning} className="note warning">

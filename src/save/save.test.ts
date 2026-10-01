@@ -96,6 +96,10 @@ describe('upgrading version 1 saves (from before M3)', () => {
       events: _events,
       news: _news,
       week: _week,
+      mewa: _mewa,
+      goal: _goal,
+      season: _season,
+      trophies: _trophies,
       ...rest
     } = game;
     const restaurants = game.restaurants.map(
@@ -129,11 +133,20 @@ describe('upgrading version 1 saves (from before M3)', () => {
 
 describe('upgrading version 2 saves (from before weather and events)', () => {
   it('starts a cloudy day with no events or news', () => {
-    const { weather: _w, events: _e, news: _n, week: _k, ...old } = newGame(31);
+    const { weather: _w, events: _e, news: _n, week: _k, mewa: _m, goal: _g, season: _s, trophies: _t, ...old } =
+      newGame(31);
     const upgraded = migrate({ saveVersion: 2, savedAt: '', game: old })!;
     expect(upgraded.weather).toBe('cloudy');
     expect(upgraded.events).toEqual([]);
     expect(upgraded.news).toEqual([]);
     expect(upgraded.week).toEqual({ served: {}, turnedAway: {} });
+  });
+});
+
+describe('upgrading version 3 saves (from before Mewa)', () => {
+  it('gives Mewa’s first goal, an empty season and no trophies yet', () => {
+    const game = newGame(41);
+    const { mewa: _m, goal: _g, season: _s, trophies: _t, ...old } = game;
+    expect(migrate({ saveVersion: 3, savedAt: '', game: old })).toEqual(game);
   });
 });

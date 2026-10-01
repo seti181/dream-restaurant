@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { balance } from '../data/balance';
 import { formatTime, ticksPerDay } from '../sim/clock';
 import { money } from './format';
+import { MewaTip } from './Mewa';
 import { useGame } from './store';
 
 function Stat({ label, value }: { label: string; value: string | number }) {
@@ -36,6 +37,7 @@ export function DayScreen() {
   return (
     <main className="screen">
       <div className="card">
+        <MewaTip screen="open" />
         <p className="eyebrow">{live.closing ? 'Closed · finishing the last orders' : 'Open for business'}</p>
         <div className="big-clock">{formatTime(live.minute)}</div>
         <div className="day-progress" aria-hidden="true">
