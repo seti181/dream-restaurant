@@ -54,7 +54,7 @@ PLAN  ->  OPEN  ->  WATCH  ->  REVIEW  ->  INVEST  -> (next day)
 ```
 
 1. **Plan:** adjust menu, prices, staff, marketing and decor. Time is paused.
-2. **Open:** the day plays out from 11:00 to 22:00 in about 100 seconds at 1× speed. Pause, 2× and 4× are available.
+2. **Open:** the day plays out from 11:00 to 22:00 in about 130 seconds at 1× speed. Pause, 2× and 4× are available.
 3. **Watch:** guests arrive, choose a restaurant, order, eat and leave. Small speech bubbles show reactions.
 4. **Review:** end-of-day report shows:
    - guests served and guests lost
@@ -315,7 +315,7 @@ While the restaurant is open, the player can help out. Every interaction is opti
 
 After the playtests of M5b: the game should feel calmer, more varied and more like Gdańsk, and offer more to do over a season.
 
-**1. A slower day.** One day takes 100 seconds at 1× instead of 50 (×2), so there is time to look after tables, shoo gulls and move guests. 2× and 4× stay.
+**1. A slower day.** One day takes 130 seconds at 1× (it was 50; first 100, then 30 more after playtesting), so there is time to look after tables, shoo gulls and move guests. 2× and 4× stay.
 
 **2. A shorter season: about 40 days, ending with St. Dominic's Fair (Jarmark Dominikański).** Proposed: six full weeks, Monday 8 July to Sunday 18 August (42 days), which keeps the weekly rhythm (rent, Mewa's goal, the rivals' moves and new job candidates every Monday). The season covers the summer holidays, the tall ships festival (11–14 July), the Fair (27 July – 18 August) and the Fair cook-off (10 August). Easter, Majówka, Juwenalia and Corpus Christi fall outside it; the Amber evening on Mariacka (a personal touch) moves into the season. Everything tied to week numbers is rescaled (Tomek and Adrian, the secret recipe, Mewa's goals, rival reactions), and the economy is rebalanced with the simulator so the targets in section 13 still hold. With the slower day, a season is about 70 minutes of service plus planning: two or three evenings.
 
@@ -595,7 +595,7 @@ Work in small steps, and test each step in the browser before moving on.
 - [x] Pixel art: Old Town map, food icons and UI icons
 - [x] Restaurant view while planning: a tab next to the Map that shows the restaurant before opening
 - [ ] Balancing with the simulator plus playtests on the real tablet
-- [ ] Performance check on the tablet
+- [x] Performance check on the tablet
 
 **M5b – Interactive service (section 6.13)**
 
@@ -618,14 +618,15 @@ Each item is tested in the browser and on the tablet before the next one starts.
 
 Each item is tested in the browser and on the tablet before the next one starts.
 
-- [x] A slower day: 100 seconds at 1× instead of 50
+- [x] A slower day: 130 seconds at 1× instead of 50
 - [x] A shorter season: six weeks ending with St. Dominic's Fair, events moved, rebalanced with the simulator
 - [x] The tabs during the day: open any tab while the restaurant is open (the clock pauses); prices, menu and marketing change straight away, purchases and new staff arrive the next morning
 - [x] Choice cards: rarity, a shuffled deck, calendar and weather cards, follow-ups
 - [x] Choice cards: about 15 new cards, including the Portuguese exchange student (cabrito assado and azulejo tiles)
-- [ ] Performance check on the tablet with `?perf` (before adding more art)
+- [x] Performance check on the tablet with `?perf` (before adding more art)
 - [x] Manager-mode background: concept art (3–4 pixel mock-ups) to choose from
 - [ ] Manager-mode background: build the chosen concept
+- [ ] The day's numbers open up into lists: tap Guests served, Takings, Walked out or No free table to see who and what (groups, dishes, reasons)
 - [ ] Gdańsk streets: ornate gables, facade colours and details, granite paving
 - [ ] Gdańsk streets: shop fronts, awnings, café umbrellas, double lanterns, the Town Hall clock and golden spire, flags, flower boxes, bikes, pigeons, an amber stall, a street musician
 - [ ] Gdańsk streets: each of the six streets looks like itself
@@ -651,7 +652,7 @@ Each item is tested in the browser and on the tablet before the next one starts.
   - "do nothing" loses money, like bad decisions do
   - "balanced" becomes profitable by week 2–3
   - a thoughtful player wins the Golden Neptune on the first try, with some tension in the final weeks
-- **Pace target:** about 100 seconds per day at 1× speed (calm enough to look after the guests). The season length is set in M7 (section 6.14).
+- **Pace target:** about 130 seconds per day at 1× speed (calm enough to look after the guests). The season length is set in M7 (section 6.14).
 
 **Fixed issue (playtest, 2026-10-01): too many lost guests.** After a few days the "No free table" counter climbs into the hundreds (for example 179 turned away against 138 served on a June day), which feels unnatural. The simulator shows the same: the balanced strategy turns away about eight people for every one it serves over a season.
 
@@ -748,3 +749,7 @@ Each item is tested in the browser and on the tablet before the next one starts.
 - 2026-10-01: Fifteen new cards. The Portuguese corner: "A taste of Portugal", Ana, an Erasmus student from Coimbra, comes on day 8 (Tuesday 16 July) for certain, not at random; saying yes (the kitchen pauses 15 minutes for her lesson) unlocks cabrito assado (a main for the stove, roast kid goat with roast potatoes or oven rice, 🇵🇹 in the dish creator) and azulejo tiles from Coimbra (decor, 2,500 zł, +10 ambiance, a new "Portuguese corner" style loved by tourists and foodies; drawn as a blue-and-white tiled band along the walls) from the next morning, with a line in the news; saying no brings her back three days later. Fourteen with a Gdańsk flavour: Baltic amber on the counter, a film crew on Długa (800 zł, the door closed to walk-ins for an hour, 🎬), the way to Westerplatte, a Lechia–Arka derby night (evenings), wedding photos at the door, Kashubian napkins, no ferry to Hel (eight day-trippers), a TikToker (a gamble), a pierogi-eating contest, a delivery app (more office workers and students for three days), a forgotten phone (a five-star review), a fluffy dog, a coin for Neptune's fountain, gold letters above the door. Unlocked dishes and decor are kept in the save (version 11). Simulator, 10 seasons, refusing every card: do nothing 29,839 zł, cheap and fast bust 10/10, quality focus 10,928 zł, balanced 44,015 zł (2 busts in 10, week 6), Neptune 38.3 against 44.1.
 - 2026-10-01: Concept art for the planning-screen background, as full-screen mock-ups at the tablet's size in art/concepts/ (drawn by scripts/pixel/backgrounds.ts): A, a riverside strip of Długie Pobrzeże with the Żuraw and boats under a shorter card; B, the card as a sheet of paper on a wooden desk with a coffee cup, a pencil, receipts, basil and Mewa; C, the top bar as a banner of Długa's gabled houses and the Town Hall spire; D, concept A on a Fair evening (stalls, lanterns, the moon), to show how a background can follow the season and the time of day. The planning card covers almost the whole 1280×800 screen, so A, C and D take some height from it (A and D about 80 pixels, C about 100); B keeps the layout as it is. Waiting for a choice.
 - 2026-10-01: Background concepts, second version (feedback: "too simple, needs more detail, more pixel art but higher resolution"): drawn at 640×400 art pixels (twice the detail of the first round), with Gdańsk facades (curved Dutch scroll gables with urns, stepped and attic gables, window surrounds with pediments, cornices, shop awnings and arcades, three shades per colour), the Town Hall with its clock and tiered golden spire, the Żuraw in brick and timber, a tall ship, people and double lanterns on the quay, the Motława reflecting the houses, layered clouds and dithered skies. Each concept comes alone and with the interface placeholder (…-with-ui.png).
+- 2026-10-01: Performance on the tablet checked with ?perf: smooth, no problems found (M5 and M7 items ticked).
+- 2026-10-01: The day is 30 seconds slower again, 130 seconds at 1× (tapping waiting tables was still too rushed). The simulation is unchanged.
+- 2026-10-01: The queue at the door stands on the street in a line beside the steps (with a terrace it used to stand on the przedproże), the first in line shows ⏳, and a party that gives up walks off down the street, cross (😠), instead of vanishing.
+- 2026-10-01: Planned (M7): the numbers at the top of the day screen (guests served, takings, walked out, no free table) open into lists when tapped.

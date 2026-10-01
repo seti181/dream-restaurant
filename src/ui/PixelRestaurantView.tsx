@@ -16,6 +16,7 @@ import {
   drawRoom,
   guestKind,
   gullImage,
+  leaveQueuePath,
   movePath,
   tableMiddle,
   passerByPath,
@@ -335,6 +336,7 @@ export function PixelRestaurantView({
   const background = useMemo(() => imageUrl(drawRoom(layout, look)), [layout, look]);
   // How far out of sight people passing by start and finish, in art pixels.
   const passers = usePassersBy(layout, minute, layout.width + 120);
+  const leavers = useQueueLeavers(layout, floor);
   useEffect(() => () => URL.revokeObjectURL(background), [background]);
 
   const { walks, done, arriving, busyWaiters } = useWalkers(layout, floor);
@@ -424,6 +426,20 @@ export function PixelRestaurantView({
         {passers.walks.map((walk) => (
           <Walker key={walk.id} walk={walk} layout={layout} scale={scale} speed={speed} onDone={passers.done} />
         ))}
+        {leavers.walks.map((walk) => (
+          <Walker key={walk.id} walk={walk} layout={layout} scale={scale} speed={speed} onDone={leavers.done} />
+        ))}
+        {pieces
+          .filter((p) => p.kind === 'queue')
+          .map((p) => (
+            <span
+              key={`${p.key}:waiting`}
+              className="pixel-bubble"
+              style={{ left: at(p.px + p.image.pixels.width / 2), top: at(p.py + 4) }}
+            >
+              ⏳
+            </span>
+          ))}
         {/* Bubbles and coins above the seated guests, on top of everything. */}
         {pieces.map((p) => {
           if (p.kind !== 'guest' || !p.guests) return null;
@@ -492,6 +508,35 @@ function Gull({ layout, floor, scale, onTap }: { layout: RoomLayout; floor: Floo
       )}
     </>
   );
+}
+
+// ---------- People giving up on the queue ----------
+
+/** Parties that gave up waiting for a table walk off down the street, cross. */
+function useQueueLeavers(layout: RoomLayout, floor: FloorView) {
+  const [walks, setWalks] = useState<Walk[]>([]);
+  const seen = useRef(new Set<string>());
+  useEffect(() => {
+    const started: Walk[] = [];
+    floor.leftTheDoor.forEach((party, p) => {
+      const key = `${party.minute}:${p}:${party.group}:${party.size}`;
+      if (seen.current.has(key)) return;
+      seen.current.add(key);
+      for (let i = 0; i < Math.min(party.size, 4); i++) {
+        started.push({
+          id: `left:${key}:${i}`,
+          kind: party.group,
+          variant: p * 4 + i,
+          path: leaveQueuePath(layout, i),
+          delay: i * STAGGER,
+          angry: true,
+        });
+      }
+    });
+    if (started.length > 0) setWalks((now) => [...now, ...started]);
+  }, [floor.leftTheDoor, layout]);
+  const done = useCallback((walk: Walk) => setWalks((now) => now.filter((w) => w.id !== walk.id)), []);
+  return { walks, done };
 }
 
 // ---------- People passing by ----------

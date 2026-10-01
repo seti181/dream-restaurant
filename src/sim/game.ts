@@ -309,6 +309,7 @@ export function restingFloor(state: GameState): FloorView {
     ordersWaiting: 0,
     walkouts: [],
     atTheDoor: [],
+    leftTheDoor: [],
     decor: player.decor,
     equipment: player.equipment,
   };

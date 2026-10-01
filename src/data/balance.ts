@@ -13,7 +13,7 @@ export const balance = {
     afternoonStartHour: 15,
     eveningStartHour: 18,
     /** Real seconds that one day (11:00 to 22:00) takes at 1× speed: calm enough to look after the guests. */
-    realSecondsPerDay: 100,
+    realSecondsPerDay: 130,
   },
 
   menu: {

@@ -325,7 +325,7 @@ export interface ScenePiece {
   /** For bubbles and coins: the guests this piece shows, and their table. */
   guests?: TableGuests;
   table?: number;
-  kind?: 'guest' | 'chef' | 'steam';
+  kind?: 'guest' | 'chef' | 'steam' | 'queue';
   busy?: boolean;
 }
 
@@ -956,16 +956,13 @@ function buildingPieces(layout: RoomLayout, floor: FloorView): ScenePiece[] {
     }
   }
 
-  // People waiting at the door for a table, facing it: on the przedproże, or on the street below the steps.
-  const door = (d0 + d1) / 2;
+  // People waiting for a table queue on the street, in a line beside the steps, the first in line wearing ⏳.
   const waiting = floor.atTheDoor.flatMap((party, p) => Array.from({ length: party.size }, (_, i) => ({ group: party.group, p, i })));
-  waiting.slice(0, 6).forEach(({ group, p, i }, n) => {
+  waiting.slice(0, 8).forEach(({ group, p, i }, n) => {
     const image = personImage(group, 'back', 'stand', p * 4 + i);
-    const spot =
-      layout.terraceDepth > 0
-        ? { x: door - 3 + (n % 2) * 6, y: roomY + thick + 5 + Math.floor(n / 2) * 6, z: 0 }
-        : { x: door + 10 + n * 6, y: layout.streetY - 2, z: -PLINTH };
-    pieces.push(piece(o, `queue${n}`, image, spot.x, spot.y, spot.z, spot.x + spot.y));
+    const spot = queueSpot(layout, n);
+    const placed = piece(o, `queue${n}`, image, spot.x, spot.y, spot.z ?? 0, spot.x + spot.y);
+    pieces.push(n === 0 ? { ...placed, kind: 'queue' } : placed);
   });
   return pieces;
 }
@@ -1096,4 +1093,16 @@ export function passerByPath(layout: RoomLayout, lane: number, leftToRight: bool
     { x: reach, y: right, z },
   ];
   return leftToRight ? route : [...route].reverse();
+}
+
+/** Where the nth person waiting for a table stands: on the street, in a line to the right of the steps. */
+export function queueSpot(layout: RoomLayout, n: number): Point {
+  const door = (layout.door.x0 + layout.door.x1) / 2;
+  return { x: door + 14 + n * 6, y: layout.streetY - 3, z: -PLINTH };
+}
+
+/** A party that gave up waiting: from the queue, off down the street. */
+export function leaveQueuePath(layout: RoomLayout, person: number): Point[] {
+  const from = queueSpot(layout, person);
+  return [from, { x: from.x + 4, y: layout.streetY + 4, z: -PLINTH }, { x: from.x + 160, y: layout.streetY + 4, z: -PLINTH }];
 }

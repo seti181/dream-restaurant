@@ -6,7 +6,7 @@ import * as actions from '../../sim/actions';
 import { answerTheMoment, newGame, openRestaurant, playTick, type GameState } from '../../sim/game';
 import { specialCandidate } from '../../sim/staff';
 import { drawCloud, drawSky, drawStreet } from './street';
-import { PLINTH, drawRoom, guestKind, movePath, passerByPath, streetFurniture, roomLayout, scenePieces, seatsAt, servePath, waiterSpot, walkPath, type RoomLook } from './room';
+import { PLINTH, drawRoom, guestKind, leaveQueuePath, movePath, queueSpot, passerByPath, streetFurniture, roomLayout, scenePieces, seatsAt, servePath, waiterSpot, walkPath, type RoomLook } from './room';
 import { HEADROOM, PERSON, personPixels, SEATED_ROWS, type PersonKind } from './sprites';
 
 const look = (insideTables: number): RoomLook => ({ decor: [], equipment: ['stove'], weather: 'sunny', dusk: false, insideTables });
@@ -206,6 +206,22 @@ describe('walking in and out', () => {
     expect(path.at(-1)).toEqual({ x: to.x, y: to.y });
     // Never out on the street.
     for (const p of path) expect(p.z ?? 0).toBe(0);
+  });
+
+  it('lines the queue up on the street beside the steps, and sends anyone who gives up off down the street', () => {
+    for (const terrace of [0, 4]) {
+      const layout = roomLayout(9, terrace);
+      const door = (layout.door.x0 + layout.door.x1) / 2;
+      for (let n = 0; n < 8; n++) {
+        const spot = queueSpot(layout, n);
+        expect(spot.z).toBe(-PLINTH);
+        expect(spot.y).toBeGreaterThan(layout.edgeY);
+        expect(spot.x).toBeGreaterThan(door + 8);
+      }
+      const away = leaveQueuePath(layout, 0);
+      expect(away[0]).toEqual(queueSpot(layout, 0));
+      expect(away.at(-1)!.x).toBeGreaterThan(away[0].x + 100);
+    }
   });
 
   it('has no route to a table that does not exist', () => {

@@ -86,6 +86,8 @@ export interface Floor {
   away: { waiter: Staff; back: number }[];
   /** Parties waiting at the door for a table to free up, first come first served. */
   door: { party: Party; since: number }[];
+  /** Parties that gave up waiting at the door, and when (for the restaurant view to show them going). */
+  doorLeft: { group: GroupId; size: number; minute: number }[];
 }
 
 /** True while special guests keep new guests out. */
@@ -329,6 +331,7 @@ export function startDay(
       qualityBonus: 0,
       away: [],
       door: [],
+      doorLeft: [],
     })),
     outcomes: [],
     conditions,
@@ -416,7 +419,10 @@ function serveTheDoor(rng: RngState, progress: DayInProgress, index: number, min
     if (!fits && !gaveUp) continue;
     floor.door.splice(floor.door.indexOf(waiting), 1);
     if (fits && !closed) seat(rng, progress, index, waiting.party, minute, false);
-    else progress.outcomes.push(lostOutcome(waiting.party, progress.restaurants[index].id, 'noTable'));
+    else {
+      progress.outcomes.push(lostOutcome(waiting.party, progress.restaurants[index].id, 'noTable'));
+      floor.doorLeft.push({ group: waiting.party.group, size: waiting.party.size, minute });
+    }
   }
 }
 
@@ -573,6 +579,8 @@ export interface FloorView {
   walkouts: { group: GroupId; size: number }[];
   /** Parties waiting at the door for a table, first in line first. */
   atTheDoor: { group: GroupId; size: number; since: number }[];
+  /** Parties that gave up waiting at the door in the last few minutes. */
+  leftTheDoor: { group: GroupId; size: number; minute: number }[];
   /** A gull on the terrace, after the plate at this table (filled in by the game, not the day). */
   gull?: { table: number } | null;
 }
@@ -623,5 +631,6 @@ export function floorView(progress: DayInProgress, index: number, recentMinutes 
       .filter((w) => minute - w.minute < recentMinutes)
       .map(({ group, size }) => ({ group, size })),
     atTheDoor: floor.door.map(({ party, since }) => ({ group: party.group, size: party.size, since })),
+    leftTheDoor: floor.doorLeft.filter((left) => minute - left.minute < recentMinutes),
   };
 }

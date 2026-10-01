@@ -153,6 +153,8 @@ describe('the queue at the door', () => {
     for (let i = 0; i * balance.clock.tickMinutes <= balance.service.doorWaitMinutes; i++) stepDay(createRng(i), progress);
     expect(floor.door).toHaveLength(0);
     expect(progress.outcomes.some((o) => o.restaurant === 'player' && o.kind === 'noTable' && o.group === 'office')).toBe(true);
+    // The restaurant view sees them go.
+    expect(floorView(progress, 0).leftTheDoor).toEqual([expect.objectContaining({ group: 'office', size: 2 })]);
   });
 
   it('puts guests who booked at the front of the queue, and they wait longer', () => {
