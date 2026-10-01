@@ -6,7 +6,7 @@ import * as actions from '../../sim/actions';
 import { answerTheMoment, newGame, openRestaurant, playTick, type GameState } from '../../sim/game';
 import { specialCandidate } from '../../sim/staff';
 import { drawCloud, drawSky, drawStreet } from './street';
-import { PLINTH, drawRoom, guestKind, passerByPath, streetFurniture, roomLayout, scenePieces, seatsAt, servePath, waiterSpot, walkPath, type RoomLook } from './room';
+import { PLINTH, drawRoom, guestKind, movePath, passerByPath, streetFurniture, roomLayout, scenePieces, seatsAt, servePath, waiterSpot, walkPath, type RoomLook } from './room';
 import { HEADROOM, PERSON, personPixels, SEATED_ROWS, type PersonKind } from './sprites';
 
 const look = (insideTables: number): RoomLook => ({ decor: [], equipment: ['stove'], weather: 'sunny', dusk: false, insideTables });
@@ -184,6 +184,17 @@ describe('walking in and out', () => {
         }
       }
     }
+  });
+
+  it('walks a party that is moved from one table to another, via the door, seat to seat', () => {
+    const layout = roomLayout(6, 2);
+    const from = seatsAt(layout, 6, 4)[0];
+    const to = seatsAt(layout, 6, 6)[0];
+    const path = movePath(layout, 6, 4, from, 6, to);
+    expect(path[0]).toEqual({ x: from.x, y: from.y });
+    expect(path.at(-1)).toEqual({ x: to.x, y: to.y });
+    // Never out on the street.
+    for (const p of path) expect(p.z ?? 0).toBe(0);
   });
 
   it('has no route to a table that does not exist', () => {

@@ -57,8 +57,9 @@ export const TIPS: Record<TipId, Tip> = {
     day: 1,
     screen: 'open',
     text:
-      'See a table with ⏳ or 😤? Tap it! A free drink buys them time, and three times a day your chef ' +
-      'can come out to apologise and cook their order next. Happy guests, happy reviews.',
+      'Tap any table that’s still waiting for food! Show them to their favourite spot (tourists love the ' +
+      'terrace, locals the quiet back), give a free drink if they’re ⏳ or 😤, or ask the chef to come out ' +
+      'and apologise. Happy guests, happy reviews.',
   },
   happyHour: {
     day: 2,

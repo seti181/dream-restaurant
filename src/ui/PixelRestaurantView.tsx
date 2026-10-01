@@ -16,6 +16,7 @@ import {
   drawRoom,
   guestKind,
   gullImage,
+  movePath,
   tableMiddle,
   passerByPath,
   roomLayout,
@@ -225,14 +226,44 @@ function useWalkers(layout: RoomLayout, floor: FloorView) {
       });
     };
 
+    // A party the player showed to another table: gone from one, the same party at another.
+    const movedFrom = new Map<number, number>();
+    for (const [table, guests] of now) {
+      if (before.get(table)?.since === guests.since) continue;
+      for (const [old, was] of before) {
+        const left = now.get(old)?.since !== was.since;
+        if (old !== table && left && was.since === guests.since && was.group === guests.group) movedFrom.set(table, old);
+      }
+    }
+    const moving = (from: number, to: number, guests: TableGuests) => {
+      const fromSeats = seatsAt(layout, floor.insideTables, from);
+      const toSeats = seatsAt(layout, floor.insideTables, to);
+      for (let i = 0; i < guests.seated && i < toSeats.length && i < fromSeats.length; i++) {
+        const path = movePath(layout, floor.insideTables, from, fromSeats[i], to, toSeats[i]);
+        if (path.length < 2) continue;
+        started.push({
+          id: `${to}:${guests.since}:${i}:moved`,
+          kind: guestKind(guests, i),
+          variant: from * 4 + i,
+          path,
+          delay: i * STAGGER,
+          angry: false,
+          arrivingAt: { table: to, since: guests.since },
+        });
+      }
+    };
+
     for (const [table, guests] of now) {
       const was = before.get(table);
-      if (!was || was.since !== guests.since) walkersFor(table, guests, false);
+      const from = movedFrom.get(table);
+      if (from !== undefined) moving(from, table, guests);
+      else if (!was || was.since !== guests.since) walkersFor(table, guests, false);
       else if (was.stage !== 'eating' && guests.stage === 'eating') serve(table, guests);
     }
+    const movedAway = new Set(movedFrom.values());
     for (const [table, guests] of before) {
       const still = now.get(table);
-      if (!still || still.since !== guests.since) walkersFor(table, guests, true);
+      if ((!still || still.since !== guests.since) && !movedAway.has(table)) walkersFor(table, guests, true);
     }
     known.current = now;
     if (started.length > 0) setWalks((current) => [...current, ...started]);
@@ -260,6 +291,11 @@ export function canHelp(guests: TableGuests | null): boolean {
   return guests !== null && guests.stage === 'waiting' && guests.impatience > 0.5 && !(guests.drink && guests.apology);
 }
 
+/** True for guests the player can still do something for: seated, food not here yet. */
+export function canTend(guests: TableGuests | null): boolean {
+  return guests !== null && guests.stage !== 'eating' && guests.visitor === null;
+}
+
 export function PixelRestaurantView({
   floor,
   weather,
@@ -267,6 +303,8 @@ export function PixelRestaurantView({
   onTableTap,
   selectedTable = null,
   onGullTap,
+  freeTables = [],
+  onFreeTableTap,
 }: {
   floor: FloorView;
   weather: Weather;
@@ -276,6 +314,9 @@ export function PixelRestaurantView({
   selectedTable?: number | null;
   /** Tapping the gull on the terrace. */
   onGullTap?: () => void;
+  /** Choosing a new table for the selected guests: the free tables to offer, and which are their favourites. */
+  freeTables?: { table: number; favourite: boolean }[];
+  onFreeTableTap?: (table: number) => void;
 }) {
   const speed = useGame((s) => s.speed);
   const maxTables = Math.floor(LOCATIONS[floor.location].maxSeats / balance.service.seatsPerTable);
@@ -343,7 +384,43 @@ export function PixelRestaurantView({
         {walks.map((walk) => (
           <Walker key={walk.id} walk={walk} layout={layout} scale={scale} speed={speed} onDone={done} />
         ))}
+        {/* Every table whose guests are still waiting for food can be tapped, even while they walk in. */}
+        {onTableTap &&
+          floor.tables.map((guests, table) => {
+            if (!canTend(guests)) return null;
+            const middle = tableMiddle(layout, floor.insideTables, table);
+            if (!middle) return null;
+            const { sx, sy } = project(layout.origin, middle.x, middle.y, 18);
+            return (
+              <button
+                key={`tend${table}`}
+                type="button"
+                className={`table-help${table === selectedTable ? ' selected' : ''}`}
+                style={{ left: sx * scale, top: sy * scale }}
+                aria-label="Look after this table"
+                onClick={() => onTableTap(table)}
+              />
+            );
+          })}
         {floor.gull && <Gull layout={layout} floor={floor} scale={scale} onTap={onGullTap} />}
+        {onFreeTableTap &&
+          freeTables.map(({ table, favourite }) => {
+            const middle = tableMiddle(layout, floor.insideTables, table);
+            if (!middle) return null;
+            const { sx, sy } = project(layout.origin, middle.x, middle.y, 15);
+            return (
+              <button
+                key={`free${table}`}
+                type="button"
+                className={`free-table${favourite ? ' favourite' : ''}`}
+                style={{ left: sx * scale, top: sy * scale }}
+                aria-label={favourite ? 'Their favourite spot: seat them here' : 'Seat them here'}
+                onClick={() => onFreeTableTap(table)}
+              >
+                {favourite ? '⭐' : '🪑'}
+              </button>
+            );
+          })}
         {passers.walks.map((walk) => (
           <Walker key={walk.id} walk={walk} layout={layout} scale={scale} speed={speed} onDone={passers.done} />
         ))}
@@ -353,26 +430,17 @@ export function PixelRestaurantView({
           const x = at(p.px + p.image.pixels.width / 2);
           const y = at(p.py + 4);
           const bubble = bubbleFor(p.guests);
-          const tappable = onTableTap !== undefined && p.table !== undefined && canHelp(p.guests);
+          const urgent = onTableTap !== undefined && p.table !== undefined && canHelp(p.guests);
           return (
             <span key={`${p.key}:extras`}>
               {bubble && (
                 <span
                   key={bubble}
-                  className={`pixel-bubble${tappable ? ' tappable' : ''}${p.table === selectedTable ? ' selected' : ''}`}
+                  className={`pixel-bubble${urgent ? ' tappable' : ''}${p.table === selectedTable ? ' selected' : ''}`}
                   style={{ left: x, top: y }}
                 >
                   {bubble}
                 </span>
-              )}
-              {tappable && (
-                <button
-                  type="button"
-                  className="table-help"
-                  style={{ left: x, top: y }}
-                  aria-label="Help this table"
-                  onClick={() => onTableTap(p.table!)}
-                />
               )}
               {p.guests.critic && (
                 <span className="pixel-badge" style={{ left: x + at(7), top: y + at(4) }}>

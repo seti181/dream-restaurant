@@ -210,6 +210,11 @@ export const balance = {
     stolenReputation: 0.3,
   },
 
+  seating: {
+    /** Happiness points for guests the player shows to one of their favourite spots. */
+    favouriteMood: 6,
+  },
+
   help: {
     /** Tapping a waiting table: a free drink costs this much for each guest at it... */
     drinkCostPerGuest: 6,

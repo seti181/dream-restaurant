@@ -21,6 +21,7 @@ import {
   drinkCost,
   happyHourToday,
   helpGuests,
+  moveGuests,
   shooTheGull,
   startHappyHour,
   momentDue,
@@ -103,6 +104,8 @@ interface GameStore {
   shooGull: () => void;
   /** Starts today's happy hour now. */
   startHappyHour: () => void;
+  /** Shows the guests at one table to another; true if it's one of their favourite spots. */
+  moveGuests: (from: number, to: number) => boolean | null;
   setSpeed: (speed: Speed) => void;
   planNextDay: () => void;
   setPlanTab: (tab: PlanTab) => void;
@@ -228,6 +231,15 @@ export const useGame = create<GameStore>((set, get) => ({
     if (!openDay || !helpGuests(openDay, table, help)) return;
     play(help === 'drink' ? 'coin' : 'ding');
     set({ live: liveFrom(openDay) });
+  },
+
+  moveGuests: (from, to) => {
+    const { openDay } = get();
+    const result = openDay ? moveGuests(openDay, from, to) : null;
+    if (!openDay || !result) return null;
+    play(result.favourite ? 'goal' : 'ding');
+    set({ live: liveFrom(openDay) });
+    return result.favourite;
   },
 
   startHappyHour: () => {

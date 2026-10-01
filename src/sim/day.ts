@@ -56,6 +56,8 @@ export interface Visit {
   /** Help the player gave while they waited. */
   drink?: boolean;
   apology?: boolean;
+  /** The player showed them to another table. */
+  moved?: boolean;
   /** Reputation multipliers that apply when they leave. */
   reputationAfterwards?: Partial<Record<GroupId, number>>;
 }
@@ -487,6 +489,23 @@ export function helpTable(progress: DayInProgress, index: number, table: number,
   return visit;
 }
 
+/**
+ * The player shows the party at one table to a free table instead, before their food arrives.
+ * Only parties at a single table, once each. Returns the party moved, or null.
+ */
+export function moveParty(progress: DayInProgress, index: number, from: number, to: number): Visit | null {
+  const floor = progress.floors[index];
+  const restaurant = progress.restaurants[index];
+  const visit = floor.visits.find(
+    (v) => v.tables.length === 1 && v.tables[0] === from && !v.eating && !v.skipped && !v.visitor && !v.moved,
+  );
+  const free = to >= 0 && to < allTables(restaurant) && !floor.visits.some((v) => v.tables.includes(to));
+  if (!visit || !free) return null;
+  visit.tables = [to];
+  visit.moved = true;
+  return visit;
+}
+
 /** Plays one day from opening until the last guest leaves. The input restaurants are not changed. */
 export function runDay(
   rng: RngState,
@@ -521,6 +540,10 @@ export interface TableGuests {
   /** Help already given while they wait. */
   drink: boolean;
   apology: boolean;
+  /** Already shown to another table (once per party). */
+  moved: boolean;
+  /** Tables the whole party uses (big parties take two). */
+  tablesUsed: number;
   /** When they sat down: tells one party at this table from the next. */
   since: number;
 }
@@ -574,6 +597,8 @@ export function floorView(progress: DayInProgress, index: number, recentMinutes 
         visitor: visit.visitor ?? null,
         drink: visit.drink ?? false,
         apology: visit.apology ?? false,
+        moved: visit.moved ?? false,
+        tablesUsed: visit.tablesUsed,
         since: visit.seatedAt,
       };
     });

@@ -1563,14 +1563,19 @@ h2.spaced {
 .table-help {
   position: absolute;
   z-index: 5001;
-  width: 48px;
-  height: 48px;
+  width: 52px;
+  height: 52px;
   padding: 0;
   border: none;
   border-radius: 50%;
   background: transparent;
-  transform: translate(-50%, -75%);
+  transform: translate(-50%, -50%);
   cursor: pointer;
+}
+
+.table-help.selected {
+  border: 3px solid var(--sea);
+  background: rgba(47, 111, 143, 0.12);
 }
 
 .pixel-bubble.tappable {
@@ -1732,4 +1737,26 @@ h2.spaced {
   50% {
     box-shadow: 0 0 0 5px rgba(233, 162, 59, 0.3);
   }
+}
+
+/* Choosing a new table for a party. */
+.free-table {
+  position: absolute;
+  z-index: 5004;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  border: 3px solid var(--sea);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.85);
+  font-size: 20px;
+  line-height: 1;
+  transform: translate(-50%, -60%);
+  cursor: pointer;
+}
+
+.free-table.favourite {
+  border-color: var(--amber);
+  background: #fff4dc;
+  animation: tap-ring 0.9s ease-in-out infinite;
 }

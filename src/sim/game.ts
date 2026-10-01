@@ -12,7 +12,8 @@ import { LOCATIONS } from '../data/locations';
 import { SECRET_RECIPE, SPECIAL_STAFF, type SpecialStaffId } from '../data/personal';
 import { RIVAL_IDS } from '../data/rivals';
 import type { Weather } from '../data/weather';
-import { helpTable, startDay, stepDay, type DayInProgress, type FloorView, type Help } from './day';
+import { helpTable, moveParty, startDay, stepDay, type DayInProgress, type FloorView, type Help } from './day';
+import { isFavourite } from './seating';
 import { dateOf, isMonday } from './calendar';
 import { minuteOfDay, ticksPerDay } from './clock';
 import {
@@ -107,6 +108,8 @@ export interface OpenDay {
   help: { drinks: number; apologies: number; cash: number };
   /** Gulls on the terrace today. */
   gulls: GullsToday;
+  /** Parties the player showed to another table, and how many of those to a favourite spot. */
+  seating: { moved: number; favourites: number };
 }
 
 /** The player's numbers for a day, so far or in total. */
@@ -168,6 +171,8 @@ export interface DaySummary extends DayTally {
   gulls: { shooed: number; stolen: number };
   /** Today's happy hour, if there was one. */
   happyHour: { from: number; until: number } | null;
+  /** Guests the player showed to another table, and to a favourite spot. */
+  seating: { moved: number; favourites: number };
 }
 
 export function newGame(seed: number, difficulty: Difficulty = 'normal'): GameState {
@@ -317,6 +322,7 @@ export function openRestaurant(state: GameState): OpenDay {
     moments: planMoments((state.rng.s ^ Math.imul(state.day + 1, 0x9e3779b1)) >>> 0, state.day, state.momentsSeen),
     terraceBuilt: terraceTablesBuilt(state),
     help: { drinks: 0, apologies: 0, cash: 0 },
+    seating: { moved: 0, favourites: 0 },
     gulls: planGulls((state.rng.s ^ Math.imul(state.day + 7, 0x85ebca6b)) >>> 0, terraceTables),
   };
 }
@@ -355,6 +361,23 @@ export function startHappyHour(open: OpenDay): boolean {
 export function happyHourToday(open: OpenDay): { from: number; until: number } | null {
   const from = open.progress.restaurants[0].happyHourFrom;
   return from === undefined ? null : { from, until: from + balance.happyHour.minutes };
+}
+
+/**
+ * Shows the guests at one table to a free one. Returns whether it's one of their favourite
+ * spots (which makes them happier), or null if they can't move there.
+ */
+export function moveGuests(open: OpenDay, from: number, to: number): { favourite: boolean } | null {
+  const player = open.progress.restaurants[0];
+  const visit = moveParty(open.progress, 0, from, to);
+  if (!visit) return null;
+  const favourite = isFavourite(visit.party.group, player.location, player.tables, to);
+  if (favourite) {
+    visit.mood += balance.seating.favouriteMood;
+    open.seating.favourites++;
+  }
+  open.seating.moved++;
+  return { favourite };
 }
 
 /** The chef's apologies left today. */
@@ -679,6 +702,7 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
       help: open.help,
       gulls: { shooed: open.gulls.shooed, stolen: open.gulls.stolen },
       happyHour: happyHourToday(open),
+      seating: open.seating,
     },
   };
 }

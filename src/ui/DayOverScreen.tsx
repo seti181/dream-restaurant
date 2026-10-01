@@ -128,6 +128,12 @@ export function DayOverScreen() {
                 `👨‍🍳 The chef came out to apologise ${summary.help.apologies === 1 ? 'once' : `${summary.help.apologies} times`}.`}
             </p>
           )}
+          {summary.seating.moved > 0 && (
+            <p className="said small">
+              🪑 You showed {summary.seating.moved} {summary.seating.moved === 1 ? 'group' : 'groups'} to a new table
+              {summary.seating.favourites > 0 && `, ${summary.seating.favourites} to a favourite spot`}.
+            </p>
+          )}
           {summary.happyHour && (
             <p className="said small">
               🍹 Happy hour from {formatTime(summary.happyHour.from)} to {formatTime(summary.happyHour.until)}.

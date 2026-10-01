@@ -9,6 +9,7 @@ import type { FloorView, TableGuests } from '../../sim/day';
 import { box, placeOn, project, solid, type Faces, type Origin } from './iso';
 import { hex, mix, Pixels, type Rgb } from './raster';
 import * as S from './sprites';
+import { tableColumns } from '../../sim/seating';
 
 export const WALL_HEIGHT = 52;
 /** The floor stands this high above the street, on a stone plinth (like a cut-away dollhouse). */
@@ -154,7 +155,7 @@ export interface RoomLayout {
  * Tables sit on a grid with room for a chair on every side; the kitchen takes the far corner.
  */
 export function roomLayout(maxTables: number, terraceTables: number): RoomLayout {
-  const cols = maxTables <= 6 ? 3 : 4;
+  const cols = tableColumns(maxTables);
   const rows = Math.max(1, Math.ceil(maxTables / cols));
   const roomX = cols === 3 ? 128 : 160;
   const roomY = 54 + rows * 36;
@@ -807,6 +808,18 @@ export interface Point {
   y: number;
   /** Height above the floor; the street is below it. */
   z?: number;
+}
+
+/**
+ * A party walking from one table to another: back towards the door the way they came in,
+ * then on to the new table the way new guests do.
+ */
+export function movePath(layout: RoomLayout, insideTables: number, from: number, fromSeat: Point, to: number, toSeat: Point): Point[] {
+  const out = [...walkPath(layout, insideTables, from, fromSeat)].reverse();
+  const into = walkPath(layout, insideTables, to, toSeat);
+  if (out.length < 3 || into.length < 4) return [];
+  // Both routes pass the top of the steps: the third point in, the third from the end out.
+  return [...out.slice(0, out.length - 2), ...into.slice(3)];
 }
 
 /** A gull, for the terrace: the same herring gull as Mewa. */
