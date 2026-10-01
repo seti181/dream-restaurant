@@ -223,7 +223,7 @@ function apply(
   if (effect.visitors) {
     const { who, group, size, minutes, closesDoor, reputationAfterwards } = effect.visitors;
     const party = { group, size, origin: restaurant.location, arrivalMinute: minute, bookedAt: restaurant.id };
-    seat(today.rng, progress, 0, party, minute);
+    seat(today.rng, progress, 0, party, minute, false);
     // They didn't come for the kitchen. They stay their time, until closing at the latest.
     const visit = floor.visits.find((v) => v.party === party);
     if (visit) {
@@ -247,7 +247,7 @@ function apply(
       origin: restaurant.location,
       arrivalMinute: minute,
       bookedAt: restaurant.id,
-    }, minute);
+    }, minute, false);
   }
   const review: Review | null = effect.review
     ? {

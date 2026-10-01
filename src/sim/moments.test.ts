@@ -207,7 +207,6 @@ describe('what the answers do', () => {
     expect(until).toBe(12 * 60 + 45);
     playUntil(open, until);
     expect(floor.visits.filter((v) => v.seatedAt > 12 * 60)).toEqual([]);
-    expect(open.progress.outcomes.some((o) => o.restaurant === 'player' && o.kind === 'noTable')).toBe(true);
     playUntil(open, until + 10);
     expect(floor.visits).not.toContain(group);
   });

@@ -565,6 +565,13 @@ Each item is tested in the browser and on the tablet before the next one starts.
 - [ ] Live happy hour: a button during the day instead of the fixed 15:00–18:00 setting
 - [ ] Seat guests yourself: tap a group, then a table; favourite spots please them
 
+**M5c – The street and the building (section 9.1.1 and section 13)**
+
+- [x] Lost guests: people can see a full restaurant, and a short queue forms at the door
+- [ ] Guests come in from the street, and the restaurant looks like a building (front door, raised floor, low cut-away walls, przedproże terrace)
+- [ ] Weather in the sky: sun and moon, drifting clouds, rain
+- [ ] Street life: lamp posts, benches, trees, a menu board and people passing by
+
 **M6 – Gift day**
 
 - [ ] Final install on her tablet
@@ -580,7 +587,7 @@ Each item is tested in the browser and on the tablet before the next one starts.
   - a thoughtful player wins the Golden Neptune on the first try, with some tension in the final weeks
 - **Pace target:** about 50 seconds per day at 1× speed, which makes a season about 3–5 hours including planning.
 
-**Known issue (playtest, 2026-10-01): too many lost guests.** After a few days the "No free table" counter climbs into the hundreds (for example 179 turned away against 138 served on a June day), which feels unnatural. The simulator shows the same: the balanced strategy turns away about eight people for every one it serves over a season.
+**Fixed issue (playtest, 2026-10-01): too many lost guests.** After a few days the "No free table" counter climbs into the hundreds (for example 179 turned away against 138 served on a June day), which feels unnatural. The simulator shows the same: the balanced strategy turns away about eight people for every one it serves over a season.
 
 - **Why:** when choosing a restaurant, people don't notice that it is full. The expected wait they compare only counts order-taking and cooking, not waiting for a table to free up. So a busy, well-liked restaurant keeps attracting far more people than it can seat, and every one of them is counted as turned away. (Turned-away guests don't cost reputation, so it is mostly a numbers and realism problem, but it makes the counter meaningless.)
 - **Proposed fix:**
@@ -648,3 +655,5 @@ Each item is tested in the browser and on the tablet before the next one starts.
 - 2026-10-01: Choice cards are more random: 1–4 a day at random times (at least 45 minutes apart) instead of always 2–3 spread evenly. Cards seen in the last 3 days are a quarter as likely to come again; the save remembers the last day each card came up (save version 8, upgraded automatically).
 - 2026-10-01: Eleven new cards: the proposal, Sanepid, Nonna Rosa's basil, a Lechia Gdańsk footballer, half-price herring, Babcia's secret, dine and dash, a tram strike, a blackout, a sea shanty choir, and Lech Wałęsa. Wałęsa (white walrus moustache) and three bodyguards (black suits, sunglasses, earpieces) take a table for 3 hours (until closing at the latest), tip 2,500 zł and keep everyone else out, except Pan Cytrynówka, whom everybody knows; when they leave, reputation with locals and families is multiplied by 1.1. He comes at most once every 4 weeks.
 - 2026-10-01: Simulator, 10 seasons each, a player who says "no" to every card compared with no cards at all: balanced 367k → 318k zł and wins the Neptune 9/10 instead of 10/10; quality focus goes bust 2/10 instead of 1/10; do nothing 4/10 instead of 2/10. Ignoring the cards costs a little, like doing nothing should. The blackout's "wait" answer was softened from 15 to 10 kitchen minutes after it bankrupted a balanced season in testing. `NO_CARDS=1 npm run simulate` plays without cards.
+- 2026-10-01: Accepted from section 9.1.1: A1–A3 (sun and moon, clouds, rain), B1–B3 (raised floor, low cut-away walls, przedproże terrace), C1–C2 (street furniture, people passing by) and D (guests come in from the street), plus the lost-guests fix from section 13. A4 (gulls), B4 (neighbouring houses on both sides) and C3 (attracting passers-by) wait for later. New milestone M5c, built in this order.
+- 2026-10-01: Lost guests fixed. Up to 2 parties wait at the door for a table (at most 10 minutes); once every table is taken and the queue is full, the restaurant looks 6 points less tempting (balance.choice.fullPenalty), and people walking by see the latest state after each party sits down. Because guests now go next door when a rival is full, the Old Town got busier, so "somewhere else" went from 7 to 7.5 to keep doing nothing a losing plan. Simulator, 3 seasons, before → after: do nothing 13,852 zł (1/3 bust) → 30,119 zł (0/3; still loses money from 40,000); cheap and fast −98,264 → −69,521 zł (3/3 bust both); quality focus 12,865 → 20,263 zł (1/3 bust both); balanced 313,537 zł, Neptune 3/3 → 284,650 zł, 2/3 (over 5 seasons: 329,417 zł, 4/5). Balanced's lost guests over a season: 278,256 → 32,328, against about 35,000 served. On a busy June day in the test save: 179 turned away against 138 served before, 56–100 against 100–190 after.

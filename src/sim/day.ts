@@ -77,6 +77,8 @@ export interface Floor {
   qualityBonus: number;
   /** Waiters off the floor for a while, and when they're back. */
   away: { waiter: Staff; back: number }[];
+  /** Parties waiting at the door for a table to free up, first come first served. */
+  door: { party: Party; since: number }[];
 }
 
 /** True while special guests keep new guests out. */
@@ -313,6 +315,7 @@ export function startDay(
       closed: null,
       qualityBonus: 0,
       away: [],
+      door: [],
     })),
     outcomes: [],
     conditions,
@@ -339,6 +342,8 @@ export function seat(
   index: number,
   party: Party,
   minute: number,
+  /** False for parties that may not wait at the door for a table (they're already there, or a special case). */
+  mayQueue = true,
 ): void {
   const restaurant = progress.restaurants[index];
   const floor = progress.floors[index];
@@ -353,7 +358,9 @@ export function seat(
   const atTheBar = party.regular && floor.freeTables < 1;
   const tablesUsed = atTheBar ? 0 : tablesNeeded(party.size);
   if (floor.freeTables < tablesUsed) {
-    progress.outcomes.push(lostOutcome(party, restaurant.id, 'noTable'));
+    // Every table is taken: wait at the door if there's room in the queue, or go elsewhere.
+    if (mayQueue && floor.door.length < balance.service.doorQueueMax) floor.door.push({ party, since: minute });
+    else progress.outcomes.push(lostOutcome(party, restaurant.id, 'noTable'));
     return;
   }
   floor.freeTables -= tablesUsed;
@@ -378,14 +385,31 @@ export function seat(
   });
 }
 
+/**
+ * The queue at the door: parties are seated in turn as tables free up. Anyone who has
+ * waited too long, or is still waiting at closing time, goes somewhere else.
+ */
+function serveTheDoor(rng: RngState, progress: DayInProgress, index: number, minute: number, closed: boolean): void {
+  const floor = progress.floors[index];
+  for (const waiting of [...floor.door]) {
+    const fits = floor.freeTables >= tablesNeeded(waiting.party.size);
+    const gaveUp = closed || minute - waiting.since >= balance.service.doorWaitMinutes;
+    if (!fits && !gaveUp) continue;
+    floor.door.splice(floor.door.indexOf(waiting), 1);
+    if (fits && !closed) seat(rng, progress, index, waiting.party, minute, false);
+    else progress.outcomes.push(lostOutcome(waiting.party, progress.restaurants[index].id, 'noTable'));
+  }
+}
+
 /** Plays one tick of the day. */
 export function stepDay(rng: RngState, progress: DayInProgress): void {
   if (progress.done) return;
   const { day, tick, restaurants, floors, outcomes, conditions } = progress;
   const minute = minuteOfDay(tick);
-  restaurants.forEach((restaurant, i) =>
-    progressRestaurant(rng, restaurant, floors[i], minute, outcomes, conditions),
-  );
+  restaurants.forEach((restaurant, i) => {
+    progressRestaurant(rng, restaurant, floors[i], minute, outcomes, conditions);
+    serveTheDoor(rng, progress, i, minute, tick >= ticksPerDay());
+  });
   progress.tick++;
 
   if (tick >= ticksPerDay()) {
@@ -415,13 +439,18 @@ export function stepDay(rng: RngState, progress: DayInProgress): void {
   const waits = restaurants.map((restaurant, i) =>
     expectedWait(restaurant, allTables(restaurant) - floors[i].freeTables, floors[i].queue.length),
   );
+  // People can see when every table is taken and the queue at the door is as long as it gets.
+  const isFull = (floor: Floor) => floor.freeTables < 1 && floor.door.length >= balance.service.doorQueueMax;
+  const full = floors.map(isFull);
   for (const party of generateParties(rng, day, tick, conditions)) {
-    const index = chooseRestaurant(rng, party, restaurants, waits);
+    const index = chooseRestaurant(rng, party, restaurants, waits, full);
     if (index === null) {
       outcomes.push(lostOutcome(party, null, 'elsewhere'));
       continue;
     }
     seat(rng, progress, index, party, minute);
+    // The next people walking by see it as it is now.
+    full[index] = isFull(floors[index]);
   }
 }
 
@@ -478,6 +507,8 @@ export interface FloorView {
   ordersWaiting: number;
   /** Parties that walked out in the last few minutes. */
   walkouts: { group: GroupId; size: number }[];
+  /** Parties waiting at the door for a table, first in line first. */
+  atTheDoor: { group: GroupId; size: number; since: number }[];
 }
 
 /** A snapshot of one restaurant for the restaurant view. Reads the day; changes nothing. */
@@ -521,5 +552,6 @@ export function floorView(progress: DayInProgress, index: number, recentMinutes 
     walkouts: floor.walkouts
       .filter((w) => minute - w.minute < recentMinutes)
       .map(({ group, size }) => ({ group, size })),
+    atTheDoor: floor.door.map(({ party, since }) => ({ group: party.group, size: party.size, since })),
   };
 }

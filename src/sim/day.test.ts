@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import type { MenuDish } from '../data/dishes';
 import { RIVAL_IDS } from '../data/rivals';
-import { floorView, runDay, startDay, stepDay } from './day';
+import { balance } from '../data/balance';
+import type { GroupId } from '../data/groups';
+import { utility } from './choice';
+import { floorView, runDay, seat, startDay, stepDay } from './day';
 import { newGame, playerOf } from './game';
 import { createRng } from './rng';
 import { createPlayerRestaurant, createRivalRestaurant } from './setup';
@@ -105,5 +108,62 @@ describe('the restaurant view', () => {
     expect(sawGuests).toBe(true);
     // At closing time everyone has gone home.
     expect(floorView(progress, 0).tables.every((t) => t === null)).toBe(true);
+  });
+});
+
+describe('the queue at the door', () => {
+  /** A restaurant with every table taken by a party that has just sat down. */
+  function fullHouse() {
+    const progress = startDay(2, oldTown());
+    const player = progress.restaurants[0];
+    const floor = progress.floors[0];
+    for (let t = 0; t < player.tables; t++) {
+      seat(createRng(t), progress, 0, { group: 'locals', size: 4, origin: player.location, arrivalMinute: 660, bookedAt: 'player' }, 660);
+    }
+    expect(floor.freeTables).toBe(0);
+    return { progress, floor };
+  }
+  const party = (group: GroupId) => ({ group, size: 2, origin: 'ogarna' as const, arrivalMinute: 660, bookedAt: 'player' });
+
+  it('lets a few parties wait for a table, and turns the rest away', () => {
+    const { progress, floor } = fullHouse();
+    for (let i = 0; i < balance.service.doorQueueMax + 2; i++) seat(createRng(i), progress, 0, party('tourists'), 660);
+    expect(floor.door).toHaveLength(balance.service.doorQueueMax);
+    expect(progress.outcomes.filter((o) => o.kind === 'noTable')).toHaveLength(2);
+    expect(floorView(progress, 0).atTheDoor).toHaveLength(balance.service.doorQueueMax);
+  });
+
+  it('seats the first in line as soon as a table frees up', () => {
+    const { progress, floor } = fullHouse();
+    const waiting = party('students');
+    seat(createRng(1), progress, 0, waiting, 660);
+    // A table frees up.
+    floor.visits[0].eating = true;
+    floor.visits[0].leaveAt = 665;
+    while (floor.door.length > 0 && progress.tick < 3) stepDay(createRng(2), progress);
+    expect(floor.door).toHaveLength(0);
+    expect(floor.visits.some((v) => v.party === waiting)).toBe(true);
+  });
+
+  it('sends people elsewhere if they wait too long', () => {
+    const { progress, floor } = fullHouse();
+    seat(createRng(1), progress, 0, party('office'), 660);
+    for (const visit of floor.visits) visit.leaveAt = 9999;
+    for (let i = 0; i * balance.clock.tickMinutes <= balance.service.doorWaitMinutes; i++) stepDay(createRng(i), progress);
+    expect(floor.door).toHaveLength(0);
+    expect(progress.outcomes.some((o) => o.restaurant === 'player' && o.kind === 'noTable' && o.group === 'office')).toBe(true);
+  });
+
+  it('a full restaurant with a queue looks much less tempting', () => {
+    const restaurant = oldTown()[0];
+    const p = { group: 'locals' as const, size: 2, origin: restaurant.location, arrivalMinute: 700 };
+    expect(utility(restaurant, p, 10, true)! - utility(restaurant, p, 10, false)!).toBeCloseTo(-balance.choice.fullPenalty);
+  });
+
+  it('keeps turned-away guests to a sensible number on a busy day', () => {
+    const { outcomes } = runDay(createRng(8), 75, oldTown());
+    const player = forRestaurant(outcomes, 'player');
+    const count = (kind: PartyOutcome['kind']) => player.filter((o) => o.kind === kind).reduce((sum, o) => sum + o.size, 0);
+    expect(count('noTable')).toBeLessThan(count('served'));
   });
 });

@@ -50,7 +50,7 @@ export function distanceMetres(a: LocationId, b: LocationId): number {
  * How attractive a restaurant is to a party, or null if it is not an option
  * (out of walking range, nothing on the menu, or nobody to cook).
  */
-export function utility(restaurant: Restaurant, party: Party, expectedWaitMinutes: number): number | null {
+export function utility(restaurant: Restaurant, party: Party, expectedWaitMinutes: number, full = false): number | null {
   const distance = distanceMetres(party.origin, restaurant.location);
   const range = balance.choice.walkRangeMetres;
   if (distance > range || restaurant.menu.length === 0 || restaurant.chefs.length === 0) return null;
@@ -73,26 +73,30 @@ export function utility(restaurant: Restaurant, party: Party, expectedWaitMinute
     w.ambiance * (restaurant.ambiance / 100) +
     w.wait * waitTerm +
     lunchSetTerm +
-    interiorAppeal(restaurant, party.group)
+    interiorAppeal(restaurant, party.group) -
+    // Through the window, people can see when every table is taken.
+    (full ? balance.choice.fullPenalty : 0)
   );
 }
 
 /**
  * Picks a restaurant for the party, returning its index in `restaurants`,
  * or null if the party goes somewhere else entirely.
- * `expectedWaits` holds each restaurant's current expected wait in minutes.
+ * `expectedWaits` holds each restaurant's current expected wait in minutes, and `full`
+ * whether every table is taken (with people already waiting at the door).
  */
 export function chooseRestaurant(
   rng: RngState,
   party: Party,
   restaurants: Restaurant[],
   expectedWaits: number[],
+  full: boolean[] = [],
 ): number | null {
   const options: { index: number | null; score: number }[] = [
     { index: null, score: balance.choice.noRestaurantUtility },
   ];
   restaurants.forEach((restaurant, index) => {
-    const score = utility(restaurant, party, expectedWaits[index]);
+    const score = utility(restaurant, party, expectedWaits[index], full[index] ?? false);
     if (score !== null) options.push({ index, score });
   });
 

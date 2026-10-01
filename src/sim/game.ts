@@ -268,6 +268,7 @@ export function restingFloor(state: GameState): FloorView {
     waiters: state.team.filter((person) => person.role === 'waiter').map((person) => person.special ?? null),
     ordersWaiting: 0,
     walkouts: [],
+    atTheDoor: [],
     decor: player.decor,
     equipment: player.equipment,
   };

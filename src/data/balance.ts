@@ -100,13 +100,15 @@ export const balance = {
 
   choice: {
     /** How tempting "somewhere else" is (a kebab, home, a picnic). Higher = fewer guests eat out. */
-    noRestaurantUtility: 7,
+    noRestaurantUtility: 7.5,
     /** Restaurants further away than this (metres) are out of walking range. */
     walkRangeMetres: 700,
     /** How many of a menu's best-matching dishes decide how tempting it looks. */
     menuMatchDishes: 3,
     /** Matching tags, categories or dishes needed for a dish to be a perfect match. */
     matchesForFullAppeal: 2,
+    /** How much less tempting a restaurant looks when people can see every table is taken. */
+    fullPenalty: 6,
   },
 
   weather: {
@@ -298,6 +300,10 @@ export const balance = {
     slowOrderMinutes: 10,
     /** Service score gained for each waiter skill point above average (lost below). */
     serviceBonusPerSkillPoint: 0.15,
+    /** With every table taken, this many parties can wait at the door for one to free up... */
+    doorQueueMax: 2,
+    /** ...for at most this many minutes, before they go somewhere else. */
+    doorWaitMinutes: 10,
   },
 
   satisfaction: {
