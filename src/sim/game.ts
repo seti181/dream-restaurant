@@ -100,6 +100,8 @@ export interface OpenDay {
   rng: RngState;
   /** Team members who didn't turn up today, and why. */
   absent: { id: number; name: string; excuse: string; special?: SpecialStaffId }[];
+  /** The team as it was this morning: they work (and are paid) today, whoever is hired or let go meanwhile. */
+  team: Employee[];
   /** Choice cards: when they come, the one on screen, and what was answered. */
   moments: MomentsToday;
   /** Terrace tables to draw, even if the terrace is closed today. */
@@ -318,6 +320,7 @@ export function openRestaurant(state: GameState): OpenDay {
     progress: startDay(state.day, [today, ...rivalsToday], conditionsFor(state)),
     rng,
     absent,
+    team: state.team,
     // Moments get their own generator, so they never change who comes in or what they order.
     moments: planMoments((state.rng.s ^ Math.imul(state.day + 1, 0x9e3779b1)) >>> 0, state.day, state.momentsSeen),
     terraceBuilt: terraceTablesBuilt(state),
@@ -347,6 +350,18 @@ export function momentDue(open: OpenDay): boolean {
     progress: open.progress,
     adrianAway: open.absent.some((a) => a.special === 'adrian'),
   });
+}
+
+/**
+ * Brings changes made to the menu, the lunch set or the supplier during the day into today's
+ * kitchen straight away. (Purchases and new staff wait until tomorrow morning.)
+ */
+export function updateToday(open: OpenDay, state: GameState): void {
+  const player = playerOf(state);
+  const today = open.progress.restaurants[0];
+  today.menu = player.menu;
+  today.lunchSet = player.lunchSet;
+  today.supplier = player.supplier;
 }
 
 /** Starts today's happy hour now. Returns false if it was already used today, or the day is over. */
@@ -540,10 +555,16 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
 
   // What the team got up to: who didn't come in, and any mishaps that cost reputation.
   const staffNews = open.absent.map((a) => a.excuse);
-  // Today's team and happy hour belong to today; the restaurant keeps its own.
-  const { happyHourFrom: _today, ...workingCopy } = open.progress.restaurants[0];
-  let playerAfter = { ...workingCopy, chefs: playerBefore.chefs, waiters: playerBefore.waiters };
-  for (const person of state.team) {
+  // The restaurant as it is now, with anything bought during the day, plus what the day
+  // changed: how guests feel about it, how many have heard of it, and today's terrace.
+  const working = open.progress.restaurants[0];
+  let playerAfter = {
+    ...playerBefore,
+    reputation: working.reputation,
+    awareness: working.awareness,
+    terraceTables: working.terraceTables,
+  };
+  for (const person of open.team) {
     const special = person.special && SPECIAL_STAFF[person.special];
     const working = !open.absent.some((a) => a.id === person.id);
     if (!special?.reputationLossPerDay || !working) continue;
@@ -553,7 +574,8 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
     playerAfter = { ...playerAfter, reputation };
     staffNews.push(`${pick(rng, special.mishaps ?? [])} Reputation −${loss} with everyone.`);
   }
-  const wages = teamWages(state);
+  // Whoever worked today is paid today; anyone hired during the day starts tomorrow.
+  const wages = teamWages({ ...state, team: open.team });
   const { rent, utilities } = weeklyBillsDue(playerBefore, state.day);
   const momentsCash = open.moments.cash + open.help.cash;
   const profit = tally.revenue - tally.ingredientCost - wages - rent - utilities + momentsCash;

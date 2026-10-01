@@ -14,6 +14,7 @@ import {
   startHappyHour,
   tallyFor,
   teamWages,
+  updateToday,
 } from './game';
 
 function playWholeDay(seed: number) {
@@ -165,5 +166,37 @@ describe('the live happy hour', () => {
     // Tomorrow starts without one.
     expect(playerOf(next).happyHourFrom).toBeUndefined();
     expect(happyHourToday(openRestaurant(next))).toBeNull();
+  });
+});
+
+describe('changes made during the day', () => {
+  it('keep purchases made during the day, and the day’s effect on reputation', () => {
+    const state = { ...newGame(43), cash: 1e6 };
+    const open = openRestaurant(state);
+    for (let i = 0; i < 40; i++) playTick(open);
+    // A table bought at lunchtime: paid now, there tomorrow.
+    const bought = actions.buyTable(state);
+    while (!open.progress.done) playTick(open);
+    const { state: next } = closeDay(bought, open);
+    expect(playerOf(next).tables).toBe(playerOf(state).tables + 1);
+    expect(next.cash).toBeLessThan(state.cash);
+    expect(playerOf(next).reputation).toEqual(open.progress.restaurants[0].reputation);
+  });
+
+  it('pays the morning’s team; someone hired at lunchtime starts tomorrow', () => {
+    const state = newGame(44);
+    const open = openRestaurant(state);
+    while (!open.progress.done) playTick(open);
+    const hired = actions.hire({ ...state, cash: 1e6 }, state.candidates[0].id);
+    const { summary } = closeDay(hired, open);
+    expect(summary.wages).toBe(teamWages(state));
+  });
+
+  it('brings a new menu into today’s kitchen straight away', () => {
+    const state = newGame(45);
+    const open = openRestaurant(state);
+    const cheaper = actions.setDishPrice(state, 0, 5);
+    updateToday(open, cheaper);
+    expect(open.progress.restaurants[0].menu[0].price).toBe(5);
   });
 });

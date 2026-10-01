@@ -36,21 +36,29 @@ const TABS: { tab: PlanTab; label: ReactNode }[] = [
   { tab: 'settings', label: '⚙️ Settings' },
 ];
 
+/** Tabs that only make sense before opening: the empty restaurant, and starting over. */
+const BEFORE_OPENING_ONLY: PlanTab[] = ['restaurant', 'settings'];
+
 export function PlanScreen() {
   const planTab = useGame((s) => s.planTab);
   const setPlanTab = useGame((s) => s.setPlanTab);
   const open = useGame((s) => s.open);
+  // During the day the same tabs open over the restaurant, with the clock paused.
+  const duringDay = useGame((s) => s.phase === 'open' && s.managing);
+  const closeManager = useGame((s) => s.closeManager);
+  const tabs = duringDay ? TABS.filter(({ tab }) => !BEFORE_OPENING_ONLY.includes(tab)) : TABS;
+  const shown = duringDay && BEFORE_OPENING_ONLY.includes(planTab) ? 'menu' : planTab;
 
   return (
     <main className="screen">
       <div className="card plan-card">
         <nav className="tabs" aria-label="Planning">
-          {TABS.map(({ tab, label }) => (
+          {tabs.map(({ tab, label }) => (
             <button
               key={tab}
               type="button"
               className="tab"
-              aria-pressed={planTab === tab}
+              aria-pressed={shown === tab}
               onClick={() => setPlanTab(tab)}
             >
               {label}
@@ -58,22 +66,35 @@ export function PlanScreen() {
           ))}
         </nav>
         <div className="plan-body">
-          <MewaTip screen="plan" />
-          {planTab === 'today' && <TodayPanel />}
-          {planTab === 'menu' && <MenuPanel />}
-          {planTab === 'kitchen' && <KitchenPanel />}
-          {planTab === 'interior' && <InteriorPanel />}
-          {planTab === 'staff' && <StaffPanel />}
-          {planTab === 'marketing' && <MarketingPanel />}
-          {planTab === 'restaurant' && <RestaurantPanel />}
-          {planTab === 'map' && <MapPanel />}
-          {planTab === 'mewa' && <MewaPanel />}
-          {planTab === 'settings' && <SettingsPanel />}
+          {duringDay ? (
+            <p className="note small">
+              ⏸ The restaurant waits while you're here. Changes to the menu, prices, the lunch set and the supplier
+              count straight away; purchases, campaigns and new staff arrive tomorrow morning.
+            </p>
+          ) : (
+            <MewaTip screen="plan" />
+          )}
+          {shown === 'today' && <TodayPanel />}
+          {shown === 'menu' && <MenuPanel />}
+          {shown === 'kitchen' && <KitchenPanel />}
+          {shown === 'interior' && <InteriorPanel />}
+          {shown === 'staff' && <StaffPanel />}
+          {shown === 'marketing' && <MarketingPanel />}
+          {shown === 'restaurant' && <RestaurantPanel />}
+          {shown === 'map' && <MapPanel />}
+          {shown === 'mewa' && <MewaPanel />}
+          {shown === 'settings' && <SettingsPanel />}
         </div>
         <footer className="plan-footer">
-          <button type="button" className="primary" onClick={open}>
-            Open the restaurant
-          </button>
+          {duringDay ? (
+            <button type="button" className="primary" onClick={closeManager}>
+              Back to the restaurant
+            </button>
+          ) : (
+            <button type="button" className="primary" onClick={open}>
+              Open the restaurant
+            </button>
+          )}
         </footer>
       </div>
     </main>

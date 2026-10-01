@@ -9,11 +9,12 @@ import { useGame } from './store';
 
 export function App() {
   const phase = useGame((s) => s.phase);
+  const managing = useGame((s) => s.managing);
   return (
     <div className="app">
       <Hud />
-      {phase === 'plan' && <PlanScreen />}
-      {phase === 'open' && <DayScreen />}
+      {(phase === 'plan' || (phase === 'open' && managing)) && <PlanScreen />}
+      {phase === 'open' && !managing && <DayScreen />}
       {phase === 'dayOver' && <DayOverScreen />}
       {phase === 'ceremony' && <CeremonyScreen />}
       {phase === 'gameOver' && <GameOverScreen />}

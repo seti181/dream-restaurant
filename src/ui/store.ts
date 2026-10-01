@@ -24,6 +24,7 @@ import {
   moveGuests,
   shooTheGull,
   startHappyHour,
+  updateToday,
   momentDue,
   newGame,
   openRestaurant,
@@ -91,6 +92,14 @@ interface GameStore {
   planTab: PlanTab;
   /** Whether the last autosave worked; null before the first one. */
   saved: boolean | null;
+  /** The planning tabs are open during the day; the clock is paused meanwhile. */
+  managing: boolean;
+  /** The speed to go back to when the tabs close. */
+  speedBeforeManaging: Speed;
+
+  /** Opens the planning tabs during the day (pausing the clock), and closes them again. */
+  openManager: () => void;
+  closeManager: () => void;
 
   open: () => void;
   tick: () => void;
@@ -173,6 +182,18 @@ export const useGame = create<GameStore>((set, get) => ({
   summary: null,
   planTab: 'today',
   saved: null,
+  managing: false,
+  speedBeforeManaging: 1,
+
+  openManager: () => {
+    if (get().phase !== 'open' || get().managing) return;
+    set({ managing: true, speedBeforeManaging: get().speed, speed: 0, planTab: 'menu' });
+  },
+
+  closeManager: () => {
+    if (!get().managing) return;
+    set({ managing: false, speed: get().speedBeforeManaging });
+  },
 
   open: () => {
     if (get().phase !== 'plan' || get().game.gameOver) return;
@@ -208,7 +229,7 @@ export const useGame = create<GameStore>((set, get) => ({
       stopAmbience();
       if (state.gameOver) play('sad');
       else if (summary.goalCompleted) play('goal');
-      set({ game: state, summary, phase: 'dayOver', openDay: null, live: null, saved: saveGame(state) });
+      set({ game: state, summary, phase: 'dayOver', openDay: null, live: null, managing: false, saved: saveGame(state) });
     } else {
       const next = liveFrom(openDay);
       if (next.floor.gull && !live?.floor.gull) play('seagull');
@@ -276,24 +297,24 @@ export const useGame = create<GameStore>((set, get) => ({
   setPlanTab: (planTab) => set({ planTab }),
 
   addDish: (template, variant, extras, name) =>
-    plan((game) => actions.addDish(game, template, variant, extras, name)),
-  removeDish: (index) => plan((game) => actions.removeDish(game, index)),
-  setDishPrice: (index, price) => plan((game) => actions.setDishPrice(game, index, price)),
+    plan((game) => actions.addDish(game, template, variant, extras, name), 'now'),
+  removeDish: (index) => plan((game) => actions.removeDish(game, index), 'now'),
+  setDishPrice: (index, price) => plan((game) => actions.setDishPrice(game, index, price), 'now'),
   hire: (candidateId) => plan((game) => actions.hire(game, candidateId)),
   letGo: (employeeId) => plan((game) => actions.letGo(game, employeeId)),
-  setLunchSet: (soupIndex, mainIndex) => plan((game) => actions.setLunchSet(game, soupIndex, mainIndex)),
-  setLunchSetPrice: (price) => plan((game) => actions.setLunchSetPrice(game, price)),
-  clearLunchSet: () => plan((game) => actions.clearLunchSet(game)),
+  setLunchSet: (soupIndex, mainIndex) => plan((game) => actions.setLunchSet(game, soupIndex, mainIndex), 'now'),
+  setLunchSetPrice: (price) => plan((game) => actions.setLunchSetPrice(game, price), 'now'),
+  clearLunchSet: () => plan((game) => actions.clearLunchSet(game), 'now'),
   buyEquipment: (id) => plan((game) => actions.buyEquipment(game, id)),
   buyTable: () => plan((game) => actions.buyTable(game)),
   buyDecor: (id) => plan((game) => actions.buyDecor(game, id)),
   buyTerracePermit: () => plan((game) => actions.buyTerracePermit(game)),
   launchCampaign: (id) => plan((game) => actions.launchCampaign(game, id)),
-  relocate: (to) => plan((game) => actions.relocate(game, to)),
+  relocate: (to) => plan((game) => actions.relocate(game, to), 'beforeOpening'),
   // Mewa's tips can be dismissed on any screen, even mid-day.
   dismissTip: (tip) => set({ game: actions.dismissTip(get().game, tip) }),
   skipTips: () => set({ game: actions.skipTips(get().game) }),
-  setDifficulty: (difficulty) => plan((game) => actions.setDifficulty(game, difficulty)),
+  setDifficulty: (difficulty) => plan((game) => actions.setDifficulty(game, difficulty), 'beforeOpening'),
 
   importSave: (code) => {
     const game = importSaveCode(code);
@@ -308,7 +329,7 @@ export const useGame = create<GameStore>((set, get) => ({
     set({ game, phase: 'plan', planTab: 'today', saved: saveGame(game) });
   },
   upgradeMenuBoard: () => plan((game) => actions.upgradeMenuBoard(game)),
-  setSupplier: (supplier) => plan((game) => actions.setSupplier(game, supplier)),
+  setSupplier: (supplier) => plan((game) => actions.setSupplier(game, supplier), 'now'),
 }));
 
 /** A new or loaded game can replace the current one while planning, or after a game over. */
@@ -317,12 +338,20 @@ function canStartOver(): boolean {
   return phase === 'plan' || phase === 'gameOver';
 }
 
-/** Applies a planning action. Plans can only change while time is paused before opening. */
-function plan(action: (game: GameState) => GameState): void {
-  const { phase, game } = useGame.getState();
-  if (phase !== 'plan') return;
+/**
+ * Applies a planning action. Before opening, anything goes. During the day (with the tabs open),
+ * changes to the menu, the lunch set and the supplier reach today's kitchen straight away ('now');
+ * purchases, campaigns and new staff are paid now and arrive tomorrow morning ('tomorrow');
+ * moving street and the difficulty can only change before opening ('beforeOpening').
+ */
+function plan(action: (game: GameState) => GameState, when: 'now' | 'tomorrow' | 'beforeOpening' = 'tomorrow'): void {
+  const { phase, game, openDay, managing } = useGame.getState();
+  const duringDay = phase === 'open' && managing && openDay !== null;
+  if (phase !== 'plan' && !(duringDay && when !== 'beforeOpening')) return;
   const next = action(game);
+  if (next === game) return;
   // Money spent: a little coin sound.
   if (next.cash < game.cash) play('coin');
+  if (duringDay && when === 'now') updateToday(openDay!, next);
   useGame.setState({ game: next });
 }

@@ -84,6 +84,17 @@ function HelpPanel({
   );
 }
 
+/** Opens the planning tabs during the day: menu, map, staff and the rest. The clock waits meanwhile. */
+function ManageButton() {
+  const openManager = useGame((s) => s.openManager);
+  return (
+    <button type="button" className="happy-hour manage" onClick={openManager}>
+      📋 <strong>Manage</strong>
+      <span>menu, map, staff…</span>
+    </button>
+  );
+}
+
 /** Today's happy hour: a button to start it, then how long is left, then done. */
 function HappyHourButton() {
   const hour = useGame((s) => s.live?.happyHour ?? null);
@@ -180,6 +191,7 @@ export function DayScreen() {
         <div className="day-header">
           <p className="eyebrow day-status">{live.closing ? 'Closed · last orders' : 'Open for business'}</p>
           <HappyHourButton />
+          <ManageButton />
           <div className="stats">
             <Stat label="Guests served" value={live.guestsServed} />
             <Stat label="Takings" value={money(live.revenue)} />
