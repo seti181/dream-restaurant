@@ -25,7 +25,7 @@ The season runs from spring until the great St. Dominic's Fair in August. At the
 
 ## 2. Design pillars
 
-1. **Cozy, never punishing.** Mistakes cost money and reputation, never the game. There is no game over.
+1. **Cozy, but with stakes.** Mistakes cost money and reputation. Only running out of money ends the game, and a warning comes first.
 2. **Every decision has a visible reason.** Customers explain themselves through reviews and reports ("Lovely żurek, but I waited forever").
 3. **Gdańsk is a character.** Real streets, real seasons, real festivals, local food, seagulls.
 4. **Small but deep.** A few systems that interact well beat many shallow ones.
@@ -41,8 +41,8 @@ The season runs from spring until the great St. Dominic's Fair in August. At the
   - Nothing depends on hover.
   - Pinch-zoom and pull-to-refresh disabled.
 - **Performance:** must run smoothly on a budget tablet.
-  - DOM/CSS UI with light SVG art; no heavy canvas effects.
-  - Aim for under 5 MB total download.
+  - DOM/CSS UI. Art is pixel-art sprites (small PNG sprite sheets) shown as DOM images, scaled up by whole numbers so the pixels stay crisp. Light SVG only where it helps; no heavy canvas effects.
+  - Aim for under 5 MB total download, with all art under about 2 MB.
 - **Saves:** automatic save to browser storage at the end of every in-game day.
   - Save data carries a version number so old saves can be migrated.
   - Export/import of a save code for backups.
@@ -324,8 +324,8 @@ All numbers live in `src/data/` (`balance.ts`, `dishes.ts`, `locations.ts`, `riv
 
 **Screens:**
 
-- **Restaurant view** (main): a cozy illustrated cross-section of the dining room and kitchen. Guests appear as simple figures with reaction bubbles.
-- **Old Town map:** the illustrated map, locations, rivals, relocation.
+- **Restaurant view** (main): a cozy isometric pixel-art room with the dining room, kitchen and terrace. Guests and staff are small 2D sprites with reaction bubbles. See section 9.
+- **Old Town map:** a pixel-art map of the Old Town with locations, rivals and relocation.
 - **Menu:** dish list, dish creator, prices, lunch set.
 - **Kitchen:** equipment.
 - **Staff:** team and hiring.
@@ -337,14 +337,67 @@ All numbers live in `src/data/` (`balance.ts`, `dishes.ts`, `locations.ts`, `riv
 
 ## 9. Art, audio and feel
 
-- **Style:** warm flat illustration.
-  - Colourful Gdańsk gabled houses, brick red, amber, sea blue.
-  - Rounded shapes and friendly fonts.
-- **Order of work:**
-  1. placeholders first (coloured boxes, emoji)
-  2. hand-made SVG art later
-  3. CC0 assets (e.g. Kenney.nl) where they fit
-- **Audio:** soft background music, café ambience, a till "ding", seagull calls. Use CC0 sources only; a mute toggle is required.
+### 9.1 Art direction: cozy pixel art (chosen 2026-10-01)
+
+The game moves from flat SVG illustration to **cozy pixel art with 2D sprites**. The current flat SVG art stays as the placeholder until the pixel art replaces it piece by piece.
+
+**What we take from each reference image:**
+
+| Reference | What it shows | What we take |
+|---|---|---|
+| 1. Character sheet | A small chibi character (big head, short body) in many poses: front, back and side, standing and walking. Soft drop shadow, dark-brown outline, 2–3 shades per colour, no blurry edges. | How **guests and staff** look: tiny, cute and readable, with a shadow under each one. |
+| 2. "Pixel Art Kitchen Kit" | An isometric kitchen: checkered floor, fridge, sink, stove and oven, extractor hood, pots, microwave, toaster, double doors with round windows, an island, a small dining set, bar stools and a dresser. Clean 1-pixel outlines; pale walls with wooden trim. | The **kitchen**: checkered floor and steel-and-wood furniture, and the **isometric view** with 2:1 floor tiles. |
+| 3. Cozy restaurant | An isometric dining room: honey-wood floorboards with a cream tiled path, cream walls with wooden trim, an arched wooden door, windows with cream curtains, warm pendant lamps, lots of potted plants, small wooden tables with two chairs, white plates and tiny plants on the tables. | The **mood and palette** for the dining room: warm wood, cream, soft yellow lamplight and green plants. |
+
+Notes on the references:
+
+- Reference 2 carries a seller's logo, so it comes from an asset pack that is probably paid. Its licence must be checked before any of it is used (see "Sources and licences").
+- Reference 3 has a "yeri.ai" watermark, so it is AI-generated. It is a mood reference only, never a game asset.
+- References 2 and 3 are **isometric**; reference 1 is drawn for a **straight top-down** game (facing up, down, left and right). In an isometric room, characters face the diagonals. The plan is to draw characters in the reference 1 style, but facing diagonally: one front-diagonal and one back-diagonal pose, mirrored for the other two directions.
+
+**Look and feel:**
+
+- **View:** isometric rooms on a 2:1 tile grid (e.g. 32×16-pixel floor tiles); characters about 16×24 to 24×32 pixels.
+- **Palette:** a small shared palette, warm first. Honey and walnut wood, cream walls, lamp yellow and plant green from reference 3. Gdańsk accents of brick red, amber and sea blue. Steel greys and the checkered floor in the kitchen.
+- **Lines and light:** dark-brown or plum outlines (not pure black), 2–3 shades per colour, soft shadows under people and furniture, warm light pools under lamps.
+- **Gdańsk stays a character:** windows look out onto gabled Old Town houses; the four decor styles (Hanseatic, Maritime, Rustic Polish, Modern) each get their own pixel-art furniture; Mewa becomes a pixel-art herring gull (grey and white, yellow beak with the red spot).
+- **Text and buttons** stay clean and readable: menus and reports keep a normal friendly font, framed with pixel-art borders and icons where it helps.
+
+**What needs drawing:**
+
+- **Rooms:** floor and wall tiles for the dining room, kitchen and terrace; windows with the Old Town view (changing with weather and dusk); the door; the terrace awning. Rooms of different sizes for the six premises.
+- **Furniture:** tables for 4, chairs, terrace tables, the communal table.
+- **Decor:** all 12 decor items, in their four styles.
+- **Equipment:** stove, deep fryer, grill, pizza oven, espresso machine, dessert display.
+- **People:** each of the five guest groups recognisable at a glance (tourists with cameras and sun hats, students with backpacks, locals and families, office workers in shirts, foodies with scarves); chefs in white with hats; waiters with aprons; Tomek, Adrian and the Friday regular as special sprites; the food critic.
+- **Poses:** standing, walking (2–4 frames), sitting, eating, plus reaction bubbles.
+- **Food and icons:** small icons for every dish and drink; UI icons for cash, stars, weather and speed.
+- **Map:** a pixel-art Old Town map with the river, Granary Island, landmarks and street markers.
+
+**Technical approach:**
+
+- Sprites are PNG sprite sheets bundled with the game and precached by the service worker, so it all works offline.
+- They are shown as DOM elements placed on the isometric grid and drawn front-to-back by depth. Scaling is by whole numbers (2× or 3×) with `image-rendering: pixelated` and positions rounded to whole pixels. Animation uses CSS `steps()` on the sprite sheet.
+- The simulation does not change. The restaurant view keeps reading the same `floorView()` snapshot; only how it is drawn changes.
+- If DOM sprites turn out to be too slow on the tablet, a single plain 2D canvas for the restaurant view is the fallback. That would need a change to the CLAUDE.md rules, so it is asked about first.
+
+**Sources and licences** (to decide before drawing starts, see section 15):
+
+1. **Ready-made packs** (e.g. on itch.io): fastest and best looking. The licence must allow use in a non-commercial personal gift. It must also allow the image files to sit in a **public** GitHub repository: GitHub Pages on a free account needs a public repo, and many paid packs forbid sharing the raw files.
+2. **CC0 packs** (e.g. Kenney.nl, OpenGameArt CC0): free and safe to use, but mixing several packs risks a patchy style.
+3. **Pixel art drawn for this game:** by hand, or written as palette-indexed pixel grids in code. Consistent and licence-free, but more work, and simpler than a professional pack.
+4. **AI-generated sprites:** good for trying ideas. Clean pixel grids and consistent animation frames are hard to get, and the service's terms must allow the use.
+
+**Order of work for the pixel art** (one step at a time, each tested in the browser and on the tablet):
+
+1. Pick sources and palette, then build **one sample scene** (a small dining room with two tables, one guest, one waiter, one chef) and approve the look.
+2. The restaurant view: rooms, furniture, decor, equipment, terrace.
+3. Characters: guests, staff and special characters, with animations and bubbles.
+4. The Old Town map, food icons and UI icons.
+
+### 9.2 Audio and juice
+
+- **Audio:** soft background music, café ambience, a till "ding", seagull calls. Made in code with Web Audio (no sound files), or CC0 sources only; a mute toggle is required.
 - **Juice:** coins popping, stars appearing, a small celebration when a goal is reached.
 
 ## 10. Personal touches (fill in)
@@ -436,7 +489,11 @@ Work in small steps, and test each step in the browser before moving on.
 
 **M5 – Polish and balance**
 
-- [x] Art pass, sound, animations
+- [x] Art pass, sound, animations (flat SVG art, now the placeholder for the pixel art)
+- [ ] Pixel art: choose sources and palette, and approve one sample scene (section 9.1)
+- [ ] Pixel art: restaurant view (rooms, furniture, decor, equipment, terrace)
+- [ ] Pixel art: characters (guests, staff, Mewa, special characters) with animations
+- [ ] Pixel art: Old Town map, food icons and UI icons
 - [ ] Balancing with the simulator plus playtests on the real tablet
 - [ ] Performance check on the tablet
 
@@ -469,6 +526,9 @@ Work in small steps, and test each step in the browser before moving on.
 - Should the player choose a restaurant concept at the start (e.g. Polish tavern vs bistro) or build it freely? The current plan is free-form with no fixed concept.
 - Portrait support ever? The current plan is landscape only.
 - How much text-based humour is wanted in reviews and events? More is more fun, but also more writing.
+- **Pixel art:** where do the sprites come from: a ready-made pack, CC0 packs, drawn for this game, or AI-generated (section 9.1)? If a paid pack: does its licence allow the files in a public GitHub repository?
+- **Pixel art:** isometric rooms (as in references 2 and 3) or a straight top-down view (as in reference 1)? The current plan is isometric, with characters drawn facing the diagonals.
+- **Pixel art:** should guests visibly walk in through the door to their table and back out, instead of appearing at the table? It suits the sprite style, but it's new (purely visual; the simulation is unchanged).
 
 ## 16. Decision log
 
@@ -495,3 +555,4 @@ Work in small steps, and test each step in the browser before moving on.
 - 2026-10-01: Kept: the regular's name "Pan Cytrynówka" and the Arroz de vitela + cytrynówka combo. Adrian's surname is spelled Żabka.
 - 2026-10-01: Cytrynówka is also a drink on its own (Drinks, 14 zł). The regular is happy with either the drink or a dish with a glass on the side, and he never gets turned away: with every table taken, he sits at the bar.
 - 2026-10-01: Sounds and music are synthesised in the browser (Web Audio) instead of CC0 sound files: nothing to download or license, works offline, adds almost nothing to the app's size. Sound settings are stored on the tablet, separately from the save.
+- 2026-10-01: Art direction changes to cozy pixel art with 2D sprites, based on three reference images (a chibi character sheet, an isometric pixel-art kitchen kit, and an AI-generated cozy isometric restaurant used for mood only). The flat SVG art stays as the placeholder until the pixel art replaces it. Details in section 9.1.
