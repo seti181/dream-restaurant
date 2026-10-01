@@ -2,7 +2,7 @@
 // stacked on top, back to front. Guests walk in from the door to their table and back
 // out when they leave. Bubbles and coins float above them.
 
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { balance } from '../data/balance';
 import { LOCATIONS } from '../data/locations';
 import type { Weather } from '../data/weather';
@@ -25,6 +25,7 @@ import {
 } from './pixel/room';
 import type { Carry, PersonKind } from './pixel/sprites';
 import { useGame } from './store';
+import { useFittingScale } from './useFittingScale';
 
 /** World units a guest walks per second at 1× speed. */
 const WALK_SPEED = 60;
@@ -63,30 +64,6 @@ function bubbleFor(guests: TableGuests): string | null {
   if (guests.satisfaction >= 60) return '🙂';
   if (guests.satisfaction >= 40) return '😐';
   return '😞';
-}
-
-/**
- * The biggest scale that fits. Whole device pixels per art pixel keep the art crisp, but when
- * that would waste a lot of space (big rooms), an in-between scale is better than a tiny room.
- */
-function useFittingScale(width: number, height: number) {
-  const wrap = useRef<HTMLDivElement>(null);
-  const [scale, setScale] = useState(2);
-  useLayoutEffect(() => {
-    const element = wrap.current;
-    if (!element) return;
-    const measure = () => {
-      const dpr = window.devicePixelRatio || 1;
-      const fit = Math.min(element.clientWidth / width, element.clientHeight / height) * dpr;
-      const whole = Math.max(1, Math.floor(fit));
-      setScale((whole / fit >= 0.85 ? whole : Math.max(1, fit)) / dpr);
-    };
-    measure();
-    const observer = new ResizeObserver(measure);
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, [width, height]);
-  return { wrap, scale };
 }
 
 // ---------- Walking guests ----------
