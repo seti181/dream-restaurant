@@ -49,12 +49,18 @@ describe('gulls on the terrace', () => {
 
   it('steal the plate if nobody shoos them, and the table writes about it', () => {
     const open = gullDue();
-    playTick(open);
-    const before = open.progress.restaurants[0].reputation.tourists;
-    for (let i = 0; i < balance.gulls.windowTicks; i++) playTick(open);
+    // The same day without the gull, to compare with.
+    const calm = gullDue();
+    calm.gulls.slots = [];
+    for (let i = 0; i <= balance.gulls.windowTicks; i++) {
+      playTick(open);
+      playTick(calm);
+    }
     expect(open.gulls.active).toBeNull();
     expect(open.gulls.stolen).toBe(1);
-    expect(open.progress.restaurants[0].reputation.tourists).toBeLessThan(before);
+    expect(open.progress.restaurants[0].reputation.tourists).toBeCloseTo(
+      calm.progress.restaurants[0].reputation.tourists - balance.gulls.stolenReputation,
+    );
     expect(GULLS.reviews.map((r) => r.text)).toContain(open.gulls.reviews[0].text);
     expect(GULLS.stolen).toContain(open.gulls.last?.text);
   });
@@ -65,7 +71,7 @@ describe('gulls on the terrace', () => {
     const before = open.progress.restaurants[0].reputation.tourists;
     expect(shooTheGull(open)).toBe(true);
     expect(open.gulls.shooed).toBe(1);
-    expect(open.progress.restaurants[0].reputation.tourists).toBeGreaterThan(before);
+    expect(open.progress.restaurants[0].reputation.tourists).toBeCloseTo(before + balance.gulls.shooedReputation);
     expect(shooTheGull(open)).toBe(false);
     for (let i = 0; i < balance.gulls.windowTicks + 2; i++) playTick(open);
     expect(open.gulls.stolen).toBe(0);
