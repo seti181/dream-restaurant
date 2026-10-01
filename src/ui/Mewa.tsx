@@ -3,6 +3,7 @@
 import { TIP_IDS, TIPS } from '../data/mewa';
 import { goalOf, goalProgress, goalText } from '../sim/goals';
 import { money } from './format';
+import { MewaIcon } from './MewaIcon';
 import { useGame } from './store';
 
 /** Mewa's tip for this screen today, if there is one she hasn't given yet. */
@@ -23,7 +24,7 @@ export function MewaTip({ screen }: { screen: 'plan' | 'open' | 'dayOver' }) {
   return (
     <aside className="mewa" aria-label="Mewa says">
       <span className="mewa-face" aria-hidden="true">
-        🐦
+        <MewaIcon size={64} />
       </span>
       <div className="mewa-bubble">
         <p>{TIPS[tip].text}</p>
@@ -50,7 +51,9 @@ export function GoalCard() {
 
   return (
     <section className={`goal-card${game.goal.done ? ' done' : ''}`}>
-      <h2>🐦 Mewa’s goal this week</h2>
+      <h2 className="with-icon">
+        <MewaIcon size={32} /> Mewa’s goal this week
+      </h2>
       <p>
         <strong>{goalText(goal)}</strong> <span className="muted">· reward {money(goal.reward)}</span>
       </p>

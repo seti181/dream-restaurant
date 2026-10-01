@@ -480,3 +480,11 @@ Work in small steps, and test each step in the browser before moving on.
 - 2026-10-01: Running out of money is a game over, replacing the no-fail rescues (bank loan, Babcia's envelope). Doing nothing should lose money, just like bad decisions.
 - 2026-10-01: The Golden Neptune ending reads "Parabéns!!! You passed a test! Now You are ready to open Your dream restaurant in the real WORLD!!!"
 - 2026-10-01: First balancing pass (end of M3). Before it, every restaurant was overbooked all day, so money came too easily. Changes: fewer people eat out ("somewhere else" utility 6 → 7); being unknown matters more (awareness weights doubled); meals take 60 minutes, not 30; wages 650/450 zł a day; rents doubled (Ogarna 600 zł a day); utilities 1,400 zł a week; a table costs 4,000 zł; Mewa's first goal is 300 guests. The simulator's pretend players now invest (tables, staff, decor, terrace, marketing), and "balanced" moves to Długa once it can afford to.
+- 2026-10-01: Moving to another street costs 5,000 zł. You keep 70% of your reputation and the best half of your decor.
+- 2026-10-01: Relaxed difficulty: 60,000 zł starting cash, and rivals react later, cut prices less and promote themselves less.
+- 2026-10-01: Fictional event dates: Easter week 15–21 April, Majówka 1–3 May, Juwenalia 16–19 May, Corpus Christi 20–23 June, tall ships festival 11–14 July, Fair cook-off 10 August.
+- 2026-10-01: The Golden Neptune is awarded every summer, so free play gives another chance each year.
+- 2026-10-01: Prices invented for M3: a table 4,000 zł (after balancing), decor items 1,200–4,000 zł, terrace permit 3,000 zł, menu board +2 dishes for 3,000 zł, premium supplier +8 quality for 1.5× ingredient cost, happy hour 15:00–18:00 at 20% off.
+- 2026-10-01: Staff traits change skill and speed (for example Perfectionist +1 skill −1 speed); a chef's specialty adds 8 quality. The starter team is Pani Krystyna (chef) and Kacper (waiter), with a stove and 16 seats on ul. Ogarna.
+- 2026-10-01: "Cheap and fast" going bust in week 4 is fine: bad plans should fail.
+- 2026-10-01: Mewa is drawn as a herring gull (white head and body, grey wings with black tips, yellow beak with a red spot, pink legs), in SVG, instead of the 🐦 emoji.

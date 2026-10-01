@@ -943,8 +943,15 @@ h2.spaced {
 }
 
 .mewa-face {
-  font-size: 2.5rem;
-  line-height: 1;
+  flex: none;
+  line-height: 0;
+}
+
+/* An icon sitting beside text, like Mewa on her tab. */
+.with-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .mewa-bubble {

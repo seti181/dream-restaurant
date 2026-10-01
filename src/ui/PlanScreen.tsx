@@ -1,6 +1,7 @@
 // Planning: time is paused. Tabs for today's overview, the menu and the staff,
 // with the "Open the restaurant" button always at hand.
 
+import type { ReactNode } from 'react';
 import { InteriorPanel } from './plan/InteriorPanel';
 import { KitchenPanel } from './plan/KitchenPanel';
 import { MapPanel } from './plan/MapPanel';
@@ -8,12 +9,13 @@ import { MarketingPanel } from './plan/MarketingPanel';
 import { MewaPanel } from './plan/MewaPanel';
 import { SettingsPanel } from './plan/SettingsPanel';
 import { MewaTip } from './Mewa';
+import { MewaIcon } from './MewaIcon';
 import { MenuPanel } from './plan/MenuPanel';
 import { StaffPanel } from './plan/StaffPanel';
 import { TodayPanel } from './plan/TodayPanel';
 import { useGame, type PlanTab } from './store';
 
-const TABS: { tab: PlanTab; label: string }[] = [
+const TABS: { tab: PlanTab; label: ReactNode }[] = [
   { tab: 'today', label: 'Today' },
   { tab: 'menu', label: 'Menu' },
   { tab: 'kitchen', label: 'Kitchen' },
@@ -21,7 +23,14 @@ const TABS: { tab: PlanTab; label: string }[] = [
   { tab: 'staff', label: 'Staff' },
   { tab: 'marketing', label: 'Marketing' },
   { tab: 'map', label: 'Map' },
-  { tab: 'mewa', label: '🐦 Mewa' },
+  {
+    tab: 'mewa',
+    label: (
+      <span className="with-icon">
+        <MewaIcon size={24} /> Mewa
+      </span>
+    ),
+  },
   { tab: 'settings', label: '⚙️ Settings' },
 ];
 
