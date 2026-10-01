@@ -229,7 +229,9 @@ function DishCreator() {
         <div key={category} className="picker-group">
           <span className="small muted">{CATEGORY_NAMES[category]}</span>
           <div className="chips">
-            {TEMPLATE_IDS.filter((id) => DISH_TEMPLATES[id].category === category).map((id) => {
+            {TEMPLATE_IDS.filter(
+              (id) => DISH_TEMPLATES[id].category === category && (!DISH_TEMPLATES[id].secret || game.secretRecipe),
+            ).map((id) => {
               const locked = dishUnavailableReason(game, id, DISH_TEMPLATES[id].variants[0].id)?.startsWith('Needs');
               return (
                 <button
@@ -241,6 +243,7 @@ function DishCreator() {
                   onClick={() => chooseTemplate(id)}
                 >
                   {locked && '🔒 '}
+                  {DISH_TEMPLATES[id].secret && '⭐ '}
                   {DISH_TEMPLATES[id].name}
                 </button>
               );

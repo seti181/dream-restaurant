@@ -8,6 +8,7 @@ import { GROUP_IDS, type GroupId } from '../data/groups';
 import { CAMPAIGNS, type CampaignId } from '../data/marketing';
 import { FIRST_GOAL, type TipId } from '../data/mewa';
 import { LOCATIONS } from '../data/locations';
+import { SECRET_RECIPE } from '../data/personal';
 import { RIVAL_IDS } from '../data/rivals';
 import type { Weather } from '../data/weather';
 import { startDay, stepDay, type DayInProgress } from './day';
@@ -77,6 +78,8 @@ export interface GameState {
   season: SeasonTally;
   /** Golden Neptunes won. */
   trophies: number;
+  /** True once Mewa has found the secret recipe card. */
+  secretRecipe: boolean;
   /** True once the money ran out at the end of a day: the restaurant has closed for good. */
   gameOver: boolean;
   /** The player's restaurant first, then the rivals. */
@@ -163,6 +166,7 @@ export function newGame(seed: number, difficulty: Difficulty = 'normal'): GameSt
     goal: startGoal(FIRST_GOAL),
     season: { ratings: {}, fairGuests: {} },
     trophies: 0,
+    secretRecipe: false,
     gameOver: false,
     restaurants: [
       createPlayerRestaurant(start.name, start.menu, staffOf(team, 'chef'), staffOf(team, 'waiter')),
@@ -444,6 +448,13 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
     news.push({ title: 'Mewa’s goal for the week', text: `${goalText(goalOf(goal))}. Reward: ${goalOf(goal).reward} zł.` });
   }
 
+  // Mewa finds the secret recipe once the restaurant is doing well, or by week 3 at the latest.
+  let { secretRecipe } = state;
+  if (!secretRecipe && (starRating(playerAfter) >= SECRET_RECIPE.unlockStars || nextDay >= SECRET_RECIPE.unlockByDay)) {
+    secretRecipe = true;
+    news.push({ ...SECRET_RECIPE.news });
+  }
+
   // The Golden Neptune, on the last day of the Fair.
   let season = addToSeason(state.season, outcomes, state.day);
   let neptune: NeptuneResult | null = null;
@@ -470,6 +481,7 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
       goal,
       season,
       trophies,
+      secretRecipe,
       // Running out of money ends the game.
       gameOver: state.gameOver || cash <= 0,
       restaurants,

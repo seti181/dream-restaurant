@@ -40,6 +40,7 @@ export type TemplateId =
   | 'friedCod'
   | 'schabowy'
   | 'golabki'
+  | 'arrozDeVitela'
   | 'saladBowl'
   | 'szarlotka'
   | 'sernik'
@@ -72,6 +73,8 @@ export interface DishTemplate {
   referencePrice: number;
   tags: Tag[];
   variants: Variant[];
+  /** A secret recipe stays hidden in the dish creator until it has been found. */
+  secret?: boolean;
 }
 
 /** One line on a restaurant's menu. */
@@ -90,7 +93,7 @@ export interface MenuDish {
 
 export const TEMPLATE_IDS: readonly TemplateId[] = [
   'zurek', 'barszcz', 'fishSoup', 'tomatoSoup',
-  'pierogi', 'pizza', 'pasta', 'burger', 'friedCod', 'schabowy', 'golabki', 'saladBowl',
+  'pierogi', 'pizza', 'pasta', 'burger', 'friedCod', 'schabowy', 'golabki', 'arrozDeVitela', 'saladBowl',
   'szarlotka', 'sernik', 'iceCream',
   'coffee', 'kompot', 'lemonade',
 ];
@@ -255,6 +258,18 @@ export const DISH_TEMPLATES: Record<TemplateId, DishTemplate> = {
       { id: 'buckwheat', name: 'with buckwheat and mushrooms', ingredientCost: 9, tags: ['veggie'] },
     ],
   },
+  arrozDeVitela: {
+    name: 'Arroz de vitela',
+    category: 'main',
+    cuisine: null,
+    equipment: 'stove',
+    prepMinutes: 15,
+    baseQuality: 70,
+    referencePrice: 46,
+    tags: ['hearty', 'homemade'],
+    variants: [{ id: 'joana', name: 'slow-cooked veal with rice, Joana’s way', ingredientCost: 14, tags: [] }],
+    secret: true,
+  },
   saladBowl: {
     name: 'Salad bowl',
     category: 'main',
@@ -371,7 +386,8 @@ export type ExtraId =
   | 'chili'
   | 'whippedCream'
   | 'honey'
-  | 'strawberries';
+  | 'strawberries'
+  | 'cytrynowka';
 
 export interface Extra {
   name: string;
@@ -384,7 +400,7 @@ export interface Extra {
 
 export const EXTRA_IDS: readonly ExtraId[] = [
   'dill', 'sourCream', 'friedOnions', 'skwarki', 'oscypek', 'cranberry',
-  'horseradish', 'wildMushrooms', 'chili', 'whippedCream', 'honey', 'strawberries',
+  'horseradish', 'wildMushrooms', 'chili', 'whippedCream', 'honey', 'strawberries', 'cytrynowka',
 ];
 
 export const EXTRAS: Record<ExtraId, Extra> = {
@@ -400,6 +416,7 @@ export const EXTRAS: Record<ExtraId, Extra> = {
   whippedCream: { name: 'whipped cream', ingredientCost: 2, tags: ['sweet'], categories: ['soup', 'main', 'dessert', 'drink'] },
   honey: { name: 'honey', ingredientCost: 2, tags: ['sweet', 'homemade'], categories: ['main', 'dessert', 'drink'] },
   strawberries: { name: 'Kashubian strawberries', ingredientCost: 3, tags: ['sweet', 'polish'], categories: ['main', 'dessert', 'drink'] },
+  cytrynowka: { name: 'a glass of cytrynówka on the side', ingredientCost: 4, tags: ['polish'], categories: ['soup', 'main'] },
 };
 
 /**
@@ -428,6 +445,12 @@ export const PAIRINGS: Pairing[] = [
   { extras: ['whippedCream'], with: { template: 'szarlotka' }, quality: 8, comment: 'Szarlotka with a cloud of cream. Perfect.' },
   { extras: ['strawberries', 'whippedCream'], quality: 10, comment: 'Kashubian strawberries and cream taste like summer.' },
   { extras: ['honey'], with: { template: 'lemonade' }, quality: 6, comment: 'Honey in the lemonade was a lovely touch.' },
+  {
+    extras: ['cytrynowka'],
+    with: { template: 'arrozDeVitela' },
+    quality: 20,
+    comment: 'Arroz de vitela with a glass of cytrynówka: Portugal and Poland at one table. Perfect.',
+  },
   // Clashes
   { extras: ['chili', 'whippedCream'], quality: -15, comment: 'Someone put chili in the cream. Brave, but no.' },
   { extras: ['cranberry'], with: { tag: 'seafood' }, quality: -10, comment: 'Cranberry and fish? The seagulls approved. Nobody else did.' },

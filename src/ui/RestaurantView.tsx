@@ -22,6 +22,8 @@ const TERRACE_WIDTH = 270;
 
 /** How a table feels, as an emoji bubble, or null for no bubble. */
 function bubbleFor(guests: TableGuests): string | null {
+  // The Friday regular wants one thing, and the whole room knows it.
+  if (guests.regular && guests.stage !== 'eating') return '🍋';
   if (guests.stage === 'ordering') return '💬';
   if (guests.stage === 'waiting') {
     if (guests.impatience > 0.8) return '😤';

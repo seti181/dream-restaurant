@@ -48,6 +48,7 @@ export function dishUnavailableReason(
   extras: ExtraId[] = [],
 ): string | null {
   const player = playerOf(state);
+  if (DISH_TEMPLATES[template].secret && !state.secretRecipe) return 'A secret recipe, not found yet';
   const needs = DISH_TEMPLATES[template].equipment;
   if (needs !== null && !player.equipment.includes(needs)) return `Needs a ${EQUIPMENT[needs].name.toLowerCase()}`;
   if (!DISH_TEMPLATES[template].variants.some((v) => v.id === variant)) return 'Unknown recipe';

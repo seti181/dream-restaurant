@@ -13,7 +13,8 @@ import {
   WALKOUT_LINES,
   type ReviewFactor,
 } from '../data/reviews';
-import { pairingsOf, templateOf } from './menu';
+import { REGULAR } from '../data/personal';
+import { extrasOf, pairingsOf, templateOf } from './menu';
 import { chance, pick, type RngState } from './rng';
 import type { Review, SatisfactionFactors } from './types';
 
@@ -47,9 +48,29 @@ export interface ReviewInput {
   factors: SatisfactionFactors | null;
   satisfaction: number;
   critic: boolean;
+  /** The Friday regular, who only cares whether there was cytrynówka. */
+  regular?: boolean;
+}
+
+/** The regular's review: delighted with cytrynówka, loudly disappointed without. */
+function regularsReview(rng: RngState, input: ReviewInput): Review {
+  const gotIt = input.order.some((dish) => extrasOf(dish).includes('cytrynowka'));
+  const stars = Math.max(1, Math.min(5, 1 + Math.floor(input.satisfaction / 20)));
+  const text = !input.factors
+    ? `${REGULAR.shout} And some food, eventually!`
+    : gotIt
+      ? pick(rng, REGULAR.happy)
+      : `${REGULAR.shout} ${pick(rng, REGULAR.grumpy)}`;
+  return {
+    stars: !input.factors ? 1 : gotIt ? 5 : Math.min(3, stars),
+    text,
+    reviewer: REGULAR.name,
+    critic: false,
+  };
 }
 
 export function writeReview(rng: RngState, input: ReviewInput): Review {
+  if (input.regular) return regularsReview(rng, input);
   const reviewer = input.critic ? CRITIC_NAME : pick(rng, REVIEWER[input.group]);
   if (!input.factors) {
     return { stars: 1, text: pick(rng, WALKOUT_LINES), reviewer, critic: input.critic };

@@ -178,6 +178,14 @@ describe('upgrading version 5 saves (from before game over)', () => {
   });
 });
 
+describe('upgrading version 6 saves (from before the secret recipe)', () => {
+  it('starts without the recipe card', () => {
+    const game = newGame(53);
+    const { secretRecipe: _s, ...old } = game;
+    expect(migrate({ saveVersion: 6, savedAt: '', game: old })).toEqual(game);
+  });
+});
+
 describe('save codes', () => {
   it('turn a game into text and back again, Polish letters and all', () => {
     let game = newGame(61);

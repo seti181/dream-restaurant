@@ -11,8 +11,9 @@ import {
   type EventEffects,
   type RandomEventId,
 } from '../data/events';
+import { REGULAR } from '../data/personal';
 import { WEATHER_IDS, type Weather } from '../data/weather';
-import { dateOf } from './calendar';
+import { dateOf, weekdayOf } from './calendar';
 import type { GameState } from './game';
 import { chance, nextFloat, type RngState } from './rng';
 import type { DayConditions } from './types';
@@ -111,6 +112,17 @@ export function conditionsFor(state: GameState): DayConditions {
         critic: event.booking.critic ?? false,
       });
     }
+  }
+  // The Friday regular comes in for dinner, as always.
+  if (weekdayOf(state.day) === REGULAR.weekday) {
+    conditions.bookings.push({
+      restaurant: player.id,
+      group: REGULAR.group,
+      size: 1,
+      minute: REGULAR.hour * 60,
+      critic: false,
+      regular: true,
+    });
   }
   return conditions;
 }

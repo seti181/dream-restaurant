@@ -72,6 +72,8 @@ export interface Party {
   bookedAt?: string;
   /** A food critic, whose review counts for much more. */
   critic?: boolean;
+  /** The Friday regular, who always wants cytrynówka with his dish. */
+  regular?: boolean;
 }
 
 /** A review left by a guest. */
@@ -92,6 +94,7 @@ export interface Booking {
   /** Minutes after midnight. */
   minute: number;
   critic: boolean;
+  regular?: boolean;
 }
 
 /** Everything about a day that isn't the restaurants: weather, events and bookings. */

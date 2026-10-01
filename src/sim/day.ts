@@ -9,7 +9,7 @@ import { chooseRestaurant } from './choice';
 import { minuteOfDay, ticksPerDay } from './clock';
 import { ORDINARY_DAY } from './events';
 import { generateParties } from './guests';
-import { ingredientCostOf, templateOf } from './menu';
+import { extrasOf, ingredientCostOf, templateOf } from './menu';
 import { writeReview } from './reviews';
 import { chance, type RngState } from './rng';
 import { satisfactionFactors, satisfactionScore, updatedReputation } from './satisfaction';
@@ -125,7 +125,8 @@ function maybeReview(
   satisfaction: number,
 ): PartyOutcome['review'] {
   const critic = visit.party.critic ?? false;
-  if (!critic && !chance(rng, balance.reviews.chance)) return null;
+  const regular = visit.party.regular ?? false;
+  if (!critic && !regular && !chance(rng, balance.reviews.chance)) return null;
   return writeReview(rng, {
     group: visit.party.group,
     order: visit.order,
@@ -133,6 +134,7 @@ function maybeReview(
     factors,
     satisfaction,
     critic,
+    regular,
   });
 }
 
@@ -284,6 +286,14 @@ export function startDay(
   };
 }
 
+/** The regular swaps his main for any dish that comes with cytrynówka, if the menu has one. */
+function regularsOrder(restaurant: Restaurant, order: MenuDish[]): MenuDish[] {
+  const wish = restaurant.menu.find((dish) => extrasOf(dish).includes('cytrynowka'));
+  if (!wish) return order;
+  const others = order.filter((dish) => !['soup', 'main'].includes(templateOf(dish).category));
+  return [wish, ...others];
+}
+
 /** Seats a party that has chosen (or booked) a restaurant, if there's a free table. */
 function seat(
   rng: RngState,
@@ -300,13 +310,15 @@ function seat(
     return;
   }
   floor.freeTables -= tablesUsed;
+  let order = chooseOrder(rng, restaurant, party, minute, progress.conditions.weather);
+  if (party.regular) order = regularsOrder(restaurant, order);
   const taken = new Set(floor.visits.flatMap((v) => v.tables));
   const tables = [...Array(allTables(restaurant)).keys()].filter((t) => !taken.has(t)).slice(0, tablesUsed);
   floor.visits.push({
     party,
     tablesUsed,
     tables,
-    order: chooseOrder(rng, restaurant, party, minute, progress.conditions.weather),
+    order,
     seatedAt: minute,
     orderedAt: minute + orderMinutes(restaurant, allTables(restaurant) - floor.freeTables),
     readyAt: null,
@@ -347,6 +359,7 @@ export function stepDay(rng: RngState, progress: DayInProgress): void {
       arrivalMinute: minute,
       bookedAt: booking.restaurant,
       critic: booking.critic,
+      regular: booking.regular,
     };
     seat(rng, progress, index, party, minute);
   }
@@ -392,6 +405,7 @@ export interface TableGuests {
   /** Minutes since the food arrived. */
   eatingFor: number;
   critic: boolean;
+  regular: boolean;
 }
 
 export interface FloorView {
@@ -428,6 +442,7 @@ export function floorView(progress: DayInProgress, index: number, recentMinutes 
         satisfaction: visit.satisfaction,
         eatingFor: visit.eating && visit.readyAt !== null ? minute - visit.readyAt : 0,
         critic: party.critic ?? false,
+        regular: party.regular ?? false,
       };
     });
   }
