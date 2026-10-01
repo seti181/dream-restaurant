@@ -12,8 +12,8 @@ export const balance = {
     /** Times of day used by the customer groups: lunch runs from opening until the afternoon starts. */
     afternoonStartHour: 15,
     eveningStartHour: 18,
-    /** Real seconds that one day (11:00 to 22:00) takes at 1× speed. */
-    realSecondsPerDay: 50,
+    /** Real seconds that one day (11:00 to 22:00) takes at 1× speed: calm enough to look after the guests. */
+    realSecondsPerDay: 100,
   },
 
   menu: {

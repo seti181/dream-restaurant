@@ -54,7 +54,7 @@ PLAN  ->  OPEN  ->  WATCH  ->  REVIEW  ->  INVEST  -> (next day)
 ```
 
 1. **Plan:** adjust menu, prices, staff, marketing and decor. Time is paused.
-2. **Open:** the day plays out from 11:00 to 22:00 in about 50 seconds at 1× speed. Pause, 2× and 4× are available.
+2. **Open:** the day plays out from 11:00 to 22:00 in about 100 seconds at 1× speed. Pause, 2× and 4× are available.
 3. **Watch:** guests arrive, choose a restaurant, order, eat and leave. Small speech bubbles show reactions.
 4. **Review:** end-of-day report shows:
    - guests served and guests lost
@@ -618,7 +618,7 @@ Each item is tested in the browser and on the tablet before the next one starts.
 
 Each item is tested in the browser and on the tablet before the next one starts.
 
-- [ ] A slower day: 100 seconds at 1× instead of 50
+- [x] A slower day: 100 seconds at 1× instead of 50
 - [ ] A shorter season: six weeks ending with St. Dominic's Fair, events moved, rebalanced with the simulator
 - [ ] The tabs during the day: open any tab while the restaurant is open (the clock pauses); prices, menu and marketing change straight away, purchases and new staff arrive the next morning
 - [ ] Choice cards: rarity, a shuffled deck, calendar and weather cards, follow-ups
@@ -651,7 +651,7 @@ Each item is tested in the browser and on the tablet before the next one starts.
   - "do nothing" loses money, like bad decisions do
   - "balanced" becomes profitable by week 3–4
   - a thoughtful player wins the Golden Neptune on the first try, with some tension in the final weeks
-- **Pace target:** about 50 seconds per day at 1× speed, which makes a season about 3–5 hours including planning.
+- **Pace target:** about 100 seconds per day at 1× speed (calm enough to look after the guests). The season length is set in M7 (section 6.14).
 
 **Fixed issue (playtest, 2026-10-01): too many lost guests.** After a few days the "No free table" counter climbs into the hundreds (for example 179 turned away against 138 served on a June day), which feels unnatural. The simulator shows the same: the balanced strategy turns away about eight people for every one it serves over a season.
 
@@ -736,3 +736,4 @@ Each item is tested in the browser and on the tablet before the next one starts.
 - 2026-10-01: New milestone M7 "Shape and polish" (section 6.14), from playtest feedback: a slower day (×2), a season of about 40 days ending with St. Dominic's Fair, the tabs usable during the day, more and more varied choice cards, a pixel-art background for the planning screens (concept art first), streets that look more like real Gdańsk (ul. Długa), and more to do over a season. M6 (gift day) stays the last milestone.
 - 2026-10-01: Personal touch: a Portuguese exchange student (choice card) unlocks cabrito assado and azulejo tiles.
 - 2026-10-01: Ideas for longer play accepted: named regulars with stories, staff growth, seasonal ingredients and specials, replying to reviews, attracting passers-by, bigger premises, a sticker album, Mewa's finds. Left out: hosted events, an autumn and Christmas-market season, a cook-off against the rivals, postcards.
+- 2026-10-01: A day takes 100 seconds at 1× (was 50). The simulation is unchanged (only how fast real time runs); people passing by set off twice as often per five-minute step, so the street stays as busy.

@@ -520,7 +520,8 @@ function usePassersBy(layout: RoomLayout, minute: number, reach: number) {
       const n = count.current++;
       // A little hash instead of Math.random, so it never touches the game's dice.
       const roll = (n * 2654435761 + minute * 40503) >>> 0;
-      if (roll % 3 !== 0) return now;
+      // With five-minute steps coming every ¾ of a second at 1×, two in three bring someone along.
+      if (roll % 3 === 0) return now;
       const groups = (STROLLERS.find((s) => minute < s.until) ?? STROLLERS[STROLLERS.length - 1]).groups;
       const kind = groups[(roll >>> 4) % groups.length];
       return [
