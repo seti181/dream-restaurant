@@ -420,6 +420,26 @@ Notes on the references:
 3. Characters: guests, staff and special characters, with animations and bubbles.
 4. The Old Town map, food icons and UI icons.
 
+### 9.1.1 The street around the restaurant: proposals (waiting for a choice)
+
+Since 2026-10-01 the restaurant view sits in an Old Town street: cobbles, pavements, rows of gabled houses and the Town Hall spire. Playtest feedback: the sky behind the houses should show the day's forecast, and the restaurant looks as if it stands on the pavement. Proposals below; the chosen ones become roadmap items and decision-log entries.
+
+**A. Weather in the sky behind the houses** (the same weather as the forecast and the window view)
+
+1. **Sun and moon.** A pixel sun over the roofs on sunny days (bigger and hotter-looking in a heatwave, with a warm haze); after 19:30 a moon and a few twinkling stars instead.
+2. **Clouds.** Soft pixel clouds that drift slowly across the sky: a few small white ones when sunny, a thick grey layer when cloudy, dark heavy ones in the rain. Moved with CSS, so they cost almost nothing.
+3. **Rain.** Falling rain streaks over the whole street (one light animated layer), a darker sky, wet cobbles with a few puddles that reflect the windows, and closed umbrellas on the empty terrace.
+4. **Gulls.** Now and then a herring gull glides across the sky above the roofs (Mewa's cousins), more often on sunny days.
+
+**B. The restaurant as a building, not furniture on the pavement**
+
+1. **A raised floor (dollhouse cut).** The room stands on a stone plinth a few pixels high, showing its thickness along the two open sides, like a cut-away dollhouse or diorama. The floor no longer touches the cobbles.
+2. **Low cut-away walls on the open sides.** The front and side walls are cut off at knee height (the usual way isometric games show the inside of a building), with the wooden trim, the window sills and the door opening to the street. This makes it read as the inside of a house.
+3. **A Gdańsk przedproże for the terrace.** Instead of tables on the bare street, the terrace becomes a raised stone platform in front of the door with a few steps down to the street and a carved stone balustrade, like the ones on ul. Mariacka. Very Gdańsk, and it explains why the terrace sits above the cobbles.
+4. **The house in its row.** Neighbouring houses continue the building line on both sides, so the restaurant reads as one house in a street, with the pavement and the cobbled road running in front. The big empty cobbled square to the right of the kitchen becomes a narrow side lane.
+
+**Recommendation:** A1, A2 and A3 for the weather (A4 later, with the "shoo the gulls" item in M5b), and B1 + B2 + B3 for the building. B4 needs care so the neighbouring house never hides the kitchen.
+
 ### 9.2 Audio and juice
 
 - **Audio:** soft background music, café ambience, a till "ding", seagull calls. Made in code with Web Audio (no sound files), or CC0 sources only; a mute toggle is required.
