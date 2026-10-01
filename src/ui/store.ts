@@ -26,6 +26,7 @@ import {
   type OpenDay,
 } from '../sim/game';
 import type { Supplier } from '../sim/types';
+import { play, startAmbience, stopAmbience } from './sound';
 
 /**
  * Plan: time paused, getting ready. Open: the day is playing. Day over: the results.
@@ -130,6 +131,8 @@ export const useGame = create<GameStore>((set, get) => ({
     // Save the plan first, so menu and staff changes survive if the app closes mid-day.
     const saved = saveGame(get().game);
     const openDay = openRestaurant(get().game);
+    play('doorbell');
+    startAmbience();
     set({
       saved,
       phase: 'open',
@@ -140,14 +143,20 @@ export const useGame = create<GameStore>((set, get) => ({
   },
 
   tick: () => {
-    const { openDay, game } = get();
+    const { openDay, game, live } = get();
     if (!openDay) return;
     playTick(openDay);
     if (openDay.progress.done) {
       const { state, summary } = closeDay(game, openDay);
+      stopAmbience();
+      if (state.gameOver) play('sad');
+      else if (summary.goalCompleted) play('goal');
       set({ game: state, summary, phase: 'dayOver', openDay: null, live: null, saved: saveGame(state) });
     } else {
-      set({ live: liveFrom(openDay) });
+      const next = liveFrom(openDay);
+      // The till rings as guests pay.
+      if (live && next.guestsServed > live.guestsServed) play('ding');
+      set({ live: next });
     }
   },
 
@@ -156,7 +165,10 @@ export const useGame = create<GameStore>((set, get) => ({
   planNextDay: () => {
     // After the Fair's last report comes the Golden Neptune ceremony, unless the money ran out.
     if (get().game.gameOver) set({ phase: 'gameOver', summary: null });
-    else if (get().phase === 'dayOver' && get().summary?.neptune) set({ phase: 'ceremony' });
+    else if (get().phase === 'dayOver' && get().summary?.neptune) {
+      if (get().summary?.neptune?.playerWon) play('fanfare');
+      set({ phase: 'ceremony' });
+    }
     else set({ phase: 'plan', summary: null, planTab: 'today' });
   },
 
@@ -209,5 +221,8 @@ function canStartOver(): boolean {
 function plan(action: (game: GameState) => GameState): void {
   const { phase, game } = useGame.getState();
   if (phase !== 'plan') return;
-  useGame.setState({ game: action(game) });
+  const next = action(game);
+  // Money spent: a little coin sound.
+  if (next.cash < game.cash) play('coin');
+  useGame.setState({ game: next });
 }

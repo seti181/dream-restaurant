@@ -5,6 +5,7 @@ import { dateOf, formatDate, seasonWeek } from '../sim/calendar';
 import { formatTime } from '../sim/clock';
 import { playerOf, starRating } from '../sim/game';
 import { money, stars } from './format';
+import { setSoundPrefs, useSoundPrefs } from './sound';
 import { useGame, type Speed } from './store';
 
 const SPEEDS: { speed: Speed; label: string; name: string }[] = [
@@ -37,6 +38,22 @@ function SpeedControls() {
   );
 }
 
+/** Quick mute for everything; music and sounds can be chosen separately in Settings. */
+function MuteButton() {
+  const { muted } = useSoundPrefs();
+  return (
+    <button
+      type="button"
+      className="mute"
+      aria-label={muted ? 'Sound off. Tap to turn it on' : 'Sound on. Tap to mute'}
+      aria-pressed={muted}
+      onClick={() => setSoundPrefs({ muted: !muted })}
+    >
+      {muted ? '🔇' : '🔊'}
+    </button>
+  );
+}
+
 export function Hud() {
   const game = useGame((s) => s.game);
   const phase = useGame((s) => s.phase);
@@ -65,6 +82,7 @@ export function Hud() {
       <div className="hud-stat" aria-label="Rating">
         {stars(starRating(playerOf(game)))}
       </div>
+      <MuteButton />
       <SpeedControls />
     </header>
   );

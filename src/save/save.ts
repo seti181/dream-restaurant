@@ -19,7 +19,7 @@ interface SaveFile {
 /** The parts of localStorage we use. Tests pass a stand-in. */
 export type SaveStorage = Pick<Storage, 'getItem' | 'setItem'>;
 
-function browserStorage(): SaveStorage | null {
+export function browserStorage(): SaveStorage | null {
   try {
     return globalThis.localStorage ?? null;
   } catch {

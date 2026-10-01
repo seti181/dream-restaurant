@@ -5,6 +5,7 @@ import { balance } from '../../data/balance';
 import { exportSaveCode } from '../../save/save';
 import type { Difficulty } from '../../sim/game';
 import { money } from '../format';
+import { setSoundPrefs, useSoundPrefs } from '../sound';
 import { useGame } from '../store';
 
 export const DIFFICULTIES: { difficulty: Difficulty; name: string; description: string }[] = [
@@ -124,6 +125,33 @@ function Backup() {
   );
 }
 
+function SoundSettings() {
+  const prefs = useSoundPrefs();
+  const switches: { key: 'music' | 'sound'; name: string }[] = [
+    { key: 'music', name: '🎵 Music' },
+    { key: 'sound', name: '🔔 Sounds' },
+  ];
+  return (
+    <>
+      <h2 className="spaced">Sound</h2>
+      <div className="chips">
+        {switches.map(({ key, name }) => (
+          <button
+            key={key}
+            type="button"
+            className="chip"
+            aria-pressed={prefs[key]}
+            onClick={() => setSoundPrefs({ [key]: !prefs[key], muted: false })}
+          >
+            {name}: {prefs[key] ? 'on' : 'off'}
+          </button>
+        ))}
+      </div>
+      <p className="small muted">The 🔊 button in the top bar mutes everything at once.</p>
+    </>
+  );
+}
+
 export function SettingsPanel() {
   const game = useGame((s) => s.game);
   const setDifficulty = useGame((s) => s.setDifficulty);
@@ -172,8 +200,7 @@ export function SettingsPanel() {
           onConfirm={() => startNewGame(newDifficulty)}
         />
 
-        <h2 className="spaced">Sound</h2>
-        <p className="small muted">Music and sounds arrive in a later update, with a mute switch here.</p>
+        <SoundSettings />
       </section>
       <Backup />
     </div>

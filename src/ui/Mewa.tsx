@@ -1,9 +1,11 @@
 // Mewa the seagull: tutorial tips in a speech bubble, and the week's goal.
 
+import { useEffect } from 'react';
 import { TIP_IDS, TIPS } from '../data/mewa';
 import { goalOf, goalProgress, goalText } from '../sim/goals';
 import { money } from './format';
 import { MewaIcon } from './MewaIcon';
+import { play } from './sound';
 import { useGame } from './store';
 
 /** Mewa's tip for this screen today, if there is one she hasn't given yet. */
@@ -12,13 +14,16 @@ export function MewaTip({ screen }: { screen: 'plan' | 'open' | 'dayOver' }) {
   const summary = useGame((s) => s.summary);
   const dismissTip = useGame((s) => s.dismissTip);
   const skipTips = useGame((s) => s.skipTips);
-  if (game.mewa.tipsOff) return null;
 
   // On the report, it's still the day that just ended.
   const day = screen === 'dayOver' && summary ? summary.day : game.day;
-  const tip = TIP_IDS.find(
-    (id) => TIPS[id].screen === screen && TIPS[id].day === day && !game.mewa.seenTips.includes(id),
-  );
+  const tip = game.mewa.tipsOff
+    ? undefined
+    : TIP_IDS.find((id) => TIPS[id].screen === screen && TIPS[id].day === day && !game.mewa.seenTips.includes(id));
+  // Mewa announces herself.
+  useEffect(() => {
+    if (tip) play('seagull');
+  }, [tip]);
   if (!tip) return null;
 
   return (
