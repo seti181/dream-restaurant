@@ -11,6 +11,8 @@ import { dishName, money, signedMoney, stars } from './format';
 import { Confetti, StarRow } from './Juice';
 import { MewaTip } from './Mewa';
 import { FoodIcon } from './PixelIcon';
+import { PanoramaScreen } from './Panorama';
+import { isFairDay } from '../sim/neptune';
 import { useGame } from './store';
 
 type Factor = keyof SatisfactionFactors;
@@ -93,7 +95,7 @@ export function DayOverScreen() {
   if (!summary) return null;
 
   return (
-    <main className="screen">
+    <PanoramaScreen weather={summary.weather} evening fair={isFairDay(summary.day)}>
       <div className="card plan-card">
         <div className="plan-body">
           <MewaTip screen="dayOver" />
@@ -262,6 +264,6 @@ export function DayOverScreen() {
           </button>
         </footer>
       </div>
-    </main>
+    </PanoramaScreen>
   );
 }

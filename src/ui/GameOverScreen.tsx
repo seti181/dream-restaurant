@@ -5,6 +5,7 @@ import { playerOf } from '../sim/game';
 import { money } from './format';
 import { DIFFICULTIES, LoadSaveCode } from './plan/SettingsPanel';
 import { useGame } from './store';
+import { PanoramaScreen } from './Panorama';
 
 export function GameOverScreen() {
   const game = useGame((s) => s.game);
@@ -12,7 +13,7 @@ export function GameOverScreen() {
   const lastDay = Math.max(0, game.day - 1);
 
   return (
-    <main className="screen">
+    <PanoramaScreen weather="sunny" evening fair={false}>
       <div className="card plan-card ceremony">
         <div className="plan-body">
           <p className="eyebrow">{formatDate(dateOf(lastDay))} · closing time</p>
@@ -48,6 +49,6 @@ export function GameOverScreen() {
           </div>
         </div>
       </div>
-    </main>
+    </PanoramaScreen>
   );
 }

@@ -14,6 +14,8 @@ import { MewaIcon } from './MewaIcon';
 import { MenuPanel } from './plan/MenuPanel';
 import { StaffPanel } from './plan/StaffPanel';
 import { TodayPanel } from './plan/TodayPanel';
+import { PanoramaScreen } from './Panorama';
+import { isFairDay } from '../sim/neptune';
 import { useGame, type PlanTab } from './store';
 
 const TABS: { tab: PlanTab; label: ReactNode }[] = [
@@ -48,9 +50,11 @@ export function PlanScreen() {
   const closeManager = useGame((s) => s.closeManager);
   const tabs = duringDay ? TABS.filter(({ tab }) => !BEFORE_OPENING_ONLY.includes(tab)) : TABS;
   const shown = duringDay && BEFORE_OPENING_ONLY.includes(planTab) ? 'menu' : planTab;
+  const day = useGame((s) => s.game.day);
+  const weather = useGame((s) => s.game.weather);
 
   return (
-    <main className="screen">
+    <PanoramaScreen weather={weather} evening={false} fair={isFairDay(day)}>
       <div className="card plan-card">
         <nav className="tabs" aria-label="Planning">
           {tabs.map(({ tab, label }) => (
@@ -97,6 +101,6 @@ export function PlanScreen() {
           )}
         </footer>
       </div>
-    </main>
+    </PanoramaScreen>
   );
 }

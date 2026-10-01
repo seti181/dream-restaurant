@@ -4,6 +4,7 @@ import { ENDING } from '../data/personal';
 import { playerOf } from '../sim/game';
 import { Confetti } from './Juice';
 import { useGame } from './store';
+import { PanoramaScreen } from './Panorama';
 
 const ORDINALS = ['first', 'second', 'third', 'fourth', 'fifth'];
 
@@ -19,7 +20,7 @@ export function CeremonyScreen() {
   const best = winner.score;
 
   return (
-    <main className="screen">
+    <PanoramaScreen weather="sunny" evening fair={false}>
       <div className="card plan-card ceremony">
         <div className="plan-body">
           <p className="eyebrow">St. Dominic’s Fair · the Golden Neptune</p>
@@ -76,6 +77,6 @@ export function CeremonyScreen() {
           </button>
         </footer>
       </div>
-    </main>
+    </PanoramaScreen>
   );
 }

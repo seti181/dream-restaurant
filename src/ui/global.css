@@ -1760,3 +1760,31 @@ h2.spaced {
   background: #fff4dc;
   animation: tap-ring 0.9s ease-in-out infinite;
 }
+
+/* The riverside along the bottom of the planning screens and the day report. */
+.screen.with-panorama {
+  position: relative;
+  /* Leaves the lower part of the riverside showing below the card: houses, the quay and the river. */
+  padding-bottom: 16vw;
+}
+
+.screen.with-panorama > .card {
+  position: relative;
+  z-index: 1;
+}
+
+.panorama {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.panorama img {
+  display: block;
+  width: 100%;
+  height: auto;
+  image-rendering: pixelated;
+}

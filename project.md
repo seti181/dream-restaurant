@@ -625,7 +625,7 @@ Each item is tested in the browser and on the tablet before the next one starts.
 - [x] Choice cards: about 15 new cards, including the Portuguese exchange student (cabrito assado and azulejo tiles)
 - [x] Performance check on the tablet with `?perf` (before adding more art)
 - [x] Manager-mode background: concept art (3–4 pixel mock-ups) to choose from
-- [ ] Manager-mode background: build the chosen concept
+- [x] Manager-mode background: build the chosen concept
 - [ ] The day's numbers open up into lists: tap Guests served, Takings, Walked out or No free table to see who and what (groups, dishes, reasons)
 - [ ] Gdańsk streets: ornate gables, facade colours and details, granite paving
 - [ ] Gdańsk streets: shop fronts, awnings, café umbrellas, double lanterns, the Town Hall clock and golden spire, flags, flower boxes, bikes, pigeons, an amber stall, a street musician
@@ -753,3 +753,4 @@ Each item is tested in the browser and on the tablet before the next one starts.
 - 2026-10-01: The day is 30 seconds slower again, 130 seconds at 1× (tapping waiting tables was still too rushed). The simulation is unchanged.
 - 2026-10-01: The queue at the door stands on the street in a line beside the steps (with a terrace it used to stand on the przedproże), the first in line shows ⏳, and a party that gives up walks off down the street, cross (😠), instead of vanishing.
 - 2026-10-01: Planned (M7): the numbers at the top of the day screen (guests served, takings, walked out, no free table) open into lists when tapped.
+- 2026-10-01: Background chosen: A and D both. The planning screen shows the riverside by day (concept A), with the sky by the weather (blue, grey when cloudy, darker in rain, warm in a heatwave); the day report, the Golden Neptune ceremony and the game-over screen show it in the evening (concept D), with lit windows, lanterns and a dusk sky; during St. Dominic's Fair both get the striped stalls and strings of lights on the quay. Drawn by the game (src/ui/pixel/panorama.ts) as a strip along the bottom, 640×164 art pixels shown twice as big; the sky is a CSS gradient behind it. The card leaves the bottom 16% of the screen width free, so the houses, the quay and the river show beneath it.
