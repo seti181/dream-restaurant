@@ -2,7 +2,8 @@
 // the kitchen queue, eating, satisfaction and reviews. See project.md section 7, step 3.
 
 import { balance } from '../data/balance';
-import type { MenuDish } from '../data/dishes';
+import type { DecorId } from '../data/decor';
+import type { EquipmentId, MenuDish } from '../data/dishes';
 import { GROUP_IDS, GROUPS } from '../data/groups';
 import { LOCATIONS } from '../data/locations';
 import { chooseRestaurant } from './choice';
@@ -421,6 +422,8 @@ export interface FloorView {
   /** For each chef: busy cooking right now? */
   chefsBusy: boolean[];
   waiters: number;
+  decor: DecorId[];
+  equipment: EquipmentId[];
   /** Orders waiting for a free chef. */
   ordersWaiting: number;
   /** Parties that walked out in the last few minutes. */
@@ -458,6 +461,8 @@ export function floorView(progress: DayInProgress, index: number, recentMinutes 
     insideTables: restaurant.tables,
     chefsBusy: floor.chefFreeAt.map((freeAt) => freeAt > minute),
     waiters: restaurant.waiters.length,
+    decor: restaurant.decor,
+    equipment: restaurant.equipment,
     ordersWaiting: floor.queue.length,
     walkouts: floor.walkouts
       .filter((w) => minute - w.minute < recentMinutes)

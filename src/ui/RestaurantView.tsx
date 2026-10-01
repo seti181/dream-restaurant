@@ -3,7 +3,9 @@
 // bubble showing how they feel. See project.md section 8.
 
 import type { GroupId } from '../data/groups';
+import type { Weather } from '../data/weather';
 import type { FloorView, TableGuests } from '../sim/day';
+import { DecorLayer, KitchenEquipment } from './RoomArt';
 
 /** Each kind of guest has its own colour, so you can see at a glance who's in. */
 export const GROUP_COLOURS: Record<GroupId, string> = {
@@ -62,12 +64,15 @@ function Table({
   size,
   guests,
   outdoor,
+  clothed = false,
 }: {
   x: number;
   y: number;
   size: number;
   guests: TableGuests | null;
   outdoor: boolean;
+  /** Embroidered tablecloths from the decor shop. */
+  clothed?: boolean;
 }) {
   const bubble = guests && bubbleFor(guests);
   const colour = guests ? GROUP_COLOURS[guests.group] : '';
@@ -80,7 +85,14 @@ function Table({
         SEATS.slice(0, guests.seated).map(([dx, dy], i) => (
           <Person key={i} x={x + dx * 0.9} y={y + dy - 4} colour={colour} />
         ))}
-      <rect x={x - 22} y={y - 8} width={44} height={28} rx={5} className={outdoor ? 'table outdoor' : 'table'} />
+      <rect
+        x={x - 22}
+        y={y - 8}
+        width={44}
+        height={28}
+        rx={5}
+        className={outdoor ? 'table outdoor' : clothed ? 'table clothed' : 'table'}
+      />
       {guests?.stage === 'eating' &&
         [-10, 10].map((dx) => <circle key={dx} cx={x + dx} cy={y + 6} r={6} className="plate" />)}
       {/* They've paid: a coin floats up from the table. */}
@@ -129,14 +141,44 @@ function tableSpots(count: number, left: number, width: number, top: number, bot
   return { spots, size };
 }
 
+/** What's outside: the weather, and whether evening has come. */
+interface Sky {
+  weather: Weather;
+  dusk: boolean;
+}
+
+/** Sun, moon, clouds or rain in a patch of sky. */
+function SkyDetails({ x, y, width, sky }: { x: number; y: number; width: number; sky: Sky }) {
+  if (sky.weather === 'rain') {
+    return (
+      <g className="rain">
+        {Array.from({ length: Math.floor(width / 14) }, (_, i) => (
+          <line key={i} x1={x + 8 + i * 14} y1={y + 8 + (i % 3) * 8} x2={x + 4 + i * 14} y2={y + 22 + (i % 3) * 8} />
+        ))}
+      </g>
+    );
+  }
+  if (sky.weather === 'cloudy') {
+    return (
+      <g className="cloud">
+        <ellipse cx={x + width * 0.3} cy={y + 20} rx={22} ry={9} />
+        <ellipse cx={x + width * 0.72} cy={y + 14} rx={18} ry={7} />
+      </g>
+    );
+  }
+  if (sky.dusk) return <circle cx={x + width * 0.78} cy={y + 18} r={8} className="moon" />;
+  return <circle cx={x + width * 0.78} cy={y + 20} r={sky.weather === 'heatwave' ? 14 : 10} className="sun" />;
+}
+
 /** A row of gabled Old Town houses, seen through a window. */
-function TownWindow({ x, y, width }: { x: number; y: number; width: number }) {
+function TownWindow({ x, y, width, sky }: { x: number; y: number; width: number; sky: Sky }) {
   const colours = ['#e9a23b', '#b5452f', '#5d8aa8', '#e4c9a0', '#7a9e6b'];
   const houses = 4;
   const w = width / houses;
   return (
     <g>
-      <rect x={x} y={y} width={width} height={100} rx={8} className="window-sky" />
+      <rect x={x} y={y} width={width} height={100} rx={8} className={`window-sky ${sky.weather}${sky.dusk ? ' dusk' : ''}`} />
+      <SkyDetails x={x} y={y} width={width} sky={sky} />
       {Array.from({ length: houses }, (_, i) => {
         const hx = x + i * w;
         const top = y + 30 + (i % 2) * 10;
@@ -146,7 +188,14 @@ function TownWindow({ x, y, width }: { x: number; y: number; width: number }) {
               d={`M${hx + 2} ${y + 100} V${top + 14} L${hx + w / 2} ${top} L${hx + w - 2} ${top + 14} V${y + 100} Z`}
               fill={colours[(i + Math.round(x)) % colours.length]}
             />
-            <rect x={hx + w / 2 - 5} y={top + 26} width={10} height={14} rx={2} className="house-window" />
+            <rect
+              x={hx + w / 2 - 5}
+              y={top + 26}
+              width={10}
+              height={14}
+              rx={2}
+              className={sky.dusk ? 'house-window lit' : 'house-window'}
+            />
           </g>
         );
       })}
@@ -156,7 +205,20 @@ function TownWindow({ x, y, width }: { x: number; y: number; width: number }) {
   );
 }
 
-export function RestaurantView({ floor }: { floor: FloorView }) {
+/**
+ * @param weather today's weather, shown through the windows
+ * @param minute the time of day; the sky darkens in the evening
+ */
+export function RestaurantView({
+  floor,
+  weather = 'cloudy',
+  minute = 12 * 60,
+}: {
+  floor: FloorView;
+  weather?: Weather;
+  minute?: number;
+}) {
+  const sky: Sky = { weather, dusk: minute >= 19 * 60 + 30 };
   const terraceCount = floor.tables.length - floor.insideTables;
   const terraceWidth = terraceCount > 0 ? TERRACE_WIDTH : 0;
   const diningLeft = terraceWidth;
@@ -167,12 +229,41 @@ export function RestaurantView({ floor }: { floor: FloorView }) {
   const outside = tableSpots(terraceCount, 0, terraceWidth, FLOOR_Y + 80, FLOOR_Y + 200, 3);
   const doorX = diningLeft + 10;
 
+  // Free wall beside and between the windows, for pictures and shelves.
+  const windowWidth = Math.min(220, diningWidth * 0.26);
+  const gaps = [
+    { from: diningLeft + diningWidth * 0.12 + windowWidth, to: diningLeft + diningWidth * 0.55 },
+    {
+      from: diningLeft + diningWidth * 0.55 + windowWidth,
+      to: diningLeft + diningWidth - (floor.decor.includes('tiledStove') ? 70 : 0),
+    },
+  ];
+  const wallSpots = gaps.flatMap(({ from, to }) => {
+    const gap = to - from;
+    if (gap < 46) return [];
+    if (gap >= 105) {
+      const size = Math.min(72, gap / 2 - 8);
+      return [
+        { x: from + gap / 4, y: 95, size },
+        { x: from + (gap * 3) / 4, y: 95, size },
+      ];
+    }
+    return [{ x: from + gap / 2, y: 95, size: Math.min(80, gap - 10) }];
+  });
+
   return (
     <svg className="restaurant-view" viewBox={`0 0 ${WIDTH} ${HEIGHT}`} role="img" aria-label="Your restaurant">
       {/* Terrace: open sky, an awning and cobbles */}
       {terraceCount > 0 && (
         <g>
-          <rect x={0} y={0} width={terraceWidth} height={HEIGHT} className="terrace-sky" />
+          <rect
+            x={0}
+            y={0}
+            width={terraceWidth}
+            height={HEIGHT}
+            className={`terrace-sky ${weather}${sky.dusk ? ' dusk' : ''}`}
+          />
+          <SkyDetails x={0} y={0} width={terraceWidth} sky={sky} />
           <rect x={0} y={FLOOR_Y} width={terraceWidth} height={HEIGHT - FLOOR_Y} className="cobbles" />
           {Array.from({ length: 6 }, (_, i) => (
             <rect
@@ -184,7 +275,7 @@ export function RestaurantView({ floor }: { floor: FloorView }) {
               className={i % 2 === 0 ? 'awning' : 'awning light'}
             />
           ))}
-          <text x={terraceWidth / 2} y={120} className="scene-label">
+          <text x={terraceWidth / 2} y={120} className={sky.dusk ? 'scene-label on-dark' : 'scene-label'}>
             Terrace
           </text>
         </g>
@@ -193,9 +284,10 @@ export function RestaurantView({ floor }: { floor: FloorView }) {
       {/* Dining room: warm wall, windows onto the Old Town, wooden floor */}
       <rect x={diningLeft} y={0} width={diningWidth} height={FLOOR_Y} className="wall" />
       <rect x={diningLeft} y={FLOOR_Y - 26} width={diningWidth} height={26} className="wainscot" />
-      <TownWindow x={diningLeft + diningWidth * 0.12} y={36} width={Math.min(220, diningWidth * 0.3)} />
-      <TownWindow x={diningLeft + diningWidth * 0.55} y={36} width={Math.min(220, diningWidth * 0.3)} />
+      <TownWindow x={diningLeft + diningWidth * 0.12} y={36} width={windowWidth} sky={sky} />
+      <TownWindow x={diningLeft + diningWidth * 0.55} y={36} width={windowWidth} sky={sky} />
       <rect x={diningLeft} y={FLOOR_Y} width={diningWidth} height={HEIGHT - FLOOR_Y} className="floorboards" />
+      <DecorLayer decor={floor.decor} left={diningLeft} width={diningWidth} floorY={FLOOR_Y} wallSpots={wallSpots} />
       <rect x={doorX} y={FLOOR_Y - 120} width={44} height={120} rx={6} className="door" />
 
       {/* Kitchen: tiles, the pass, the stove and the chefs */}
@@ -215,6 +307,7 @@ export function RestaurantView({ floor }: { floor: FloorView }) {
           +{floor.ordersWaiting - 8} more
         </text>
       )}
+      <KitchenEquipment equipment={floor.equipment} left={kitchenLeft} width={KITCHEN_WIDTH} y={150} />
       <rect x={kitchenLeft + 20} y={FLOOR_Y + 40} width={KITCHEN_WIDTH - 40} height={40} rx={6} className="stove" />
       {floor.chefsBusy.map((busy, i) => {
         const x = kitchenLeft + (KITCHEN_WIDTH * (i + 1)) / (floor.chefsBusy.length + 1);
@@ -237,7 +330,15 @@ export function RestaurantView({ floor }: { floor: FloorView }) {
 
       {/* Guests at their tables */}
       {inside.spots.map((spot, i) => (
-        <Table key={`in${i}`} x={spot.x} y={spot.y} size={inside.size} guests={floor.tables[i]} outdoor={false} />
+        <Table
+          key={`in${i}`}
+          x={spot.x}
+          y={spot.y}
+          size={inside.size}
+          guests={floor.tables[i]}
+          outdoor={false}
+          clothed={floor.decor.includes('tablecloths')}
+        />
       ))}
       {outside.spots.map((spot, i) => (
         <Table

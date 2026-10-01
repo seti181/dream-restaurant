@@ -436,7 +436,7 @@ Work in small steps, and test each step in the browser before moving on.
 
 **M5 – Polish and balance**
 
-- [ ] Art pass, sound, animations
+- [x] Art pass, sound, animations
 - [ ] Balancing with the simulator plus playtests on the real tablet
 - [ ] Performance check on the tablet
 
@@ -494,3 +494,4 @@ Work in small steps, and test each step in the browser before moving on.
 - 2026-10-01: Mariacka cameo: a heart on the map, and "Amber evening on Mariacka" every 20 May (a Monday in the fictional calendar) (more foodies and tourists, a crowd on Mariacka).
 - 2026-10-01: Kept: the regular's name "Pan Cytrynówka" and the Arroz de vitela + cytrynówka combo. Adrian's surname is spelled Żabka.
 - 2026-10-01: Cytrynówka is also a drink on its own (Drinks, 14 zł). The regular is happy with either the drink or a dish with a glass on the side, and he never gets turned away: with every table taken, he sits at the bar.
+- 2026-10-01: Sounds and music are synthesised in the browser (Web Audio) instead of CC0 sound files: nothing to download or license, works offline, adds almost nothing to the app's size. Sound settings are stored on the tablet, separately from the save.

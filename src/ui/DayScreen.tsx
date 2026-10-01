@@ -23,6 +23,7 @@ function Stat({ label, value }: { label: string; value: string | number }) {
 
 export function DayScreen() {
   const live = useGame((s) => s.live);
+  const weather = useGame((s) => s.game.weather);
   const speed = useGame((s) => s.speed);
   const tick = useGame((s) => s.tick);
 
@@ -61,7 +62,7 @@ export function DayScreen() {
           <div style={{ width: `${progress * 100}%` }} />
         </div>
         <div className="scene-wrap">
-          <RestaurantView floor={live.floor} />
+          <RestaurantView floor={live.floor} weather={weather} minute={live.minute} />
           {speed === 0 && <p className="paused">Paused. Tap 1× to carry on.</p>}
         </div>
         <ul className="legend" aria-label="Who is who">

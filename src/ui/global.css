@@ -1357,3 +1357,74 @@ h2.spaced {
     display: none;
   }
 }
+
+/* ---------- Art in the restaurant view ---------- */
+
+.restaurant-view .window-sky.sunny,
+.restaurant-view .terrace-sky.sunny { fill: #bfe0f0; }
+.restaurant-view .window-sky.cloudy,
+.restaurant-view .terrace-sky.cloudy { fill: #d3dde3; }
+.restaurant-view .window-sky.rain,
+.restaurant-view .terrace-sky.rain { fill: #a4b4c0; }
+.restaurant-view .window-sky.heatwave,
+.restaurant-view .terrace-sky.heatwave { fill: #ffe3a8; }
+.restaurant-view .window-sky.dusk,
+.restaurant-view .terrace-sky.dusk { fill: #3d4a74; }
+.restaurant-view .sun { fill: #f4c531; }
+.restaurant-view .moon { fill: #f6efd0; }
+.restaurant-view .cloud ellipse { fill: #ffffff; opacity: 0.9; }
+.restaurant-view .rain line { stroke: #ffffff; stroke-width: 2; opacity: 0.7; }
+.restaurant-view .house-window.lit { fill: #ffd76a; }
+
+.restaurant-view .table.clothed { fill: #fdf6e3; stroke: #b5452f; stroke-dasharray: 4 3; }
+
+.restaurant-view .cord { stroke: #6b3d24; stroke-width: 2; }
+.restaurant-view .brass { fill: #c9a227; stroke: #c9a227; }
+.restaurant-view .candle { fill: #fdf6e3; }
+.restaurant-view .flame { fill: #ffcf4a; }
+.restaurant-view .lantern { fill: #4a3426; stroke: #2e2018; stroke-width: 2; }
+.restaurant-view .pendant { fill: #2f6f8f; }
+.restaurant-view .frame { fill: #8a5233; stroke: #c9a227; stroke-width: 2; }
+.restaurant-view .portrait-bg { fill: #3c4a3a; }
+.restaurant-view .face { fill: #f3d2b5; }
+.restaurant-view .coat { fill: #2b2b2b; }
+.restaurant-view .chart-sea { fill: #bfe0f0; }
+.restaurant-view .chart-coast { fill: none; stroke: #c9a46a; stroke-width: 4; }
+.restaurant-view .chart-pin { fill: var(--brick); }
+.restaurant-view .shelf { fill: #6b3d24; }
+.restaurant-view .bottle { fill: #cfe8e0; stroke: #7fa89a; opacity: 0.9; }
+.restaurant-view .tiny-hull { fill: #8a5233; }
+.restaurant-view .tiny-sail { fill: #ffffff; }
+.restaurant-view .pot-clay { fill: #c97a4a; }
+.restaurant-view .pot-clay.dark { fill: #9c5a33; }
+.restaurant-view .plant-panel { fill: #5f8a52; }
+.restaurant-view .leaf { fill: #3c7a3a; }
+.restaurant-view .leaf.light { fill: #7fb069; }
+.restaurant-view .panelling { fill: #6b3d24; }
+.restaurant-view .panel-inset { fill: #7a4a2c; stroke: #5a321c; }
+.restaurant-view .tiled-stove { fill: #f2efe6; stroke: #9ab0c0; stroke-width: 2; }
+.restaurant-view .stove-tile { fill: #ffffff; stroke: #2f6f8f; stroke-width: 1.5; }
+.restaurant-view .oak { fill: #a8673f; }
+
+.restaurant-view .counter-top { fill: #9aa4a9; }
+.restaurant-view .steel { fill: #b9c3c7; stroke: #7d8a90; }
+.restaurant-view .steel.dark { fill: #5d666b; }
+.restaurant-view .basket { fill: none; stroke: #7d8a90; stroke-width: 2; }
+.restaurant-view .handle { stroke: #3b2a22; stroke-width: 3; stroke-linecap: round; }
+.restaurant-view .grill-bar { stroke: #e9a23b; stroke-width: 2; }
+.restaurant-view .oven-brick { fill: #a9472f; stroke: #6e3220; stroke-width: 1.5; }
+.restaurant-view .oven-mouth { fill: #2e2018; }
+.restaurant-view .espresso { fill: #b5452f; }
+.restaurant-view .cup { fill: #ffffff; }
+.restaurant-view .glass { fill: #e6f3f7; stroke: #9ab0c0; stroke-width: 2; opacity: 0.95; }
+.restaurant-view .cake { fill: #f1d7a0; stroke: #c99a5a; }
+.restaurant-view .cake.dark { fill: #b5452f; }
+
+/* A Gdańsk skyline along the bottom of the top bar. */
+.hud {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='360' height='24' viewBox='0 0 360 24'%3E%3Cpath fill='%23000' fill-opacity='0.13' d='M0 24V14l8-8 8 8v-4h10l6-6 6 6v10h6V8l7-7 7 7v16h4V12l9-9 9 9v12h6V16l6-6 6 6v8h4V4h4V0h4v4h4v20h6V12l8-8 8 8v12h4V14l7-7 7 7v10h6V10l9-9 9 9v14h4V16l5-5 5 5v8h6V6h8l4 4v14h6V12l8-8 8 8v12h4V14l7-7 7 7v10h6V8l6-6 6 6v16h6V14l9-9 9 9v10h6V12l6-6 6 6v12z'/%3E%3C/svg%3E");
+  background-repeat: repeat-x;
+  background-position: left bottom;
+}
+
+.restaurant-view .scene-label.on-dark { fill: #fdf6e3; opacity: 0.9; }
