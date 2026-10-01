@@ -346,8 +346,20 @@ export type Pose = 'stand' | 'sit' | 'walk1' | 'walk2';
  * A whole person: body, legs for the pose, and accessories, with HEADROOM rows above
  * for hats. Seated people are cut off at the waist (the table hides the rest).
  */
-export function personPixels(kind: PersonKind, facing: 'front' | 'back', pose: Pose, variant = 0): Pixels {
+/** What a waiter carries: a tray with a plate of food, or the empty tray on the way back. */
+export type Carry = 'full' | 'empty';
+
+const TRAY: Record<Carry, Overlay> = {
+  full: { x: 10, y: 8, rows: ['.FFF..', 'PPPPP.', 'oooooo'] },
+  empty: { x: 10, y: 10, rows: ['oooooo'] },
+};
+
+export function personPixels(kind: PersonKind, facing: 'front' | 'back', pose: Pose, variant = 0, carry?: Carry): Pixels {
   const look = lookOf(kind, variant);
+  if (carry) {
+    look.palette = { ...look.palette, F: '#e9a23b', P: '#fdf8ee' };
+    look.overlays = [...look.overlays, TRAY[carry]];
+  }
   const body: string[] = [...(facing === 'front' ? PERSON : PERSON_BACK)];
   if (pose === 'walk1' || pose === 'walk2') body.splice(body.length - 4, 4, ...WALK_LEGS[pose]);
   const image = new Pixels(body[0].length, body.length + HEADROOM);

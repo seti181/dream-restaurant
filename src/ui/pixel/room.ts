@@ -243,12 +243,12 @@ export function personImage(kind: S.PersonKind, facing: Facing, pose: S.Pose, va
 }
 
 /** Two walking steps side by side, for a CSS walk cycle. */
-export function walkStrip(kind: S.PersonKind, facing: Facing, variant: number): SpriteImage {
-  const key = `walk:${kind}:${facing}:${variant % 3}`;
+export function walkStrip(kind: S.PersonKind, facing: Facing, variant: number, carry?: S.Carry): SpriteImage {
+  const key = `walk:${kind}:${facing}:${variant % 3}:${carry ?? ''}`;
   const cached = spriteCache.get(key);
   if (cached) return cached;
-  const a = S.personPixels(kind, facing, 'walk1', variant);
-  const b = S.personPixels(kind, facing, 'walk2', variant);
+  const a = S.personPixels(kind, facing, 'walk1', variant, carry);
+  const b = S.personPixels(kind, facing, 'walk2', variant, carry);
   const pixels = new Pixels(a.width * 2, a.height);
   pixels.draw(a, 0, 0);
   pixels.draw(b, a.width, 0);
@@ -583,6 +583,8 @@ export function scenePieces(
   look: RoomLook,
   /** Tables whose guests are still on their way in (by table number), so not yet seated. */
   arriving: ReadonlySet<number> = new Set(),
+  /** Waiters out serving (by number), so not standing by the kitchen. */
+  busyWaiters: ReadonlySet<number> = new Set(),
 ): ScenePiece[] {
   const o = layout.origin;
   const pieces: ScenePiece[] = [];
@@ -680,8 +682,9 @@ export function scenePieces(
 
   // Waiters wait by the kitchen: Tomek and Adrian look like themselves.
   floor.waiters.forEach((special, i) => {
-    const x = k - 10 - i * 12;
-    pieces.push(piece(o, `waiter${i}`, personImage(special ?? 'waiter', 'front', 'stand'), x, 46, 0, x + 46));
+    if (busyWaiters.has(i)) return;
+    const spot = waiterSpot(layout, i);
+    pieces.push(piece(o, `waiter${i}`, personImage(special ?? 'waiter', 'front', 'stand'), spot.x, spot.y, 0, depthAt(spot)));
   });
 
   // Order tickets waiting on the rail.
@@ -792,4 +795,18 @@ export function walkPath(layout: RoomLayout, insideTables: number, table: number
 /** The stacking order of something standing at a point, matching the scene's pieces. */
 export function depthAt(point: Point): number {
   return point.x + point.y;
+}
+
+/** Where waiter number `index` waits, by the kitchen. */
+export function waiterSpot(layout: RoomLayout, index: number): Point {
+  return { x: layout.kitchenX - 10 - index * 12, y: 46 };
+}
+
+/** A waiter's way from the kitchen to the side of a table: along the gap in front of the tables, then down the aisle. */
+export function servePath(layout: RoomLayout, insideTables: number, table: number, waiter: number): Point[] {
+  const found = slotOf(layout, insideTables, table);
+  if (!found) return [];
+  const start = waiterSpot(layout, waiter);
+  const aisle = found.slot.x - 5;
+  return [start, { x: aisle, y: start.y }, { x: aisle, y: found.slot.y + TABLE / 2 }];
 }

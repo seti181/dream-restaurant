@@ -16,19 +16,22 @@ import {
   roomLayout,
   scenePieces,
   seatsAt,
+  servePath,
   walkPath,
   walkStrip,
   type Point,
   type RoomLayout,
   type RoomLook,
 } from './pixel/room';
-import type { PersonKind } from './pixel/sprites';
+import type { Carry, PersonKind } from './pixel/sprites';
 import { useGame } from './store';
 
 /** World units a guest walks per second at 1× speed. */
 const WALK_SPEED = 60;
 /** Seconds between people of the same party setting off. */
 const STAGGER = 0.25;
+/** Seconds a waiter stands at the table putting the plates down. */
+const SERVING_PAUSE = 0.4;
 
 /** Sprite pictures never change once drawn, so each gets one URL for the whole session. */
 const spriteUrls = new WeakMap<Pixels, string>();
@@ -98,6 +101,10 @@ interface Walk {
   angry: boolean;
   /** For guests walking in: the table they're heading for, and which visit that is. */
   arrivingAt?: { table: number; since: number };
+  /** For waiters: which one (by number), what they carry, and the walk back afterwards. */
+  waiter?: number;
+  carry?: Carry;
+  then?: Walk;
 }
 
 /** One guest on the move. The browser animates each stretch of the walk; React only steps in between. */
@@ -123,7 +130,7 @@ function Walker({
   const to = walk.path[leg + 1];
   // Walking towards us shows the face; walking away shows the back.
   const facing = to && to.x + to.y >= from.x + from.y ? 'front' : 'back';
-  const strip = walkStrip(walk.kind, facing, walk.variant);
+  const strip = walkStrip(walk.kind, facing, walk.variant, walk.carry);
 
   useEffect(() => {
     if (!to) {
@@ -158,6 +165,7 @@ function Walker({
     <div
       ref={ref}
       className="pixel-walker"
+      data-walker={walk.waiter !== undefined ? 'waiter' : 'guest'}
       style={{
         width: (strip.pixels.width / 2) * scale,
         height: strip.pixels.height * scale,
@@ -180,6 +188,9 @@ function Walker({
 function useWalkers(layout: RoomLayout, floor: FloorView) {
   const known = useRef(new Map<number, TableGuests>());
   const [walks, setWalks] = useState<Walk[]>([]);
+  // The walks as they are right now, for picking a free waiter.
+  const current = useRef(walks);
+  current.current = walks;
 
   useEffect(() => {
     const before = known.current;
@@ -204,9 +215,33 @@ function useWalkers(layout: RoomLayout, floor: FloorView) {
       }
     };
 
+    // The food is ready: a free waiter carries it from the kitchen, then walks back.
+    const busy = new Set(current.current.map((w) => w.waiter).filter((w) => w !== undefined));
+    const serve = (table: number, guests: TableGuests) => {
+      const waiter = floor.waiters.findIndex((_, i) => !busy.has(i));
+      if (waiter < 0) return;
+      busy.add(waiter);
+      const path = servePath(layout, floor.insideTables, table, waiter);
+      if (path.length < 2) return;
+      const kind = floor.waiters[waiter] ?? 'waiter';
+      const id = `serve:${table}:${guests.since}`;
+      started.push({
+        id,
+        kind,
+        variant: 0,
+        path,
+        delay: 0,
+        angry: false,
+        waiter,
+        carry: 'full',
+        then: { id: `${id}:back`, kind, variant: 0, path: [...path].reverse(), delay: SERVING_PAUSE, angry: false, waiter, carry: 'empty' },
+      });
+    };
+
     for (const [table, guests] of now) {
       const was = before.get(table);
       if (!was || was.since !== guests.since) walkersFor(table, guests, false);
+      else if (was.stage !== 'eating' && guests.stage === 'eating') serve(table, guests);
     }
     for (const [table, guests] of before) {
       const still = now.get(table);
@@ -216,7 +251,10 @@ function useWalkers(layout: RoomLayout, floor: FloorView) {
     if (started.length > 0) setWalks((current) => [...current, ...started]);
   }, [floor, layout]);
 
-  const [done] = useState(() => (walk: Walk) => setWalks((current) => current.filter((w) => w.id !== walk.id)));
+  // A finished walk goes; a waiter's walk to a table is followed by the walk back.
+  const [done] = useState(
+    () => (walk: Walk) => setWalks((list) => [...list.filter((w) => w.id !== walk.id), ...(walk.then ? [walk.then] : [])]),
+  );
 
   // Tables whose current party still has someone walking in: they aren't seated yet.
   const arriving = new Set(
@@ -224,7 +262,8 @@ function useWalkers(layout: RoomLayout, floor: FloorView) {
       .filter((w) => w.arrivingAt && floor.tables[w.arrivingAt.table]?.since === w.arrivingAt.since)
       .map((w) => w.arrivingAt!.table),
   );
-  return { walks, done, arriving };
+  const busyWaiters = new Set(walks.map((w) => w.waiter).filter((w): w is number => w !== undefined));
+  return { walks, done, arriving, busyWaiters };
 }
 
 // ---------- The view ----------
@@ -255,8 +294,8 @@ export function PixelRestaurantView({
   const background = useMemo(() => imageUrl(drawRoom(layout, look)), [layout, look]);
   useEffect(() => () => URL.revokeObjectURL(background), [background]);
 
-  const { walks, done, arriving } = useWalkers(layout, floor);
-  const pieces = scenePieces(layout, floor, look, arriving);
+  const { walks, done, arriving, busyWaiters } = useWalkers(layout, floor);
+  const pieces = scenePieces(layout, floor, look, arriving, busyWaiters);
   const { wrap, scale } = useFittingScale(layout.width, layout.height);
   const at = (n: number) => n * scale;
 

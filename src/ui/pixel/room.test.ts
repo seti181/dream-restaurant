@@ -5,7 +5,7 @@ import { floorView, startDay, stepDay } from '../../sim/day';
 import * as actions from '../../sim/actions';
 import { newGame, openRestaurant, playTick, type GameState } from '../../sim/game';
 import { specialCandidate } from '../../sim/staff';
-import { drawRoom, roomLayout, scenePieces, seatsAt, walkPath, type RoomLook } from './room';
+import { drawRoom, roomLayout, scenePieces, seatsAt, servePath, waiterSpot, walkPath, type RoomLook } from './room';
 import { HEADROOM, PERSON, personPixels, SEATED_ROWS, type PersonKind } from './sprites';
 
 const look = (insideTables: number): RoomLook => ({ decor: [], equipment: ['stove'], weather: 'sunny', dusk: false, insideTables });
@@ -109,6 +109,18 @@ describe('walking in and out', () => {
     const path = walkPath(layout, 6, 6, seat);
     expect(path[0].y).toBeGreaterThan(layout.roomY + layout.terraceDepth);
     expect(path.at(-1)).toEqual({ x: seat.x, y: seat.y });
+  });
+
+  it('sends a waiter from their spot by the kitchen to the side of the table', () => {
+    const layout = roomLayout(6, 2);
+    for (let table = 0; table < 8; table++) {
+      const path = servePath(layout, 6, table, 1);
+      expect(path[0]).toEqual(waiterSpot(layout, 1));
+      const last = path.at(-1)!;
+      const seat = seatsAt(layout, 6, table)[2]; // the left-hand seat, beside the aisle
+      expect(Math.abs(last.y - seat.y)).toBeLessThanOrEqual(1);
+      expect(last.x).toBeLessThan(seat.x);
+    }
   });
 
   it('has no route to a table that does not exist', () => {
