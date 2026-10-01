@@ -16,5 +16,7 @@
     "isolatedModules": true,
     "skipLibCheck": true
   },
-  "include": ["src", "scripts", "vite.config.ts"]
+  "include": ["src", "scripts", "vite.config.ts"],
+  // The pixel-art tools use Node APIs; they run with tsx and are never part of the game.
+  "exclude": ["scripts/pixel"]
 }

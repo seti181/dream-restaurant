@@ -490,7 +490,7 @@ Work in small steps, and test each step in the browser before moving on.
 **M5 – Polish and balance**
 
 - [x] Art pass, sound, animations (flat SVG art, now the placeholder for the pixel art)
-- [ ] Pixel art: choose sources and palette, and approve one sample scene (section 9.1)
+- [x] Pixel art: choose sources and palette, and approve one sample scene (section 9.1)
 - [ ] Pixel art: restaurant view (rooms, furniture, decor, equipment, terrace)
 - [ ] Pixel art: characters (guests, staff, Mewa, special characters) with animations
 - [ ] Pixel art: Old Town map, food icons and UI icons
@@ -526,8 +526,6 @@ Work in small steps, and test each step in the browser before moving on.
 - Should the player choose a restaurant concept at the start (e.g. Polish tavern vs bistro) or build it freely? The current plan is free-form with no fixed concept.
 - Portrait support ever? The current plan is landscape only.
 - How much text-based humour is wanted in reviews and events? More is more fun, but also more writing.
-- **Pixel art:** where do the sprites come from: a ready-made pack, CC0 packs, drawn for this game, or AI-generated (section 9.1)? If a paid pack: does its licence allow the files in a public GitHub repository?
-- **Pixel art:** isometric rooms (as in references 2 and 3) or a straight top-down view (as in reference 1)? The current plan is isometric, with characters drawn facing the diagonals.
 - **Pixel art:** should guests visibly walk in through the door to their table and back out, instead of appearing at the table? It suits the sprite style, but it's new (purely visual; the simulation is unchanged).
 
 ## 16. Decision log
@@ -556,3 +554,4 @@ Work in small steps, and test each step in the browser before moving on.
 - 2026-10-01: Cytrynówka is also a drink on its own (Drinks, 14 zł). The regular is happy with either the drink or a dish with a glass on the side, and he never gets turned away: with every table taken, he sits at the bar.
 - 2026-10-01: Sounds and music are synthesised in the browser (Web Audio) instead of CC0 sound files: nothing to download or license, works offline, adds almost nothing to the app's size. Sound settings are stored on the tablet, separately from the save.
 - 2026-10-01: Art direction changes to cozy pixel art with 2D sprites, based on three reference images (a chibi character sheet, an isometric pixel-art kitchen kit, and an AI-generated cozy isometric restaurant used for mood only). The flat SVG art stays as the placeholder until the pixel art replaces it. Details in section 9.1.
+- 2026-10-01: Pixel-art sample scene approved ("spot on"). The pixel art is drawn for this game in code (scripts/pixel/), so there are no licence questions. Rooms are isometric, characters are chibi sprites in the style of reference 1. The sample is kept in art/sample/.
