@@ -66,6 +66,8 @@ export interface Floor {
   /** When each chef finishes their current order. */
   chefFreeAt: number[];
   walkouts: Walkout[];
+  /** Until this minute new guests stay away (a noisy group is in); guests who booked still come. */
+  closedUntil: number;
 }
 
 export interface DayResult {
@@ -283,6 +285,7 @@ export function startDay(
       queue: [],
       chefFreeAt: r.chefs.map(() => 0),
       walkouts: [],
+      closedUntil: 0,
     })),
     outcomes: [],
     conditions,
@@ -312,6 +315,11 @@ export function seat(
 ): void {
   const restaurant = progress.restaurants[index];
   const floor = progress.floors[index];
+  // With a noisy group in, people peek through the door and go somewhere else.
+  if (!party.bookedAt && floor.closedUntil > minute) {
+    progress.outcomes.push(lostOutcome(party, restaurant.id, 'noTable'));
+    return;
+  }
   // The regular never gets turned away: with every table taken, he squeezes in at the bar.
   const atTheBar = party.regular && floor.freeTables < 1;
   const tablesUsed = atTheBar ? 0 : tablesNeeded(party.size);

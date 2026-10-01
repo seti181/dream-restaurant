@@ -91,6 +91,8 @@ function needMet(need: MomentNeed, { progress, adrianAway }: MomentContext): boo
       return restaurant.waiters.some((waiter) => waiter.special === 'tomek');
     case 'roomForSix':
       return floor.freeTables >= 2;
+    case 'freeTable':
+      return floor.freeTables >= 1;
   }
 }
 
@@ -194,6 +196,17 @@ function apply(
   if (effect.helper) restaurant.waiters = [...restaurant.waiters, { ...effect.helper }];
   if (effect.kitchenPause) {
     floor.chefFreeAt = floor.chefFreeAt.map((freeAt) => Math.max(freeAt, minute) + effect.kitchenPause!);
+  }
+  if (effect.noisyGroup) {
+    const { group, size, minutes } = effect.noisyGroup;
+    const party = { group, size, origin: restaurant.location, arrivalMinute: minute, bookedAt: restaurant.id };
+    seat(today.rng, progress, 0, party, minute);
+    // They only drink: nothing for the kitchen, and they leave when the bottle is empty.
+    const visit = floor.visits.find((v) => v.party === party);
+    if (visit) {
+      Object.assign(visit, { order: [], eating: true, readyAt: minute, leaveAt: minute + minutes });
+      floor.closedUntil = minute + minutes;
+    }
   }
   if (effect.walkIn) {
     const { group, size } = effect.walkIn;

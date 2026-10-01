@@ -163,6 +163,27 @@ describe('what the answers do', () => {
     for (const visit of waiting) expect(visit.mood).toBe(MOMENTS.stoLat.choices[0].effect.mood!.amount);
   });
 
+  it('the merry group tips well, but keeps new guests away while they’re in', () => {
+    const open = openRestaurant(newGame(13));
+    playUntil(open, 12 * 60);
+    const floor = open.progress.floors[0];
+    const before = floor.visits.length;
+    show(open, 'merryTourists');
+    const result = answerTheMoment(open, 0);
+    expect(result?.cash).toBe(500);
+    const group = floor.visits[before];
+    expect(group.party).toMatchObject({ group: 'tourists', size: 4 });
+    expect(group.order).toEqual([]);
+    // Nobody new sits down until they leave, and they don't stay for ever.
+    const until = floor.closedUntil;
+    expect(until).toBe(12 * 60 + 45);
+    playUntil(open, until);
+    expect(floor.visits.filter((v) => v.seatedAt > 12 * 60)).toEqual([]);
+    expect(open.progress.outcomes.some((o) => o.restaurant === 'player' && o.kind === 'noTable')).toBe(true);
+    playUntil(open, until + 10);
+    expect(floor.visits).not.toContain(group);
+  });
+
   it('a shower sends the terrace guests inside, if there’s room', () => {
     const june = { ...newGame(12), day: 62, weather: 'cloudy' as const, terracePermitUntilDay: 200 };
     const open = openRestaurant(june);

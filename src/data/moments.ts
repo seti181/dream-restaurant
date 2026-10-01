@@ -11,7 +11,8 @@ export type MomentId =
   | 'tomekTray'
   | 'tourGroup'
   | 'stoLat'
-  | 'busker';
+  | 'busker'
+  | 'merryTourists';
 
 /** What has to be true right now for a moment to happen. The simulation checks these. */
 export type MomentNeed =
@@ -32,7 +33,9 @@ export type MomentNeed =
   /** Tomek is working today. */
   | 'tomekWorking'
   /** Two free tables. */
-  | 'roomForSix';
+  | 'roomForSix'
+  /** A free table. */
+  | 'freeTable';
 
 /** What an answer does. Everything is optional; `result` says what happened. */
 export interface MomentEffect {
@@ -54,6 +57,11 @@ export interface MomentEffect {
   helper?: { skill: number; speed: number };
   /** A group walks in right now. */
   walkIn?: { group: GroupId; size: number };
+  /**
+   * A noisy group takes a table for a while, orders nothing from the kitchen, and keeps
+   * new guests away until they leave (guests who booked still come in).
+   */
+  noisyGroup?: { group: GroupId; size: number; minutes: number };
   /** Terrace guests move to free tables inside. */
   moveInside?: boolean;
   /** Every chef stops for this many minutes. */
@@ -89,6 +97,7 @@ export const MOMENT_IDS: readonly MomentId[] = [
   'tourGroup',
   'stoLat',
   'busker',
+  'merryTourists',
 ];
 
 export const MOMENTS: Record<MomentId, Moment> = {
@@ -267,6 +276,31 @@ export const MOMENTS: Record<MomentId, Moment> = {
       {
         label: 'No, thank you',
         effect: { result: 'He plays outside a rival’s door instead. It sounds lovely from here.' },
+      },
+    ],
+  },
+  merryTourists: {
+    title: 'A very merry group',
+    text:
+      'Four tourists stumble in, already very cheerful, singing something about Gdańsk. ' +
+      'They don’t want food, only shots of cytrynówka. Lots of them. They promise a big tip.',
+    needs: ['freeTable'],
+    weight: 3,
+    choices: [
+      {
+        label: 'Pour the cytrynówka!',
+        effect: {
+          cash: 500,
+          mood: { who: 'waiting', amount: -10 },
+          noisyGroup: { group: 'tourists', size: 4, minutes: 45 },
+          result:
+            'They sing, they toast everyone and they tip 500 zł. The other guests stare at their plates, ' +
+            'and people outside decide to come back another time.',
+        },
+      },
+      {
+        label: 'Sorry, we’re a restaurant',
+        effect: { result: 'They sing their way down Długa to find a bar.' },
       },
     ],
   },
