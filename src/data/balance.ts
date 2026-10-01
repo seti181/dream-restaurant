@@ -195,6 +195,17 @@ export const balance = {
     recentWeight: 0.25,
   },
 
+  help: {
+    /** Tapping a waiting table: a free drink costs this much for each guest at it... */
+    drinkCostPerGuest: 6,
+    /** ...and buys them this many more minutes of patience, and a little goodwill. */
+    drinkPatienceMinutes: 15,
+    drinkMood: 3,
+    /** The chef comes out to apologise and cooks their order next: this many times a day. */
+    apologiesPerDay: 3,
+    apologyMood: 5,
+  },
+
   lunchSet: {
     /** "Obiad dnia" is served from 12:00 until 15:00. */
     startHour: 12,

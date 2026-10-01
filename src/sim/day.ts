@@ -51,6 +51,11 @@ export interface Visit {
   mood: number;
   /** Special guests who came for something other than the food (see data/moments.ts). */
   visitor?: Visitor;
+  /** Minutes of patience added on top of their group's (a free drink). */
+  extraPatience: number;
+  /** Help the player gave while they waited. */
+  drink?: boolean;
+  apology?: boolean;
   /** Reputation multipliers that apply when they leave. */
   reputationAfterwards?: Partial<Record<GroupId, number>>;
 }
@@ -101,6 +106,11 @@ function allTables(restaurant: Restaurant): number {
   return restaurant.tables + restaurant.terraceTables;
 }
 
+/** When a party gives up waiting for its food. */
+function giveUpAt(visit: Visit): number {
+  return visit.seatedAt + GROUPS[visit.party.group].patienceMinutes + visit.extraPatience;
+}
+
 /** Chefs who are free take the oldest waiting orders. */
 function startCooking(restaurant: Restaurant, floor: Floor, minute: number): void {
   if (floor.chefFreeAt.length === 0) return;
@@ -113,7 +123,7 @@ function startCooking(restaurant: Restaurant, floor: Floor, minute: number): voi
     const readyAt = start + prepMinutes(visit.order, chef, restaurant.menu.length);
     // Don't cook for a table that will have given up before the food is ready;
     // spend the time on guests who will still be there.
-    if (readyAt > visit.seatedAt + GROUPS[visit.party.group].patienceMinutes) {
+    if (readyAt > giveUpAt(visit)) {
       visit.skipped = true;
       continue;
     }
@@ -182,7 +192,8 @@ function progressRestaurant(
       floor.queue.push(visit);
     }
   }
-  floor.queue.sort((a, b) => a.orderedAt - b.orderedAt);
+  // Oldest orders first, except that the chef cooks for a table they've apologised to next.
+  floor.queue.sort((a, b) => Number(b.apology ?? false) - Number(a.apology ?? false) || a.orderedAt - b.orderedAt);
   startCooking(restaurant, floor, minute);
 
   const costMultiplier = conditions.ingredientCost[restaurant.id] ?? 1;
@@ -206,8 +217,8 @@ function progressRestaurant(
       continue;
     }
 
-    const giveUpAt = visit.seatedAt + GROUPS[party.group].patienceMinutes;
-    const readyInTime = visit.readyAt !== null && visit.readyAt <= giveUpAt;
+    const gives = giveUpAt(visit);
+    const readyInTime = visit.readyAt !== null && visit.readyAt <= gives;
 
     if (readyInTime && visit.readyAt! <= minute) {
       // The food arrives. The party eats and makes up its mind.
@@ -239,7 +250,7 @@ function progressRestaurant(
       visit.eating = true;
       visit.satisfaction = satisfaction;
       visit.leaveAt = visit.readyAt! + balance.service.eatingMinutes;
-    } else if (!readyInTime && giveUpAt <= minute) {
+    } else if (!readyInTime && gives <= minute) {
       // Out of patience: they walk out.
       const satisfaction = balance.satisfaction.walkoutScore;
       updateReputation(restaurant, party, satisfaction);
@@ -253,7 +264,7 @@ function progressRestaurant(
         order: visit.order,
         revenue: 0,
         ingredientCost: visit.readyAt === null ? 0 : ingredients(visit.order),
-        waitMinutes: giveUpAt - visit.seatedAt,
+        waitMinutes: gives - visit.seatedAt,
         satisfaction,
         factors: null,
         review: maybeReview(rng, restaurant, visit, null, satisfaction),
@@ -382,6 +393,7 @@ export function seat(
     leaveAt: 0,
     satisfaction: null,
     mood: 0,
+    extraPatience: 0,
   });
 }
 
@@ -454,6 +466,27 @@ export function stepDay(rng: RngState, progress: DayInProgress): void {
   }
 }
 
+export type Help = 'drink' | 'apology';
+
+/**
+ * The player helps the party at a table that's still waiting for its food: a free drink buys
+ * them patience; the chef's apology puts their order first in the kitchen. Each kind of help
+ * once per party. Returns the party helped, or null if there was nobody to help.
+ */
+export function helpTable(progress: DayInProgress, index: number, table: number, help: Help): Visit | null {
+  const visit = progress.floors[index].visits.find((v) => v.tables.includes(table) && !v.eating && !v.skipped);
+  if (!visit || (help === 'drink' ? visit.drink : visit.apology)) return null;
+  if (help === 'drink') {
+    visit.drink = true;
+    visit.extraPatience += balance.help.drinkPatienceMinutes;
+    visit.mood += balance.help.drinkMood;
+  } else {
+    visit.apology = true;
+    visit.mood += balance.help.apologyMood;
+  }
+  return visit;
+}
+
 /** Plays one day from opening until the last guest leaves. The input restaurants are not changed. */
 export function runDay(
   rng: RngState,
@@ -485,6 +518,9 @@ export interface TableGuests {
   regular: boolean;
   /** Special guests: the merry group, a footballer, Lech Wałęsa... */
   visitor: Visitor | null;
+  /** Help already given while they wait. */
+  drink: boolean;
+  apology: boolean;
   /** When they sat down: tells one party at this table from the next. */
   since: number;
 }
@@ -520,7 +556,7 @@ export function floorView(progress: DayInProgress, index: number, recentMinutes 
 
   for (const visit of floor.visits) {
     const { party } = visit;
-    const patience = GROUPS[party.group].patienceMinutes;
+    const patience = GROUPS[party.group].patienceMinutes + visit.extraPatience;
     const stage: GuestStage = visit.eating ? 'eating' : minute < visit.orderedAt ? 'ordering' : 'waiting';
     visit.tables.forEach((table, i) => {
       if (table >= tables.length) return;
@@ -534,6 +570,8 @@ export function floorView(progress: DayInProgress, index: number, recentMinutes 
         critic: party.critic ?? false,
         regular: party.regular ?? false,
         visitor: visit.visitor ?? null,
+        drink: visit.drink ?? false,
+        apology: visit.apology ?? false,
         since: visit.seatedAt,
       };
     });

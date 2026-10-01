@@ -5,7 +5,7 @@ import type { GroupId } from './groups';
 
 // ---------- Tutorial tips (the first three days) ----------
 
-export type TipId = 'welcome' | 'speed' | 'report' | 'prices' | 'hiring' | 'farewell';
+export type TipId = 'welcome' | 'speed' | 'report' | 'prices' | 'hiring' | 'helpTables' | 'farewell';
 
 export interface Tip {
   /** When the tip appears: on this day, on this screen. */
@@ -14,7 +14,7 @@ export interface Tip {
   text: string;
 }
 
-export const TIP_IDS: readonly TipId[] = ['welcome', 'speed', 'report', 'prices', 'hiring', 'farewell'];
+export const TIP_IDS: readonly TipId[] = ['welcome', 'speed', 'report', 'prices', 'hiring', 'helpTables', 'farewell'];
 
 export const TIPS: Record<TipId, Tip> = {
   welcome: {
@@ -52,6 +52,13 @@ export const TIPS: Record<TipId, Tip> = {
     text:
       'One chef cooks one order at a time. If guests walk out waiting, the Staff tab has people ' +
       'looking for work. New faces turn up every Monday.',
+  },
+  helpTables: {
+    day: 1,
+    screen: 'open',
+    text:
+      'See a table with ⏳ or 😤? Tap it! A free drink buys them time, and three times a day your chef ' +
+      'can come out to apologise and cook their order next. Happy guests, happy reviews.',
   },
   farewell: {
     day: 2,

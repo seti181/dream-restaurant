@@ -119,6 +119,14 @@ export function DayOverScreen() {
               🃏 <strong>{moment.title}</strong> <span className="muted">({moment.choice})</span> {moment.result}
             </p>
           ))}
+          {(summary.help.drinks > 0 || summary.help.apologies > 0) && (
+            <p className="said small">
+              {summary.help.drinks > 0 &&
+                `🥤 ${summary.help.drinks} free ${summary.help.drinks === 1 ? 'drink' : 'drinks'} for waiting tables (${money(-summary.help.cash)}). `}
+              {summary.help.apologies > 0 &&
+                `👨‍🍳 The chef came out to apologise ${summary.help.apologies === 1 ? 'once' : `${summary.help.apologies} times`}.`}
+            </p>
+          )}
           {summary.pairingComments.slice(0, 3).map(({ comment, happy }) => (
             <p key={comment} className="said small">
               {happy ? '😋' : '🤔'} “{comment}”
@@ -191,7 +199,7 @@ export function DayOverScreen() {
                 <Row label="Ingredients" value={`−${money(summary.ingredientCost)}`} />
                 <Row label="Wages" value={`−${money(summary.wages)}`} />
                 {summary.momentsCash !== 0 && (
-                  <Row label="Choices during service" value={signedMoney(summary.momentsCash)} />
+                  <Row label="Cards and free drinks" value={signedMoney(summary.momentsCash)} />
                 )}
                 {summary.rent > 0 && <Row label="Rent for the week" value={`−${money(summary.rent)}`} />}
                 {summary.utilities > 0 && <Row label="Utilities" value={`−${money(summary.utilities)}`} />}

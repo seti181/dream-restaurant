@@ -318,8 +318,9 @@ export interface ScenePiece {
   px: number;
   py: number;
   depth: number;
-  /** For bubbles and coins: the guests this piece shows. */
+  /** For bubbles and coins: the guests this piece shows, and their table. */
   guests?: TableGuests;
+  table?: number;
   kind?: 'guest' | 'chef' | 'steam';
   busy?: boolean;
 }
@@ -694,7 +695,7 @@ export function scenePieces(
         const image = personImage(guestKind(guests, i), seat.facing, 'sit', tableIndex * 4 + i);
         const p = piece(o, `guest${slot.x},${slot.y},${i}`, image, seat.x, seat.y, SEAT_Z, seatDepth(seat));
         // Only the first sitter carries the table's bubble.
-        pieces.push(i === 0 ? { ...p, guests, kind: 'guest' } : p);
+        pieces.push(i === 0 ? { ...p, guests, kind: 'guest', table: tableIndex } : p);
       });
     }
   };

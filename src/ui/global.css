@@ -1558,3 +1558,70 @@ h2.spaced {
     transform: translate(calc(var(--rain-tile) / -6), var(--rain-tile));
   }
 }
+
+/* Helping a waiting table: its bubble can be tapped. */
+.table-help {
+  position: absolute;
+  z-index: 5001;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  transform: translate(-50%, -75%);
+  cursor: pointer;
+}
+
+.pixel-bubble.tappable {
+  border-color: var(--amber);
+  box-shadow: 0 0 0 2px rgba(233, 162, 59, 0.45);
+  animation: bubble-pop 0.3s ease-out, tap-me 1.4s ease-in-out 0.3s infinite;
+}
+
+.pixel-bubble.selected {
+  background: #fdf0d8;
+  box-shadow: 0 0 0 3px var(--sea);
+  animation: none;
+}
+
+@keyframes tap-me {
+  50% {
+    box-shadow: 0 0 0 5px rgba(233, 162, 59, 0.2);
+  }
+}
+
+.help-panel {
+  position: absolute;
+  left: 50%;
+  bottom: 12px;
+  z-index: 60000;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: calc(100% - 32px);
+  padding: 12px 16px;
+  border-radius: 16px;
+  background: var(--cream);
+  border: 3px solid var(--amber);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+.help-panel p {
+  margin: 0 0 10px;
+}
+
+.help-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.help-buttons .primary {
+  min-height: 52px;
+  padding: 0 18px;
+  font-size: 1.05rem;
+}
+
+.help-buttons .primary:disabled {
+  opacity: 0.55;
+}

@@ -13,10 +13,13 @@ import type { TipId } from '../data/mewa';
 import { importSaveCode, loadGame, saveGame } from '../save/save';
 import * as actions from '../sim/actions';
 import { minuteOfDay } from '../sim/clock';
-import { floorView, type FloorView } from '../sim/day';
+import { floorView, type FloorView, type Help } from '../sim/day';
 import {
   answerTheMoment,
+  apologiesLeft,
   closeDay,
+  drinkCost,
+  helpGuests,
   momentDue,
   newGame,
   openRestaurant,
@@ -66,6 +69,8 @@ export interface LiveDay extends DayTally {
   moment: { title: string; text: string; choices: [string, string] } | null;
   /** What the last answer did; the day screen shows it for a few seconds. */
   lastMoment: MomentResult | null;
+  /** The chef's apologies left today. */
+  apologiesLeft: number;
 }
 
 interface GameStore {
@@ -83,6 +88,10 @@ interface GameStore {
   tick: () => void;
   /** Answers the choice card on screen with its first (0) or second (1) answer. */
   answerMoment: (choice: 0 | 1) => void;
+  /** Helps the guests waiting at one of the tables. */
+  helpTable: (table: number, help: Help) => void;
+  /** What a free drink would cost at a table right now, or null if it can't have one. */
+  drinkCostAt: (table: number) => number | null;
   setSpeed: (speed: Speed) => void;
   planNextDay: () => void;
   setPlanTab: (tab: PlanTab) => void;
@@ -126,6 +135,7 @@ function liveFrom(openDay: OpenDay): LiveDay {
       ? { title: pending.title, text: pending.text, choices: [pending.choices[0].label, pending.choices[1].label] }
       : null,
     lastMoment: moments.results[moments.results.length - 1] ?? null,
+    apologiesLeft: apologiesLeft(openDay),
   };
 }
 
@@ -189,6 +199,18 @@ export const useGame = create<GameStore>((set, get) => ({
     const result = answerTheMoment(openDay, choice);
     if (result && result.cash < 0) play('coin');
     set({ live: liveFrom(openDay) });
+  },
+
+  helpTable: (table, help) => {
+    const { openDay } = get();
+    if (!openDay || !helpGuests(openDay, table, help)) return;
+    play(help === 'drink' ? 'coin' : 'ding');
+    set({ live: liveFrom(openDay) });
+  },
+
+  drinkCostAt: (table) => {
+    const { openDay } = get();
+    return openDay ? drinkCost(openDay, table) : null;
   },
 
   setSpeed: (speed) => set({ speed }),

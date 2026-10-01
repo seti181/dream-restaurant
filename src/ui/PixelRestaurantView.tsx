@@ -253,14 +253,24 @@ function useWalkers(layout: RoomLayout, floor: FloorView) {
 
 // ---------- The view ----------
 
+/** True when a table's guests are waiting long enough to show ⏳ or 😤, and can still be helped. */
+export function canHelp(guests: TableGuests | null): boolean {
+  return guests !== null && guests.stage === 'waiting' && guests.impatience > 0.5 && !(guests.drink && guests.apology);
+}
+
 export function PixelRestaurantView({
   floor,
   weather,
   minute,
+  onTableTap,
+  selectedTable = null,
 }: {
   floor: FloorView;
   weather: Weather;
   minute: number;
+  /** Tapping a waiting table's bubble (only while the day runs). */
+  onTableTap?: (table: number) => void;
+  selectedTable?: number | null;
 }) {
   const speed = useGame((s) => s.speed);
   const maxTables = Math.floor(LOCATIONS[floor.location].maxSeats / balance.service.seatsPerTable);
@@ -337,12 +347,26 @@ export function PixelRestaurantView({
           const x = at(p.px + p.image.pixels.width / 2);
           const y = at(p.py + 4);
           const bubble = bubbleFor(p.guests);
+          const tappable = onTableTap !== undefined && p.table !== undefined && canHelp(p.guests);
           return (
             <span key={`${p.key}:extras`}>
               {bubble && (
-                <span key={bubble} className="pixel-bubble" style={{ left: x, top: y }}>
+                <span
+                  key={bubble}
+                  className={`pixel-bubble${tappable ? ' tappable' : ''}${p.table === selectedTable ? ' selected' : ''}`}
+                  style={{ left: x, top: y }}
+                >
                   {bubble}
                 </span>
+              )}
+              {tappable && (
+                <button
+                  type="button"
+                  className="table-help"
+                  style={{ left: x, top: y }}
+                  aria-label="Help this table"
+                  onClick={() => onTableTap(p.table!)}
+                />
               )}
               {p.guests.critic && (
                 <span className="pixel-badge" style={{ left: x + at(7), top: y + at(4) }}>

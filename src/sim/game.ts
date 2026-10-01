@@ -12,7 +12,7 @@ import { LOCATIONS } from '../data/locations';
 import { SECRET_RECIPE, SPECIAL_STAFF, type SpecialStaffId } from '../data/personal';
 import { RIVAL_IDS } from '../data/rivals';
 import type { Weather } from '../data/weather';
-import { startDay, stepDay, type DayInProgress, type FloorView } from './day';
+import { helpTable, startDay, stepDay, type DayInProgress, type FloorView, type Help } from './day';
 import { dateOf, isMonday } from './calendar';
 import {
   calendarEventsOn,
@@ -101,6 +101,8 @@ export interface OpenDay {
   moments: MomentsToday;
   /** Terrace tables to draw, even if the terrace is closed today. */
   terraceBuilt: number;
+  /** Help given to waiting tables today, and what the free drinks cost. */
+  help: { drinks: number; apologies: number; cash: number };
 }
 
 /** The player's numbers for a day, so far or in total. */
@@ -154,8 +156,10 @@ export interface DaySummary extends DayTally {
   staffNews: string[];
   /** The choice cards answered today. */
   moments: MomentResult[];
-  /** What the answers gained or spent. */
+  /** What the answers and the free drinks gained or spent. */
   momentsCash: number;
+  /** Free drinks and apologies given to waiting tables. */
+  help: { drinks: number; apologies: number; cash: number };
 }
 
 export function newGame(seed: number, difficulty: Difficulty = 'normal'): GameState {
@@ -304,6 +308,7 @@ export function openRestaurant(state: GameState): OpenDay {
     // Moments get their own generator, so they never change who comes in or what they order.
     moments: planMoments((state.rng.s ^ Math.imul(state.day + 1, 0x9e3779b1)) >>> 0, state.day, state.momentsSeen),
     terraceBuilt: terraceTablesBuilt(state),
+    help: { drinks: 0, apologies: 0, cash: 0 },
   };
 }
 
@@ -321,6 +326,32 @@ export function momentDue(open: OpenDay): boolean {
     progress: open.progress,
     adrianAway: open.absent.some((a) => a.special === 'adrian'),
   });
+}
+
+/** The chef's apologies left today. */
+export function apologiesLeft(open: OpenDay): number {
+  return Math.max(0, balance.help.apologiesPerDay - open.help.apologies);
+}
+
+/** What a free drink for the party at a table would cost, or null if nobody there can have one. */
+export function drinkCost(open: OpenDay, table: number): number | null {
+  const visit = open.progress.floors[0].visits.find((v) => v.tables.includes(table) && !v.eating && !v.skipped);
+  return visit && !visit.drink ? balance.help.drinkCostPerGuest * visit.party.size : null;
+}
+
+/** Helps the guests at one of the player's tables. Returns false if that help isn't possible. */
+export function helpGuests(open: OpenDay, table: number, help: Help): boolean {
+  if (help === 'apology' && apologiesLeft(open) === 0) return false;
+  const cost = drinkCost(open, table);
+  const visit = helpTable(open.progress, 0, table, help);
+  if (!visit) return false;
+  if (help === 'drink') {
+    open.help.drinks++;
+    open.help.cash -= cost ?? 0;
+  } else {
+    open.help.apologies++;
+  }
+  return true;
 }
 
 /** Answers the choice card on screen with its first (0) or second (1) answer. */
@@ -470,7 +501,7 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
   }
   const wages = teamWages(state);
   const { rent, utilities } = weeklyBillsDue(playerBefore, state.day);
-  const momentsCash = open.moments.cash;
+  const momentsCash = open.moments.cash + open.help.cash;
   const profit = tally.revenue - tally.ingredientCost - wages - rent - utilities + momentsCash;
 
   const nextDay = state.day + 1;
@@ -613,6 +644,7 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
       staffNews,
       moments: open.moments.results,
       momentsCash,
+      help: open.help,
     },
   };
 }
