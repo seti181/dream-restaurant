@@ -15,6 +15,8 @@ import {
   depthAt,
   drawRoom,
   guestKind,
+  gullImage,
+  tableMiddle,
   passerByPath,
   roomLayout,
   scenePieces,
@@ -264,6 +266,7 @@ export function PixelRestaurantView({
   minute,
   onTableTap,
   selectedTable = null,
+  onGullTap,
 }: {
   floor: FloorView;
   weather: Weather;
@@ -271,6 +274,8 @@ export function PixelRestaurantView({
   /** Tapping a waiting table's bubble (only while the day runs). */
   onTableTap?: (table: number) => void;
   selectedTable?: number | null;
+  /** Tapping the gull on the terrace. */
+  onGullTap?: () => void;
 }) {
   const speed = useGame((s) => s.speed);
   const maxTables = Math.floor(LOCATIONS[floor.location].maxSeats / balance.service.seatsPerTable);
@@ -338,6 +343,7 @@ export function PixelRestaurantView({
         {walks.map((walk) => (
           <Walker key={walk.id} walk={walk} layout={layout} scale={scale} speed={speed} onDone={done} />
         ))}
+        {floor.gull && <Gull layout={layout} floor={floor} scale={scale} onTap={onGullTap} />}
         {passers.walks.map((walk) => (
           <Walker key={walk.id} walk={walk} layout={layout} scale={scale} speed={speed} onDone={passers.done} />
         ))}
@@ -384,6 +390,39 @@ export function PixelRestaurantView({
       </div>
       {look.weather === 'rain' && <Rain scale={scale} />}
     </div>
+  );
+}
+
+// ---------- A gull on the terrace ----------
+
+/** A gull swooping down onto a terrace table's plate, with a big target to tap it away. */
+function Gull({ layout, floor, scale, onTap }: { layout: RoomLayout; floor: FloorView; scale: number; onTap?: () => void }) {
+  const spot = floor.gull ? tableMiddle(layout, floor.insideTables, floor.gull.table) : null;
+  if (!spot) return null;
+  const image = gullImage();
+  const { sx, sy } = project(layout.origin, spot.x, spot.y, 16);
+  // Drawn twice as big as everything else: a bold gull, close up, and easy to spot.
+  const size = scale * 2;
+  const left = sx * scale + image.dx * size;
+  const top = sy * scale + image.dy * size;
+  return (
+    <>
+      <img
+        src={urlOf(image.pixels)}
+        className="pixel gull"
+        alt=""
+        style={{ left, top, width: image.pixels.width * size, zIndex: 5002 }}
+      />
+      {onTap && (
+        <button
+          type="button"
+          className="gull-tap"
+          style={{ left: left + (image.pixels.width * size) / 2, top: top + (image.pixels.height * size) / 2 }}
+          aria-label="Shoo the gull away"
+          onClick={onTap}
+        />
+      )}
+    </>
   );
 }
 

@@ -23,6 +23,7 @@ import {
 } from './events';
 import { weeklyBillsDue } from './finance';
 import { goalOf, goalText, nextGoal, startGoal, trackGoal, type GoalState } from './goals';
+import { planGulls, shooGull, stepGulls, type GullsToday } from './gulls';
 import { answerMoment, checkMoments, planMoments, type MomentResult, type MomentsToday } from './moments';
 import { pairingsOf } from './menu';
 import { isFairDay, isNeptuneDay, neptuneResult, type NeptuneResult, type SeasonTally } from './neptune';
@@ -103,6 +104,8 @@ export interface OpenDay {
   terraceBuilt: number;
   /** Help given to waiting tables today, and what the free drinks cost. */
   help: { drinks: number; apologies: number; cash: number };
+  /** Gulls on the terrace today. */
+  gulls: GullsToday;
 }
 
 /** The player's numbers for a day, so far or in total. */
@@ -160,6 +163,8 @@ export interface DaySummary extends DayTally {
   momentsCash: number;
   /** Free drinks and apologies given to waiting tables. */
   help: { drinks: number; apologies: number; cash: number };
+  /** Gulls on the terrace: shooed away, and plates they got. */
+  gulls: { shooed: number; stolen: number };
 }
 
 export function newGame(seed: number, difficulty: Difficulty = 'normal'): GameState {
@@ -309,12 +314,19 @@ export function openRestaurant(state: GameState): OpenDay {
     moments: planMoments((state.rng.s ^ Math.imul(state.day + 1, 0x9e3779b1)) >>> 0, state.day, state.momentsSeen),
     terraceBuilt: terraceTablesBuilt(state),
     help: { drinks: 0, apologies: 0, cash: 0 },
+    gulls: planGulls((state.rng.s ^ Math.imul(state.day + 7, 0x85ebca6b)) >>> 0, terraceTables),
   };
 }
 
 /** Plays one tick (five in-game minutes). */
 export function playTick(open: OpenDay): void {
+  stepGulls(open.gulls, open.progress);
   stepDay(open.rng, open.progress);
+}
+
+/** The player taps the gull on the terrace. Returns true if there was one to shoo. */
+export function shooTheGull(open: OpenDay): boolean {
+  return shooGull(open.gulls, open.progress);
 }
 
 /**
@@ -552,6 +564,7 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
   const reviews = [
     ...outcomes.filter((o) => o.restaurant === playerBefore.id && o.review !== null).map((o) => o.review!),
     ...open.moments.results.flatMap((m) => (m.review ? [m.review] : [])),
+    ...open.gulls.reviews,
   ].sort((a, b) => Number(b.critic) - Number(a.critic));
   const lunchSetsSold = outcomes
     .filter((o) => o.restaurant === playerBefore.id && o.kind === 'served')
@@ -645,6 +658,7 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
       moments: open.moments.results,
       momentsCash,
       help: open.help,
+      gulls: { shooed: open.gulls.shooed, stolen: open.gulls.stolen },
     },
   };
 }

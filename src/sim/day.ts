@@ -545,6 +545,8 @@ export interface FloorView {
   walkouts: { group: GroupId; size: number }[];
   /** Parties waiting at the door for a table, first in line first. */
   atTheDoor: { group: GroupId; size: number; since: number }[];
+  /** A gull on the terrace, after the plate at this table (filled in by the game, not the day). */
+  gull?: { table: number } | null;
 }
 
 /** A snapshot of one restaurant for the restaurant view. Reads the day; changes nothing. */

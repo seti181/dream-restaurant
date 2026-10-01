@@ -1625,3 +1625,68 @@ h2.spaced {
 .help-buttons .primary:disabled {
   opacity: 0.55;
 }
+
+/* A gull on the terrace. */
+.pixel.gull {
+  animation: gull-swoop 0.6s ease-out, gull-peck 0.5s steps(2) 0.6s infinite;
+}
+
+@keyframes gull-swoop {
+  from {
+    transform: translate(60px, -90px) scale(1.2);
+    opacity: 0;
+  }
+}
+
+@keyframes gull-peck {
+  50% {
+    transform: translateY(2px);
+  }
+}
+
+.gull-tap {
+  position: absolute;
+  z-index: 5003;
+  width: 76px;
+  height: 76px;
+  padding: 0;
+  border: 4px solid rgba(181, 69, 47, 0.9);
+  border-radius: 50%;
+  background: rgba(255, 244, 230, 0.25);
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.7);
+  transform: translate(-50%, -50%);
+  cursor: pointer;
+  animation: tap-ring 0.9s ease-in-out infinite;
+}
+
+@keyframes tap-ring {
+  50% {
+    transform: translate(-50%, -50%) scale(1.12);
+  }
+}
+
+.gull-warning {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  z-index: 60000;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: calc(100% - 32px);
+  margin: 0;
+  padding: 10px 18px;
+  border-radius: 12px;
+  background: #fff4e6;
+  border-left: 5px solid var(--brick);
+  font-weight: 600;
+  pointer-events: none;
+}
+
+.gull-warning.good {
+  border-left-color: var(--leaf);
+  font-weight: normal;
+}
+
+.gull-warning.bad {
+  font-weight: normal;
+}

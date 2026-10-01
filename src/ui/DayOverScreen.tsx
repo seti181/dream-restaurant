@@ -127,6 +127,12 @@ export function DayOverScreen() {
                 `👨‍🍳 The chef came out to apologise ${summary.help.apologies === 1 ? 'once' : `${summary.help.apologies} times`}.`}
             </p>
           )}
+          {(summary.gulls.shooed > 0 || summary.gulls.stolen > 0) && (
+            <p className="said small">
+              🐦 Gulls on the terrace: {summary.gulls.shooed} shooed away
+              {summary.gulls.stolen > 0 && `, ${summary.gulls.stolen} ${summary.gulls.stolen === 1 ? 'plate' : 'plates'} stolen`}.
+            </p>
+          )}
           {summary.pairingComments.slice(0, 3).map(({ comment, happy }) => (
             <p key={comment} className="said small">
               {happy ? '😋' : '🤔'} “{comment}”

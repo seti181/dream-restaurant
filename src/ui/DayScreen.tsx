@@ -9,6 +9,7 @@ import { MomentCard, MomentResultNote } from './MomentCard';
 import { GROUP_COLOURS } from './pixel/sprites';
 import { canHelp, PixelRestaurantView } from './PixelRestaurantView';
 import { GROUP_IDS, GROUPS } from '../data/groups';
+import { GULLS } from '../data/gulls';
 import { useGame } from './store';
 
 function Stat({ label, value }: { label: string; value: string | number }) {
@@ -54,8 +55,22 @@ function HelpPanel({ table, onClose }: { table: number; onClose: () => void }) {
   );
 }
 
+/** What the last gull did, for a few seconds. */
+function GullNote() {
+  const last = useGame((s) => s.live?.lastGull ?? null);
+  const [shownOut, setShownOut] = useState<typeof last>(null);
+  useEffect(() => {
+    if (!last) return;
+    const timer = window.setTimeout(() => setShownOut(last), 4000);
+    return () => window.clearTimeout(timer);
+  }, [last]);
+  if (!last || shownOut === last) return null;
+  return <p className={`gull-warning ${last.shooed ? 'good' : 'bad'}`}>{last.shooed ? '🎉' : '🐦'} {last.text}</p>;
+}
+
 export function DayScreen() {
   const live = useGame((s) => s.live);
+  const shooGull = useGame((s) => s.shooGull);
   const [selected, setSelected] = useState<{ table: number; since: number } | null>(null);
   const weather = useGame((s) => s.game.weather);
   const speed = useGame((s) => s.speed);
@@ -112,7 +127,10 @@ export function DayScreen() {
               const guests = live.floor.tables[table];
               if (guests) setSelected({ table, since: guests.since });
             }}
+            onGullTap={shooGull}
           />
+          {live.floor.gull && !live.moment && <p className="gull-warning">🐦 {GULLS.warning}</p>}
+          {!live.floor.gull && !live.moment && <GullNote />}
           {stillThere && !live.moment && <HelpPanel table={selected!.table} onClose={() => setSelected(null)} />}
           {speed === 0 && !live.moment && <p className="paused">Paused. Tap 1× to carry on.</p>}
           {!live.moment && <MomentResultNote />}

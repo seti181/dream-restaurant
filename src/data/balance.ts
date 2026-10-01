@@ -195,6 +195,20 @@ export const balance = {
     recentWeight: 0.25,
   },
 
+  gulls: {
+    /** On days the terrace is open, this many gulls come looking for food... */
+    perDay: { min: 1, max: 3 },
+    /** ...between these times; if no terrace table is eating, they circle back this many minutes later. */
+    firstMinute: 12 * 60,
+    lastMinute: 20 * 60 + 30,
+    retryMinutes: 20,
+    /** Ticks the player has to shoo a gull before it grabs the plate (the clock runs at 1× meanwhile). */
+    windowTicks: 6,
+    /** Reputation with that table's group: gained when the gull is shooed, lost when it steals. */
+    shooedReputation: 0.3,
+    stolenReputation: 0.3,
+  },
+
   help: {
     /** Tapping a waiting table: a free drink costs this much for each guest at it... */
     drinkCostPerGuest: 6,

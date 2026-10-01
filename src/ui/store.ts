@@ -20,6 +20,7 @@ import {
   closeDay,
   drinkCost,
   helpGuests,
+  shooTheGull,
   momentDue,
   newGame,
   openRestaurant,
@@ -71,6 +72,8 @@ export interface LiveDay extends DayTally {
   lastMoment: MomentResult | null;
   /** The chef's apologies left today. */
   apologiesLeft: number;
+  /** What the last gull did, for a note on screen. */
+  lastGull: { minute: number; text: string; shooed: boolean } | null;
 }
 
 interface GameStore {
@@ -92,6 +95,8 @@ interface GameStore {
   helpTable: (table: number, help: Help) => void;
   /** What a free drink would cost at a table right now, or null if it can't have one. */
   drinkCostAt: (table: number) => number | null;
+  /** Shoos the gull off the terrace. */
+  shooGull: () => void;
   setSpeed: (speed: Speed) => void;
   planNextDay: () => void;
   setPlanTab: (tab: PlanTab) => void;
@@ -129,17 +134,25 @@ function liveFrom(openDay: OpenDay): LiveDay {
     ...tallyFor(progress.outcomes, 'player'),
     minute,
     closing: minute >= balance.clock.closeMinute,
-    floor: { ...floorView(progress, 0), terraceTables: openDay.terraceBuilt },
+    floor: {
+      ...floorView(progress, 0),
+      terraceTables: openDay.terraceBuilt,
+      gull: openDay.gulls.active ? { table: openDay.gulls.active.table } : null,
+    },
     absent: openDay.absent.map((a) => a.excuse),
     moment: pending
       ? { title: pending.title, text: pending.text, choices: [pending.choices[0].label, pending.choices[1].label] }
       : null,
     lastMoment: moments.results[moments.results.length - 1] ?? null,
     apologiesLeft: apologiesLeft(openDay),
+    lastGull: openDay.gulls.last,
   };
 }
 
 const startingGame = loadGame() ?? newGame(Date.now() >>> 0);
+
+/** Counts timer calls while a gull slows the clock down to 1×. */
+let slowMotion = 0;
 
 export const useGame = create<GameStore>((set, get) => ({
   // Carry on from the saved game, or start a new one with a fresh seed.
@@ -173,6 +186,8 @@ export const useGame = create<GameStore>((set, get) => ({
     if (!openDay) return;
     // A choice card stops the clock until it is answered.
     if (openDay.moments.pending) return;
+    // While a gull is about, time runs no faster than 1×, so there's a fair chance to shoo it.
+    if (openDay.gulls.active && get().speed > 1 && ++slowMotion % get().speed !== 0) return;
     if (momentDue(openDay)) {
       play('card');
       set({ live: liveFrom(openDay) });
@@ -187,6 +202,7 @@ export const useGame = create<GameStore>((set, get) => ({
       set({ game: state, summary, phase: 'dayOver', openDay: null, live: null, saved: saveGame(state) });
     } else {
       const next = liveFrom(openDay);
+      if (next.floor.gull && !live?.floor.gull) play('seagull');
       // The till rings as guests pay.
       if (live && next.guestsServed > live.guestsServed) play('ding');
       set({ live: next });
@@ -205,6 +221,13 @@ export const useGame = create<GameStore>((set, get) => ({
     const { openDay } = get();
     if (!openDay || !helpGuests(openDay, table, help)) return;
     play(help === 'drink' ? 'coin' : 'ding');
+    set({ live: liveFrom(openDay) });
+  },
+
+  shooGull: () => {
+    const { openDay } = get();
+    if (!openDay || !shooTheGull(openDay)) return;
+    play('seagull');
     set({ live: liveFrom(openDay) });
   },
 

@@ -809,6 +809,17 @@ export interface Point {
   z?: number;
 }
 
+/** A gull, for the terrace: the same herring gull as Mewa. */
+export function gullImage(): SpriteImage {
+  return plainSprite('gull', S.MEWA, S.MEWA_COLOURS);
+}
+
+/** The middle of a table's top, or null if there's no such table. */
+export function tableMiddle(layout: RoomLayout, insideTables: number, table: number): Point | null {
+  const found = slotOf(layout, insideTables, table);
+  return found ? { x: found.slot.x + TABLE / 2, y: found.slot.y + TABLE / 2 } : null;
+}
+
 /** The table spot for table number `table` (inside tables first, then the terrace). */
 function slotOf(layout: RoomLayout, insideTables: number, table: number): { slot: Slot; outdoor: boolean } | null {
   if (table < insideTables) return layout.inside[table] ? { slot: layout.inside[table], outdoor: false } : null;
