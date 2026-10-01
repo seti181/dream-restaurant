@@ -325,6 +325,7 @@ All numbers live in `src/data/` (`balance.ts`, `dishes.ts`, `locations.ts`, `riv
 **Screens:**
 
 - **Restaurant view** (main): a cozy isometric pixel-art room with the dining room, kitchen and terrace. Guests and staff are small 2D sprites with reaction bubbles. See section 9.
+  - It can also be opened **while planning, before the restaurant opens**, from its own tab next to the Map: the empty room with the team in place, so you can see new tables, decor and equipment straight after buying them.
 - **Old Town map:** a pixel-art map of the Old Town with locations, rivals and relocation.
 - **Menu:** dish list, dish creator, prices, lunch set.
 - **Kitchen:** equipment.
@@ -494,6 +495,7 @@ Work in small steps, and test each step in the browser before moving on.
 - [x] Pixel art: restaurant view (rooms, furniture, decor, equipment, terrace)
 - [ ] Pixel art: characters (guests, staff, Mewa, special characters) with animations, and guests walking in and out
 - [ ] Pixel art: Old Town map, food icons and UI icons
+- [ ] Restaurant view while planning: a tab next to the Map that shows the restaurant before opening
 - [ ] Balancing with the simulator plus playtests on the real tablet
 - [ ] Performance check on the tablet
 
@@ -556,3 +558,4 @@ Work in small steps, and test each step in the browser before moving on.
 - 2026-10-01: Pixel-art sample scene approved ("spot on"). The pixel art is drawn for this game in code (scripts/pixel/), so there are no licence questions. Rooms are isometric, characters are chibi sprites in the style of reference 1. The sample is kept in art/sample/.
 - 2026-10-01: The pixel art is drawn by the game in code at runtime (no PNG files shipped). Each street's room size comes from its seats (3 or 4 columns of tables, 2 or 3 rows); every table has four chairs; the open kitchen sits in the far corner; the terrace is a cobbled strip in front with planters. Scaling stays crisp (whole device pixels) unless that would make a big room much smaller.
 - 2026-10-01: Guests visibly walk in through the door to their table, and back out when they leave (purely visual; the simulation is unchanged).
+- 2026-10-01: While planning (before opening), a tab next to the Map shows the restaurant view: the empty room with the team in place, so purchases can be seen straight away.
