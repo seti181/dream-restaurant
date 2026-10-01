@@ -14,7 +14,7 @@ import {
   type ReviewFactor,
 } from '../data/reviews';
 import { REGULAR } from '../data/personal';
-import { extrasOf, pairingsOf, templateOf } from './menu';
+import { hasCytrynowka, pairingsOf, templateOf } from './menu';
 import { chance, pick, type RngState } from './rng';
 import type { Review, SatisfactionFactors } from './types';
 
@@ -54,7 +54,7 @@ export interface ReviewInput {
 
 /** The regular's review: delighted with cytrynówka, loudly disappointed without. */
 function regularsReview(rng: RngState, input: ReviewInput): Review {
-  const gotIt = input.order.some((dish) => extrasOf(dish).includes('cytrynowka'));
+  const gotIt = input.order.some(hasCytrynowka);
   const stars = Math.max(1, Math.min(5, 1 + Math.floor(input.satisfaction / 20)));
   const text = !input.factors
     ? `${REGULAR.shout} And some food, eventually!`

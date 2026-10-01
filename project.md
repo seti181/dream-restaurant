@@ -352,7 +352,7 @@ All numbers live in `src/data/` (`balance.ts`, `dishes.ts`, `locations.ts`, `riv
 - Her name: Joana / the restaurant's default name: **[Joana´s Kitchen ]**
 - Her favourite dish, which becomes a secret recipe with a perfect combo bonus: **[Aroz de Vitela  ]**
 - Places in Gdańsk that mean something to you both (cameos on the map or in events): **[Mariacka ]**
-- Inside jokes to hide in reviews, staff bios or rival messages: **[two waiters based on people she knows Tomek Graczyk (cheapest, but low skilled causing drastic drop of reputation) and Adrian Zabka (50%chance not coming to work but highest stats) ]**
+- Inside jokes to hide in reviews, staff bios or rival messages: **[two waiters based on people she knows Tomek Graczyk (cheapest, but low skilled causing drastic drop of reputation) and Adrian Żabka (50%chance not coming to work but highest stats) ]**
 - A regular guest based on you: **[he will always shout: give me cytrynowka to my dish!! ]**
 - Ending: after winning the Golden Neptune, a personal message / credits: **[Parabéns!!! You passed a test! Now You are ready to open Your dream restaurant in the real WORLD!!!]**
 
@@ -490,5 +490,7 @@ Work in small steps, and test each step in the browser before moving on.
 - 2026-10-01: Mewa is drawn as a herring gull (white head and body, grey wings with black tips, yellow beak with a red spot, pink legs), in SVG, instead of the 🐦 emoji.
 - 2026-10-01: Secret recipe: Arroz de vitela (spelled the Portuguese way), a strong main hidden in the dish creator until Mewa finds the recipe card, at 2 stars or by week 3 at the latest. Its perfect combo is a new extra, a glass of cytrynówka on the side (+20 quality).
 - 2026-10-01: The regular guest comes every Friday at 19:00 and shouts "Give me cytrynówka to my dish!!". With cytrynówka on the menu he writes a 5-star review; without it his review says so (at most 3 stars). Shown as "Pan Cytrynówka, your Friday regular" until a real name is chosen.
-- 2026-10-01: Tomek Graczyk (from week 2): the cheapest waiter (180 zł a day, skill 1, speed 2), but −2 reputation with every group each day he works. Adrian Zabka (from week 3): skill and speed 5, but a 50% chance each morning of not turning up; paid either way. Both return to the candidates every 3 weeks until hired.
-- 2026-10-01: Mariacka cameo: a heart on the map, and "Amber evening on Mariacka" every Saturday 1 June (more foodies and tourists, a crowd on Mariacka).
+- 2026-10-01: Tomek Graczyk (from week 2): the cheapest waiter (180 zł a day, skill 1, speed 2), but −2 reputation with every group each day he works. Adrian Żabka (from week 3): skill and speed 5, but a 50% chance each morning of not turning up; paid either way. Both return to the candidates every 3 weeks until hired.
+- 2026-10-01: Mariacka cameo: a heart on the map, and "Amber evening on Mariacka" every 20 May (a Monday in the fictional calendar) (more foodies and tourists, a crowd on Mariacka).
+- 2026-10-01: Kept: the regular's name "Pan Cytrynówka" and the Arroz de vitela + cytrynówka combo. Adrian's surname is spelled Żabka.
+- 2026-10-01: Cytrynówka is also a drink on its own (Drinks, 14 zł). The regular is happy with either the drink or a dish with a glass on the side, and he never gets turned away: with every table taken, he sits at the bar.

@@ -64,8 +64,8 @@ export const CALENDAR_EVENTS: Record<CalendarEventId, CalendarEvent> = {
     description:
       'Lanterns, amber stalls and a violinist under the gargoyles. Couples stroll ul. Mariacka hand in hand. ' +
       'Mewa says it is the most romantic street in Gdańsk, and for once she isn’t joking.',
-    start: { month: 6, day: 1 },
-    end: { month: 6, day: 1 },
+    start: { month: 5, day: 20 },
+    end: { month: 5, day: 20 },
     effects: { groups: { foodies: 1.3, tourists: 1.2 }, locations: { mariacka: 1.8 } },
   },
   corpusChristi: {

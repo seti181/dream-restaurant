@@ -96,7 +96,7 @@ export const SPECIAL_STAFF: Record<SpecialStaffId, SpecialStaff> = {
     ],
   },
   adrian: {
-    name: 'Adrian Zabka',
+    name: 'Adrian Żabka',
     bio:
       'The best waiter in the Old Town, when he turns up. Remembers every order, every name and every allergy. ' +
       'His alarm clock is less reliable. Gets paid either way, somehow.',

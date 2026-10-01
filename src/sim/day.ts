@@ -286,12 +286,16 @@ export function startDay(
   };
 }
 
-/** The regular swaps his main for any dish that comes with cytrynówka, if the menu has one. */
+/**
+ * The regular always gets his cytrynówka if the menu has it: a dish that comes with a glass
+ * on the side takes the place of his main, or the drink takes the place of his drink.
+ */
 function regularsOrder(restaurant: Restaurant, order: MenuDish[]): MenuDish[] {
-  const wish = restaurant.menu.find((dish) => extrasOf(dish).includes('cytrynowka'));
-  if (!wish) return order;
-  const others = order.filter((dish) => !['soup', 'main'].includes(templateOf(dish).category));
-  return [wish, ...others];
+  const withGlass = restaurant.menu.find((dish) => extrasOf(dish).includes('cytrynowka'));
+  if (withGlass) return [withGlass, ...order.filter((dish) => !['soup', 'main'].includes(templateOf(dish).category))];
+  const drink = restaurant.menu.find((dish) => dish.template === 'cytrynowka');
+  if (drink) return [...order.filter((dish) => templateOf(dish).category !== 'drink'), drink];
+  return order;
 }
 
 /** Seats a party that has chosen (or booked) a restaurant, if there's a free table. */
@@ -304,7 +308,9 @@ function seat(
 ): void {
   const restaurant = progress.restaurants[index];
   const floor = progress.floors[index];
-  const tablesUsed = tablesNeeded(party.size);
+  // The regular never gets turned away: with every table taken, he squeezes in at the bar.
+  const atTheBar = party.regular && floor.freeTables < 1;
+  const tablesUsed = atTheBar ? 0 : tablesNeeded(party.size);
   if (floor.freeTables < tablesUsed) {
     progress.outcomes.push(lostOutcome(party, restaurant.id, 'noTable'));
     return;

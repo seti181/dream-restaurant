@@ -3,7 +3,7 @@ import type { MenuDish } from '../data/dishes';
 import type { GroupId } from '../data/groups';
 import { REGULAR, SECRET_RECIPE, SPECIAL_STAFF } from '../data/personal';
 import { addDish, dishUnavailableReason } from './actions';
-import { nextDayOn, weekdayOf } from './calendar';
+import { nextDayOn } from './calendar';
 import { calendarEventsOn, conditionsFor } from './events';
 import { closeDay, newGame, openRestaurant, playerOf, playTick } from './game';
 import { pairingQuality } from './menu';
@@ -58,6 +58,13 @@ describe('the Friday regular', () => {
     const grumpy = writeReview(createRng(1), { ...base, factors, order: [arroz()] });
     expect(grumpy.text.startsWith(REGULAR.shout)).toBe(true);
     expect(grumpy.stars).toBeLessThanOrEqual(3);
+  });
+
+  it('is just as happy with cytrynówka as a drink', () => {
+    let state = { ...newGame(9), day: FRIDAY, menuSlots: 12 };
+    state = addDish(state, 'cytrynowka', 'homemade');
+    const { summary } = playDay(state);
+    expect(summary.reviews.find((r) => r.reviewer === REGULAR.name)?.stars).toBe(5);
   });
 
   it('orders the dish with cytrynówka when there is one, and always writes a review', () => {
@@ -123,10 +130,10 @@ describe('Tomek and Adrian', () => {
 });
 
 describe('Mariacka', () => {
-  it('has its amber evening on Saturday 1 June, with a crowd on the street', () => {
-    const june1 = nextDayOn(6, 1, 0);
-    expect(weekdayOf(june1)).toBe(5);
-    expect(calendarEventsOn(june1)).toContain('amberEvening');
-    expect(conditionsFor({ ...newGame(8), day: june1 }).locations.mariacka).toBeGreaterThan(1);
+  it('has its amber evening on 20 May, with a crowd on the street', () => {
+    const may20 = nextDayOn(5, 20, 0);
+    expect(calendarEventsOn(may20)).toContain('amberEvening');
+    expect(calendarEventsOn(may20 - 1)).not.toContain('amberEvening');
+    expect(conditionsFor({ ...newGame(8), day: may20 }).locations.mariacka).toBeGreaterThan(1);
   });
 });

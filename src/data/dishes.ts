@@ -47,7 +47,8 @@ export type TemplateId =
   | 'iceCream'
   | 'coffee'
   | 'kompot'
-  | 'lemonade';
+  | 'lemonade'
+  | 'cytrynowka';
 
 export interface Variant {
   id: string;
@@ -95,7 +96,7 @@ export const TEMPLATE_IDS: readonly TemplateId[] = [
   'zurek', 'barszcz', 'fishSoup', 'tomatoSoup',
   'pierogi', 'pizza', 'pasta', 'burger', 'friedCod', 'schabowy', 'golabki', 'arrozDeVitela', 'saladBowl',
   'szarlotka', 'sernik', 'iceCream',
-  'coffee', 'kompot', 'lemonade',
+  'coffee', 'kompot', 'lemonade', 'cytrynowka',
 ];
 
 export const DISH_TEMPLATES: Record<TemplateId, DishTemplate> = {
@@ -369,6 +370,17 @@ export const DISH_TEMPLATES: Record<TemplateId, DishTemplate> = {
       { id: 'mint', name: 'lemon and mint', ingredientCost: 3, tags: [] },
       { id: 'rhubarb', name: 'rhubarb', ingredientCost: 3, tags: ['creative'] },
     ],
+  },
+  cytrynowka: {
+    name: 'Cytrynówka',
+    category: 'drink',
+    cuisine: null,
+    equipment: null,
+    prepMinutes: 1,
+    baseQuality: 58,
+    referencePrice: 14,
+    tags: ['polish', 'homemade'],
+    variants: [{ id: 'homemade', name: 'homemade lemon vodka, ice-cold', ingredientCost: 3, tags: [] }],
   },
 };
 

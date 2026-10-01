@@ -60,6 +60,11 @@ export function pairingsOf(dish: MenuDish): Pairing[] {
   });
 }
 
+/** Cytrynówka on its own, or a glass of it on the side: what the Friday regular wants. */
+export function hasCytrynowka(dish: MenuDish): boolean {
+  return dish.template === 'cytrynowka' || extrasOf(dish).includes('cytrynowka');
+}
+
 /** Quality gained or lost from the dish's pairings. */
 export function pairingQuality(dish: MenuDish): number {
   return pairingsOf(dish).reduce((sum, pairing) => sum + pairing.quality, 0);
