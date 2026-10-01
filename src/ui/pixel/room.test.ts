@@ -5,7 +5,7 @@ import { floorView, startDay, stepDay } from '../../sim/day';
 import * as actions from '../../sim/actions';
 import { answerTheMoment, newGame, openRestaurant, playTick, type GameState } from '../../sim/game';
 import { specialCandidate } from '../../sim/staff';
-import { drawStreet } from './street';
+import { drawCloud, drawSky, drawStreet } from './street';
 import { PLINTH, drawRoom, guestKind, roomLayout, scenePieces, seatsAt, servePath, waiterSpot, walkPath, type RoomLook } from './room';
 import { HEADROOM, PERSON, personPixels, SEATED_ROWS, type PersonKind } from './sprites';
 
@@ -63,12 +63,27 @@ describe('the pixel-art room layout', () => {
     for (const kind of ['walesa', 'guard', 'footballer'] as const) expect(personPixels(kind, 'front', 'sit').width).toBe(PERSON[0].length);
   });
 
-  it('draws the street big enough to fill the frame, with the room in its place', () => {
+  it('draws the street and the sky big enough to fill the frame together', () => {
     const layout = roomLayout(6, 2);
     const street = drawStreet(layout, look(4), layout.width + 80, layout.height + 40, 40, 20);
+    const sky = drawSky(look(4), layout.width + 80, layout.height + 40);
     expect(street.width).toBe(layout.width + 80);
-    // Every pixel is filled: sky, houses or cobbles.
-    for (let y = 0; y < street.height; y += 7) for (let x = 0; x < street.width; x += 7) expect(street.get(x, y)).not.toBeNull();
+    for (let y = 0; y < street.height; y += 7) {
+      for (let x = 0; x < street.width; x += 7) expect(street.get(x, y) ?? sky.get(x, y)).not.toBeNull();
+    }
+    // The bottom of the picture is street, the top corner is sky (with houses in between).
+    expect(street.get(street.width / 2, street.height - 1)).not.toBeNull();
+    expect(street.get(0, 0)).toBeNull();
+  });
+
+  it('puts the weather in the sky: a sun on clear days, the moon at dusk, nothing on a grey day', () => {
+    const sun = (weather: RoomLook['weather'], dusk = false) => {
+      const sky = drawSky({ ...look(4), weather, dusk }, 200, 100);
+      return sky.get(Math.round(200 * 0.27), 10);
+    };
+    expect(sun('sunny')).not.toEqual(sun('cloudy'));
+    expect(sun('sunny', true)).not.toEqual(sun('sunny'));
+    expect(drawCloud({ ...look(4), weather: 'rain' }, 40, 1).bounds()).not.toBeNull();
   });
 
   it('turns a real moment of the day into furniture and people, back to front', () => {

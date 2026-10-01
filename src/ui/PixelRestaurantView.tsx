@@ -26,7 +26,7 @@ import {
 } from './pixel/room';
 import type { Carry, PersonKind } from './pixel/sprites';
 import { useGame } from './store';
-import { drawStreet } from './pixel/street';
+import { drawCloud, drawRainTile, drawSky, drawStreet } from './pixel/street';
 import { useFittingScale } from './useFittingScale';
 
 /** World units a guest walks per second at 1× speed. */
@@ -293,10 +293,18 @@ export function PixelRestaurantView({
     [layout, look.weather, look.dusk, streetWidth, streetHeight],
   );
   useEffect(() => () => URL.revokeObjectURL(street), [street]);
+  const sky = useMemo(
+    () => imageUrl(drawSky(look, streetWidth, streetHeight)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [look.weather, look.dusk, streetWidth, streetHeight],
+  );
+  useEffect(() => () => URL.revokeObjectURL(sky), [sky]);
 
   return (
     <div ref={wrap} className="pixel-wrap">
       <div className="pixel-scene" style={{ width: at(layout.width), height: at(layout.height) }} role="img" aria-label="Your restaurant">
+        <img src={sky} className="pixel" alt="" style={{ left: -at(marginX), top: -at(marginY), width: at(streetWidth), zIndex: 0 }} />
+        <Clouds look={look} left={-at(marginX)} top={-at(marginY)} width={at(streetWidth)} height={at(streetHeight)} scale={scale} />
         <img
           src={street}
           className="pixel"
@@ -343,6 +351,72 @@ export function PixelRestaurantView({
           );
         })}
       </div>
+      {look.weather === 'rain' && <Rain scale={scale} />}
     </div>
+  );
+}
+
+// ---------- Weather in the sky ----------
+
+/** How many clouds each kind of weather brings, and how big they are (art pixels wide). */
+const CLOUDS: Record<Weather, { count: number; width: [number, number] }> = {
+  heatwave: { count: 1, width: [18, 22] },
+  sunny: { count: 3, width: [22, 34] },
+  cloudy: { count: 7, width: [34, 56] },
+  rain: { count: 8, width: [40, 64] },
+};
+
+/** Clouds drifting slowly across the sky, behind the houses. Moved by CSS, so they cost almost nothing. */
+function Clouds({ look, left, top, width, height, scale }: { look: RoomLook; left: number; top: number; width: number; height: number; scale: number }) {
+  const { count, width: [narrow, wide] } = CLOUDS[look.weather];
+  const clouds = useMemo(
+    () =>
+      Array.from({ length: count }, (_, i) => {
+        const w = Math.round(narrow + ((wide - narrow) * ((i * 37) % 11)) / 10);
+        return { w, url: imageUrl(drawCloud(look, w, i)), y: ((i * 29) % 7) / 7, seconds: 70 + ((i * 53) % 60), start: (i * 0.37) % 1 };
+      }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [look.weather, look.dusk, count, narrow, wide],
+  );
+  useEffect(() => () => clouds.forEach((c) => URL.revokeObjectURL(c.url)), [clouds]);
+  return (
+    <div className="sky-clouds" style={{ left, top, width, height, zIndex: 0 }} aria-hidden="true">
+      {clouds.map((cloud, i) => (
+        <img
+          key={i}
+          src={cloud.url}
+          className="pixel cloud"
+          alt=""
+          style={{
+            top: cloud.y * height * 0.28,
+            width: cloud.w * scale,
+            animationDuration: `${cloud.seconds}s`,
+            animationDelay: `${-cloud.start * cloud.seconds}s`,
+            ['--sky-width' as string]: `${width}px`,
+            ['--cloud-width' as string]: `${cloud.w * scale}px`,
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
+let rainUrl: string | null = null;
+
+/** Rain falling over the whole street: one light layer of streaks, moved down in a loop. */
+function Rain({ scale }: { scale: number }) {
+  const url = (rainUrl ??= imageUrl(drawRainTile()));
+  const tile = 24 * scale;
+  return (
+    <div
+      className="rain-layer"
+      aria-hidden="true"
+      style={{
+        backgroundImage: `url(${url})`,
+        backgroundSize: `${tile}px ${tile}px`,
+        top: -tile,
+        ['--rain-tile' as string]: `${tile}px`,
+      }}
+    />
   );
 }

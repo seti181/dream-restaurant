@@ -1,6 +1,7 @@
 // The Old Town around the restaurant: a cobbled street in front, pavements, and rows of
-// gabled townhouses behind and beside it, with St. Mary's tower peeking over the roofs.
-// Drawn as one picture behind the room, big enough to fill the whole frame. See project.md section 9.1.
+// gabled townhouses behind and beside it, with the Town Hall spire peeking over the roofs.
+// Drawn in layers behind the room, big enough to fill the whole frame: the sky (with the sun,
+// or the moon and stars), drifting clouds, then the houses and the street. See project.md section 9.1.1.
 
 import type { Weather } from '../../data/weather';
 import { hex, mix, Pixels, type Rgb } from './raster';
@@ -26,6 +27,13 @@ const C = {
   dusk: hex('#3d4a74'),
   rain: hex('#e6eef3'),
   white: hex('#ffffff'),
+  sun: hex('#f4c531'),
+  sunCore: hex('#fff1a8'),
+  moon: hex('#f6efd0'),
+  moonShade: hex('#d9cfa6'),
+  star: hex('#fdf6e3'),
+  puddle: hex('#9fb3c2'),
+  puddleShine: hex('#d6e2ea'),
 };
 
 type Gable = 'pointed' | 'stepped' | 'flat' | 'tower';
@@ -119,17 +127,111 @@ function facade(house: House, u: number, z: number, look: RoomLook): Rgb | null 
   return house.colour;
 }
 
-function sky(look: RoomLook, py: number, height: number, px: number): Rgb {
+/** The sky colour of the day, from the top of the picture down to the rooftops. */
+function skyColour(look: RoomLook, py: number, height: number): Rgb {
   const base = look.dusk ? C.dusk : C.sky[look.weather];
-  if (look.weather === 'rain' && (px * 3 + py * 7) % 23 === 0) return C.rain;
-  return mix(base, C.white, 0.3 * (py / height));
+  return mix(base, C.white, (look.weather === 'rain' ? 0.12 : 0.3) * (py / height));
+}
+
+/**
+ * The sky behind everything: the day's colour, a sun on clear days (bigger, with a warm halo,
+ * in a heatwave), or after dusk the moon and a sprinkling of stars. Clouds drift over it,
+ * and the houses stand in front of it.
+ */
+export function drawSky(look: RoomLook, width: number, height: number): Pixels {
+  const img = new Pixels(width, height);
+  for (let py = 0; py < height; py++) for (let px = 0; px < width; px++) img.set(px, py, skyColour(look, py, height));
+  const cx = Math.round(width * 0.27);
+  const cy = Math.round(Math.min(18, height * 0.1));
+  if (look.dusk) {
+    // Stars, scattered the same way every evening.
+    for (let i = 0; i < 40; i++) {
+      const x = (i * 97 + 31) % width;
+      const y = (i * 53 + 7) % Math.max(1, Math.round(height * 0.35));
+      img.set(x, y, C.star, i % 3 === 0 ? 255 : 150);
+    }
+    // A crescent moon.
+    for (let y = -6; y <= 6; y++) {
+      for (let x = -6; x <= 6; x++) {
+        const lit = x * x + y * y <= 30;
+        const bite = (x - 3) * (x - 3) + (y - 1) * (y - 1) <= 22;
+        if (lit && !bite) img.set(cx + x, cy + y, x < -3 ? C.moonShade : C.moon);
+      }
+    }
+  } else if (look.weather === 'sunny' || look.weather === 'heatwave') {
+    const r = look.weather === 'heatwave' ? 9 : 6;
+    for (let y = -r - 6; y <= r + 6; y++) {
+      for (let x = -r - 6; x <= r + 6; x++) {
+        const d = Math.hypot(x, y);
+        if (d <= r) img.set(cx + x, cy + y, d < r * 0.55 ? C.sunCore : C.sun);
+        else if (look.weather === 'heatwave' && d <= r + 6) img.set(cx + x, cy + y, C.sunCore, Math.round(110 * (1 - (d - r) / 6)));
+        // Short rays on a clear day.
+        else if (look.weather === 'sunny' && d <= r + 4 && (Math.abs(x) < 0.6 || Math.abs(y) < 0.6 || Math.abs(Math.abs(x) - Math.abs(y)) < 0.6)) {
+          img.set(cx + x, cy + y, C.sun);
+        }
+      }
+    }
+  }
+  return img;
+}
+
+/** Cloud colours: white and fluffy, grey, or dark with rain; blue-grey after dusk. */
+export function cloudColours(look: RoomLook): { light: Rgb; shade: Rgb } {
+  const base =
+    look.weather === 'rain'
+      ? { light: hex('#8e9aa6'), shade: hex('#6f7b88') }
+      : look.weather === 'cloudy'
+        ? { light: hex('#eef1f3'), shade: hex('#c3cbd2') }
+        : { light: hex('#ffffff'), shade: hex('#dbe7ee') };
+  return look.dusk ? { light: mix(base.light, C.dusk, 0.55), shade: mix(base.shade, C.dusk, 0.6) } : base;
+}
+
+/** One pixel cloud: a few overlapping puffs, light on top and shaded underneath. */
+export function drawCloud(look: RoomLook, width: number, seed: number): Pixels {
+  const height = Math.round(width * 0.42);
+  const img = new Pixels(width, height);
+  const { light, shade } = cloudColours(look);
+  const puffs = [0.22, 0.42, 0.62, 0.8].map((at, i) => ({
+    x: width * at,
+    y: height * (i % 2 === 0 ? 0.62 : 0.48) - ((seed * (i + 3)) % 3),
+    r: height * (i === 1 || i === 2 ? 0.42 : 0.3),
+  }));
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const inside = puffs.some((p) => (x - p.x) ** 2 + ((y - p.y) * 1.2) ** 2 <= p.r * p.r);
+      if (inside && y < height - 1) img.set(x, y, y > height * 0.62 ? shade : light);
+    }
+  }
+  return img;
+}
+
+/** A tile of falling rain streaks, repeated over the whole scene and moved down in a loop. */
+export function drawRainTile(): Pixels {
+  const img = new Pixels(24, 24);
+  const drops = [[2, 1], [14, 4], [7, 10], [19, 13], [11, 18], [3, 20], [21, 22]];
+  for (const [x, y] of drops) {
+    for (let k = 0; k < 4; k++) img.set((x + Math.floor(k / 2)) % 24, (y + k) % 24, C.rain, 170);
+  }
+  return img;
 }
 
 /** Remainder that stays positive for negative numbers too. */
 const mod = (value: number, by: number) => ((value % by) + by) % by;
 
 /** The ground at a world point: pavement along the house fronts, cobbles on the street. */
-function ground(layout: RoomLayout, x: number, y: number): Rgb {
+/** Puddles on the cobbles on a rainy day, reflecting the sky. */
+function puddle(x: number, y: number): Rgb | null {
+  const cx = Math.floor(x / 26);
+  const cy = Math.floor(y / 18);
+  if (((cx * 7 + cy * 13) & 7) !== 0) return null;
+  const dx = mod(x, 26) - 13;
+  const dy = mod(y, 18) - 9;
+  const d = (dx * dx) / 64 + (dy * dy) / 16;
+  if (d > 1) return null;
+  return d < 0.25 && dx < 0 ? C.puddleShine : C.puddle;
+}
+
+function ground(layout: RoomLayout, x: number, y: number, look?: RoomLook): Rgb {
   const { edgeX: roomX } = layout;
   // The pavement runs along the house fronts; the przedproże and its steps stand on it.
   const roomY = layout.roomY + LOW_WALL.thick;
@@ -140,7 +242,9 @@ function ground(layout: RoomLayout, x: number, y: number): Rgb {
     if (mod(x, 8) < 0.6 || mod(y, 8) < 0.6) return C.slabGap;
     return (Math.floor(x / 8) + Math.floor(y / 8)) % 2 === 0 ? C.slabA : C.slabB;
   }
-  // Cobbles in staggered rows, a little darker than the terrace's.
+  const wet = look?.weather === 'rain' ? puddle(x, y) : null;
+  if (wet) return wet;
+  // Cobbles in staggered rows.
   const row = Math.floor(y / 4);
   const shift = mod(row, 2) === 0 ? 0 : 2.5;
   if (mod(y, 4) < 0.6 || mod(x + shift, 5) < 0.6) return C.cobbleGap;
@@ -200,16 +304,15 @@ export function drawStreet(layout: RoomLayout, look: RoomLook, width: number, he
         }
       }
       if (z < 0) {
-        colour = ground(layout, (sx + 2 * sy) / 2, (2 * sy - sx) / 2);
+        colour = ground(layout, (sx + 2 * sy) / 2, (2 * sy - sx) / 2, look);
         haze = 0;
       }
-      if (colour === null) {
-        img.set(px, py, sky(look, py, height, px));
-        continue;
-      }
+      // The sky stays see-through: the sky picture and the clouds show behind.
+      if (colour === null) continue;
       const skyColour = look.dusk ? C.dusk : C.sky[look.weather];
       if (haze > 0 && colour !== C.lit) colour = mix(colour, skyColour, haze);
       if (look.dusk && colour !== C.lit) colour = mix(colour, C.dusk, 0.35);
+      else if (look.weather === 'rain' && haze === 0 && colour !== C.puddle && colour !== C.puddleShine) colour = mix(colour, C.shadow, 0.12);
       img.set(px, py, colour);
     }
   }

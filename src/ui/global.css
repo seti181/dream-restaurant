@@ -1520,3 +1520,41 @@ h2.spaced {
     transform: translateY(12px) scale(0.97);
   }
 }
+
+/* Weather in the sky behind the houses. */
+.sky-clouds {
+  position: absolute;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.pixel.cloud {
+  left: 0;
+  animation: cloud-drift linear infinite;
+}
+
+@keyframes cloud-drift {
+  from {
+    transform: translateX(calc(-1 * var(--cloud-width)));
+  }
+  to {
+    transform: translateX(var(--sky-width));
+  }
+}
+
+.rain-layer {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 50000;
+  pointer-events: none;
+  image-rendering: pixelated;
+  animation: rain-fall 0.45s linear infinite;
+}
+
+@keyframes rain-fall {
+  to {
+    transform: translate(calc(var(--rain-tile) / -6), var(--rain-tile));
+  }
+}
