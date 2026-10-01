@@ -52,7 +52,7 @@ export type Difficulty = 'relaxed' | 'normal';
 /** Everything that makes up a game in progress. Plain data, so it can be saved. */
 export interface GameState {
   difficulty: Difficulty;
-  /** Days since the season started; day 0 is Monday 1 April. */
+  /** Days since the season started; day 0 is Monday 8 July. */
   day: number;
   cash: number;
   rng: RngState;

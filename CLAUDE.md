@@ -56,7 +56,7 @@ npm run simulate   # headless full-season balance simulation
 
 ## Tablet and UI rules
 
-- Landscape only. Layout must work from 1280×800 upwards.
+- Landscape only. The tablet lays the page out at 1364×603 CSS pixels: check every screen there. Layout must also work from about 850×530 upwards.
 - Touch targets at least 48 px.
 - No hover-only interactions.
 - Disable pinch-zoom and pull-to-refresh.

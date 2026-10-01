@@ -161,7 +161,7 @@ export const balance = {
   terrace: {
     /** The summer terrace permit, for one season, in złoty. */
     permitCost: 3_000,
-    /** With a permit, the terrace is open from April (the very first day) to September. */
+    /** With a permit, the terrace is open from the very first day to the end of September. */
     firstMonth: 4,
     lastMonth: 9,
     /** How much an open terrace tempts each group. Tourists love it. */

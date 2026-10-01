@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { balance } from '../../data/balance';
 import { exportSaveCode } from '../../save/save';
 import type { Difficulty } from '../../sim/game';
+import { dateOf, MONTH_NAMES } from '../../sim/calendar';
 import { money } from '../format';
 import { setSoundPrefs, useSoundPrefs } from '../sound';
 import { useGame } from '../store';
@@ -179,7 +180,7 @@ export function SettingsPanel() {
         </div>
 
         <h2 className="spaced">Start a new game</h2>
-        <p className="small muted">Starts again from 1 April. Your current game will be gone, so make a save code first.</p>
+        <p className="small muted">Starts again from {dateOf(0).dayOfMonth} {MONTH_NAMES[dateOf(0).month - 1]}. Your current game will be gone, so make a save code first.</p>
         <div className="chips">
           {DIFFICULTIES.map(({ difficulty, name }) => (
             <button
