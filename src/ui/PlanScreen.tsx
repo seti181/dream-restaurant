@@ -1,7 +1,8 @@
 // Planning: time is paused. Tabs for today's overview, the menu and the staff,
 // with the "Open the restaurant" button always at hand.
 
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
+import { NoteClose } from './MomentCard';
 import { InteriorPanel } from './plan/InteriorPanel';
 import { KitchenPanel } from './plan/KitchenPanel';
 import { MapPanel } from './plan/MapPanel';
@@ -52,6 +53,7 @@ export function PlanScreen() {
   const shown = duringDay && BEFORE_OPENING_ONLY.includes(planTab) ? 'menu' : planTab;
   const day = useGame((s) => s.game.day);
   const weather = useGame((s) => s.game.weather);
+  const [waitNoteClosed, setWaitNoteClosed] = useState(false);
 
   return (
     <PanoramaScreen weather={weather} evening={false} fair={isFairDay(day)}>
@@ -71,10 +73,15 @@ export function PlanScreen() {
         </nav>
         <div className="plan-body">
           {duringDay ? (
-            <p className="note small">
-              ⏸ The restaurant waits while you're here. Changes to the menu, prices, the lunch set and the supplier
-              count straight away; purchases, campaigns and new staff arrive tomorrow morning.
-            </p>
+            !waitNoteClosed && (
+              <p className="note small closable">
+                <span>
+                  ⏸ The restaurant waits while you're here. Changes to the menu, prices, the lunch set and the supplier
+                  count straight away; purchases, campaigns and new staff arrive tomorrow morning.
+                </span>
+                <NoteClose onClose={() => setWaitNoteClosed(true)} />
+              </p>
+            )
           ) : (
             <MewaTip screen="plan" />
           )}

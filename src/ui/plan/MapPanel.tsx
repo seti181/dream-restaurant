@@ -1,15 +1,51 @@
-// The Old Town map: the six streets, where the rivals are, and moving house.
+// The Old Town map: the six streets, where the rivals are, having a look, and moving house.
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { balance } from '../../data/balance';
 import { GROUP_IDS, GROUPS } from '../../data/groups';
 import { LOCATIONS, type LocationId } from '../../data/locations';
 import { RIVALS, type RivalId } from '../../data/rivals';
 import { afterMove, relocateUnavailableReason } from '../../sim/actions';
 import { playerOf } from '../../sim/game';
+import { previewOf } from '../../sim/preview';
 import { money } from '../format';
+import { NoteClose } from '../MomentCard';
 import { OldTownMap } from '../OldTownMap';
+import { PixelRestaurantView } from '../PixelRestaurantView';
 import { useGame } from '../store';
+
+/** Mid-morning, before the doors open. */
+const BEFORE_OPENING = 10 * 60 + 30;
+
+/** The restaurant on a street, drawn over the map: yours, a rival's, or yours if you moved there. */
+function StreetPreviewDialog({ id, onClose }: { id: LocationId; onClose: () => void }) {
+  const game = useGame((s) => s.game);
+  const preview = useMemo(() => previewOf(game, id), [game, id]);
+  const place = LOCATIONS[id];
+  const lines = {
+    yours: 'Your restaurant, as it is this morning.',
+    rival: 'A rival’s restaurant. Have a peek at the competition!',
+    moved: 'Your restaurant if you moved here: your tables, and the decor that comes along.',
+  };
+  return (
+    <div className="preview-backdrop" role="dialog" aria-modal="true" aria-label={`${preview.name} on ${place.name}`}>
+      <div className="preview-card">
+        <header>
+          <div>
+            <h2>
+              {preview.name} <span className="muted">· {place.name}</span>
+            </h2>
+            <p className="small muted">{lines[preview.whose]}</p>
+          </div>
+          <NoteClose onClose={onClose} />
+        </header>
+        <div className="preview-view">
+          <PixelRestaurantView floor={preview.floor} weather={game.weather} minute={BEFORE_OPENING} />
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function LocationCard({ id }: { id: LocationId }) {
   const game = useGame((s) => s.game);
@@ -22,6 +58,7 @@ function LocationCard({ id }: { id: LocationId }) {
   const moved = afterMove(game, id);
   const tablesLost = player.tables - moved.tables;
   const decorLost = player.decor.length - moved.decor.length;
+  const [looking, setLooking] = useState(false);
 
   return (
     <section className="panel-column">
@@ -29,6 +66,10 @@ function LocationCard({ id }: { id: LocationId }) {
         {place.name} {id === player.location && <span className="muted">· you are here</span>}
       </h2>
       <p className="small muted">{place.blurb}</p>
+      <button type="button" className="secondary look-button" onClick={() => setLooking(true)}>
+        👀 Have a look
+      </button>
+      {looking && <StreetPreviewDialog id={id} onClose={() => setLooking(false)} />}
       <ul className="rows">
         <li>
           <span>Rent</span>
