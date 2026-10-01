@@ -141,6 +141,15 @@ export const balance = {
     coolTreatOrders: { sunny: 1.2, cloudy: 1, rain: 0.7, heatwave: 2 },
   },
 
+  relocation: {
+    /** Moving to another street costs this much, in złoty. */
+    fee: 5_000,
+    /** Share of reputation that comes along: new neighbours need winning over. */
+    reputationKept: 0.7,
+    /** Share of decor items that survive the move (the most atmospheric ones). */
+    decorKept: 0.5,
+  },
+
   interior: {
     /** One more table (seatsPerTable seats), in złoty. */
     tableCost: 1_500,

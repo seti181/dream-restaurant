@@ -426,7 +426,7 @@ Work in small steps, and test each step in the browser before moving on.
 
 - [x] Dish creator, lunch set, equipment, interior and terrace, marketing
 - [x] Rival AI, events, weather, reviews
-- [ ] Map and relocation
+- [x] Map and relocation
 - [ ] Tutorial, weekly goals, Golden Neptune ending
 - [ ] Settings: difficulty, save export/import
 

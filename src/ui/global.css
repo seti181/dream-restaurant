@@ -851,3 +851,83 @@ h2.spaced {
   color: var(--amber);
   letter-spacing: 2px;
 }
+
+/* ---------- Map ---------- */
+
+.map-panel {
+  grid-template-columns: 3fr 2fr;
+}
+
+.old-town-map {
+  width: 100%;
+  border-radius: 16px;
+  background: #f4ecdc;
+}
+
+.old-town-map .river {
+  fill: none;
+  stroke: #9cc3d5;
+  stroke-width: 34;
+  stroke-linecap: round;
+}
+
+.map-note {
+  fill: var(--sea);
+  font-size: 22px;
+  font-style: italic;
+}
+
+.map-spot {
+  cursor: pointer;
+}
+
+.map-spot circle {
+  fill: #fff;
+  stroke: var(--sea);
+  stroke-width: 4;
+}
+
+.map-spot.home circle {
+  fill: #f9dcd4;
+  stroke: var(--brick);
+}
+
+.map-spot.selected circle {
+  stroke: var(--amber);
+  stroke-width: 10;
+}
+
+.map-icon {
+  font-size: 30px;
+  text-anchor: middle;
+  fill: var(--sea);
+}
+
+.map-label {
+  font-size: 24px;
+  font-weight: 700;
+  text-anchor: middle;
+  fill: var(--ink);
+}
+
+.map-badge {
+  fill: var(--sea);
+}
+
+.map-badge-text {
+  font-size: 16px;
+  font-weight: 700;
+  text-anchor: middle;
+  fill: #fff;
+}
+
+.move {
+  margin-top: 16px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: var(--cream);
+}
+
+.move p {
+  margin: 0 0 10px;
+}

@@ -6,6 +6,7 @@ import { create } from 'zustand';
 import { balance } from '../data/balance';
 import type { DecorId } from '../data/decor';
 import type { EquipmentId, ExtraId, TemplateId } from '../data/dishes';
+import type { LocationId } from '../data/locations';
 import type { CampaignId } from '../data/marketing';
 import { loadGame, saveGame } from '../save/save';
 import * as actions from '../sim/actions';
@@ -30,7 +31,7 @@ export type Phase = 'plan' | 'open' | 'dayOver';
 export type Speed = 0 | 1 | 2 | 4;
 
 /** The tabs of the planning screen. */
-export type PlanTab = 'today' | 'menu' | 'kitchen' | 'interior' | 'staff' | 'marketing';
+export type PlanTab = 'today' | 'menu' | 'kitchen' | 'interior' | 'staff' | 'marketing' | 'map';
 
 export interface LiveDay extends DayTally {
   minute: number;
@@ -69,6 +70,7 @@ interface GameStore {
   buyTerracePermit: () => void;
   launchCampaign: (id: CampaignId) => void;
   setHappyHour: (on: boolean) => void;
+  relocate: (to: LocationId) => void;
   upgradeMenuBoard: () => void;
   setSupplier: (supplier: Supplier) => void;
 }
@@ -140,6 +142,7 @@ export const useGame = create<GameStore>((set, get) => ({
   buyTerracePermit: () => plan((game) => actions.buyTerracePermit(game)),
   launchCampaign: (id) => plan((game) => actions.launchCampaign(game, id)),
   setHappyHour: (on) => plan((game) => actions.setHappyHour(game, on)),
+  relocate: (to) => plan((game) => actions.relocate(game, to)),
   upgradeMenuBoard: () => plan((game) => actions.upgradeMenuBoard(game)),
   setSupplier: (supplier) => plan((game) => actions.setSupplier(game, supplier)),
 }));

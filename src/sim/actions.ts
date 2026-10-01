@@ -5,7 +5,8 @@ import { balance } from '../data/balance';
 import { DISH_TEMPLATES, EXTRAS, type EquipmentId, type ExtraId, type MenuDish, type TemplateId } from '../data/dishes';
 import { DECOR, type DecorId } from '../data/decor';
 import { EQUIPMENT } from '../data/equipment';
-import { LOCATIONS } from '../data/locations';
+import { GROUP_IDS } from '../data/groups';
+import { LOCATIONS, type LocationId } from '../data/locations';
 import { CAMPAIGNS, type CampaignId } from '../data/marketing';
 import { playerOf, type GameState } from './game';
 import { dateOf, daysInMonth, nextDayOn } from './calendar';
@@ -246,4 +247,42 @@ export function launchCampaign(state: GameState, id: CampaignId): GameState {
 
 export function setHappyHour(state: GameState, on: boolean): GameState {
   return withPlayer(state, { happyHour: on });
+}
+
+// ---------- Relocation ----------
+
+export function relocateUnavailableReason(state: GameState, to: LocationId): string | null {
+  const player = playerOf(state);
+  if (player.location === to) return 'You’re already here';
+  if (player.equipment.length > LOCATIONS[to].equipmentSlots) {
+    return `Your equipment won’t fit: this kitchen has room for ${LOCATIONS[to].equipmentSlots}`;
+  }
+  return cantAfford(state, balance.relocation.fee);
+}
+
+/** What the restaurant looks like after moving to another street. */
+export function afterMove(state: GameState, to: LocationId): Restaurant {
+  const player = playerOf(state);
+  const r = balance.relocation;
+  // The most atmospheric decor survives the move; the rest stays behind.
+  const keep = Math.ceil(player.decor.length * r.decorKept);
+  const decor = [...player.decor].sort((a, b) => DECOR[b].ambiance - DECOR[a].ambiance).slice(0, keep);
+  const maxTables = Math.floor(LOCATIONS[to].maxSeats / balance.service.seatsPerTable);
+  const reputation = { ...player.reputation };
+  for (const g of GROUP_IDS) reputation[g] *= r.reputationKept;
+  return {
+    ...player,
+    location: to,
+    decor,
+    ambiance: ambianceWith(decor),
+    tables: Math.min(player.tables, maxTables),
+    reputation,
+  };
+}
+
+/** Moves the restaurant to another street. Equipment, menu and staff come along. */
+export function relocate(state: GameState, to: LocationId): GameState {
+  if (relocateUnavailableReason(state, to) !== null) return state;
+  const moved = withPlayer(state, afterMove(state, to));
+  return { ...moved, cash: state.cash - balance.relocation.fee };
 }

@@ -10,6 +10,8 @@ export interface Location {
   rentPerDay: number;
   /** Hungry passers-by per hour at the busiest hour of an ordinary weekday. */
   peakGuestsPerHour: number;
+  /** Foot traffic in words, for the map. */
+  trafficLabel: string;
   /** Relative foot traffic for each opening hour, 11:00 first (1 = busiest). */
   hourCurve: readonly number[];
   /** Multiplier on Saturdays and Sundays. */
@@ -50,6 +52,7 @@ export const LOCATIONS: Record<LocationId, Location> = {
       'and a cat who visits every windowsill.',
     rentPerDay: 300,
     peakGuestsPerHour: 30,
+    trafficLabel: 'Low',
     hourCurve: LUNCH_AND_DINNER,
     weekendFactor: 1.1,
     monthFactors: STEADY_YEAR,
@@ -66,6 +69,7 @@ export const LOCATIONS: Record<LocationId, Location> = {
       'Locals and tourists wander past in equal measure.',
     rentPerDay: 600,
     peakGuestsPerHour: 60,
+    trafficLabel: 'Medium',
     hourCurve: LUNCH_AND_DINNER,
     weekendFactor: 1.2,
     monthFactors: STEADY_YEAR,
@@ -82,6 +86,7 @@ export const LOCATIONS: Record<LocationId, Location> = {
       'and gargoyles that watch you eat. Small inside, lovely outside.',
     rentPerDay: 900,
     peakGuestsPerHour: 55,
+    trafficLabel: 'Medium',
     hourCurve: EVENING_HEAVY,
     weekendFactor: 1.3,
     monthFactors: STEADY_YEAR,
@@ -98,6 +103,7 @@ export const LOCATIONS: Record<LocationId, Location> = {
       'Crowds all day long, and rent to match.',
     rentPerDay: 1500,
     peakGuestsPerHour: 150,
+    trafficLabel: 'Very high',
     hourCurve: ALL_DAY,
     weekendFactor: 1.3,
     monthFactors: STEADY_YEAR,
@@ -114,6 +120,7 @@ export const LOCATIONS: Record<LocationId, Location> = {
       'and the terrace is the best seat in town when the sun is out.',
     rentPerDay: 1100,
     peakGuestsPerHour: 90,
+    trafficLabel: 'High in summer',
     hourCurve: ALL_DAY,
     weekendFactor: 1.3,
     monthFactors: WATERFRONT_YEAR,
@@ -130,6 +137,7 @@ export const LOCATIONS: Record<LocationId, Location> = {
       'and people who photograph their food.',
     rentPerDay: 800,
     peakGuestsPerHour: 60,
+    trafficLabel: 'Medium',
     hourCurve: LUNCH_HEAVY,
     weekendFactor: 0.8,
     monthFactors: STEADY_YEAR,

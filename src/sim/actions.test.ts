@@ -19,6 +19,8 @@ import {
   extraUnavailableReason,
   launchCampaign,
   menuBoardUnavailableReason,
+  relocate,
+  relocateUnavailableReason,
   removeDish,
   setDishPrice,
   setHappyHour,
@@ -354,5 +356,58 @@ describe('marketing', () => {
     const off = playerOf(fresh());
     const students = { group: 'students' as const, size: 2, origin: 'ogarna' as const, arrivalMinute: 16 * 60 };
     expect(utility(on, students, 10)!).toBeGreaterThan(utility(off, students, 10)!);
+  });
+});
+
+describe('moving to another street', () => {
+  const rich = () => ({ ...fresh(), cash: 1_000_000 });
+
+  it('moves the restaurant for the moving fee, keeping menu, staff and equipment', () => {
+    const state = buyEquipment(rich(), 'fryer');
+    const moved = relocate(state, 'piwna');
+    const player = playerOf(moved);
+    expect(player.location).toBe('piwna');
+    expect(moved.cash).toBe(state.cash - balance.relocation.fee);
+    expect(player.menu).toEqual(playerOf(state).menu);
+    expect(player.chefs).toEqual(playerOf(state).chefs);
+    expect(player.equipment).toEqual(['stove', 'fryer']);
+    expect(moved.team).toEqual(state.team);
+  });
+
+  it('keeps about 70% of reputation', () => {
+    const state = rich();
+    const moved = relocate(state, 'dluga');
+    expect(playerOf(moved).reputation.locals).toBeCloseTo(
+      playerOf(state).reputation.locals * balance.relocation.reputationKept,
+    );
+  });
+
+  it('leaves some decor behind, keeping the most atmospheric', () => {
+    let state = rich();
+    for (const id of ['shipsInBottles', 'lanterns', 'seaChart', 'tablecloths'] as const) state = buyDecor(state, id);
+    const moved = playerOf(relocate(state, 'piwna'));
+    expect(moved.decor).toHaveLength(2);
+    expect(moved.decor).toEqual(expect.arrayContaining(['seaChart', 'lanterns']));
+    expect(moved.ambiance).toBe(balance.start.ambiance + DECOR.seaChart.ambiance + DECOR.lanterns.ambiance);
+  });
+
+  it('loses tables that don’t fit the new room', () => {
+    let state = { ...fresh(), cash: 1_000_000 };
+    state = relocate(state, 'dluga');
+    for (let i = 0; i < 20; i++) state = buyTable(state);
+    expect(playerOf(state).tables).toBe(12); // Długa holds 48 seats
+    const toMariacka = relocate(state, 'mariacka');
+    expect(playerOf(toMariacka).tables).toBe(6); // Mariacka holds 24
+  });
+
+  it('refuses a move that is impossible, and says why', () => {
+    const state = rich();
+    expect(relocateUnavailableReason(state, 'ogarna')).toBe('You’re already here');
+    expect(relocateUnavailableReason({ ...state, cash: 10 }, 'piwna')).toBe('Not enough cash');
+    // Four machines won't fit Mariacka's kitchen (3 spaces).
+    let bigKitchen = relocate(state, 'dluga');
+    for (const id of ['fryer', 'grill', 'espresso'] as const) bigKitchen = buyEquipment(bigKitchen, id);
+    expect(relocateUnavailableReason(bigKitchen, 'mariacka')).toMatch(/won’t fit/);
+    expect(relocate(bigKitchen, 'mariacka')).toBe(bigKitchen);
   });
 });
