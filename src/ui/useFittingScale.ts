@@ -6,6 +6,7 @@ import { useLayoutEffect, useRef, useState } from 'react';
 export function useFittingScale(width: number, height: number, fitHeight = true) {
   const wrap = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(2);
+  const [box, setBox] = useState({ width: 0, height: 0 });
   useLayoutEffect(() => {
     const element = wrap.current;
     if (!element) return;
@@ -15,11 +16,12 @@ export function useFittingScale(width: number, height: number, fitHeight = true)
       const fit = (fitHeight ? Math.min(byWidth, element.clientHeight / height) : byWidth) * dpr;
       const whole = Math.max(1, Math.floor(fit));
       setScale((whole / fit >= 0.85 ? whole : Math.max(1, fit)) / dpr);
+      setBox({ width: element.clientWidth, height: element.clientHeight });
     };
     measure();
     const observer = new ResizeObserver(measure);
     observer.observe(element);
     return () => observer.disconnect();
   }, [width, height, fitHeight]);
-  return { wrap, scale };
+  return { wrap, scale, box };
 }

@@ -1246,7 +1246,8 @@ h2.spaced {
   justify-content: center;
   overflow: hidden;
   border-radius: 16px;
-  background: #2a1d26;
+  /* The street picture fills this; the colour only shows for a moment while it's drawn. */
+  background: #a99d91;
 }
 
 .pixel-scene {

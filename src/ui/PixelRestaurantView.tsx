@@ -25,6 +25,7 @@ import {
 } from './pixel/room';
 import type { Carry, PersonKind } from './pixel/sprites';
 import { useGame } from './store';
+import { drawStreet } from './pixel/street';
 import { useFittingScale } from './useFittingScale';
 
 /** World units a guest walks per second at 1× speed. */
@@ -275,12 +276,30 @@ export function PixelRestaurantView({
 
   const { walks, done, arriving, busyWaiters } = useWalkers(layout, floor);
   const pieces = scenePieces(layout, floor, look, arriving, busyWaiters);
-  const { wrap, scale } = useFittingScale(layout.width, layout.height);
+  const { wrap, scale, box } = useFittingScale(layout.width, layout.height);
   const at = (n: number) => n * scale;
+
+  // The street fills the whole frame around the room, so it's drawn as big as the frame.
+  const marginX = Math.max(0, Math.ceil((box.width / scale - layout.width) / 2) + 1);
+  const marginY = Math.max(0, Math.ceil((box.height / scale - layout.height) / 2) + 1);
+  const streetWidth = layout.width + 2 * marginX;
+  const streetHeight = layout.height + 2 * marginY;
+  const street = useMemo(
+    () => imageUrl(drawStreet(layout, look, streetWidth, streetHeight, marginX, marginY)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [layout, look.weather, look.dusk, streetWidth, streetHeight],
+  );
+  useEffect(() => () => URL.revokeObjectURL(street), [street]);
 
   return (
     <div ref={wrap} className="pixel-wrap">
       <div className="pixel-scene" style={{ width: at(layout.width), height: at(layout.height) }} role="img" aria-label="Your restaurant">
+        <img
+          src={street}
+          className="pixel"
+          alt=""
+          style={{ left: -at(marginX), top: -at(marginY), width: at(streetWidth), zIndex: 0 }}
+        />
         <img src={background} className="pixel" alt="" style={{ left: 0, top: 0, width: at(layout.width), zIndex: 0 }} />
         {pieces.map((p) => (
           <img

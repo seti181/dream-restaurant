@@ -461,7 +461,6 @@ export function lampSpots(layout: RoomLayout, look: RoomLook): { x: number; y: n
 export function drawRoom(layout: RoomLayout, look: RoomLook): Pixels {
   const { width, height, origin: o, roomX, roomY } = layout;
   const img = new Pixels(width, height);
-  img.fillRect(0, 0, width, height, C.backdrop);
   const floorY = roomY + layout.terraceDepth;
   const glows = lampSpots(layout, look).filter((l) => l.kind !== 'lantern');
 
@@ -636,18 +635,19 @@ export function scenePieces(
     addTable(slot, floor.tables[floor.insideTables + i] ?? null, true, floor.insideTables + i),
   );
 
-  // A row of planters along the edge of the terrace.
+  // A row of flower boxes along the edge of the terrace. Each is its own piece, so that
+  // chairs and tables in front of a box are drawn over it, and the boxes over things behind.
   if (layout.terraceDepth > 0) {
-    const planter = drawn(`planter:${layout.roomX}`, (img, lo) => {
-      for (let x = 0; x < layout.roomX - 4; x += 20) {
-        box(img, lo, { x0: x, x1: x + 16, y0: 0, y1: 4, z0: 0, z1: 5 }, cabinet);
-        for (let f = 1; f < 15; f += 3) {
-          box(img, lo, { x0: x + f, x1: x + f + 2, y0: 1, y1: 3, z0: 5, z1: 7 }, solid(f % 2 ? C.leaf : C.leafLight));
-          box(img, lo, { x0: x + f, x1: x + f + 1, y0: 1.5, y1: 2.5, z0: 7, z1: 8 }, solid(C.flowers[(f + x) % 4]));
-        }
+    const planter = drawn('planter', (img, lo) => {
+      box(img, lo, { x0: 0, x1: 16, y0: 0, y1: 4, z0: 0, z1: 5 }, cabinet);
+      for (let f = 1; f < 15; f += 3) {
+        box(img, lo, { x0: f, x1: f + 2, y0: 1, y1: 3, z0: 5, z1: 7 }, solid(f % 2 ? C.leaf : C.leafLight));
+        box(img, lo, { x0: f, x1: f + 1, y0: 1.5, y1: 2.5, z0: 7, z1: 8 }, solid(C.flowers[f % 4]));
       }
-    }, 2 * layout.roomX + 40);
-    pieces.push(piece(o, 'planter', planter, 2, layout.roomY + 2, 0, layout.roomX / 2 + layout.roomY));
+    });
+    for (let x = 2; x < layout.roomX - 2; x += 20) {
+      pieces.push(piece(o, `planter${x}`, planter, x, layout.roomY + 2, 0, x + 8 + layout.roomY + 6));
+    }
   }
 
   // The kitchen: chefs behind the island, a pot each, the pizza oven at the side.
