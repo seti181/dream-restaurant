@@ -50,7 +50,7 @@ export interface ReviewInput {
 }
 
 export function writeReview(rng: RngState, input: ReviewInput): Review {
-  const reviewer = input.critic ? CRITIC_NAME : REVIEWER[input.group];
+  const reviewer = input.critic ? CRITIC_NAME : pick(rng, REVIEWER[input.group]);
   if (!input.factors) {
     return { stars: 1, text: pick(rng, WALKOUT_LINES), reviewer, critic: input.critic };
   }

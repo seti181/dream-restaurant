@@ -24,7 +24,7 @@ import { goalOf, goalText, nextGoal, startGoal, trackGoal, type GoalState } from
 import { pairingsOf } from './menu';
 import { isFairDay, isNeptuneDay, neptuneResult, type NeptuneResult, type SeasonTally } from './neptune';
 import { planRivalWeek, rivalAwarenessToday } from './rivalAi';
-import { createRng, type RngState } from './rng';
+import { createRng, pick, type RngState } from './rng';
 import { createPlayerRestaurant, createRivalRestaurant } from './setup';
 import { generateCandidates, starterTeam, staffOf } from './staff';
 import type { Employee, PartyOutcome, Restaurant, Review, SatisfactionFactors } from './types';
@@ -403,7 +403,7 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
   if (surprise) {
     const event = RANDOM_EVENTS[surprise];
     events.push({ id: surprise, fromDay: nextDay, untilDay: nextDay + event.days - 1 });
-    news.push({ title: event.name, text: event.description });
+    news.push({ title: event.name, text: pick(rng, event.descriptions) });
     if (event.cash) cash += event.cash;
     if (event.awareness) {
       const [player, ...rivals] = restaurants;

@@ -54,7 +54,7 @@ describe('reviews', () => {
   });
 
   it('say who wrote them', () => {
-    expect(writeReview(createRng(5), input({ group: 'students' })).reviewer).toBe(REVIEWER.students);
+    expect(REVIEWER.students).toContain(writeReview(createRng(5), input({ group: 'students' })).reviewer);
     expect(writeReview(createRng(5), input({ critic: true })).reviewer).toBe(CRITIC_NAME);
   });
 

@@ -57,6 +57,14 @@ function LocationCard({ id }: { id: LocationId }) {
           <span>{rivalsHere.length === 0 ? 'None' : rivalsHere.map((r) => RIVALS[r.id as RivalId].name).join(', ')}</span>
         </li>
       </ul>
+      {rivalsHere.map((r) => {
+        const rival = RIVALS[r.id as RivalId];
+        return (
+          <p key={r.id} className="small rival-note">
+            <strong>{rival.owner}</strong> runs {rival.name}. {rival.personality}
+          </p>
+        );
+      })}
 
       {id !== player.location && (
         <div className="move">

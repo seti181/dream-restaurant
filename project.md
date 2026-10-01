@@ -431,7 +431,7 @@ Work in small steps, and test each step in the browser before moving on.
 **M4 – Gdańsk and personal**
 
 - [x] Illustrated map and restaurant view
-- [ ] Event texts, rival personalities, review lines
+- [x] Event texts, rival personalities, review lines
 - [ ] Everything from section 10
 
 **M5 – Polish and balance**

@@ -10,7 +10,7 @@ import { RIVALS, type RivalId, type RivalMove } from '../data/rivals';
 import { dateOf } from './calendar';
 import type { GameState } from './game';
 import { recipeKey, templateOf } from './menu';
-import { nextFloat, type RngState } from './rng';
+import { nextFloat, pick, type RngState } from './rng';
 import type { Restaurant } from './types';
 
 /** The two groups a rival cares about most: where it started with the best reputation. */
@@ -120,7 +120,7 @@ function planRival(state: GameState, rival: Restaurant, rng: RngState): { rival:
           : { ...rival, ambiance: Math.min(r.maxAmbiance, rival.ambiance + r.upgradeAmbiance) };
       break;
   }
-  return { rival: updated, news: RIVALS[id].lines[move].replace('{dish}', dishName) };
+  return { rival: updated, news: pick(rng, RIVALS[id].lines[move]).replace('{dish}', dishName) };
 }
 
 /** Every rival makes its move for the week. The player's restaurant is unchanged. */

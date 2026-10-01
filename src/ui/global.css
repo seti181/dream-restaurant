@@ -1233,3 +1233,11 @@ h2.spaced {
   height: 14px;
   border-radius: 50%;
 }
+
+.rival-note {
+  margin: 10px 0 0;
+  padding: 10px 12px;
+  border-left: 4px solid var(--sea);
+  border-radius: 8px;
+  background: #eef4f7;
+}

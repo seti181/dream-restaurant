@@ -3,6 +3,8 @@ import { balance } from './balance';
 import { DISH_TEMPLATES, TEMPLATE_IDS } from './dishes';
 import { GROUP_IDS, GROUPS } from './groups';
 import { LOCATION_IDS, LOCATIONS } from './locations';
+import { RANDOM_EVENT_IDS, RANDOM_EVENTS } from './events';
+import { REVIEWER } from './reviews';
 import { RIVAL_IDS, RIVALS } from './rivals';
 
 const openHours = (balance.clock.closeMinute - balance.clock.openMinute) / 60;
@@ -76,5 +78,15 @@ describe('rivals', () => {
       expect(rival.startingReputation[g]).toBeGreaterThanOrEqual(0);
       expect(rival.startingReputation[g]).toBeLessThanOrEqual(100);
     }
+  });
+});
+
+describe('texts', () => {
+  it('give every rival move, surprise event and reviewer a few versions, so the news doesn’t repeat', () => {
+    for (const id of RIVAL_IDS) {
+      for (const lines of Object.values(RIVALS[id].lines)) expect(lines.length).toBeGreaterThanOrEqual(2);
+    }
+    for (const id of RANDOM_EVENT_IDS) expect(RANDOM_EVENTS[id].descriptions.length).toBeGreaterThanOrEqual(2);
+    for (const group of GROUP_IDS) expect(REVIEWER[group].length).toBeGreaterThanOrEqual(2);
   });
 });

@@ -111,7 +111,8 @@ export type RandomEventId =
 
 export interface RandomEvent {
   name: string;
-  description: string;
+  /** A few ways of telling the news; one is picked at random. */
+  descriptions: string[];
   /** How likely this event is compared with the others. */
   weight: number;
   /** How many days it lasts. */
@@ -135,57 +136,88 @@ export const RANDOM_EVENT_IDS: readonly RandomEventId[] = [
 export const RANDOM_EVENTS: Record<RandomEventId, RandomEvent> = {
   tourBus: {
     name: 'A tour bus!',
-    description: 'A coach full of hungry tourists has booked your place for lunch at 13:00.',
+    descriptions: [
+      'A coach full of hungry tourists has booked your place for lunch at 13:00.',
+      'A tour group from Kraków has booked lunch at 13:00. Their guide promised them “the real Gdańsk”.',
+      'A coach of Swedish cruise passengers has booked your tables for 13:00. They have heard about the żurek.',
+    ],
     weight: 3,
     days: 1,
     booking: { group: 'tourists', size: 12, hour: 13 },
   },
   foodCritic: {
     name: 'A food critic is in town',
-    description: 'The Baltic Gourmet column’s critic is dining with you tonight. No pressure.',
+    descriptions: [
+      'The Baltic Gourmet column’s critic is dining with you tonight. No pressure.',
+      'Rumour has it the Baltic Gourmet critic has booked a table for 19:00 under a false name. Watch out for berets.',
+      'The Baltic Gourmet critic is coming at 19:00. Mewa has promised to behave.',
+    ],
     weight: 1,
     days: 1,
     booking: { group: 'foodies', size: 1, hour: 19, critic: true },
   },
   newspaper: {
     name: 'In the newspaper',
-    description: 'The local paper ran a little feature about you. People are curious!',
+    descriptions: [
+      'The local paper ran a little feature about you. People are curious!',
+      'Dziennik Bałtycki printed a photo of your front door. Half of Gdańsk now knows where you are.',
+      'A radio presenter mentioned your restaurant on the morning show. People are curious!',
+    ],
     weight: 2,
     days: 1,
     awareness: 12,
   },
   supplierDiscount: {
     name: 'Supplier discount week',
-    description: 'Your supplier has too many potatoes and a kind heart: ingredients are 30% cheaper this week.',
+    descriptions: [
+      'Your supplier has too many potatoes and a kind heart: ingredients are 30% cheaper this week.',
+      'The market had a bumper harvest: ingredients are 30% cheaper this week.',
+      'Your supplier’s daughter just got married and he is feeling generous: ingredients are 30% cheaper this week.',
+    ],
     weight: 2,
     days: 7,
     ingredientCost: 0.7,
   },
   streetWorks: {
     name: 'Street works',
-    description: 'The cobbles on your street are being relaid. Fewer people walk past for a few days.',
+    descriptions: [
+      'The cobbles on your street are being relaid. Fewer people walk past for a few days.',
+      'Workmen are digging up your street. Again. Fewer people walk past for a few days.',
+      'A water pipe burst under your street. Fewer people walk past while it’s fixed.',
+    ],
     weight: 2,
     days: 3,
     streetTraffic: 0.6,
   },
   wedding: {
     name: 'A wedding party',
-    description: 'A wedding party has booked your dining room for 17:00. Get the kompot ready!',
+    descriptions: [
+      'A wedding party has booked your dining room for 17:00. Get the kompot ready!',
+      'A young couple from Oliwa are celebrating their wedding with you at 17:00. Babcia will be inspecting the pierogi.',
+      'A wedding party is coming at 17:00, straight from St. Mary’s. Expect dancing.',
+    ],
     weight: 1,
     days: 1,
     booking: { group: 'locals', size: 16, hour: 17 },
   },
   birthday: {
     name: 'A regular’s birthday',
-    description: 'One of your regulars is celebrating with family tonight at 19:00.',
+    descriptions: [
+      'One of your regulars is celebrating with family tonight at 19:00.',
+      'A regular is turning seventy and wants to celebrate with you at 19:00. There will be singing.',
+      'A regular has booked a birthday table for 19:00. They asked for “the usual, times six”.',
+    ],
     weight: 2,
     days: 1,
     booking: { group: 'locals', size: 6, hour: 19 },
   },
   seagull: {
     name: 'Seagull thief',
-    description:
+    descriptions: [
       'A seagull swooped in and stole a pieróg straight off a plate. The guest laughed; you brought them a new one.',
+      'A seagull snatched a whole schabowy from a table by the window and flew off towards the Crane. You made another.',
+      'A seagull walked in, took a bread roll from the counter and walked out again. Mewa says it was her cousin.',
+    ],
     weight: 3,
     days: 1,
     cash: -9,

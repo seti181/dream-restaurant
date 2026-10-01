@@ -39,7 +39,7 @@ describe('the rivals’ week', () => {
     const { restaurants, news } = planRivalWeek(state, createRng(3));
     const before = state.restaurants[1];
     const after = restaurants[1];
-    expect(news[0]).toBe(RIVALS.nonnaRosa.lines.reactToPlayer);
+    expect(RIVALS.nonnaRosa.lines.reactToPlayer).toContain(news[0]);
     expect(after.menu[0].price).toBeLessThan(before.menu[0].price);
   });
 
@@ -50,7 +50,7 @@ describe('the rivals’ week', () => {
     state.week.turnedAway.blyskawica = 100;
     const { restaurants, news } = planRivalWeek(state, createRng(4));
     expect(restaurants[2].tables).toBe(9);
-    expect(news[1]).toBe(RIVALS.blyskawica.lines.upgrade);
+    expect(RIVALS.blyskawica.lines.upgrade).toContain(news[1]);
   });
 
   it('adds its seasonal dishes as the months go by', () => {
@@ -95,7 +95,7 @@ describe('difficulty', () => {
       state.week.served.player = Object.fromEntries(nonnasFavourites.map((g) => [g, 45]));
       return planRivalWeek(state, createRng(9)).news[0];
     };
-    expect(threat('normal')).toBe(RIVALS.nonnaRosa.lines.reactToPlayer);
-    expect(threat('relaxed')).not.toBe(RIVALS.nonnaRosa.lines.reactToPlayer);
+    expect(RIVALS.nonnaRosa.lines.reactToPlayer).toContain(threat('normal'));
+    expect(RIVALS.nonnaRosa.lines.reactToPlayer).not.toContain(threat('relaxed'));
   });
 });
