@@ -54,7 +54,8 @@ describe('helping a waiting table', () => {
       // No chef, so the food never comes.
       open.progress.floors[0].chefFreeAt = [99999];
       if (drink) helpGuests(open, 0, 'drink');
-      while (open.progress.floors[0].visits.length > 0) playTick(open);
+      const ours = open.progress.floors[0].visits[0];
+      while (open.progress.floors[0].visits.includes(ours)) playTick(open);
       return minuteOfDay(open.progress.tick - 1);
     };
     expect(walkoutMinute(false)).toBeGreaterThanOrEqual(660 + patience);

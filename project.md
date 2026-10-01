@@ -7,7 +7,7 @@ The player is up against friendly rivals, fighting only for the city's hungry gu
 - **Platform:** Android tablet (Samsung Galaxy Tab A series), landscape, touch only
 - **Language:** English
 - **Tone:** cozy, warm, funny, low-stress
-- **Length:** one season takes roughly 3–5 hours ("a few evenings"); free play continues afterwards
+- **Length:** one season (six weeks in July and August) takes roughly two hours ("two or three evenings"); free play continues afterwards
 
 ---
 
@@ -68,7 +68,7 @@ Weekly rhythm: every Monday brings rent, a weekly summary and a new small goal f
 
 ## 5. Game structure
 
-- **Season:** 1 April to the end of St. Dominic's Fair (mid-August), about 20 in-game weeks. The in-game year is fixed and fictional so dates are predictable.
+- **Season:** six weeks, Monday 8 July to Sunday 18 August, the last day of St. Dominic's Fair (Jarmark Dominikański). The in-game year is fixed and fictional so dates are predictable.
 - **Victory:** at the end of the Fair, the restaurant with the highest **Neptune Score** wins the Golden Neptune.
   - Neptune Score = 60% average rating + 40% share of Old Town guests during the Fair.
   - Winning plays a special ending sequence (section 10).
@@ -649,7 +649,7 @@ Each item is tested in the browser and on the tablet before the next one starts.
 - The headless simulator runs full seasons with scripted strategies ("do nothing", "cheap and fast", "quality focus", "balanced").
 - **Targets on Normal:**
   - "do nothing" loses money, like bad decisions do
-  - "balanced" becomes profitable by week 3–4
+  - "balanced" becomes profitable by week 2–3
   - a thoughtful player wins the Golden Neptune on the first try, with some tension in the final weeks
 - **Pace target:** about 100 seconds per day at 1× speed (calm enough to look after the guests). The season length is set in M7 (section 6.14).
 
@@ -737,3 +737,6 @@ Each item is tested in the browser and on the tablet before the next one starts.
 - 2026-10-01: Personal touch: a Portuguese exchange student (choice card) unlocks cabrito assado and azulejo tiles.
 - 2026-10-01: Ideas for longer play accepted: named regulars with stories, staff growth, seasonal ingredients and specials, replying to reviews, attracting passers-by, bigger premises, a sticker album, Mewa's finds. Left out: hosted events, an autumn and Christmas-market season, a cook-off against the rivals, postcards.
 - 2026-10-01: A day takes 100 seconds at 1× (was 50). The simulation is unchanged (only how fast real time runs); people passing by set off twice as often per five-minute step, so the street stays as busy.
+- 2026-10-01: The season is six weeks: Monday 8 July to Sunday 18 August (42 days), ending with St. Dominic's Fair (27 July – 18 August). The Amber evening on Mariacka moves to Saturday 20 July; Mewa finds the secret recipe by week 2 at the latest (day 7). Easter, Majówka, Juwenalia and Corpus Christi stay in the data but only come round in free play.
+- 2026-10-01: Rebalancing for six weeks (simulator, before = the same rules over six weeks without changes, 3 seasons): do nothing ended at 53,801 zł from 40,000 (earning money), cheap and fast at 10,199 zł (not bust), balanced at 90,538 zł with the Neptune 0/3. Changes: weekly utilities 1,400 → 4,200 zł; reputation moves faster (smoothing 0.02 → 0.035) so six weeks matter; "somewhere else" 7.5 → 7.8; the simulator's balanced player buys tables sooner and moves to Długa at 45,000 zł (was 80,000). After, over 10 seasons: do nothing 31,256 zł (loses money, never bust), cheap and fast bust 10/10 in week 4, quality focus 10,017 zł, balanced 46,826 zł and profitable from week 2, but behind Bar Błyskawica in the Golden Neptune (38.6 against 44.2; rating 51.2 against 54.8, Fair share 19.6% against 28.3%), only just behind Karczma (39.0). Tried and dropped: higher starting cash (the simulated player then moved to Długa on day one and went bust), a stronger start for the player (made doing nothing profitable), a smaller Bar Błyskawica (its rating rose). The simulator now prints each restaurant's Neptune rating and Fair share, and can play an "interactive" player (yes to cards, shooing gulls, free drinks). Open question for the player: how hard should the Golden Neptune be in a six-week season?
+- 2026-10-01: Guests who booked (the Friday regular, a food critic, a tour bus, a wedding party) go to the front of the queue at the door and wait four times as long (balance.service.bookedWaitFactor), so a full July lunch no longer turns away a booked food critic.

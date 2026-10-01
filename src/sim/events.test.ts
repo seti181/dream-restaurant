@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { nextDayOn } from './calendar';
 import { balance } from '../data/balance';
 import type { MenuDish } from '../data/dishes';
 import { GROUP_IDS } from '../data/groups';
@@ -10,9 +11,10 @@ import { createRng } from './rng';
 import { weatherAppetite } from './service';
 import type { DayConditions } from './types';
 
-const FIRST_OF_APRIL = 0;
-const FIRST_OF_MAY = 30;
-const FIRST_OF_AUGUST = 122;
+// The season starts on 8 July, so April and May come round in free play.
+const FIRST_OF_APRIL = nextDayOn(4, 1, 0);
+const FIRST_OF_MAY = nextDayOn(5, 1, 0);
+const FIRST_OF_AUGUST = nextDayOn(8, 1, 0);
 
 describe('weather', () => {
   it('never brings a heatwave in April, and sometimes does in August', () => {
@@ -40,9 +42,9 @@ describe('weather', () => {
   });
 
   it('closes the terrace in the rain', () => {
-    const inMay: GameState = { ...newGame(1), day: FIRST_OF_MAY, terracePermitUntilDay: 182 };
-    expect(terraceOpenOn({ ...inMay, weather: 'sunny' }, FIRST_OF_MAY)).toBe(true);
-    expect(terraceOpenOn({ ...inMay, weather: 'rain' }, FIRST_OF_MAY)).toBe(false);
+    const inAugust: GameState = { ...newGame(1), day: FIRST_OF_AUGUST, terracePermitUntilDay: FIRST_OF_AUGUST + 30 };
+    expect(terraceOpenOn({ ...inAugust, weather: 'sunny' }, FIRST_OF_AUGUST)).toBe(true);
+    expect(terraceOpenOn({ ...inAugust, weather: 'rain' }, FIRST_OF_AUGUST)).toBe(false);
   });
 });
 

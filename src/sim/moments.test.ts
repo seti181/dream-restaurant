@@ -250,14 +250,14 @@ describe('what the answers do', () => {
 
   it('Lech Wałęsa: a big tip, nobody else gets in for three hours, and locals love you afterwards', () => {
     const open = openRestaurant(newGame(17));
-    playUntil(open, 12 * 60);
+    // At opening time, before July's lunch crowd has taken every table.
     const floor = open.progress.floors[0];
     show(open, 'walesa');
     const result = answerTheMoment(open, 0);
     expect(result?.cash).toBe(2500);
     const visit = floor.visits.find((v) => v.visitor === 'walesa')!;
     expect(visit.party.size).toBe(4);
-    expect(floor.closed).toEqual({ until: 15 * 60, everyone: true });
+    expect(floor.closed).toEqual({ until: 14 * 60, everyone: true });
     // Even guests who booked are kept out...
     const booked = { group: 'tourists' as const, size: 2, origin: player(open).location, arrivalMinute: 13 * 60, bookedAt: 'player' };
     seat(open.rng, open.progress, 0, booked, 13 * 60);
@@ -266,9 +266,9 @@ describe('what the answers do', () => {
     const regular = { ...booked, group: 'locals' as const, size: 1, regular: true };
     seat(open.rng, open.progress, 0, regular, 13 * 60);
     expect(floor.visits.some((v) => v.party === regular)).toBe(true);
-    playUntil(open, 15 * 60 - 5);
+    playUntil(open, 14 * 60 - 5);
     const before = player(open).reputation.locals;
-    playUntil(open, 15 * 60 + 5);
+    playUntil(open, 14 * 60 + 5);
     expect(floor.visits).not.toContain(visit);
     expect(player(open).reputation.locals).toBeGreaterThan(before * 1.09);
   });

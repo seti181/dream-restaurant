@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { dateOf, nextDayOn } from './calendar';
 import { balance } from '../data/balance';
 import { GROUP_IDS, GROUPS } from '../data/groups';
 import { LOCATIONS } from '../data/locations';
@@ -24,9 +25,11 @@ describe('guest generation', () => {
   });
 
   it('brings more tourists in summer than in April', () => {
-    const firstOfAugust = 122;
+    // Both on a Thursday: 1 August, and 3 April in free play the next spring.
+    const firstOfAugust = nextDayOn(8, 1, 0);
+    const aprilThursday = nextDayOn(4, 3, 0);
     expect(expectedGuests('dluga', 'tourists', firstOfAugust, NOON)).toBeGreaterThan(
-      expectedGuests('dluga', 'tourists', MONDAY, NOON),
+      expectedGuests('dluga', 'tourists', aprilThursday, NOON),
     );
   });
 
@@ -41,7 +44,8 @@ describe('guest generation', () => {
     const ONE_PM = 24;
     const total = GROUP_IDS.reduce((sum, g) => {
       const people = GROUPS[g];
-      return sum + expectedGuests('ogarna', g, MONDAY, ONE_PM) / (people.timeOfDay.lunch * people.monthFactors[3]);
+      const month = dateOf(MONDAY).month - 1;
+      return sum + expectedGuests('ogarna', g, MONDAY, ONE_PM) / (people.timeOfDay.lunch * people.monthFactors[month]);
     }, 0);
     expect(total).toBeCloseTo(LOCATIONS.ogarna.peakGuestsPerHour * (balance.clock.tickMinutes / 60));
   });

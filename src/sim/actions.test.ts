@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { nextDayOn } from './calendar';
 import type { GroupId } from '../data/groups';
 import { balance } from '../data/balance';
 import { DECOR } from '../data/decor';
@@ -272,15 +273,15 @@ describe('interior and terrace', () => {
     expect(interiorAppeal(playerOf(state), 'office')).toBe(0);
   });
 
-  it('opens the terrace from May to the end of September with a permit', () => {
-    const state = buyTerracePermit(rich());
-    const FIRST_OF_MAY = 30;
-    const LAST_OF_SEPTEMBER = 182;
+  it('opens the terrace from the first day of the season to the end of September with a permit', () => {
+    const state = { ...buyTerracePermit(rich()), weather: 'sunny' as const };
+    const LAST_OF_SEPTEMBER = nextDayOn(9, 30, 0);
     expect(state.terracePermitUntilDay).toBe(LAST_OF_SEPTEMBER);
-    expect(terraceOpenOn(state, 0)).toBe(false); // April
-    expect(terraceOpenOn(state, FIRST_OF_MAY)).toBe(true);
+    expect(terraceOpenOn(state, 0)).toBe(true); // 8 July
     expect(terraceOpenOn(state, LAST_OF_SEPTEMBER)).toBe(true);
     expect(terraceOpenOn(state, LAST_OF_SEPTEMBER + 1)).toBe(false);
+    // The permit is for one season: next April needs a new one.
+    expect(terraceOpenOn(state, nextDayOn(4, 15, 0))).toBe(false);
     expect(terraceUnavailableReason(state)).toBe('You already have this season’s permit');
   });
 

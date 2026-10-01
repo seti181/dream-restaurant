@@ -372,7 +372,10 @@ export function seat(
   const tablesUsed = atTheBar ? 0 : tablesNeeded(party.size);
   if (floor.freeTables < tablesUsed) {
     // Every table is taken: wait at the door if there's room in the queue, or go elsewhere.
-    if (mayQueue && floor.door.length < balance.service.doorQueueMax) floor.door.push({ party, since: minute });
+    // Guests who booked always wait, at the front of the queue: their table is the next one free.
+    const booked = party.bookedAt !== undefined && mayQueue;
+    if (booked) floor.door.unshift({ party, since: minute });
+    else if (mayQueue && floor.door.length < balance.service.doorQueueMax) floor.door.push({ party, since: minute });
     else progress.outcomes.push(lostOutcome(party, restaurant.id, 'noTable'));
     return;
   }
@@ -407,7 +410,9 @@ function serveTheDoor(rng: RngState, progress: DayInProgress, index: number, min
   const floor = progress.floors[index];
   for (const waiting of [...floor.door]) {
     const fits = floor.freeTables >= tablesNeeded(waiting.party.size);
-    const gaveUp = closed || minute - waiting.since >= balance.service.doorWaitMinutes;
+    // Guests who booked wait longer for their table than people who just walked up.
+    const patience = balance.service.doorWaitMinutes * (waiting.party.bookedAt ? balance.service.bookedWaitFactor : 1);
+    const gaveUp = closed || minute - waiting.since >= patience;
     if (!fits && !gaveUp) continue;
     floor.door.splice(floor.door.indexOf(waiting), 1);
     if (fits && !closed) seat(rng, progress, index, waiting.party, minute, false);

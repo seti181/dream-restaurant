@@ -33,10 +33,10 @@ describe('weekly bills', () => {
 
 describe('Golden Neptune', () => {
   it('runs the Fair from Saturday 27 July to the last day of the season', () => {
-    expect(isFairDay(116)).toBe(false); // Friday 26 July
-    expect(isFairDay(117)).toBe(true); // Saturday 27 July
-    expect(isFairDay(139)).toBe(true); // Sunday 18 August
-    expect(isFairDay(140)).toBe(false); // free play
+    expect(isFairDay(18)).toBe(false); // Friday 26 July
+    expect(isFairDay(19)).toBe(true); // Saturday 27 July
+    expect(isFairDay(41)).toBe(true); // Sunday 18 August
+    expect(isFairDay(42)).toBe(false); // free play
   });
 
   it('weighs rating 60% and Fair share 40%', () => {

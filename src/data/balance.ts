@@ -34,13 +34,13 @@ export const balance = {
   },
 
   calendar: {
-    /** The season starts on 1 April. */
-    seasonStartMonth: 4,
-    seasonStartDayOfMonth: 1,
+    /** The season starts on Monday 8 July... */
+    seasonStartMonth: 7,
+    seasonStartDayOfMonth: 8,
     /** Weekday of the first day: 0 = Monday … 6 = Sunday. */
     seasonStartWeekday: 0,
-    /** 20 weeks: 1 April to Sunday 18 August, the last day of St. Dominic's Fair. */
-    seasonLengthDays: 140,
+    /** ...and lasts six weeks, to Sunday 18 August, the last day of St. Dominic's Fair. */
+    seasonLengthDays: 42,
     /** St. Dominic's Fair: the last 23 days of the season, Saturday 27 July to Sunday 18 August. */
     fairLengthDays: 23,
   },
@@ -100,7 +100,7 @@ export const balance = {
 
   choice: {
     /** How tempting "somewhere else" is (a kebab, home, a picnic). Higher = fewer guests eat out. */
-    noRestaurantUtility: 7.5,
+    noRestaurantUtility: 7.8,
     /** Restaurants further away than this (metres) are out of walking range. */
     walkRangeMetres: 700,
     /** How many of a menu's best-matching dishes decide how tempting it looks. */
@@ -296,7 +296,7 @@ export const balance = {
 
   finance: {
     /** Paid every Monday, together with the week's rent. */
-    weeklyUtilities: 1_400,
+    weeklyUtilities: 4_200,
     /** Warn when cash would last fewer than this many days of wages and rent. */
     lowCashDays: 7,
   },
@@ -335,6 +335,8 @@ export const balance = {
     doorQueueMax: 2,
     /** ...for at most this many minutes, before they go somewhere else. */
     doorWaitMinutes: 10,
+    /** Guests who booked go to the front of the queue and wait this many times as long. */
+    bookedWaitFactor: 4,
   },
 
   satisfaction: {
@@ -350,6 +352,6 @@ export const balance = {
 
   reputation: {
     /** How far reputation moves towards each party's satisfaction. Small = slow and steady. */
-    smoothing: 0.02,
+    smoothing: 0.035,
   },
 } as const;

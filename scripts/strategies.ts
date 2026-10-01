@@ -44,6 +44,8 @@ interface Plan {
   premiumSupplier?: boolean;
   /** Starts the happy hour at this time every day (minutes after midnight). */
   happyHourAt?: number;
+  /** Plays along during the day: says yes to choice cards, shoos gulls, looks after waiting tables. */
+  interactive?: boolean;
   /** Menu positions of a soup and a main for the lunch set. */
   lunchSet?: [number, number];
 }
@@ -220,16 +222,16 @@ export const STRATEGIES: Strategy[] = [
     waiters: [{ skill: 4, speed: 3 }],
     plan: {
       reserve: 8_000,
-      tableWhenTurnedAway: 0.15,
+      tableWhenTurnedAway: 0.02,
       chefWhenWalkouts: 0.08,
       hireFor: 'both',
       tablesPerWaiter: 4,
       decorStyle: 'maritime',
-      decorItems: 2,
-      campaigns: ['tramPoster', 'guideListing'],
+      decorItems: 3,
+      campaigns: ['tramPoster', 'guideListing', 'social'],
       terrace: true,
       lunchSet: [0, 3],
-      relocate: { to: 'dluga', whenCash: 80_000 },
+      relocate: { to: 'dluga', whenCash: 45_000 },
     },
   },
 ];

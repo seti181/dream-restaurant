@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
+import { balance } from '../data/balance';
 import type { MenuDish } from '../data/dishes';
 import type { GroupId } from '../data/groups';
 import { REGULAR, SECRET_RECIPE, SPECIAL_STAFF } from '../data/personal';
 import { addDish, dishUnavailableReason } from './actions';
-import { nextDayOn } from './calendar';
+import { dateOf, nextDayOn } from './calendar';
 import { calendarEventsOn, conditionsFor } from './events';
 import { closeDay, newGame, openRestaurant, playerOf, playTick } from './game';
 import { pairingQuality } from './menu';
@@ -130,10 +131,12 @@ describe('Tomek and Adrian', () => {
 });
 
 describe('Mariacka', () => {
-  it('has its amber evening on 20 May, with a crowd on the street', () => {
-    const may20 = nextDayOn(5, 20, 0);
-    expect(calendarEventsOn(may20)).toContain('amberEvening');
-    expect(calendarEventsOn(may20 - 1)).not.toContain('amberEvening');
-    expect(conditionsFor({ ...newGame(8), day: may20 }).locations.mariacka).toBeGreaterThan(1);
+  it('has its amber evening on Saturday 20 July, with a crowd on the street', () => {
+    const july20 = nextDayOn(7, 20, 0);
+    expect(july20).toBeLessThan(balance.calendar.seasonLengthDays);
+    expect(dateOf(july20).weekday).toBe(5);
+    expect(calendarEventsOn(july20)).toContain('amberEvening');
+    expect(calendarEventsOn(july20 - 1)).not.toContain('amberEvening');
+    expect(conditionsFor({ ...newGame(8), day: july20 }).locations.mariacka).toBeGreaterThan(1);
   });
 });

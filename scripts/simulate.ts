@@ -6,13 +6,16 @@ import { RIVAL_IDS, RIVALS, type RivalId } from '../src/data/rivals';
 import { isInSeason, isMonday } from '../src/sim/calendar';
 import { wageOf } from '../src/sim/finance';
 import { minuteOfDay } from '../src/sim/clock';
+import { floorView } from '../src/sim/day';
 import {
   answerTheMoment,
   closeDay,
+  helpGuests,
   momentDue,
   newGame,
   openRestaurant,
   playTick,
+  shooTheGull,
   startHappyHour,
   type GameState,
 } from '../src/sim/game';
@@ -43,8 +46,9 @@ interface SeasonResult {
   guestsLost: number;
   averageRating: number;
   fairShare: number;
-  /** Neptune Score for the player and each rival. */
+  /** Neptune Score for the player and each rival, and what it's made of. */
   neptune: Record<string, number>;
+  neptuneParts: Record<string, { rating: number; share: number }>;
 }
 
 /** A new game where the player's menu and team are the strategy's. */
@@ -78,6 +82,7 @@ function playSeason(strategy: Strategy, seed: number): SeasonResult {
     averageRating: 0,
     fairShare: 0,
     neptune: {},
+    neptuneParts: {},
   };
   const ratings = new Map<string, { total: number; count: number }>();
   const fairGuests = new Map<string, number>();
@@ -102,11 +107,21 @@ function playSeason(strategy: Strategy, seed: number): SeasonResult {
     }
 
     const open = openRestaurant(state);
+    const interactive = strategy.plan?.interactive ?? false;
     while (!open.progress.done) {
-      // A player who only watches: every choice card gets the answer that doesn't help.
-      if (!NO_CARDS && momentDue(open)) answerTheMoment(open, 1);
+      // A player who only watches says no to every card; an interactive one says yes.
+      if (!NO_CARDS && momentDue(open)) answerTheMoment(open, interactive ? 0 : 1);
       const happyHourAt = strategy.plan?.happyHourAt;
       if (happyHourAt !== undefined && minuteOfDay(open.progress.tick) >= happyHourAt) startHappyHour(open);
+      if (interactive) {
+        // Shoos every gull, and looks after tables that have waited a while.
+        shooTheGull(open);
+        floorView(open.progress, 0).tables.forEach((guests, table) => {
+          if (!guests || guests.stage !== 'waiting') return;
+          if (guests.impatience > 0.5 && !guests.drink) helpGuests(open, table, 'drink');
+          if (guests.impatience > 0.8 && !guests.apology) helpGuests(open, table, 'apology');
+        });
+      }
       playTick(open);
     }
     for (const o of open.progress.outcomes) {
@@ -147,6 +162,7 @@ function playSeason(strategy: Strategy, seed: number): SeasonResult {
     const rating = r ? r.total / r.count : 0;
     const share = allFairGuests > 0 ? (fairGuests.get(id) ?? 0) / allFairGuests : 0;
     result.neptune[id] = neptuneScore(rating, share);
+    result.neptuneParts[id] = { rating, share };
     if (id === 'player') {
       result.averageRating = rating;
       result.fairShare = share;
@@ -222,5 +238,22 @@ console.log(
     ]),
   ),
 );
+
+// What each Golden Neptune score is made of, in the balanced strategy's seasons.
+const balanced = results.find(({ strategy }) => strategy.name === 'balanced');
+if (balanced) {
+  console.log('\nGolden Neptune in the balanced seasons: average rating and share of Fair guests\n');
+  console.log(
+    table(
+      ['Restaurant', 'Rating', 'Fair share', 'Neptune'],
+      ['player', ...RIVAL_IDS].map((id) => [
+        id,
+        mean(balanced.seasons.map((s) => s.neptuneParts[id].rating)).toFixed(1),
+        `${(mean(balanced.seasons.map((s) => s.neptuneParts[id].share)) * 100).toFixed(1)}%`,
+        mean(balanced.seasons.map((s) => s.neptune[id])).toFixed(1),
+      ]),
+    ),
+  );
+}
 
 console.log(`\nSimulated ${STRATEGIES.length * SEEDS.length} seasons in ${((performance.now() - started) / 1000).toFixed(1)} s.\n`);

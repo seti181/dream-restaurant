@@ -17,8 +17,8 @@ export const SECRET_RECIPE = {
   template: 'arrozDeVitela',
   /** Mewa finds the recipe once the restaurant reaches this many stars... */
   unlockStars: 2,
-  /** ...or on this day at the latest (day 14 is the Monday of week 3). */
-  unlockByDay: 14,
+  /** ...or on this day at the latest (day 7 is the Monday of week 2). */
+  unlockByDay: 7,
   news: {
     title: 'A secret recipe!',
     text:

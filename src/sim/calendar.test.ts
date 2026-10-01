@@ -4,25 +4,25 @@ import { dateOf, formatDate, isInSeason, isMonday, isWeekend, seasonWeek } from 
 const text = (day: number) => formatDate(dateOf(day));
 
 describe('calendar', () => {
-  it('starts the season on Monday 1 April', () => {
-    expect(text(0)).toBe('Monday 1 April');
+  it('starts the season on Monday 8 July', () => {
+    expect(text(0)).toBe('Monday 8 July');
   });
 
   it('rolls over month ends', () => {
-    expect(text(29)).toBe('Tuesday 30 April');
-    expect(text(30)).toBe('Wednesday 1 May');
+    expect(text(23)).toBe('Wednesday 31 July');
+    expect(text(24)).toBe('Thursday 1 August');
   });
 
-  it('ends the season after 20 weeks on Sunday 18 August', () => {
-    expect(text(139)).toBe('Sunday 18 August');
-    expect(seasonWeek(139)).toBe(20);
-    expect(isInSeason(139)).toBe(true);
-    expect(isInSeason(140)).toBe(false);
+  it('ends the season after six weeks on Sunday 18 August, the last day of the Fair', () => {
+    expect(text(41)).toBe('Sunday 18 August');
+    expect(seasonWeek(41)).toBe(6);
+    expect(isInSeason(41)).toBe(true);
+    expect(isInSeason(42)).toBe(false);
   });
 
   it('keeps counting into free play and the next year', () => {
-    expect(text(275)).toBe('Wednesday 1 January');
-    expect(dateOf(365)).toMatchObject({ month: 4, dayOfMonth: 1 });
+    expect(text(177)).toBe('Wednesday 1 January');
+    expect(dateOf(365)).toMatchObject({ month: 7, dayOfMonth: 8 });
   });
 
   it('starts a new week every Monday', () => {

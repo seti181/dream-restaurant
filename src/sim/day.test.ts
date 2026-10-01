@@ -123,7 +123,8 @@ describe('the queue at the door', () => {
     expect(floor.freeTables).toBe(0);
     return { progress, floor };
   }
-  const party = (group: GroupId) => ({ group, size: 2, origin: 'ogarna' as const, arrivalMinute: 660, bookedAt: 'player' });
+  /** People walking up to the door, without a booking. */
+  const party = (group: GroupId) => ({ group, size: 2, origin: 'ogarna' as const, arrivalMinute: 660 });
 
   it('lets a few parties wait for a table, and turns the rest away', () => {
     const { progress, floor } = fullHouse();
@@ -152,6 +153,18 @@ describe('the queue at the door', () => {
     for (let i = 0; i * balance.clock.tickMinutes <= balance.service.doorWaitMinutes; i++) stepDay(createRng(i), progress);
     expect(floor.door).toHaveLength(0);
     expect(progress.outcomes.some((o) => o.restaurant === 'player' && o.kind === 'noTable' && o.group === 'office')).toBe(true);
+  });
+
+  it('puts guests who booked at the front of the queue, and they wait longer', () => {
+    const { progress, floor } = fullHouse();
+    for (let i = 0; i < balance.service.doorQueueMax; i++) seat(createRng(i), progress, 0, party('tourists'), 660);
+    const critic = { ...party('foodies'), bookedAt: 'player', critic: true };
+    seat(createRng(9), progress, 0, critic, 660);
+    expect(floor.door[0].party).toBe(critic);
+    for (const visit of floor.visits) visit.leaveAt = 9999;
+    for (let i = 0; i * balance.clock.tickMinutes <= balance.service.doorWaitMinutes; i++) stepDay(createRng(i), progress);
+    // The walk-ups have given up; the critic is still waiting for the next table.
+    expect(floor.door.map((w) => w.party)).toEqual([critic]);
   });
 
   it('a full restaurant with a queue looks much less tempting', () => {
