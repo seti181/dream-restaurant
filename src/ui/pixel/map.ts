@@ -1,182 +1,414 @@
-// The Old Town map in pixel art, seen from above: the Motława and Granary Island,
-// streets lined with gabled houses, and the landmarks. Map coordinates are metres east
-// (x) and north (y), the same as in data/locations.ts.
+// The Old Town map in pixel art, seen from the south at an angle, like an aerial photo:
+// every building shows its tiled roof and its street front. Blocks of narrow gabled
+// townhouses in many colours, courtyards with trees, cobbled streets opening into
+// Długi Targ, St. Mary's, the Town Hall, the Green Gate, the Żuraw, and Granary Island.
+// Map coordinates are metres east (x) and north (y), the same as in data/locations.ts.
 
 import type { LocationId } from '../../data/locations';
 import type { IconArt } from './icons';
-import { hex, Pixels, type Rgb } from './raster';
+import { hex, mix, Pixels, type Rgb } from './raster';
 import { sprite } from './sprites';
 
-export const MAP_WIDTH = 300;
-export const MAP_HEIGHT = 180;
+export const MAP_WIDTH = 336;
+export const MAP_HEIGHT = 204;
+const SCALE = MAP_WIDTH / 900;
 
 /** A map position (metres east, metres north) as a pixel on the map. */
 export function mapPixel(x: number, north: number): { px: number; py: number } {
-  return { px: Math.round((x - 150) / 3), py: Math.round((-north + 330) / 3) };
+  return { px: Math.round((x - 150) * SCALE), py: Math.round((-north + 330) * SCALE) };
+}
+
+/** A small seeded random generator, so the town is built the same way every time. */
+function random(seed: number) {
+  let s = seed >>> 0;
+  const next = () => {
+    s = (s + 0x6d2b79f5) >>> 0;
+    let t = s;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+  return {
+    next,
+    int: (min: number, max: number) => min + Math.floor(next() * (max - min + 1)),
+    pick: <T>(list: readonly T[]) => list[Math.floor(next() * list.length)],
+  };
 }
 
 const C = {
-  land: hex('#efe2c6'),
-  landDot: hex('#e6d6b6'),
-  street: hex('#fbf5e8'),
-  lane: hex('#f6ecd8'),
-  water: hex('#8fc1d8'),
-  waterLight: hex('#b9dbe9'),
-  waterDark: hex('#6fa6c0'),
-  bank: hex('#c9b89a'),
-  outline: hex('#3b2433'),
+  outline: hex('#4a2a22'),
+  cobble: hex('#cdbfa8'),
+  cobbleDark: hex('#b9aa91'),
+  square: hex('#ddd0b8'),
+  squareLine: hex('#c9b99c'),
+  courtyard: hex('#8fae6a'),
+  courtyardDark: hex('#7a9a58'),
+  tree: hex('#4f8f45'),
+  treeDark: hex('#3a6e33'),
+  treeLight: hex('#7fb069'),
+  water: hex('#5f98b5'),
+  waterLight: hex('#86b8cf'),
+  waterDark: hex('#4b8099'),
+  quay: hex('#a89c8a'),
+  quayDark: hex('#8f8374'),
+  window: hex('#4a4656'),
+  windowLit: hex('#6d6a7c'),
+  door: hex('#5a3a28'),
   brick: hex('#a9472f'),
   brickDark: hex('#7a3322'),
-  roofGreen: hex('#4f6f63'),
-  window: hex('#fdf6e3'),
+  brickRoof: hex('#8c3b26'),
+  copper: hex('#5f8f7a'),
   gold: hex('#d9a92b'),
-  gateTan: hex('#c98f5a'),
-  wood: hex('#4a3426'),
+  timber: hex('#4a3426'),
   sail: hex('#fdf6e3'),
-  houses: ['#e9a23b', '#b5452f', '#5d8aa8', '#e4c9a0', '#7a9e6b', '#d98c6a', '#c9b458'].map(hex),
-  heart: hex('#d9412b'),
+  hull: hex('#6b3d24'),
+  stone: hex('#d8cdb8'),
 };
 
-/** Streets running east–west: pixel row of their middle and where they start and end. */
-const STREETS = [
-  { y: 116, x0: 7, x1: 220 }, // Długa and Długi Targ
-  { y: 149, x0: 7, x1: 220 }, // Ogarna
-  { y: 49, x0: 7, x1: 123 }, // Piwna
-  { y: 44, x0: 137, x1: 220 }, // Mariacka
+/** Wall colours and roof tiles, as in the photo: cream, white, pink, ochre under red-orange tiles. */
+const WALLS = ['#f1e4c9', '#f8f2e6', '#ecc9b4', '#e3c27a', '#d9a27f', '#d6dcd2', '#e9d3a6', '#c97a5a', '#f3dcc0', '#bfcfd6'].map(hex);
+const ROOFS = ['#c45a32', '#b34a2a', '#d06a3a', '#a8432a', '#cf7444', '#9c3f26'].map(hex);
+
+type Gable = 'pointed' | 'stepped' | 'curved' | 'flat';
+
+interface Building {
+  x0: number;
+  x1: number;
+  /** Ground footprint, north to south. */
+  y0: number;
+  y1: number;
+  /** How tall the front wall stands. */
+  height: number;
+  wall: Rgb;
+  roof: Rgb;
+  /** A gabled townhouse front facing the street, or a plain back wall. */
+  gable: Gable | null;
+  /** The roof ridge runs along the street (eaves to the street) instead of towards it. */
+  eaves?: boolean;
+  windows: boolean;
+}
+
+function fill(img: Pixels, x0: number, y0: number, x1: number, y1: number, c: Rgb): void {
+  for (let y = Math.max(0, y0); y < Math.min(MAP_HEIGHT, y1); y++) for (let x = Math.max(0, x0); x < Math.min(MAP_WIDTH, x1); x++) img.set(x, y, c);
+}
+
+/**
+ * One building, seen from the south at an angle: its roof (the footprint lifted by its height)
+ * and its south wall. Townhouses have their gable to the street, so the roof ridge runs north–south.
+ */
+function drawBuilding(img: Pixels, b: Building): void {
+  const roofTop = b.y0 - b.height;
+  const wallTop = b.y1 - b.height;
+  const width = b.x1 - b.x0;
+  const ridge = b.x0 + Math.floor(width / 2);
+  const shade = mix(b.roof, C.outline, 0.25);
+  const light = mix(b.roof, hex('#ffffff'), 0.12);
+  // Roof: two slopes either side of the ridge, with a row of tiles every other line.
+  const ridgeRow = roofTop + Math.floor((wallTop - roofTop) / 2);
+  for (let y = roofTop; y < wallTop; y++) {
+    for (let x = b.x0; x < b.x1; x++) {
+      let c = b.eaves
+        ? y < ridgeRow
+          ? shade
+          : y > ridgeRow
+            ? light
+            : mix(b.roof, hex('#ffffff'), 0.25)
+        : x < ridge
+          ? light
+          : x > ridge
+            ? shade
+            : mix(b.roof, hex('#ffffff'), 0.25);
+      if ((y - roofTop) % 2 === 1 && x !== ridge) c = mix(c, C.outline, 0.08);
+      img.set(x, y, c);
+    }
+  }
+  // Front wall, with windows in rows and a door.
+  fill(img, b.x0, wallTop, b.x1, b.y1, b.wall);
+  if (b.windows && width >= 3) {
+    for (let y = wallTop + 1; y < b.y1 - 2; y += 2) {
+      for (let x = b.x0 + 1; x < b.x1 - 1; x += 2) img.set(x, y, (x + y) % 5 === 0 ? C.windowLit : C.window);
+    }
+    img.set(b.x0 + Math.floor(width / 2), b.y1 - 1, C.door);
+  }
+  // The gable rises above the front wall, in the wall's colour.
+  if (b.gable && width >= 4) {
+    const rise = Math.min(3, Math.floor(width / 2));
+    for (let r = 1; r <= rise; r++) {
+      let inset: number;
+      if (b.gable === 'pointed') inset = r;
+      else if (b.gable === 'stepped') inset = Math.ceil(r / 1.5) + (r === rise ? 1 : 0);
+      else if (b.gable === 'curved') inset = r === rise ? Math.floor(width / 2) - 1 : r - 1;
+      else inset = r === 1 ? 0 : width;
+      fill(img, b.x0 + inset, wallTop - r, b.x1 - inset, wallTop - r + 1, b.wall);
+    }
+  }
+  // Soft outlines: the sides and the bottom of the wall.
+  const edge = mix(b.wall, C.outline, 0.45);
+  for (let y = roofTop; y < b.y1; y++) {
+    img.set(b.x0, y, mix(img.get(b.x0, y) ?? edge, C.outline, 0.35));
+    img.set(b.x1 - 1, y, mix(img.get(b.x1 - 1, y) ?? edge, C.outline, 0.35));
+  }
+  fill(img, b.x0, b.y1 - 1, b.x1, b.y1, mix(b.wall, C.outline, 0.3));
+}
+
+function drawTree(img: Pixels, cx: number, cy: number, r: number): void {
+  img.set(cx, cy + 1, C.timber);
+  for (let y = -r; y <= r; y++) {
+    for (let x = -r; x <= r; x++) {
+      const d = x * x + y * y;
+      if (d > r * r + 1) continue;
+      const c = d > r * r - r ? C.treeDark : x + y < -1 ? C.treeLight : C.tree;
+      img.set(cx + x, cy - r + y, c);
+    }
+  }
+}
+
+// ---------- The plan of the town (in map pixels) ----------
+
+/** North–south lanes: their middle and width. */
+const LANES = [
+  { x: 65, w: 5 },
+  { x: 121, w: 5 },
+  { x: 167, w: 6 },
+  { x: 212, w: 5 },
 ];
-const LANES = [77, 137, 190];
-const WATERFRONT = 222;
+const QUAY = { x0: 252, x1: 264 };
+const RIVER = { x0: 264, x1: 279 };
+const NEW_RIVER = { x0: 322, x1: MAP_WIDTH };
 
-/** Where the Motława's middle is at a given row (it bends a little). */
-const riverAt = (py: number) => 244 - 3 * Math.sin((py / MAP_HEIGHT) * Math.PI * 1.6);
-const RIVER_HALF = 7;
-const NEW_RIVER = 297;
+interface Street {
+  x0: number;
+  x1: number;
+  y: number;
+  w: number;
+}
+const STREETS: Street[] = [
+  { x0: 0, x1: QUAY.x0, y: 8, w: 5 },
+  { x0: 0, x1: 167, y: 54, w: 7 }, // Piwna
+  { x0: 167, x1: QUAY.x0, y: 46, w: 7 }, // Mariacka
+  { x0: 0, x1: QUAY.x0, y: 88, w: 5 },
+  { x0: 0, x1: 167, y: 128, w: 9 }, // Długa
+  { x0: 167, x1: QUAY.x0, y: 128, w: 15 }, // Długi Targ, the market square
+  { x0: 0, x1: QUAY.x0, y: 166, w: 7 }, // Ogarna
+];
 
-function fillRect(img: Pixels, x0: number, y0: number, x1: number, y1: number, c: Rgb): void {
-  for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) img.set(x, y, c);
+/** St. Mary's sits in the block north of Piwna. */
+const CHURCH = { x0: 72, x1: 162, y0: 22, y1: 50 };
+
+function streetAt(x: number, y: number): Street | undefined {
+  return STREETS.find((s) => x >= s.x0 && x < s.x1 && Math.abs(y - s.y) <= s.w / 2);
 }
 
-/** A gabled house front, its base on row `base`. */
-function house(img: Pixels, x: number, base: number, i: number): void {
-  const colour = C.houses[i % C.houses.length];
-  const h = 5 + (i % 3);
-  for (let y = base - h; y < base; y++) for (let dx = 0; dx < 6; dx++) img.set(x + dx, y, colour);
-  for (let r = 0; r < 3; r++) for (let dx = r; dx < 6 - r; dx++) img.set(x + dx, base - h - 1 - r, colour);
-  img.set(x + 2, base - h + 1, C.window);
-  img.set(x + 3, base - h + 1, C.window);
-  // Outline: sides, roof slopes and the base.
-  for (let y = base - h - 1; y <= base; y++) {
-    img.set(x - 1, y, C.outline);
-    img.set(x + 6, y, C.outline);
+/** The blocks of houses: everything between streets and lanes. */
+function blocks(): { x0: number; x1: number; y0: number; y1: number }[] {
+  // How far each lane wanders sideways in each row of blocks (medieval streets are never straight).
+  const wander = (lane: number, row: number) => [0, 2, -2, 1, -1, 3, -3][(lane * 5 + row * 3) % 7];
+  const result: { x0: number; x1: number; y0: number; y1: number }[] = [];
+  for (let c = 0; c <= LANES.length; c++) {
+    const baseMid = ((c === 0 ? 0 : LANES[c - 1].x) + (c === LANES.length ? QUAY.x0 : LANES[c].x)) / 2;
+    const across = STREETS.filter((s) => baseMid >= s.x0 && baseMid < s.x1).sort((a, b) => a.y - b.y);
+    const bands: [number, number][] = [];
+    let top = 0;
+    for (const s of across) {
+      bands.push([top + 1, Math.floor(s.y - s.w / 2)]);
+      top = Math.ceil(s.y + s.w / 2);
+    }
+    bands.push([top + 1, MAP_HEIGHT + 4]);
+    bands.forEach(([y0, y1], row) => {
+      const left = c === 0 ? 0 : LANES[c - 1].x + Math.ceil(LANES[c - 1].w / 2) + wander(c - 1, row);
+      const right = c === LANES.length ? QUAY.x0 : LANES[c].x - Math.ceil(LANES[c].w / 2) + wander(c, row);
+      result.push({ x0: left + 1, x1: right - 1, y0, y1 });
+    });
   }
-  for (let r = 0; r < 4; r++) {
-    img.set(x - 1 + r, base - h - 1 - r, C.outline);
-    img.set(x + 6 - r, base - h - 1 - r, C.outline);
-  }
-}
-
-function inRiver(px: number, py: number): boolean {
-  return Math.abs(px - riverAt(py)) <= RIVER_HALF || px >= NEW_RIVER - 6;
+  return result;
 }
 
 /** The whole map, drawn once. */
 export function drawOldTown(): Pixels {
   const img = new Pixels(MAP_WIDTH, MAP_HEIGHT);
+  const rnd = random(1997);
 
-  // Land, with a little texture.
+  // Cobbles everywhere first; the buildings cover most of it.
   for (let y = 0; y < MAP_HEIGHT; y++) {
-    for (let x = 0; x < MAP_WIDTH; x++) img.set(x, y, (x * 7 + y * 13) % 23 === 0 ? C.landDot : C.land);
+    for (let x = 0; x < MAP_WIDTH; x++) {
+      const street = streetAt(x, y);
+      const onSquare = street && street.w > 10;
+      const c = onSquare
+        ? (x + y * 2) % 9 === 0
+          ? C.squareLine
+          : C.square
+        : (x * 3 + y * 7) % 11 === 0
+          ? C.cobbleDark
+          : C.cobble;
+      img.set(x, y, c);
+    }
   }
-  // Lanes, streets and the waterfront.
-  for (const lx of LANES) fillRect(img, lx - 1, 0, lx + 2, MAP_HEIGHT, C.lane);
-  for (const s of STREETS) fillRect(img, s.x0, s.y - 3, s.x1, s.y + 4, C.street);
-  fillRect(img, WATERFRONT - 3, 0, WATERFRONT + 4, MAP_HEIGHT, C.street);
 
-  // Houses along both sides of every street, leaving gaps for the lanes and landmarks.
-  let i = 0;
-  const busy = (x: number, y: number) =>
-    LANES.some((lane) => Math.abs(x + 3 - lane) < 5) || (x > 92 && x < 142 && y < 40) || (x > 208 && y > 95 && y < 125);
-  for (const s of STREETS) {
-    for (let x = s.x0 + 1; x + 6 < s.x1; x += 8) {
-      for (const base of [s.y - 4, s.y + 13]) {
-        if (busy(x, base)) continue;
-        house(img, x, base, i++ * 5 + Math.floor(x / 8));
+  // The quay, the rivers and Granary Island.
+  fill(img, QUAY.x0, 0, QUAY.x1, MAP_HEIGHT, C.quay);
+  for (let y = 0; y < MAP_HEIGHT; y += 3) img.set(QUAY.x0 + (y % 6 === 0 ? 3 : 8), y, C.quayDark);
+  for (const river of [RIVER, NEW_RIVER]) {
+    for (let y = 0; y < MAP_HEIGHT; y++) {
+      for (let x = river.x0; x < river.x1; x++) {
+        const k = (x * 5 + y * 3) % 19;
+        img.set(x, y, k === 0 ? C.waterLight : k === 7 ? C.waterDark : C.water);
+      }
+      img.set(river.x0, y, C.quayDark);
+    }
+  }
+  fill(img, RIVER.x1, 0, NEW_RIVER.x0, MAP_HEIGHT, C.courtyardDark);
+
+  const buildings: Building[] = [];
+  const trees: { x: number; y: number; r: number }[] = [];
+
+  // Every block: townhouses along its south side (fronts to the street), a row along its north
+  // side (we see their roofs and back walls), and a green courtyard with trees in between.
+  for (const block of blocks()) {
+    const overlapsChurch = block.x1 > CHURCH.x0 && block.x0 < CHURCH.x1 && block.y1 > CHURCH.y0 && block.y0 < CHURCH.y1;
+    const depth = block.y1 - block.y0;
+    if (depth < 6 || block.x1 - block.x0 < 4) continue;
+    fill(img, block.x0, block.y0, block.x1, Math.min(block.y1, MAP_HEIGHT), C.courtyard);
+    const rowDepth = Math.min(7, Math.floor(depth / 2));
+    for (const side of ['south', 'north'] as const) {
+      if (overlapsChurch && side === 'north') continue;
+      let x = block.x0;
+      while (x < block.x1 - 2) {
+        const w = Math.min(rnd.int(4, 7), block.x1 - x);
+        if (overlapsChurch && x + w > CHURCH.x0 - 2 && x < CHURCH.x1 + 2) {
+          x += w;
+          continue;
+        }
+        const setback = rnd.int(0, 1);
+        const d = rowDepth - rnd.int(0, 2);
+        const height = side === 'south' ? rnd.int(6, 9) : rnd.int(5, 7);
+        buildings.push(
+          side === 'south'
+            ? {
+                x0: x,
+                x1: x + w,
+                y0: block.y1 - setback - d,
+                y1: block.y1 - setback,
+                height,
+                wall: rnd.pick(WALLS),
+                roof: rnd.pick(ROOFS),
+                gable: rnd.pick(['pointed', 'stepped', 'curved', 'pointed', 'flat'] as const),
+                windows: true,
+              }
+            : {
+                x0: x,
+                x1: x + w,
+                y0: block.y0 + setback,
+                y1: block.y0 + setback + d,
+                height,
+                wall: mix(rnd.pick(WALLS), C.outline, 0.12),
+                roof: rnd.pick(ROOFS),
+                gable: null,
+                windows: true,
+              },
+        );
+        x += w;
+      }
+    }
+    // Trees in the courtyard, if there's room.
+    if (depth > rowDepth * 2 + 6 && !overlapsChurch) {
+      for (let tx = block.x0 + 4; tx < block.x1 - 3; tx += rnd.int(6, 10)) {
+        trees.push({ x: tx, y: block.y0 + rowDepth + Math.floor((depth - rowDepth * 2) / 2) + 2, r: rnd.int(2, 3) });
       }
     }
   }
 
-  // St. Mary's: a huge brick church with a square tower.
-  fillRect(img, 97, 3, 108, 33, C.brick);
-  fillRect(img, 108, 15, 139, 33, C.brick);
-  fillRect(img, 108, 12, 139, 15, C.roofGreen);
-  for (const wx of [113, 120, 127, 134]) fillRect(img, wx, 19, wx + 2, 27, C.window);
-  fillRect(img, 101, 8, 104, 12, C.window);
-  outlineBox(img, 97, 3, 108, 33);
-  outlineBox(img, 108, 12, 139, 33);
-
-  // The Neptune Fountain on Długi Targ.
-  for (let y = -3; y <= 3; y++) for (let x = -3; x <= 3; x++) if (x * x + y * y <= 10) img.set(170 + x, 117 + y, C.waterLight);
-  for (let y = 112; y < 118; y++) img.set(170, y, C.gold);
-  img.set(168, 113, C.gold);
-  img.set(172, 113, C.gold);
-  img.set(169, 114, C.gold);
-  img.set(171, 114, C.gold);
-
-  // The Green Gate, where Długi Targ meets the river.
-  fillRect(img, 212, 103, 226, 122, C.gateTan);
-  fillRect(img, 212, 100, 226, 103, C.roofGreen);
-  fillRect(img, 217, 114, 221, 122, C.brickDark);
-  outlineBox(img, 212, 100, 226, 122);
-
-  // The rivers, with a little shimmer, and Granary Island between them.
-  for (let y = 0; y < MAP_HEIGHT; y++) {
-    for (let x = 0; x < MAP_WIDTH; x++) {
-      if (!inRiver(x, y)) continue;
-      const shimmer = (x * 3 + y * 5) % 17;
-      img.set(x, y, shimmer === 0 ? C.waterLight : shimmer === 9 ? C.waterDark : C.water);
-    }
-    const left = Math.round(riverAt(y) - RIVER_HALF - 1);
-    const right = Math.round(riverAt(y) + RIVER_HALF + 1);
-    img.set(left, y, C.bank);
-    img.set(right, y, C.bank);
-    img.set(NEW_RIVER - 7, y, C.bank);
-  }
-  // A street on the island and its brick granaries.
-  fillRect(img, 268, 0, 271, MAP_HEIGHT, C.street);
-  for (const gy of [14, 50, 86, 142]) {
-    for (const gx of [256, 274]) {
-      fillRect(img, gx, gy, gx + 10, gy + 14, C.brick);
-      for (let r = 0; r < 5; r++) fillRect(img, gx + r, gy - 1 - r, gx + 10 - r, gy - r, C.brickDark);
-      fillRect(img, gx + 4, gy + 8, gx + 6, gy + 14, C.brickDark);
-      outlineBox(img, gx, gy, gx + 10, gy + 14);
+  // Wide houses sometimes turn their long side to the street.
+  for (const b of buildings) {
+    if (b.gable && b.x1 - b.x0 >= 6 && (b.x0 * 7 + b.y1) % 4 === 0) {
+      b.eaves = true;
+      b.gable = null;
     }
   }
+  // Trees along the quay.
+  for (let y = 12; y < MAP_HEIGHT; y += 23) if (y < 60 || y > 84) trees.push({ x: QUAY.x1 - 3, y, r: 2 });
 
-  // Żuraw, the medieval Crane, on the waterfront.
-  fillRect(img, 229, 58, 237, 78, C.wood);
-  for (let r = 0; r < 4; r++) fillRect(img, 229 + r, 57 - r, 237 - r, 58 - r, C.wood);
-  for (const cx of [228, 238]) for (let y = -3; y <= 3; y++) for (let x = -3; x <= 3; x++) if (x * x + y * y <= 10) img.set(cx + x, 80 + y, C.brick);
+  // Granary Island: tall brick granaries with stepped gables, and trees.
+  for (const gy of [30, 70, 110, 150, 190]) {
+    for (let gx = RIVER.x1 + 3; gx < NEW_RIVER.x0 - 8; gx += 11) {
+      buildings.push({ x0: gx, x1: gx + 9, y0: gy - 12, y1: gy, height: 9, wall: rnd.pick([C.brick, C.brickDark, hex('#b5523a')]), roof: C.brickRoof, gable: 'stepped', windows: true });
+    }
+    trees.push({ x: NEW_RIVER.x0 - 4, y: gy - 16, r: 2 });
+  }
 
-  // A little boat on the Motława.
-  const bx = Math.round(riverAt(124));
-  fillRect(img, bx - 4, 125, bx + 4, 127, C.wood);
-  for (let r = 0; r < 6; r++) fillRect(img, bx, 119 + r, bx + 1 + Math.floor(r / 2), 120 + r, C.sail);
+  // Draw everything from north to south, so nearer things cover those behind.
+  const items: { y: number; draw: () => void }[] = [
+    ...buildings.map((b) => ({ y: b.y1, draw: () => drawBuilding(img, b) })),
+    ...trees.map((t) => ({ y: t.y, draw: () => drawTree(img, t.x, t.y, t.r) })),
+    { y: CHURCH.y1, draw: () => drawStMarys(img) },
+    { y: 124, draw: () => drawTownHall(img) },
+    { y: 138, draw: () => drawGreenGate(img) },
+    { y: 79, draw: () => drawCrane(img) },
+  ];
+  for (const item of items.sort((a, b) => a.y - b.y)) item.draw();
 
-  // A heart beside Mariacka.
-  const heart = ['.rr.rr.', 'rrrrrrr', 'rrrrrrr', '.rrrrr.', '..rrr..', '...r...'];
-  heart.forEach((row, y) => [...row].forEach((c, x) => c === 'r' && img.set(150 + x, 26 + y, C.heart)));
+  drawNeptune(img, 196, 131);
+  drawBoat(img, 271, 104);
+  drawBoat(img, 270, 172);
   return img;
 }
 
-function outlineBox(img: Pixels, x0: number, y0: number, x1: number, y1: number): void {
-  for (let x = x0 - 1; x <= x1; x++) {
-    img.set(x, y0 - 1, C.outline);
-    img.set(x, y1, C.outline);
+// ---------- Landmarks ----------
+
+/** St. Mary's: a huge brick hall church under a steep roof, with its massive square tower. */
+function drawStMarys(img: Pixels): void {
+  const { x0, x1, y0, y1 } = CHURCH;
+  drawBuilding(img, { x0: x0 + 16, x1, y0, y1, height: 16, wall: C.brick, roof: C.brickRoof, gable: null, windows: false });
+  // Tall pointed windows along the nave.
+  for (let x = x0 + 20; x < x1 - 3; x += 6) fill(img, x, y1 - 13, x + 2, y1 - 3, C.brickDark);
+  // Little gables along the roof, like the real one.
+  for (let x = x0 + 22; x < x1 - 4; x += 12) {
+    for (let r = 0; r < 4; r++) fill(img, x + r, y0 - 16 - r, x + 8 - r, y0 - 15 - r, C.brick);
   }
-  for (let y = y0 - 1; y <= y1; y++) {
-    img.set(x0 - 1, y, C.outline);
-    img.set(x1, y, C.outline);
-  }
+  // The tower: tall and broad, with a dark top and corner turrets.
+  const t = { x0, x1: x0 + 17, y0: y0 + 2, y1 };
+  drawBuilding(img, { ...t, height: 24, wall: C.brick, roof: C.brickDark, gable: null, windows: false });
+  for (let y = t.y1 - 22; y < t.y1 - 2; y += 4) for (const x of [t.x0 + 4, t.x0 + 8, t.x0 + 12]) fill(img, x, y, x + 1, y + 3, C.brickDark);
+  for (const x of [t.x0, t.x0 + 5, t.x0 + 11, t.x1 - 2]) fill(img, x, t.y0 - 28, x + 2, t.y0 - 24, C.brickDark);
+}
+
+/** The Main Town Hall, with its slender spire and a golden figure on top. */
+function drawTownHall(img: Pixels): void {
+  const b = { x0: 150, x1: 162, y0: 116, y1: 124 };
+  drawBuilding(img, { ...b, height: 13, wall: hex('#d9a27f'), roof: C.brickRoof, gable: 'stepped', windows: true });
+  const cx = b.x0 + 6;
+  fill(img, cx - 2, b.y0 - 20, cx + 3, b.y0 - 11, C.brick);
+  fill(img, cx - 1, b.y0 - 26, cx + 2, b.y0 - 20, C.copper);
+  fill(img, cx, b.y0 - 31, cx + 1, b.y0 - 26, C.copper);
+  img.set(cx, b.y0 - 32, C.gold);
+}
+
+/** The Green Gate across the end of Długi Targ, by the river. */
+function drawGreenGate(img: Pixels): void {
+  const b = { x0: 236, x1: 252, y0: 131, y1: 138 };
+  drawBuilding(img, { ...b, height: 14, wall: hex('#c98f5a'), roof: C.brickRoof, gable: 'stepped', windows: true });
+  for (const x of [240, 244, 248]) fill(img, x, b.y1 - 4, x + 2, b.y1, C.door);
+}
+
+/** Żuraw, the medieval wooden crane between two brick towers, on the quay. */
+function drawCrane(img: Pixels): void {
+  const b = { x0: 253, x1: 263, y0: 66, y1: 79 };
+  drawBuilding(img, { ...b, height: 8, wall: C.brick, roof: C.brickRoof, gable: null, windows: false });
+  fill(img, b.x0 + 1, b.y0 - 22, b.x1 - 1, b.y0 - 8, C.timber);
+  for (let r = 0; r < 4; r++) fill(img, b.x0 + 1 + r, b.y0 - 23 - r, b.x1 - 1 - r, b.y0 - 22 - r, C.timber);
+  fill(img, b.x1 - 1, b.y0 - 18, b.x1 + 3, b.y0 - 16, C.timber);
+}
+
+function drawNeptune(img: Pixels, cx: number, cy: number): void {
+  for (let y = -2; y <= 2; y++) for (let x = -3; x <= 3; x++) if (x * x + y * y * 2 <= 10) img.set(cx + x, cy + y, x * x + y * y * 2 > 6 ? C.stone : C.waterLight);
+  for (let y = cy - 6; y < cy; y++) img.set(cx, y, C.gold);
+  img.set(cx - 1, cy - 6, C.gold);
+  img.set(cx + 1, cy - 6, C.gold);
+}
+
+function drawBoat(img: Pixels, cx: number, cy: number): void {
+  fill(img, cx - 4, cy, cx + 4, cy + 2, C.hull);
+  for (let r = 0; r < 6; r++) fill(img, cx, cy - 6 + r, cx + 1 + Math.floor(r / 2), cy - 5 + r, C.sail);
+  img.set(cx - 1, cy - 6, C.timber);
 }
 
 // ---------- Street markers ----------
