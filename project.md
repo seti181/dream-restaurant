@@ -492,7 +492,7 @@ Work in small steps, and test each step in the browser before moving on.
 - [x] Art pass, sound, animations (flat SVG art, now the placeholder for the pixel art)
 - [x] Pixel art: choose sources and palette, and approve one sample scene (section 9.1)
 - [x] Pixel art: restaurant view (rooms, furniture, decor, equipment, terrace)
-- [ ] Pixel art: characters (guests, staff, Mewa, special characters) with animations
+- [ ] Pixel art: characters (guests, staff, Mewa, special characters) with animations, and guests walking in and out
 - [ ] Pixel art: Old Town map, food icons and UI icons
 - [ ] Balancing with the simulator plus playtests on the real tablet
 - [ ] Performance check on the tablet
@@ -526,7 +526,6 @@ Work in small steps, and test each step in the browser before moving on.
 - Should the player choose a restaurant concept at the start (e.g. Polish tavern vs bistro) or build it freely? The current plan is free-form with no fixed concept.
 - Portrait support ever? The current plan is landscape only.
 - How much text-based humour is wanted in reviews and events? More is more fun, but also more writing.
-- **Pixel art:** should guests visibly walk in through the door to their table and back out, instead of appearing at the table? It suits the sprite style, but it's new (purely visual; the simulation is unchanged).
 
 ## 16. Decision log
 
@@ -556,3 +555,4 @@ Work in small steps, and test each step in the browser before moving on.
 - 2026-10-01: Art direction changes to cozy pixel art with 2D sprites, based on three reference images (a chibi character sheet, an isometric pixel-art kitchen kit, and an AI-generated cozy isometric restaurant used for mood only). The flat SVG art stays as the placeholder until the pixel art replaces it. Details in section 9.1.
 - 2026-10-01: Pixel-art sample scene approved ("spot on"). The pixel art is drawn for this game in code (scripts/pixel/), so there are no licence questions. Rooms are isometric, characters are chibi sprites in the style of reference 1. The sample is kept in art/sample/.
 - 2026-10-01: The pixel art is drawn by the game in code at runtime (no PNG files shipped). Each street's room size comes from its seats (3 or 4 columns of tables, 2 or 3 rows); every table has four chairs; the open kitchen sits in the far corner; the terrace is a cobbled strip in front with planters. Scaling stays crisp (whole device pixels) unless that would make a big room much smaller.
+- 2026-10-01: Guests visibly walk in through the door to their table, and back out when they leave (purely visual; the simulation is unchanged).
