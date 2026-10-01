@@ -196,14 +196,6 @@ button {
 
 /* ---------- The day ---------- */
 
-.big-clock {
-  font-size: 5rem;
-  font-weight: 800;
-  text-align: center;
-  color: var(--brick);
-  font-variant-numeric: tabular-nums;
-}
-
 .day-progress {
   height: 16px;
   margin: 8px 0 24px;
@@ -1106,4 +1098,122 @@ h2.spaced {
   max-width: 640px;
   margin: 0 auto;
   text-align: left;
+}
+
+/* ---------- Restaurant view (day screen) ---------- */
+
+.day-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: min(1200px, 100%);
+  max-height: 100%;
+  padding: 20px 28px;
+}
+
+.day-status {
+  width: 120px;
+  margin: 0;
+}
+
+.day-header {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.day-header .stats {
+  flex: 1;
+  gap: 10px;
+}
+
+.day-header .stat {
+  padding: 8px;
+}
+
+.day-header .stat strong {
+  font-size: 1.5rem;
+}
+
+.day-card .day-progress {
+  margin: 0;
+  height: 10px;
+}
+
+.scene-wrap {
+  position: relative;
+}
+
+.scene-wrap .paused {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
+  padding: 8px 18px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.restaurant-view {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 60vh;
+  border-radius: 16px;
+  background: var(--sand);
+}
+
+.restaurant-view .wall { fill: #f6e3c4; }
+.restaurant-view .wainscot { fill: #c9895a; }
+.restaurant-view .floorboards { fill: #d9a86c; }
+.restaurant-view .door { fill: #8a5233; stroke: #6b3d24; stroke-width: 3; }
+.restaurant-view .window-sky { fill: #bfe0f0; }
+.restaurant-view .window-frame { fill: none; stroke: #7a4a2c; stroke-width: 6; }
+.restaurant-view .window-bar { stroke: #7a4a2c; stroke-width: 4; }
+.restaurant-view .house-window { fill: #fdf6e3; }
+.restaurant-view .terrace-sky { fill: #cfe8f3; }
+.restaurant-view .cobbles { fill: #b9ada0; }
+.restaurant-view .awning { fill: var(--brick); }
+.restaurant-view .awning.light { fill: #fdf6e3; }
+.restaurant-view .kitchen-wall { fill: #e8f0f2; }
+.restaurant-view .kitchen-floor { fill: #c7d3d8; }
+.restaurant-view .partition { fill: #8a5233; }
+.restaurant-view .rail { stroke: #7d8a90; stroke-width: 3; }
+.restaurant-view .ticket { fill: #ffffff; stroke: #b9c3c7; }
+.restaurant-view .stove { fill: #5d666b; }
+.restaurant-view .pot { fill: #9aa4a9; }
+.restaurant-view .chef-hat { fill: #ffffff; stroke: #c9d1d4; }
+.restaurant-view .steam { fill: none; stroke: #9aa4a9; stroke-width: 3; stroke-linecap: round; opacity: 0.8; }
+.restaurant-view .tray { fill: #c9d1d4; stroke: #7d8a90; }
+.restaurant-view .chair { fill: #8a5233; }
+.restaurant-view .table { fill: #a8673f; stroke: #7a4a2c; stroke-width: 2; }
+.restaurant-view .table.outdoor { fill: #f1e6d2; stroke: #b9ada0; }
+.restaurant-view .plate { fill: #ffffff; stroke: #d8cbb6; }
+.restaurant-view .bubble rect { fill: #ffffff; stroke: #d8cbb6; stroke-width: 2; }
+.restaurant-view .scene-emoji { font-size: 20px; text-anchor: middle; }
+.restaurant-view .small-emoji { font-size: 15px; }
+.restaurant-view .scene-label { font-size: 20px; font-weight: 700; fill: var(--ink); text-anchor: middle; opacity: 0.7; }
+.restaurant-view .scene-note { font-size: 16px; fill: var(--brick); text-anchor: middle; font-weight: 600; }
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.9rem;
+}
+
+.legend li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
 }

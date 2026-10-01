@@ -23,11 +23,14 @@ import {
   tablesNeeded,
 } from './service';
 import type { DayConditions, Party, PartyOutcome, Restaurant, SatisfactionFactors } from './types';
+import type { GroupId } from '../data/groups';
 
 /** A party sitting in a restaurant. Only exists during the day, so it is never saved. */
 interface Visit {
   party: Party;
   tablesUsed: number;
+  /** Which tables they sit at: inside tables first, then the terrace. */
+  tables: number[];
   order: MenuDish[];
   seatedAt: number;
   /** When the order reaches the kitchen. */
@@ -39,6 +42,15 @@ interface Visit {
   quality: number;
   eating: boolean;
   leaveAt: number;
+  /** How the meal went (0–100), once the food has arrived. */
+  satisfaction: number | null;
+}
+
+/** A party that gave up and left, remembered briefly so the restaurant view can show them going. */
+interface Walkout {
+  group: GroupId;
+  size: number;
+  minute: number;
 }
 
 /** What is happening inside one restaurant right now. */
@@ -49,6 +61,7 @@ interface Floor {
   queue: Visit[];
   /** When each chef finishes their current order. */
   chefFreeAt: number[];
+  walkouts: Walkout[];
 }
 
 export interface DayResult {
@@ -189,6 +202,7 @@ function progressRestaurant(
         review: maybeReview(rng, restaurant, visit, factors, satisfaction),
       });
       visit.eating = true;
+      visit.satisfaction = satisfaction;
       visit.leaveAt = visit.readyAt! + balance.service.eatingMinutes;
     } else if (!readyInTime && giveUpAt <= minute) {
       // Out of patience: they walk out.
@@ -209,6 +223,7 @@ function progressRestaurant(
         factors: null,
         review: maybeReview(rng, restaurant, visit, null, satisfaction),
       });
+      floor.walkouts.push({ group: party.group, size: party.size, minute });
       leave();
     }
   }
@@ -261,6 +276,7 @@ export function startDay(
       visits: [],
       queue: [],
       chefFreeAt: r.chefs.map(() => 0),
+      walkouts: [],
     })),
     outcomes: [],
     conditions,
@@ -284,9 +300,12 @@ function seat(
     return;
   }
   floor.freeTables -= tablesUsed;
+  const taken = new Set(floor.visits.flatMap((v) => v.tables));
+  const tables = [...Array(allTables(restaurant)).keys()].filter((t) => !taken.has(t)).slice(0, tablesUsed);
   floor.visits.push({
     party,
     tablesUsed,
+    tables,
     order: chooseOrder(rng, restaurant, party, minute, progress.conditions.weather),
     seatedAt: minute,
     orderedAt: minute + orderMinutes(restaurant, allTables(restaurant) - floor.freeTables),
@@ -295,6 +314,7 @@ function seat(
     quality: 0,
     eating: false,
     leaveAt: 0,
+    satisfaction: null,
   });
 }
 
@@ -354,4 +374,72 @@ export function runDay(
   const progress = startDay(day, restaurants, conditions);
   while (!progress.done) stepDay(rng, progress);
   return { restaurants: progress.restaurants, outcomes: progress.outcomes };
+}
+
+// ---------- What the restaurant view shows ----------
+
+export type GuestStage = 'ordering' | 'waiting' | 'eating';
+
+export interface TableGuests {
+  group: GroupId;
+  /** People at this table (a big party spreads over two tables). */
+  seated: number;
+  stage: GuestStage;
+  /** How much of their patience they've used up so far, 0–1. */
+  impatience: number;
+  /** How the meal went (0–100), once the food has arrived. */
+  satisfaction: number | null;
+  /** Minutes since the food arrived. */
+  eatingFor: number;
+  critic: boolean;
+}
+
+export interface FloorView {
+  /** Inside tables first, then terrace tables; null for an empty table. */
+  tables: (TableGuests | null)[];
+  insideTables: number;
+  /** For each chef: busy cooking right now? */
+  chefsBusy: boolean[];
+  waiters: number;
+  /** Orders waiting for a free chef. */
+  ordersWaiting: number;
+  /** Parties that walked out in the last few minutes. */
+  walkouts: { group: GroupId; size: number }[];
+}
+
+/** A snapshot of one restaurant for the restaurant view. Reads the day; changes nothing. */
+export function floorView(progress: DayInProgress, index: number, recentMinutes = 10): FloorView {
+  const restaurant = progress.restaurants[index];
+  const floor = progress.floors[index];
+  const minute = minuteOfDay(Math.max(0, progress.tick - 1));
+  const tables: (TableGuests | null)[] = Array(allTables(restaurant)).fill(null);
+
+  for (const visit of floor.visits) {
+    const { party } = visit;
+    const patience = GROUPS[party.group].patienceMinutes;
+    const stage: GuestStage = visit.eating ? 'eating' : minute < visit.orderedAt ? 'ordering' : 'waiting';
+    visit.tables.forEach((table, i) => {
+      if (table >= tables.length) return;
+      tables[table] = {
+        group: party.group,
+        seated: Math.min(balance.service.seatsPerTable, party.size - i * balance.service.seatsPerTable),
+        stage,
+        impatience: visit.eating ? 0 : Math.min(1, (minute - visit.seatedAt) / patience),
+        satisfaction: visit.satisfaction,
+        eatingFor: visit.eating && visit.readyAt !== null ? minute - visit.readyAt : 0,
+        critic: party.critic ?? false,
+      };
+    });
+  }
+
+  return {
+    tables,
+    insideTables: restaurant.tables,
+    chefsBusy: floor.chefFreeAt.map((freeAt) => freeAt > minute),
+    waiters: restaurant.waiters.length,
+    ordersWaiting: floor.queue.length,
+    walkouts: floor.walkouts
+      .filter((w) => minute - w.minute < recentMinutes)
+      .map(({ group, size }) => ({ group, size })),
+  };
 }

@@ -12,6 +12,7 @@ import type { TipId } from '../data/mewa';
 import { importSaveCode, loadGame, saveGame } from '../save/save';
 import * as actions from '../sim/actions';
 import { minuteOfDay } from '../sim/clock';
+import { floorView, type FloorView } from '../sim/day';
 import {
   closeDay,
   newGame,
@@ -51,6 +52,8 @@ export interface LiveDay extends DayTally {
   minute: number;
   /** True after 22:00, while the last guests finish. */
   closing: boolean;
+  /** Who is sitting where, for the restaurant view. */
+  floor: FloorView;
 }
 
 interface GameStore {
@@ -102,6 +105,7 @@ function liveFrom(openDay: OpenDay): LiveDay {
     ...tallyFor(progress.outcomes, 'player'),
     minute,
     closing: minute >= balance.clock.closeMinute,
+    floor: floorView(progress, 0),
   };
 }
 

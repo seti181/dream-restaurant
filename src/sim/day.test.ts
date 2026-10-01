@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { MenuDish } from '../data/dishes';
 import { RIVAL_IDS } from '../data/rivals';
-import { runDay } from './day';
+import { floorView, runDay, startDay, stepDay } from './day';
+import { newGame, playerOf } from './game';
 import { createRng } from './rng';
 import { createPlayerRestaurant, createRivalRestaurant } from './setup';
 import type { PartyOutcome, Staff } from './types';
@@ -77,5 +78,32 @@ describe('a full day', () => {
     const restaurants = oldTown();
     const { restaurants: after } = runDay(createRng(10), 2, restaurants);
     expect(after[0].reputation).not.toEqual(restaurants[0].reputation);
+  });
+});
+
+describe('the restaurant view', () => {
+  it('seats every party at its own tables, never two parties at one table', () => {
+    const state = newGame(31);
+    const progress = startDay(state.day, state.restaurants);
+    const rng = createRng(31);
+    let sawGuests = false;
+    while (!progress.done) {
+      stepDay(rng, progress);
+      const view = floorView(progress, 0);
+      expect(view.tables).toHaveLength(view.insideTables + playerOf(state).terraceTables);
+      const seated = view.tables.filter((t) => t !== null);
+      if (seated.length > 0) sawGuests = true;
+      for (const table of seated) {
+        expect(table!.seated).toBeGreaterThan(0);
+        expect(table!.seated).toBeLessThanOrEqual(4);
+        expect(table!.impatience).toBeGreaterThanOrEqual(0);
+        expect(table!.impatience).toBeLessThanOrEqual(1);
+        if (table!.stage === 'eating') expect(table!.satisfaction).not.toBeNull();
+      }
+      expect(view.chefsBusy).toHaveLength(playerOf(state).chefs.length);
+    }
+    expect(sawGuests).toBe(true);
+    // At closing time everyone has gone home.
+    expect(floorView(progress, 0).tables.every((t) => t === null)).toBe(true);
   });
 });
