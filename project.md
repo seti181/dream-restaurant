@@ -432,7 +432,7 @@ Work in small steps, and test each step in the browser before moving on.
 
 - [x] Illustrated map and restaurant view
 - [x] Event texts, rival personalities, review lines
-- [ ] Everything from section 10
+- [x] Everything from section 10
 
 **M5 – Polish and balance**
 
@@ -488,3 +488,7 @@ Work in small steps, and test each step in the browser before moving on.
 - 2026-10-01: Staff traits change skill and speed (for example Perfectionist +1 skill −1 speed); a chef's specialty adds 8 quality. The starter team is Pani Krystyna (chef) and Kacper (waiter), with a stove and 16 seats on ul. Ogarna.
 - 2026-10-01: "Cheap and fast" going bust in week 4 is fine: bad plans should fail.
 - 2026-10-01: Mewa is drawn as a herring gull (white head and body, grey wings with black tips, yellow beak with a red spot, pink legs), in SVG, instead of the 🐦 emoji.
+- 2026-10-01: Secret recipe: Arroz de vitela (spelled the Portuguese way), a strong main hidden in the dish creator until Mewa finds the recipe card, at 2 stars or by week 3 at the latest. Its perfect combo is a new extra, a glass of cytrynówka on the side (+20 quality).
+- 2026-10-01: The regular guest comes every Friday at 19:00 and shouts "Give me cytrynówka to my dish!!". With cytrynówka on the menu he writes a 5-star review; without it his review says so (at most 3 stars). Shown as "Pan Cytrynówka, your Friday regular" until a real name is chosen.
+- 2026-10-01: Tomek Graczyk (from week 2): the cheapest waiter (180 zł a day, skill 1, speed 2), but −2 reputation with every group each day he works. Adrian Zabka (from week 3): skill and speed 5, but a 50% chance each morning of not turning up; paid either way. Both return to the candidates every 3 weeks until hired.
+- 2026-10-01: Mariacka cameo: a heart on the map, and "Amber evening on Mariacka" every Saturday 1 June (more foodies and tourists, a crowd on Mariacka).

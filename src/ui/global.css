@@ -1241,3 +1241,12 @@ h2.spaced {
   border-radius: 8px;
   background: #eef4f7;
 }
+
+.old-town-map .map-heart {
+  font-size: 30px;
+  fill: #d9412b;
+  text-anchor: middle;
+  stroke: #fff;
+  stroke-width: 3;
+  paint-order: stroke;
+}

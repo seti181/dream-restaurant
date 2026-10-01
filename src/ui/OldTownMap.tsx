@@ -187,6 +187,11 @@ export function OldTownMap({ selected, onSelect }: { selected: LocationId; onSel
             <text x={x} y={y + 62} className="map-label">
               {name}
             </text>
+            {id === 'mariacka' && (
+              <text x={x - 46} y={y - 22} className="map-heart" aria-hidden="true">
+                ❤
+              </text>
+            )}
             {id === home && (
               <g transform={`translate(${x - 92} ${y - 70})`}>
                 <MewaIcon size={64} />

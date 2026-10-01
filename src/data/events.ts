@@ -18,6 +18,7 @@ export type CalendarEventId =
   | 'easter'
   | 'majowka'
   | 'juwenalia'
+  | 'amberEvening'
   | 'corpusChristi'
   | 'summerHolidays'
   | 'tallShips'
@@ -33,7 +34,7 @@ export interface CalendarEvent {
 }
 
 export const CALENDAR_EVENT_IDS: readonly CalendarEventId[] = [
-  'easter', 'majowka', 'juwenalia', 'corpusChristi', 'summerHolidays', 'tallShips', 'fair', 'cookOff',
+  'easter', 'majowka', 'juwenalia', 'amberEvening', 'corpusChristi', 'summerHolidays', 'tallShips', 'fair', 'cookOff',
 ];
 
 export const CALENDAR_EVENTS: Record<CalendarEventId, CalendarEvent> = {
@@ -57,6 +58,15 @@ export const CALENDAR_EVENTS: Record<CalendarEventId, CalendarEvent> = {
     start: { month: 5, day: 16 },
     end: { month: 5, day: 19 },
     effects: { groups: { students: 2 } },
+  },
+  amberEvening: {
+    name: 'Amber evening on Mariacka',
+    description:
+      'Lanterns, amber stalls and a violinist under the gargoyles. Couples stroll ul. Mariacka hand in hand. ' +
+      'Mewa says it is the most romantic street in Gdańsk, and for once she isn’t joking.',
+    start: { month: 6, day: 1 },
+    end: { month: 6, day: 1 },
+    effects: { groups: { foodies: 1.3, tourists: 1.2 }, locations: { mariacka: 1.8 } },
   },
   corpusChristi: {
     name: 'Corpus Christi long weekend',

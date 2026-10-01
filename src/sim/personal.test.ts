@@ -3,7 +3,8 @@ import type { MenuDish } from '../data/dishes';
 import type { GroupId } from '../data/groups';
 import { REGULAR, SECRET_RECIPE, SPECIAL_STAFF } from '../data/personal';
 import { addDish, dishUnavailableReason } from './actions';
-import { conditionsFor } from './events';
+import { nextDayOn, weekdayOf } from './calendar';
+import { calendarEventsOn, conditionsFor } from './events';
 import { closeDay, newGame, openRestaurant, playerOf, playTick } from './game';
 import { pairingQuality } from './menu';
 import { writeReview } from './reviews';
@@ -118,5 +119,14 @@ describe('Tomek and Adrian', () => {
     }
     expect(absences).toBeGreaterThan(15);
     expect(absences).toBeLessThan(45);
+  });
+});
+
+describe('Mariacka', () => {
+  it('has its amber evening on Saturday 1 June, with a crowd on the street', () => {
+    const june1 = nextDayOn(6, 1, 0);
+    expect(weekdayOf(june1)).toBe(5);
+    expect(calendarEventsOn(june1)).toContain('amberEvening');
+    expect(conditionsFor({ ...newGame(8), day: june1 }).locations.mariacka).toBeGreaterThan(1);
   });
 });
