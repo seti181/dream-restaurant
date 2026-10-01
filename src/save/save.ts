@@ -6,7 +6,7 @@ import { FIRST_GOAL } from '../data/mewa';
 import type { GameState } from '../sim/game';
 import { startGoal } from '../sim/goals';
 
-export const SAVE_VERSION = 4;
+export const SAVE_VERSION = 5;
 const SAVE_KEY = 'old-town-kitchen/save';
 
 interface SaveFile {
@@ -89,6 +89,11 @@ function upgradeFrom3(game: Record<string, unknown>): Record<string, unknown> {
   };
 }
 
+/** Version 4 → 5 (M3 settings): difficulty. Older games were all Normal. */
+function upgradeFrom4(game: Record<string, unknown>): Record<string, unknown> {
+  return { difficulty: 'normal', ...game };
+}
+
 /**
  * Brings a save from any older version up to date, one version at a time.
  * Returns null for saves that can't be understood.
@@ -113,6 +118,40 @@ export function migrate(data: unknown): GameState | null {
     game = upgradeFrom3(game as unknown as Record<string, unknown>);
     version = 4;
   }
+  if (version === 4 && looksLikeGame(game)) {
+    game = upgradeFrom4(game as unknown as Record<string, unknown>);
+    version = 5;
+  }
 
   return looksLikeGame(game) ? game : null;
+}
+
+// ---------- Save codes (backups) ----------
+
+/** Every save code starts with this, so a code from elsewhere is easy to spot. */
+const CODE_PREFIX = 'OTK-';
+
+/**
+ * The whole game as a line of text that can be copied somewhere safe and pasted
+ * back later. It is the save file, packed into letters and digits (base64).
+ */
+export function exportSaveCode(game: GameState): string {
+  const file: SaveFile = { saveVersion: SAVE_VERSION, savedAt: new Date().toISOString(), game };
+  const bytes = new TextEncoder().encode(JSON.stringify(file));
+  let binary = '';
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return CODE_PREFIX + btoa(binary);
+}
+
+/** The game inside a save code, or null if the code isn't a save code or is damaged. */
+export function importSaveCode(code: string): GameState | null {
+  const trimmed = code.trim();
+  if (!trimmed.startsWith(CODE_PREFIX)) return null;
+  try {
+    const binary = atob(trimmed.slice(CODE_PREFIX.length));
+    const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
+    return migrate(JSON.parse(new TextDecoder().decode(bytes)));
+  } catch {
+    return null;
+  }
 }

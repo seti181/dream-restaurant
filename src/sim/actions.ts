@@ -9,7 +9,7 @@ import { GROUP_IDS } from '../data/groups';
 import { LOCATIONS, type LocationId } from '../data/locations';
 import { CAMPAIGNS, type CampaignId } from '../data/marketing';
 import type { TipId } from '../data/mewa';
-import { playerOf, type GameState } from './game';
+import { playerOf, type Difficulty, type GameState } from './game';
 import { dateOf, daysInMonth, nextDayOn } from './calendar';
 import { ambianceWith } from './interior';
 import { recipeKey } from './menu';
@@ -299,4 +299,11 @@ export function dismissTip(state: GameState, tip: TipId): GameState {
 /** Switches all of Mewa's tutorial tips off. */
 export function skipTips(state: GameState): GameState {
   return { ...state, mewa: { ...state.mewa, tipsOff: true } };
+}
+
+// ---------- Settings ----------
+
+/** Relaxed or Normal. Rivals change their manner straight away; starting cash only matters for new games. */
+export function setDifficulty(state: GameState, difficulty: Difficulty): GameState {
+  return { ...state, difficulty };
 }

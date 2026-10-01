@@ -74,17 +74,11 @@ export const balance = {
     awareness: 60,
     /** Share of a price change when a rival nudges prices up or down. */
     priceStep: 0.05,
-    /** Bigger cut when reacting to the player winning their favourite guests. */
-    reactionPriceCut: 0.08,
     /** Rival prices stay between these multiples of their starting prices. */
     minPriceFactor: 0.75,
     maxPriceFactor: 1.3,
-    /** A rival reacts once the player serves this share of the guests the rival serves, among its favourite groups. */
-    playerThreatShare: 0.35,
     /** A rival turning away more than this share of its guests wants more room or higher prices. */
     crowdedShare: 0.15,
-    /** Awareness a promotion adds with the rival's favourite groups (it fades like the player's). */
-    promotionAwareness: 10,
     /** Ambiance an upgrade adds, up to a maximum. */
     upgradeAmbiance: 3,
     maxAmbiance: 90,
@@ -234,9 +228,26 @@ export const balance = {
     candidateLevelWeights: [1, 3, 4, 3, 1],
   },
 
+  /** What changes between Relaxed and Normal. See project.md section 5. */
+  difficulty: {
+    relaxed: {
+      startingCash: 60_000,
+      /** A rival reacts once the player serves this share of the guests it serves, among its favourite groups. */
+      rivalThreatShare: 0.6,
+      /** How far a rival cuts prices when it reacts to the player. */
+      rivalReactionCut: 0.04,
+      /** Awareness a rival's promotion adds with its favourite groups (it fades afterwards). */
+      rivalPromotion: 5,
+    },
+    normal: {
+      startingCash: 40_000,
+      rivalThreatShare: 0.35,
+      rivalReactionCut: 0.08,
+      rivalPromotion: 10,
+    },
+  },
+
   finance: {
-    /** Starting cash on Normal. */
-    startingCash: 40_000,
     /** Paid every Monday, together with the week's rent. */
     weeklyUtilities: 400,
   },

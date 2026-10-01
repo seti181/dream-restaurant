@@ -86,3 +86,16 @@ describe('the rivals’ week', () => {
     expect(rivalAwarenessToday(rival).foodies).toBeGreaterThan(balance.rivals.awareness);
   });
 });
+
+describe('difficulty', () => {
+  it('makes Relaxed rivals slower to react to the player', () => {
+    const nonnasFavourites = favouriteGroups('nonnaRosa');
+    const threat = (difficulty: 'relaxed' | 'normal') => {
+      const state = afterAWeek({ difficulty });
+      state.week.served.player = Object.fromEntries(nonnasFavourites.map((g) => [g, 45]));
+      return planRivalWeek(state, createRng(9)).news[0];
+    };
+    expect(threat('normal')).toBe(RIVALS.nonnaRosa.lines.reactToPlayer);
+    expect(threat('relaxed')).not.toBe(RIVALS.nonnaRosa.lines.reactToPlayer);
+  });
+});

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { newGame, openRestaurant, playTick, closeDay } from '../sim/game';
-import { loadGame, migrate, saveGame, SAVE_VERSION, type SaveStorage } from './save';
+import { exportSaveCode, importSaveCode, loadGame, migrate, saveGame, SAVE_VERSION, type SaveStorage } from './save';
 
 /** A stand-in for the browser's localStorage. */
 function fakeStorage(): SaveStorage & { data: Map<string, string> } {
@@ -100,6 +100,7 @@ describe('upgrading version 1 saves (from before M3)', () => {
       goal: _goal,
       season: _season,
       trophies: _trophies,
+      difficulty: _difficulty,
       ...rest
     } = game;
     const restaurants = game.restaurants.map(
@@ -133,8 +134,18 @@ describe('upgrading version 1 saves (from before M3)', () => {
 
 describe('upgrading version 2 saves (from before weather and events)', () => {
   it('starts a cloudy day with no events or news', () => {
-    const { weather: _w, events: _e, news: _n, week: _k, mewa: _m, goal: _g, season: _s, trophies: _t, ...old } =
-      newGame(31);
+    const {
+      weather: _w,
+      events: _e,
+      news: _n,
+      week: _k,
+      mewa: _m,
+      goal: _g,
+      season: _s,
+      trophies: _t,
+      difficulty: _d,
+      ...old
+    } = newGame(31);
     const upgraded = migrate({ saveVersion: 2, savedAt: '', game: old })!;
     expect(upgraded.weather).toBe('cloudy');
     expect(upgraded.events).toEqual([]);
@@ -146,7 +157,36 @@ describe('upgrading version 2 saves (from before weather and events)', () => {
 describe('upgrading version 3 saves (from before Mewa)', () => {
   it('gives Mewa’s first goal, an empty season and no trophies yet', () => {
     const game = newGame(41);
-    const { mewa: _m, goal: _g, season: _s, trophies: _t, ...old } = game;
+    const { mewa: _m, goal: _g, season: _s, trophies: _t, difficulty: _d, ...old } = game;
     expect(migrate({ saveVersion: 3, savedAt: '', game: old })).toEqual(game);
+  });
+});
+
+describe('upgrading version 4 saves (from before difficulty)', () => {
+  it('treats older games as Normal', () => {
+    const game = newGame(51);
+    const { difficulty: _d, ...old } = game;
+    expect(migrate({ saveVersion: 4, savedAt: '', game: old })).toEqual(game);
+  });
+});
+
+describe('save codes', () => {
+  it('turn a game into text and back again, Polish letters and all', () => {
+    let game = newGame(61);
+    const open = openRestaurant(game);
+    while (!open.progress.done) playTick(open);
+    game = closeDay(game, open).state;
+    const code = exportSaveCode(game);
+    expect(code.startsWith('OTK-')).toBe(true);
+    expect(code).toMatch(/^[A-Za-z0-9+/=-]+$/);
+    expect(importSaveCode(code)).toEqual(game);
+    expect(importSaveCode(`  ${code}\n`)).toEqual(game);
+  });
+
+  it('refuse anything that isn’t a save code', () => {
+    expect(importSaveCode('')).toBeNull();
+    expect(importSaveCode('hello there')).toBeNull();
+    expect(importSaveCode('OTK-this is not base64!!')).toBeNull();
+    expect(importSaveCode(`OTK-${btoa('{"not":"a save"}')}`)).toBeNull();
   });
 });

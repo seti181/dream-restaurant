@@ -61,6 +61,7 @@ function sumGroups(counts: Partial<Record<GroupId, number>> | undefined, groups:
 function planRival(state: GameState, rival: Restaurant, rng: RngState): { rival: Restaurant; news: string } {
   const id = rival.id as RivalId;
   const r = balance.rivals;
+  const calm = balance.difficulty[state.difficulty];
   const favourites = favouriteGroups(id);
   const served = state.week.served[id];
   const theirFavourites = sumGroups(served, favourites);
@@ -71,7 +72,7 @@ function planRival(state: GameState, rival: Restaurant, rng: RngState): { rival:
   const newDish = dueSeasonalDish(rival, state.day);
 
   let move: RivalMove;
-  if (theirFavourites > 0 && playerFavourites >= theirFavourites * r.playerThreatShare) {
+  if (theirFavourites > 0 && playerFavourites >= theirFavourites * calm.rivalThreatShare) {
     move = 'reactToPlayer';
   } else if (totalServed > 0 && turnedAway > totalServed * r.crowdedShare) {
     move = rival.tables < maxTables ? 'upgrade' : 'raisePrices';
@@ -90,7 +91,7 @@ function planRival(state: GameState, rival: Restaurant, rng: RngState): { rival:
   let dishName = '';
   switch (move) {
     case 'reactToPlayer':
-      updated = { ...rival, menu: repriced(rival, 1 - r.reactionPriceCut) };
+      updated = { ...rival, menu: repriced(rival, 1 - calm.rivalReactionCut) };
       break;
     case 'cutPrices':
       updated = { ...rival, menu: repriced(rival, 1 - r.priceStep) };
@@ -108,7 +109,7 @@ function planRival(state: GameState, rival: Restaurant, rng: RngState): { rival:
     }
     case 'promotion': {
       const awareness = { ...rival.awareness };
-      for (const g of favourites) awareness[g] = Math.min(100, awareness[g] + r.promotionAwareness);
+      for (const g of favourites) awareness[g] = Math.min(100, awareness[g] + calm.rivalPromotion);
       updated = { ...rival, awareness };
       break;
     }

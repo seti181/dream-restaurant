@@ -14,7 +14,8 @@ describe('a new game', () => {
   it('starts on day 0 with the starting cash and all five restaurants', () => {
     const state = newGame(1);
     expect(state.day).toBe(0);
-    expect(state.cash).toBe(balance.finance.startingCash);
+    expect(state.cash).toBe(balance.difficulty.normal.startingCash);
+    expect(newGame(1, 'relaxed').cash).toBe(balance.difficulty.relaxed.startingCash);
     expect(state.restaurants).toHaveLength(5);
     expect(playerOf(state).name).toBe(balance.start.name);
     expect(playerOf(state).menu).toHaveLength(balance.start.menu.length);

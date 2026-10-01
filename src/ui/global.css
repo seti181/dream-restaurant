@@ -1066,3 +1066,23 @@ h2.spaced {
 .neptune-table .bar-cell {
   width: 35%;
 }
+
+/* ---------- Settings ---------- */
+
+.code-box {
+  box-sizing: border-box;
+  width: 100%;
+  margin: 10px 0;
+  padding: 10px 12px;
+  border: 2px solid var(--sand);
+  border-radius: 12px;
+  font-family: ui-monospace, Consolas, monospace;
+  font-size: 0.8rem;
+  word-break: break-all;
+  user-select: text;
+  resize: vertical;
+}
+
+.buy.left {
+  align-items: flex-start;
+}

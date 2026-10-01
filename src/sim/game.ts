@@ -41,8 +41,11 @@ export interface WeekTally {
   turnedAway: Record<string, number>;
 }
 
+export type Difficulty = 'relaxed' | 'normal';
+
 /** Everything that makes up a game in progress. Plain data, so it can be saved. */
 export interface GameState {
+  difficulty: Difficulty;
   /** Days since the season started; day 0 is Monday 1 April. */
   day: number;
   cash: number;
@@ -134,14 +137,15 @@ export interface DaySummary extends DayTally {
   neptune: NeptuneResult | null;
 }
 
-export function newGame(seed: number): GameState {
+export function newGame(seed: number, difficulty: Difficulty = 'normal'): GameState {
   const start = balance.start;
   const rng = createRng(seed);
   const team = starterTeam();
   const candidates = generateCandidates(rng, team.length + 1, namesOf(team));
   return {
+    difficulty,
     day: 0,
-    cash: balance.finance.startingCash,
+    cash: balance.difficulty[difficulty].startingCash,
     rng,
     menuSlots: balance.menu.startingSlots,
     team,

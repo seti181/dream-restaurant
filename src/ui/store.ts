@@ -9,7 +9,7 @@ import type { EquipmentId, ExtraId, TemplateId } from '../data/dishes';
 import type { LocationId } from '../data/locations';
 import type { CampaignId } from '../data/marketing';
 import type { TipId } from '../data/mewa';
-import { loadGame, saveGame } from '../save/save';
+import { importSaveCode, loadGame, saveGame } from '../save/save';
 import * as actions from '../sim/actions';
 import { minuteOfDay } from '../sim/clock';
 import {
@@ -20,6 +20,7 @@ import {
   tallyFor,
   type DaySummary,
   type DayTally,
+  type Difficulty,
   type GameState,
   type OpenDay,
 } from '../sim/game';
@@ -35,7 +36,16 @@ export type Phase = 'plan' | 'open' | 'dayOver' | 'ceremony';
 export type Speed = 0 | 1 | 2 | 4;
 
 /** The tabs of the planning screen. */
-export type PlanTab = 'today' | 'menu' | 'kitchen' | 'interior' | 'staff' | 'marketing' | 'map' | 'mewa';
+export type PlanTab =
+  | 'today'
+  | 'menu'
+  | 'kitchen'
+  | 'interior'
+  | 'staff'
+  | 'marketing'
+  | 'map'
+  | 'mewa'
+  | 'settings';
 
 export interface LiveDay extends DayTally {
   minute: number;
@@ -77,6 +87,10 @@ interface GameStore {
   relocate: (to: LocationId) => void;
   dismissTip: (tip: TipId) => void;
   skipTips: () => void;
+  setDifficulty: (difficulty: Difficulty) => void;
+  /** Loads a save code; returns false if it isn't a valid one. */
+  importSave: (code: string) => boolean;
+  startNewGame: (difficulty: Difficulty) => void;
   upgradeMenuBoard: () => void;
   setSupplier: (supplier: Supplier) => void;
 }
@@ -156,6 +170,20 @@ export const useGame = create<GameStore>((set, get) => ({
   // Mewa's tips can be dismissed on any screen, even mid-day.
   dismissTip: (tip) => set({ game: actions.dismissTip(get().game, tip) }),
   skipTips: () => set({ game: actions.skipTips(get().game) }),
+  setDifficulty: (difficulty) => plan((game) => actions.setDifficulty(game, difficulty)),
+
+  importSave: (code) => {
+    const game = importSaveCode(code);
+    if (!game || get().phase !== 'plan') return false;
+    set({ game, planTab: 'today', saved: saveGame(game) });
+    return true;
+  },
+
+  startNewGame: (difficulty) => {
+    if (get().phase !== 'plan') return;
+    const game = newGame(Date.now() >>> 0, difficulty);
+    set({ game, planTab: 'today', saved: saveGame(game) });
+  },
   upgradeMenuBoard: () => plan((game) => actions.upgradeMenuBoard(game)),
   setSupplier: (supplier) => plan((game) => actions.setSupplier(game, supplier)),
 }));

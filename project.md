@@ -428,7 +428,7 @@ Work in small steps, and test each step in the browser before moving on.
 - [x] Rival AI, events, weather, reviews
 - [x] Map and relocation
 - [x] Tutorial, weekly goals, Golden Neptune ending
-- [ ] Settings: difficulty, save export/import
+- [x] Settings: difficulty, save export/import
 
 **M4 – Gdańsk and personal**
 
