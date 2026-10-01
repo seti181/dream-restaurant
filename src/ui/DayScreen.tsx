@@ -5,7 +5,8 @@ import { balance } from '../data/balance';
 import { ticksPerDay } from '../sim/clock';
 import { money } from './format';
 import { MewaTip } from './Mewa';
-import { GROUP_COLOURS, RestaurantView } from './RestaurantView';
+import { GROUP_COLOURS } from './pixel/sprites';
+import { PixelRestaurantView } from './PixelRestaurantView';
 import { GROUP_IDS, GROUPS } from '../data/groups';
 import { useGame } from './store';
 
@@ -62,7 +63,7 @@ export function DayScreen() {
           <div style={{ width: `${progress * 100}%` }} />
         </div>
         <div className="scene-wrap">
-          <RestaurantView floor={live.floor} weather={weather} minute={live.minute} />
+          <PixelRestaurantView floor={live.floor} weather={weather} minute={live.minute} />
           {speed === 0 && <p className="paused">Paused. Tap 1× to carry on.</p>}
         </div>
         <ul className="legend" aria-label="Who is who">

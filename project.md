@@ -376,8 +376,8 @@ Notes on the references:
 
 **Technical approach:**
 
-- Sprites are PNG sprite sheets bundled with the game and precached by the service worker, so it all works offline.
-- They are shown as DOM elements placed on the isometric grid and drawn front-to-back by depth. Scaling is by whole numbers (2× or 3×) with `image-rendering: pixelated` and positions rounded to whole pixels. Animation uses CSS `steps()` on the sprite sheet.
+- The pixel art is **drawn by the game itself**, in code (`src/ui/pixel/`), when it's needed: the room as one background picture, and each piece of furniture and each person as a small sprite. Nothing is downloaded, so it works offline and adds almost nothing to the app's size, and decor, equipment, weather and dusk combine freely.
+- The pictures are shown as DOM images placed on the isometric grid and stacked back to front. Scaling is by whole device pixels with `image-rendering: pixelated` (crisp); only when that would waste a lot of space (the biggest rooms) an in-between scale is used. Animations use CSS.
 - The simulation does not change. The restaurant view keeps reading the same `floorView()` snapshot; only how it is drawn changes.
 - If DOM sprites turn out to be too slow on the tablet, a single plain 2D canvas for the restaurant view is the fallback. That would need a change to the CLAUDE.md rules, so it is asked about first.
 
@@ -491,7 +491,7 @@ Work in small steps, and test each step in the browser before moving on.
 
 - [x] Art pass, sound, animations (flat SVG art, now the placeholder for the pixel art)
 - [x] Pixel art: choose sources and palette, and approve one sample scene (section 9.1)
-- [ ] Pixel art: restaurant view (rooms, furniture, decor, equipment, terrace)
+- [x] Pixel art: restaurant view (rooms, furniture, decor, equipment, terrace)
 - [ ] Pixel art: characters (guests, staff, Mewa, special characters) with animations
 - [ ] Pixel art: Old Town map, food icons and UI icons
 - [ ] Balancing with the simulator plus playtests on the real tablet
@@ -555,3 +555,4 @@ Work in small steps, and test each step in the browser before moving on.
 - 2026-10-01: Sounds and music are synthesised in the browser (Web Audio) instead of CC0 sound files: nothing to download or license, works offline, adds almost nothing to the app's size. Sound settings are stored on the tablet, separately from the save.
 - 2026-10-01: Art direction changes to cozy pixel art with 2D sprites, based on three reference images (a chibi character sheet, an isometric pixel-art kitchen kit, and an AI-generated cozy isometric restaurant used for mood only). The flat SVG art stays as the placeholder until the pixel art replaces it. Details in section 9.1.
 - 2026-10-01: Pixel-art sample scene approved ("spot on"). The pixel art is drawn for this game in code (scripts/pixel/), so there are no licence questions. Rooms are isometric, characters are chibi sprites in the style of reference 1. The sample is kept in art/sample/.
+- 2026-10-01: The pixel art is drawn by the game in code at runtime (no PNG files shipped). Each street's room size comes from its seats (3 or 4 columns of tables, 2 or 3 rows); every table has four chairs; the open kitchen sits in the far corner; the terrace is a cobbled strip in front with planters. Scaling stays crisp (whole device pixels) unless that would make a big room much smaller.

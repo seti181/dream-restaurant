@@ -1158,6 +1158,9 @@ h2.spaced {
 
 .scene-wrap {
   position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
 }
 
 .scene-wrap .paused {
@@ -1170,47 +1173,6 @@ h2.spaced {
   border-radius: 12px;
   background: rgba(255, 255, 255, 0.92);
 }
-
-.restaurant-view {
-  display: block;
-  width: 100%;
-  height: auto;
-  max-height: 60vh;
-  border-radius: 16px;
-  background: var(--sand);
-}
-
-.restaurant-view .wall { fill: #f6e3c4; }
-.restaurant-view .wainscot { fill: #c9895a; }
-.restaurant-view .floorboards { fill: #d9a86c; }
-.restaurant-view .door { fill: #8a5233; stroke: #6b3d24; stroke-width: 3; }
-.restaurant-view .window-sky { fill: #bfe0f0; }
-.restaurant-view .window-frame { fill: none; stroke: #7a4a2c; stroke-width: 6; }
-.restaurant-view .window-bar { stroke: #7a4a2c; stroke-width: 4; }
-.restaurant-view .house-window { fill: #fdf6e3; }
-.restaurant-view .terrace-sky { fill: #cfe8f3; }
-.restaurant-view .cobbles { fill: #b9ada0; }
-.restaurant-view .awning { fill: var(--brick); }
-.restaurant-view .awning.light { fill: #fdf6e3; }
-.restaurant-view .kitchen-wall { fill: #e8f0f2; }
-.restaurant-view .kitchen-floor { fill: #c7d3d8; }
-.restaurant-view .partition { fill: #8a5233; }
-.restaurant-view .rail { stroke: #7d8a90; stroke-width: 3; }
-.restaurant-view .ticket { fill: #ffffff; stroke: #b9c3c7; }
-.restaurant-view .stove { fill: #5d666b; }
-.restaurant-view .pot { fill: #9aa4a9; }
-.restaurant-view .chef-hat { fill: #ffffff; stroke: #c9d1d4; }
-.restaurant-view .steam { fill: none; stroke: #9aa4a9; stroke-width: 3; stroke-linecap: round; opacity: 0.8; }
-.restaurant-view .tray { fill: #c9d1d4; stroke: #7d8a90; }
-.restaurant-view .chair { fill: #8a5233; }
-.restaurant-view .table { fill: #a8673f; stroke: #7a4a2c; stroke-width: 2; }
-.restaurant-view .table.outdoor { fill: #f1e6d2; stroke: #b9ada0; }
-.restaurant-view .plate { fill: #ffffff; stroke: #d8cbb6; }
-.restaurant-view .bubble rect { fill: #ffffff; stroke: #d8cbb6; stroke-width: 2; }
-.restaurant-view .scene-emoji { font-size: 20px; text-anchor: middle; }
-.restaurant-view .small-emoji { font-size: 15px; }
-.restaurant-view .scene-label { font-size: 20px; font-weight: 700; fill: var(--ink); text-anchor: middle; opacity: 0.7; }
-.restaurant-view .scene-note { font-size: 16px; fill: var(--brick); text-anchor: middle; font-weight: 600; }
 
 .legend {
   display: flex;
@@ -1268,33 +1230,6 @@ h2.spaced {
 
 @keyframes bump {
   40% { transform: scale(1.18); }
-}
-
-.restaurant-view .bubble {
-  transform-box: fill-box;
-  transform-origin: center bottom;
-  animation: bubble-pop 0.3s ease-out;
-}
-
-@keyframes bubble-pop {
-  from { transform: scale(0.3); opacity: 0; }
-}
-
-.restaurant-view .coin-pop {
-  animation: coin-rise 1.4s ease-out forwards;
-}
-
-@keyframes coin-rise {
-  from { transform: translateY(0); opacity: 1; }
-  to { transform: translateY(-46px); opacity: 0; }
-}
-
-.restaurant-view .steam {
-  animation: steam 1.6s ease-in-out infinite;
-}
-
-@keyframes steam {
-  50% { transform: translateY(-4px); opacity: 0.35; }
 }
 
 .star-row {
@@ -1358,76 +1293,12 @@ h2.spaced {
   }
 }
 
-/* ---------- Art in the restaurant view ---------- */
-
-.restaurant-view .window-sky.sunny,
-.restaurant-view .terrace-sky.sunny { fill: #bfe0f0; }
-.restaurant-view .window-sky.cloudy,
-.restaurant-view .terrace-sky.cloudy { fill: #d3dde3; }
-.restaurant-view .window-sky.rain,
-.restaurant-view .terrace-sky.rain { fill: #a4b4c0; }
-.restaurant-view .window-sky.heatwave,
-.restaurant-view .terrace-sky.heatwave { fill: #ffe3a8; }
-.restaurant-view .window-sky.dusk,
-.restaurant-view .terrace-sky.dusk { fill: #3d4a74; }
-.restaurant-view .sun { fill: #f4c531; }
-.restaurant-view .moon { fill: #f6efd0; }
-.restaurant-view .cloud ellipse { fill: #ffffff; opacity: 0.9; }
-.restaurant-view .rain line { stroke: #ffffff; stroke-width: 2; opacity: 0.7; }
-.restaurant-view .house-window.lit { fill: #ffd76a; }
-
-.restaurant-view .table.clothed { fill: #fdf6e3; stroke: #b5452f; stroke-dasharray: 4 3; }
-
-.restaurant-view .cord { stroke: #6b3d24; stroke-width: 2; }
-.restaurant-view .brass { fill: #c9a227; stroke: #c9a227; }
-.restaurant-view .candle { fill: #fdf6e3; }
-.restaurant-view .flame { fill: #ffcf4a; }
-.restaurant-view .lantern { fill: #4a3426; stroke: #2e2018; stroke-width: 2; }
-.restaurant-view .pendant { fill: #2f6f8f; }
-.restaurant-view .frame { fill: #8a5233; stroke: #c9a227; stroke-width: 2; }
-.restaurant-view .portrait-bg { fill: #3c4a3a; }
-.restaurant-view .face { fill: #f3d2b5; }
-.restaurant-view .coat { fill: #2b2b2b; }
-.restaurant-view .chart-sea { fill: #bfe0f0; }
-.restaurant-view .chart-coast { fill: none; stroke: #c9a46a; stroke-width: 4; }
-.restaurant-view .chart-pin { fill: var(--brick); }
-.restaurant-view .shelf { fill: #6b3d24; }
-.restaurant-view .bottle { fill: #cfe8e0; stroke: #7fa89a; opacity: 0.9; }
-.restaurant-view .tiny-hull { fill: #8a5233; }
-.restaurant-view .tiny-sail { fill: #ffffff; }
-.restaurant-view .pot-clay { fill: #c97a4a; }
-.restaurant-view .pot-clay.dark { fill: #9c5a33; }
-.restaurant-view .plant-panel { fill: #5f8a52; }
-.restaurant-view .leaf { fill: #3c7a3a; }
-.restaurant-view .leaf.light { fill: #7fb069; }
-.restaurant-view .panelling { fill: #6b3d24; }
-.restaurant-view .panel-inset { fill: #7a4a2c; stroke: #5a321c; }
-.restaurant-view .tiled-stove { fill: #f2efe6; stroke: #9ab0c0; stroke-width: 2; }
-.restaurant-view .stove-tile { fill: #ffffff; stroke: #2f6f8f; stroke-width: 1.5; }
-.restaurant-view .oak { fill: #a8673f; }
-
-.restaurant-view .counter-top { fill: #9aa4a9; }
-.restaurant-view .steel { fill: #b9c3c7; stroke: #7d8a90; }
-.restaurant-view .steel.dark { fill: #5d666b; }
-.restaurant-view .basket { fill: none; stroke: #7d8a90; stroke-width: 2; }
-.restaurant-view .handle { stroke: #3b2a22; stroke-width: 3; stroke-linecap: round; }
-.restaurant-view .grill-bar { stroke: #e9a23b; stroke-width: 2; }
-.restaurant-view .oven-brick { fill: #a9472f; stroke: #6e3220; stroke-width: 1.5; }
-.restaurant-view .oven-mouth { fill: #2e2018; }
-.restaurant-view .espresso { fill: #b5452f; }
-.restaurant-view .cup { fill: #ffffff; }
-.restaurant-view .glass { fill: #e6f3f7; stroke: #9ab0c0; stroke-width: 2; opacity: 0.95; }
-.restaurant-view .cake { fill: #f1d7a0; stroke: #c99a5a; }
-.restaurant-view .cake.dark { fill: #b5452f; }
-
 /* A Gdańsk skyline along the bottom of the top bar. */
 .hud {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='360' height='24' viewBox='0 0 360 24'%3E%3Cpath fill='%23000' fill-opacity='0.13' d='M0 24V14l8-8 8 8v-4h10l6-6 6 6v10h6V8l7-7 7 7v16h4V12l9-9 9 9v12h6V16l6-6 6 6v8h4V4h4V0h4v4h4v20h6V12l8-8 8 8v12h4V14l7-7 7 7v10h6V10l9-9 9 9v14h4V16l5-5 5 5v8h6V6h8l4 4v14h6V12l8-8 8 8v12h4V14l7-7 7 7v10h6V8l6-6 6 6v16h6V14l9-9 9 9v10h6V12l6-6 6 6v12z'/%3E%3C/svg%3E");
   background-repeat: repeat-x;
   background-position: left bottom;
 }
-
-.restaurant-view .scene-label.on-dark { fill: #fdf6e3; opacity: 0.9; }
 
 .perf-meter {
   position: fixed;
@@ -1444,4 +1315,78 @@ h2.spaced {
 
 .perf-meter.slow {
   background: rgba(181, 69, 47, 0.95);
+}
+
+/* ---------- The pixel-art restaurant view ---------- */
+
+.day-card {
+  align-self: stretch;
+}
+
+.pixel-wrap {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border-radius: 16px;
+  background: #2a1d26;
+}
+
+.pixel-scene {
+  position: relative;
+}
+
+.pixel {
+  position: absolute;
+  height: auto;
+  image-rendering: pixelated;
+  pointer-events: none;
+  user-select: none;
+}
+
+.pixel.steam {
+  animation: steam 1.6s ease-in-out infinite;
+}
+
+@keyframes steam {
+  50% { transform: translateY(-3px); opacity: 0.4; }
+}
+
+.pixel-bubble,
+.pixel-coin,
+.pixel-badge {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  pointer-events: none;
+  line-height: 1;
+}
+
+.pixel-bubble {
+  padding: 3px 5px;
+  border: 2px solid #3b2433;
+  border-radius: 8px;
+  background: #fffaf0;
+  font-size: 15px;
+  animation: bubble-pop 0.3s ease-out;
+}
+
+.pixel-badge {
+  font-size: 12px;
+}
+
+.pixel-coin {
+  font-size: 16px;
+  animation: coin-rise 1.4s ease-out forwards;
+}
+
+@keyframes bubble-pop {
+  from { transform: translate(-50%, -100%) scale(0.3); opacity: 0; }
+}
+
+@keyframes coin-rise {
+  from { transform: translate(-50%, -100%); opacity: 1; }
+  to { transform: translate(-50%, -260%); opacity: 0; }
 }

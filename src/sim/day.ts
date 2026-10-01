@@ -5,7 +5,7 @@ import { balance } from '../data/balance';
 import type { DecorId } from '../data/decor';
 import type { EquipmentId, MenuDish } from '../data/dishes';
 import { GROUP_IDS, GROUPS } from '../data/groups';
-import { LOCATIONS } from '../data/locations';
+import { LOCATIONS, type LocationId } from '../data/locations';
 import { chooseRestaurant } from './choice';
 import { minuteOfDay, ticksPerDay } from './clock';
 import { ORDINARY_DAY } from './events';
@@ -416,6 +416,8 @@ export interface TableGuests {
 }
 
 export interface FloorView {
+  /** The street the restaurant is on: it decides the size of the room. */
+  location: LocationId;
   /** Inside tables first, then terrace tables; null for an empty table. */
   tables: (TableGuests | null)[];
   insideTables: number;
@@ -457,6 +459,7 @@ export function floorView(progress: DayInProgress, index: number, recentMinutes 
   }
 
   return {
+    location: restaurant.location,
     tables,
     insideTables: restaurant.tables,
     chefsBusy: floor.chefFreeAt.map((freeAt) => freeAt > minute),
