@@ -316,16 +316,26 @@ button {
 }
 
 .tabs {
+  /* Keeps its height in the card's column even though it can scroll sideways. */
+  flex: none;
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  padding-bottom: 12px;
+  flex-wrap: nowrap;
+  gap: 4px;
+  padding-bottom: 8px;
   border-bottom: 2px solid var(--sand);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.tabs::-webkit-scrollbar {
+  display: none;
 }
 
 .tab {
+  flex: none;
   min-height: 48px;
-  padding: 0 18px;
+  padding: 0 14px;
+  white-space: nowrap;
   border: none;
   border-radius: 12px;
   background: transparent;
@@ -1764,8 +1774,11 @@ h2.spaced {
 /* The riverside along the bottom of the planning screens and the day report. */
 .screen.with-panorama {
   position: relative;
-  /* Leaves the lower part of the riverside showing below the card: houses, the quay and the river. */
-  padding-bottom: 16vw;
+  /*
+   * Leaves the lower part of the riverside showing below the card: houses, the quay and the river.
+   * Measured against the height, so a wide but short landscape screen keeps room for the card.
+   */
+  padding-bottom: min(16vw, 15vh);
 }
 
 .screen.with-panorama > .card {
@@ -1787,4 +1800,80 @@ h2.spaced {
   width: 100%;
   height: auto;
   image-rendering: pixelated;
+}
+
+/*
+ * Tablets in landscape: Samsung tablets show the page at about 960×600 (or less) CSS pixels,
+ * so on short screens everything around the content gets slimmer and the content keeps its room.
+ */
+@media (max-height: 720px) {
+  .hud {
+    min-height: 56px;
+    padding: 4px 16px;
+    gap: 16px;
+  }
+
+  .hud-date strong {
+    font-size: 1.1rem;
+  }
+
+  .hud-date span {
+    font-size: 0.85rem;
+  }
+
+  .hud-clock {
+    font-size: 1.5rem;
+  }
+
+  .screen {
+    padding: 10px 12px;
+  }
+
+  .screen.with-panorama {
+    padding-bottom: min(16vw, 11vh);
+  }
+
+  .plan-card,
+  .day-card {
+    padding: 10px 16px;
+  }
+
+  .tab {
+    padding: 0 12px;
+    font-size: 1rem;
+  }
+
+  .plan-body {
+    padding: 10px 0;
+  }
+
+  .plan-footer {
+    padding-top: 8px;
+  }
+
+  .plan-footer .primary {
+    min-height: 48px;
+    font-size: 1.1rem;
+  }
+}
+
+/* Narrower screens: side-by-side panels sit one above the other, so each gets the full width. */
+@media (max-width: 1100px) {
+  .two-panels {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  /* Except the map: it fits its width, so it stays beside the street details. */
+  .two-panels.map-panel {
+    grid-template-columns: 3fr 2fr;
+  }
+}
+
+/* The narrowest tablets: tabs a little tighter, so all ten fit on one row. */
+@media (max-width: 900px) {
+  .tab {
+    padding: 0 9px;
+    font-size: 0.95rem;
+  }
 }

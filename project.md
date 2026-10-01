@@ -36,7 +36,7 @@ The season runs from spring until the great St. Dominic's Fair in August. At the
 - Web game built with **TypeScript + React + Vite**, installed as a **PWA**: an icon on the home screen that opens full screen and works offline.
 - Hosted free on **GitHub Pages**. Updates reach the tablet automatically.
 - **Layout:** landscape only.
-  - Responsive from about 1280×800 upwards.
+  - Responsive from about 850×530 CSS pixels upwards: Samsung tablets lay the page out smaller than their screen's pixels (a 1920×1200 screen is about 960×600 to the browser).
   - Touch targets at least 48 px.
   - Nothing depends on hover.
   - Pinch-zoom and pull-to-refresh disabled.
@@ -754,3 +754,4 @@ Each item is tested in the browser and on the tablet before the next one starts.
 - 2026-10-01: The queue at the door stands on the street in a line beside the steps (with a terrace it used to stand on the przedproże), the first in line shows ⏳, and a party that gives up walks off down the street, cross (😠), instead of vanishing.
 - 2026-10-01: Planned (M7): the numbers at the top of the day screen (guests served, takings, walked out, no free table) open into lists when tapped.
 - 2026-10-01: Background chosen: A and D both. The planning screen shows the riverside by day (concept A), with the sky by the weather (blue, grey when cloudy, darker in rain, warm in a heatwave); the day report, the Golden Neptune ceremony and the game-over screen show it in the evening (concept D), with lit windows, lanterns and a dusk sky; during St. Dominic's Fair both get the striped stalls and strings of lights on the quay. Drawn by the game (src/ui/pixel/panorama.ts) as a strip along the bottom, 640×164 art pixels shown twice as big; the sky is a CSS gradient behind it. The card leaves the bottom 16% of the screen width free, so the houses, the quay and the river show beneath it.
+- 2026-10-01: Fix for landscape on the tablet (menus unreadably small): the browser lays the page out at about 960×600 CSS pixels on the tablet, not 1280×800, and the new panorama space (16% of the width) plus wrapping tabs left the menu about 120 pixels of height. Now the panorama's space follows the screen's height (min(16vw, 15vh), 11vh on short screens); the tabs stay on one row (scrolling sideways if they must, tighter under 900 pixels); short screens (up to 720 pixels high) get a slimmer top bar and less padding; side-by-side panels sit one above the other under 1100 pixels wide (except the map). Checked at 853×533, 960×600 and 1280×800. The ?perf meter now also shows the size the browser lays the page out at.

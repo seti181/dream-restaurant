@@ -30,9 +30,11 @@ export function PerfMeter() {
   }, []);
 
   const smooth = reading.fps >= 50 && reading.slowest < 50;
+  // The size the browser lays the page out at, which on tablets is smaller than the screen's pixels.
+  const size = typeof window !== 'undefined' ? `${window.innerWidth}×${window.innerHeight}` : '';
   return (
     <div className={smooth ? 'perf-meter' : 'perf-meter slow'} aria-hidden="true">
-      {reading.fps} fps · slowest frame {reading.slowest} ms
+      {reading.fps} fps · slowest frame {reading.slowest} ms · screen {size}
     </div>
   );
 }
