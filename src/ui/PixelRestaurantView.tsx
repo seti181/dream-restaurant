@@ -32,7 +32,7 @@ import {
 } from './pixel/room';
 import type { Carry, PersonKind } from './pixel/sprites';
 import { useGame } from './store';
-import { drawCloud, drawRainTile, drawSky, drawStreet } from './pixel/street';
+import { drawCloud, drawRainTile, drawSky, drawStreet, GRANITE_STREETS } from './pixel/street';
 import { useFittingScale } from './useFittingScale';
 
 /** World units a guest walks per second at 1× speed. */
@@ -350,9 +350,9 @@ export function PixelRestaurantView({
   const streetWidth = layout.width + 2 * marginX;
   const streetHeight = layout.height + 2 * marginY;
   const street = useMemo(
-    () => imageUrl(drawStreet(layout, look, streetWidth, streetHeight, marginX, marginY)),
+    () => imageUrl(drawStreet(layout, look, streetWidth, streetHeight, marginX, marginY, GRANITE_STREETS.includes(floor.location))),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [layout, look.weather, look.dusk, streetWidth, streetHeight],
+    [layout, look.weather, look.dusk, streetWidth, streetHeight, floor.location],
   );
   useEffect(() => () => URL.revokeObjectURL(street), [street]);
   const sky = useMemo(

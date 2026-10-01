@@ -1,26 +1,30 @@
-// The Old Town around the restaurant: a cobbled street in front, pavements, and rows of
-// gabled townhouses behind and beside it, with the Town Hall spire peeking over the roofs.
+// The Old Town around the restaurant: a cobbled street in front (granite on Długa), granite
+// pavements, and rows of Gdańsk townhouses (townhouse.ts) behind and beside it, with the
+// Town Hall spire peeking over the roofs.
 // Drawn in layers behind the room, big enough to fill the whole frame: the sky (with the sun,
 // or the moon and stars), drifting clouds, then the houses and the street. See project.md section 9.1.1.
 
+import type { LocationId } from '../../data/locations';
 import type { Weather } from '../../data/weather';
 import { hex, mix, Pixels, type Rgb } from './raster';
 import { LOW_WALL, PLINTH, type RoomLayout, type RoomLook } from './room';
+import { drawTownhouse, FACADE_COLOURS, frontWidth, type Gable, type TownhouseFront } from './townhouse';
+
+/** Streets paved with granite all the way across; the others have cobbles between granite pavements. */
+export const GRANITE_STREETS: readonly LocationId[] = ['dluga'];
 
 const C = {
   cobbleA: hex('#a99d91'),
   cobbleB: hex('#9b8f84'),
   cobbleGap: hex('#7f7468'),
-  slabA: hex('#d3cabd'),
-  slabB: hex('#c7bdaf'),
-  slabGap: hex('#a59a8b'),
+  graniteA: hex('#d8d2c8'),
+  graniteB: hex('#cdc6bb'),
+  graniteC: hex('#e1dcd3'),
+  graniteFleck: hex('#b3ab9f'),
+  graniteGap: hex('#a39a8d'),
   curb: hex('#8a8175'),
-  houses: ['#e8c07a', '#d98b6a', '#c25b43', '#e9dcc0', '#8fb3a5', '#c9a3c4', '#f2dfb8', '#7fa0c0', '#e9a23b', '#d7b48a'].map(hex),
   trim: hex('#f6eedf'),
   shadow: hex('#3b2a22'),
-  door: hex('#5a3a28'),
-  pane: hex('#5b7590'),
-  lit: hex('#ffd76a'),
   brick: hex('#a24a33'),
   spire: hex('#4b6a5c'),
   sky: { sunny: hex('#bfe0f0'), cloudy: hex('#d3dde3'), rain: hex('#a4b4c0'), heatwave: hex('#ffe3a8') } as Record<Weather, Rgb>,
@@ -36,95 +40,78 @@ const C = {
   puddleShine: hex('#d6e2ea'),
 };
 
-type Gable = 'pointed' | 'stepped' | 'flat' | 'tower';
-
 interface House {
   from: number;
   to: number;
-  /** Height of the front up to the cornice; the gable sits on top. */
-  height: number;
-  gableHeight: number;
-  gable: Gable;
+  front: TownhouseFront;
+}
+
+/** A pixel of a house row: its colour, and whether it glows (a lit window after dusk). */
+interface Sample {
   colour: Rgb;
+  glow: boolean;
 }
 
 /** A row of townhouses along a street, `length` units long, the same every time for the same seed. */
-function rowOfHouses(seed: number, length: number, minHeight: number, maxHeight: number): House[] {
+function rowOfHouses(seed: number, length: number, minHeight: number, maxHeight: number, dusk: boolean): House[] {
   let s = seed >>> 0;
   const rnd = () => {
     s = (Math.imul(s, 1103515245) + 12345) >>> 0;
     return (s >>> 8) / 16777216;
   };
-  const gables: Gable[] = ['pointed', 'stepped', 'pointed', 'flat', 'stepped'];
+  const gables: Gable[] = ['scroll', 'stepped', 'scroll', 'pointed', 'attic', 'scroll', 'stepped'];
   const houses: House[] = [];
+  let lastColour = -1;
   for (let u = 0; u < length; ) {
-    const width = 14 + Math.floor(rnd() * 8);
-    houses.push({
-      from: u,
-      to: u + width,
-      height: minHeight + Math.floor(rnd() * (maxHeight - minHeight)),
-      gableHeight: 8 + Math.floor(rnd() * 6),
-      gable: gables[Math.floor(rnd() * gables.length)],
-      colour: C.houses[Math.floor(rnd() * C.houses.length)],
-    });
-    u += width;
+    const bays = rnd() < 0.15 ? 4 : rnd() < 0.55 ? 2 : 3;
+    // Neighbours never share a colour.
+    let colour = Math.floor(rnd() * FACADE_COLOURS.length);
+    if (colour === lastColour) colour = (colour + 1) % FACADE_COLOURS.length;
+    lastColour = colour;
+    const front = drawTownhouse(
+      {
+        bays,
+        height: minHeight + Math.floor(rnd() * (maxHeight - minHeight)),
+        gable: gables[Math.floor(rnd() * gables.length)],
+        colour: FACADE_COLOURS[colour],
+        ground: rnd() < 0.2 ? 'arcade' : 'shop',
+        pediment: (['triangle', 'arch', 'flat'] as const)[Math.floor(rnd() * 3)],
+        seed: seed + houses.length * 31,
+      },
+      dusk,
+    );
+    houses.push({ from: u, to: u + frontWidth(bays), front });
+    u += frontWidth(bays);
   }
   return houses;
 }
 
-/** Finds the house at a point along the row. */
-function houseAt(row: House[], u: number): House | null {
-  for (const house of row) if (u >= house.from && u < house.to) return house;
+/** A house front at `u` along the row and `z` up. Null where there's sky. */
+function houseSample(row: House[], u: number, z: number): Sample | null {
+  for (const house of row) {
+    if (u < house.from || u >= house.to) continue;
+    const { image, glow } = house.front;
+    const x = Math.floor(u - house.from);
+    const y = image.height - 1 - Math.floor(z);
+    const colour = image.get(x, y);
+    return colour ? { colour, glow: glow.get(x, y) !== null } : null;
+  }
   return null;
 }
 
-/** A little hash, so lit windows don't make a pattern. */
-const lit = (a: number, b: number, c: number) => ((a * 73856093) ^ (b * 19349663) ^ (c * 83492791)) % 5 < 3;
-
-/** One house front, at `u` along it and `z` up. Null where there's sky. */
-function facade(house: House, u: number, z: number, look: RoomLook): Rgb | null {
-  const width = house.to - house.from;
-  const local = u - house.from;
+/** The Town Hall tower: brick, a white cornice, and a green copper spire. */
+function townHall(from: number, to: number, height: number, u: number, z: number): Rgb | null {
+  const width = to - from;
+  const local = u - from;
   const fromMiddle = Math.abs(local - width / 2);
-  if (z >= house.height) {
-    // The gable (or the tower's top).
-    const g = z - house.height;
-    if (house.gable === 'flat') return g < 2 ? C.trim : null;
-    if (house.gable === 'tower') {
-      // A green copper spire.
-      const reach = (width / 2) * (1 - g / 40);
-      return g < 40 && fromMiddle < reach ? C.spire : null;
-    }
-    if (g >= house.gableHeight) return null;
-    const half = width / 2 - 1;
-    const steps = house.gable === 'stepped' ? Math.floor(g / 3) * 3 : g;
-    const reach = half * (1 - steps / house.gableHeight);
-    if (fromMiddle > reach) return null;
-    if (fromMiddle > reach - 1) return mix(house.colour, C.shadow, 0.25);
-    // A little round window in the gable.
-    if (fromMiddle < 1.5 && g >= 2 && g < 5) return look.dusk ? C.lit : C.pane;
-    return mix(house.colour, C.white, 0.08);
+  if (z >= height) {
+    const g = z - height;
+    const reach = (width / 2) * (1 - g / 40);
+    return g < 40 && fromMiddle < reach ? C.spire : null;
   }
-  if (local < 1) return mix(house.colour, C.shadow, 0.35);
-  if (z >= house.height - 2) return C.trim;
-  if (house.gable === 'tower') return (Math.floor(z / 3) + Math.floor(local / 6)) % 7 === 0 ? mix(C.brick, C.shadow, 0.2) : C.brick;
-  const storey = Math.floor(z / 13);
-  const inStorey = z % 13;
-  if (storey === 0) {
-    // The ground floor: a door in the middle and a shop window on either side.
-    if (fromMiddle < 2.5 && z < 10) return z > 8.5 ? mix(C.door, C.shadow, 0.3) : C.door;
-    const shop = (local >= 2 && local < width / 2 - 4) || (local > width / 2 + 4 && local < width - 2);
-    if (shop && z >= 3 && z < 9) return look.dusk ? C.lit : C.pane;
-    return house.colour;
-  }
-  // Upper floors: rows of tall windows with a white frame on top.
-  const column = Math.floor((local - 2) / 5);
-  const inColumn = (local - 2) % 5;
-  if (local >= 2 && local < width - 2 && inColumn < 3 && inStorey >= 3 && inStorey < 10) {
-    if (inStorey === 9) return C.trim;
-    return look.dusk && lit(house.from, storey, column) ? C.lit : C.pane;
-  }
-  return house.colour;
+  if (local < 1) return mix(C.brick, C.shadow, 0.35);
+  if (z >= height - 2) return C.trim;
+  return (Math.floor(z / 3) + Math.floor(local / 6)) % 7 === 0 ? mix(C.brick, C.shadow, 0.2) : C.brick;
 }
 
 /** The sky colour of the day, from the top of the picture down to the rooftops. */
@@ -231,19 +218,29 @@ function puddle(x: number, y: number): Rgb | null {
   return d < 0.25 && dx < 0 ? C.puddleShine : C.puddle;
 }
 
-function ground(layout: RoomLayout, x: number, y: number, look?: RoomLook): Rgb {
+/** Light granite slabs in staggered rows, flecked, each slab a slightly different shade. */
+function granite(x: number, y: number, slab: number): Rgb {
+  const row = Math.floor(y / (slab * 0.7));
+  const shift = mod(row, 2) === 0 ? 0 : slab / 2;
+  if (mod(y, slab * 0.7) < 0.6 || mod(x + shift, slab) < 0.6) return C.graniteGap;
+  const fx = Math.floor(x);
+  const fy = Math.floor(y);
+  if (((fx * 7919 + fy * 104729) >>> 0) % 13 === 0) return C.graniteFleck;
+  const tile = mod(Math.floor((x + shift) / slab) * 5 + row * 3, 7);
+  return tile < 3 ? C.graniteA : tile < 5 ? C.graniteB : C.graniteC;
+}
+
+function ground(layout: RoomLayout, x: number, y: number, look?: RoomLook, graniteStreet = false): Rgb {
   const { edgeX: roomX } = layout;
   // The pavement runs along the house fronts; the przedproże and its steps stand on it.
   const roomY = layout.roomY + LOW_WALL.thick;
   const pavement = (x < 0 && y >= roomY && y < roomY + 10) || (x >= roomX && y >= 0 && y < 10);
   const curb = (x < 0 && y >= roomY + 10 && y < roomY + 11.5) || (x >= roomX && y >= 10 && y < 11.5 && x > roomX + 1);
   if (curb) return C.curb;
-  if (pavement) {
-    if (mod(x, 8) < 0.6 || mod(y, 8) < 0.6) return C.slabGap;
-    return (Math.floor(x / 8) + Math.floor(y / 8)) % 2 === 0 ? C.slabA : C.slabB;
-  }
+  if (pavement) return granite(x, y, 8);
   const wet = look?.weather === 'rain' ? puddle(x, y) : null;
   if (wet) return wet;
+  if (graniteStreet) return granite(x, y, 12);
   // Cobbles in staggered rows.
   const row = Math.floor(y / 4);
   const shift = mod(row, 2) === 0 ? 0 : 2.5;
@@ -255,7 +252,15 @@ function ground(layout: RoomLayout, x: number, y: number, look?: RoomLook): Rgb 
  * The street around the restaurant, `width` × `height` art pixels, with the room's picture
  * sitting `marginX`, `marginY` in from the top left. The room is drawn on top of it.
  */
-export function drawStreet(layout: RoomLayout, look: RoomLook, width: number, height: number, marginX: number, marginY: number): Pixels {
+export function drawStreet(
+  layout: RoomLayout,
+  look: RoomLook,
+  width: number,
+  height: number,
+  marginX: number,
+  marginY: number,
+  graniteStreet = false,
+): Pixels {
   const img = new Pixels(width, height);
   const { roomX } = layout;
   // Next door's houses line up with the restaurant's front wall.
@@ -264,54 +269,53 @@ export function drawStreet(layout: RoomLayout, look: RoomLook, width: number, he
   // Everything outside stands on the street, a plinth lower than the restaurant's floor.
   const oy = layout.origin.oy + marginY + PLINTH;
   // Three rows of houses: behind the back wall, above the left wall, and next door on the left.
-  const behind = rowOfHouses(1997, width + 40, 62, 80);
+  const behind = rowOfHouses(1997, width + 40, 56, 74, look.dusk);
   // The Town Hall tower, further back on the right, its green spire peeking over the roofs.
   const from = roomX + 30;
   const room = oy + (from + 11) / 2 - 4;
-  const tower: House = { from, to: from + 16, height: Math.max(84, Math.round(room - 40)), gableHeight: 40, gable: 'tower', colour: C.brick };
-  const above = rowOfHouses(1410, roomY + 1, 62, 78);
-  const nextDoor = rowOfHouses(1308, width + 40, 30, 48);
+  const tower = { from, to: from + 16, height: Math.max(84, Math.round(room - 40)) };
+  const above = rowOfHouses(1410, roomY + 1, 56, 72, look.dusk);
+  const nextDoor = rowOfHouses(1308, width + 40, 28, 42, look.dusk);
 
   for (let py = 0; py < height; py++) {
     for (let px = 0; px < width; px++) {
       const sx = px + 0.5 - ox;
       const sy = py + 0.5 - oy;
-      let colour: Rgb | null;
+      let sample: Sample | null;
       let haze = 0;
       let z: number;
       if (sx < -roomY) {
         // Next door on the left, fronts facing the street.
         const x = sx + roomY;
         z = (x + roomY) / 2 - sy;
-        const house = houseAt(nextDoor, -x);
-        colour = z >= 0 && house ? facade(house, -x, z, look) : null;
+        sample = z >= 0 ? houseSample(nextDoor, -x, z) : null;
       } else if (sx < 0) {
         // Above the left wall.
         const y = -sx;
         z = y / 2 - sy;
-        const house = houseAt(above, y);
-        colour = z >= 0 && house ? facade(house, y, z, look) : null;
+        sample = z >= 0 ? houseSample(above, y, z) : null;
         haze = 0.2;
       } else {
         // Behind the back wall, and on along the street to the right.
         z = sx / 2 - sy;
-        const house = houseAt(behind, sx);
-        colour = z >= 0 && house ? facade(house, sx, z, look) : null;
+        sample = z >= 0 ? houseSample(behind, sx, z) : null;
         haze = 0.15;
-        if (colour === null && z >= 0 && sx >= tower.from && sx < tower.to) {
-          colour = facade(tower, sx, z, look);
+        if (sample === null && z >= 0 && sx >= tower.from && sx < tower.to) {
+          const brick = townHall(tower.from, tower.to, tower.height, sx, z);
+          sample = brick ? { colour: brick, glow: false } : null;
           haze = 0.3;
         }
       }
       if (z < 0) {
-        colour = ground(layout, (sx + 2 * sy) / 2, (2 * sy - sx) / 2, look);
+        sample = { colour: ground(layout, (sx + 2 * sy) / 2, (2 * sy - sx) / 2, look, graniteStreet), glow: false };
         haze = 0;
       }
       // The sky stays see-through: the sky picture and the clouds show behind.
-      if (colour === null) continue;
+      if (sample === null) continue;
+      let colour = sample.colour;
       const skyColour = look.dusk ? C.dusk : C.sky[look.weather];
-      if (haze > 0 && colour !== C.lit) colour = mix(colour, skyColour, haze);
-      if (look.dusk && colour !== C.lit) colour = mix(colour, C.dusk, 0.35);
+      if (haze > 0 && !sample.glow) colour = mix(colour, skyColour, haze);
+      if (look.dusk && !sample.glow) colour = mix(colour, C.dusk, 0.35);
       else if (look.weather === 'rain' && haze === 0 && colour !== C.puddle && colour !== C.puddleShine) colour = mix(colour, C.shadow, 0.12);
       img.set(px, py, colour);
     }
