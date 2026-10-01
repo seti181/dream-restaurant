@@ -5,6 +5,7 @@ import { balance } from '../data/balance';
 import { ticksPerDay } from '../sim/clock';
 import { money } from './format';
 import { MewaTip } from './Mewa';
+import { MomentCard, MomentResultNote } from './MomentCard';
 import { GROUP_COLOURS } from './pixel/sprites';
 import { PixelRestaurantView } from './PixelRestaurantView';
 import { GROUP_IDS, GROUPS } from '../data/groups';
@@ -64,7 +65,9 @@ export function DayScreen() {
         </div>
         <div className="scene-wrap">
           <PixelRestaurantView floor={live.floor} weather={weather} minute={live.minute} />
-          {speed === 0 && <p className="paused">Paused. Tap 1× to carry on.</p>}
+          {speed === 0 && !live.moment && <p className="paused">Paused. Tap 1× to carry on.</p>}
+          {!live.moment && <MomentResultNote />}
+          <MomentCard />
         </div>
         <ul className="legend" aria-label="Who is who">
           {GROUP_IDS.map((g) => (

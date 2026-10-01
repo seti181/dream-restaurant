@@ -179,6 +179,16 @@ export const balance = {
     discount: 0.2,
   },
 
+  moments: {
+    /** Choice cards that come at random times each day (moments tied to a time of day come on top)... */
+    perDay: { min: 2, max: 3 },
+    /** ...between these times... */
+    firstMinute: 11 * 60 + 45,
+    lastMinute: 20 * 60 + 30,
+    /** ...and if none can happen when one is due, it tries again this many minutes later. */
+    retryMinutes: 30,
+  },
+
   lunchSet: {
     /** "Obiad dnia" is served from 12:00 until 15:00. */
     startHour: 12,

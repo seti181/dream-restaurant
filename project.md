@@ -287,6 +287,24 @@ Equipment unlocks templates and adds capacity.
 - **Other costs:** one-off purchases, and a small weekly utilities bill.
 - **Reports:** a daily and weekly profit and loss, plus a simple graph of cash and rating over time.
 
+### 6.13 Interactive service (M5b)
+
+While the restaurant is open, the player can help out. Every interaction is optional: a day still plays out if she only watches, and helping makes it go better. There are a few real choices a day, not constant tapping, and the day report says what each one changed.
+
+1. **Choice cards.** Two or three times a day a small card pauses the clock and offers two answers. Each answer has a visible effect (money, guests' mood, reputation, awareness, an extra pair of hands). Moments include:
+   - a food blogger asking for a free dessert to photograph
+   - a shower over the terrace: bring the guests inside, or hope it passes
+   - Pan Cytrynówka buying a round for the whole room ("forgot his wallet")
+   - Adrian texting "almost there!!" on a day he didn't turn up
+   - Tomek dropping a tray
+   - a tour guide asking if a group of six can come in right now
+   - a family asking the room to sing "Sto lat" for a birthday
+   - a street musician offering to play outside
+2. **Tap a waiting guest.** A table showing ⏳ or 😤 can be tapped for a **free drink** (costs a little, buys patience) or **an apology from the chef** (their order jumps the kitchen queue).
+3. **Shoo the gulls.** On terrace days a gull sometimes swoops at a plate. Tap it away in time and the guests laugh; miss it and that table loses its food and writes a funny review.
+4. **Live happy hour.** Replaces the fixed 15:00–18:00 setting: a button during the day starts a one-hour happy hour, once a day. Drinks and everything else at a discount, and more guests come in. The skill is using it in a quiet hour.
+5. **Seat guests yourself.** Arriving groups wait at the door. Tap a group, then a table. Groups have favourite spots (tourists the terrace, foodies the window, students the communal table) and sitting there pleases them. Anyone not seated within a few minutes is seated automatically, as now.
+
 ## 7. Simulation model (implementation notes)
 
 The simulation is pure TypeScript with no UI code. It is deterministic given a seed and advances in **ticks of 5 in-game minutes**.
@@ -499,6 +517,16 @@ Work in small steps, and test each step in the browser before moving on.
 - [ ] Balancing with the simulator plus playtests on the real tablet
 - [ ] Performance check on the tablet
 
+**M5b – Interactive service (section 6.13)**
+
+Each item is tested in the browser and on the tablet before the next one starts.
+
+- [x] Choice cards: 2–3 moments a day that pause the clock and offer two answers
+- [ ] Tap a waiting guest: free drink or the chef's apology
+- [ ] Shoo the gulls on the terrace
+- [ ] Live happy hour: a button during the day instead of the fixed 15:00–18:00 setting
+- [ ] Seat guests yourself: tap a group, then a table; favourite spots please them
+
 **M6 – Gift day**
 
 - [ ] Final install on her tablet
@@ -563,3 +591,5 @@ Work in small steps, and test each step in the browser before moving on.
 - 2026-10-01: Waiters carry the food: when a table's meal is ready, a free waiter walks from their spot by the kitchen to the table with a full tray, pauses to serve, and walks back with the empty tray. If every waiter is already out, the food arrives without a walk.
 - 2026-10-01: Pixel art for the map and icons: the Old Town map is drawn in code from above (streets of gabled houses, the Motława, Granary Island, St. Mary's, the Neptune Fountain, the Green Gate, the Żuraw); street markers, names and rival signs stay as large, clearly lettered buttons on top. Every dish and drink has a pixel icon; cash, stars, weather and Mewa use pixel icons too.
 - 2026-10-01: The map shows Granary Island with its own streets (one down the middle, four across) and two bridges from the mainland: the Green Bridge straight on from the Green Gate at Długi Targ, and a second bridge by the Żuraw in line with Mariacka.
+- 2026-10-01: The day felt too static once the restaurant opened. New milestone M5b, "Interactive service" (section 6.13): choice cards, tapping waiting guests, shooing gulls, a live happy hour button and seating guests yourself. Interactions are optional bonuses; a player who only watches still gets a normal day. They are built and tested one at a time.
+- 2026-10-01: Choice cards: 2–3 random cards a day between 11:45 and 20:30, plus Adrian's text at 12:00 (on days he's away) and Pan Cytrynówka's round at 19:30 (Fridays), never more than 3 in a day. Each card comes at most once a day. Cards use their own random generator, so they never change who comes in. The simulator answers every card with the second ("no") answer, like a player who only watches.

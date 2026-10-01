@@ -8,7 +8,7 @@ import { GROUP_IDS, type GroupId } from '../data/groups';
 import { CAMPAIGNS, type CampaignId } from '../data/marketing';
 import { FIRST_GOAL, type TipId } from '../data/mewa';
 import { LOCATIONS } from '../data/locations';
-import { SECRET_RECIPE, SPECIAL_STAFF } from '../data/personal';
+import { SECRET_RECIPE, SPECIAL_STAFF, type SpecialStaffId } from '../data/personal';
 import { RIVAL_IDS } from '../data/rivals';
 import type { Weather } from '../data/weather';
 import { startDay, stepDay, type DayInProgress, type FloorView } from './day';
@@ -22,6 +22,7 @@ import {
 } from './events';
 import { weeklyBillsDue } from './finance';
 import { goalOf, goalText, nextGoal, startGoal, trackGoal, type GoalState } from './goals';
+import { answerMoment, checkMoments, planMoments, type MomentResult, type MomentsToday } from './moments';
 import { pairingsOf } from './menu';
 import { isFairDay, isNeptuneDay, neptuneResult, type NeptuneResult, type SeasonTally } from './neptune';
 import { planRivalWeek, rivalAwarenessToday } from './rivalAi';
@@ -92,7 +93,9 @@ export interface OpenDay {
   /** The day's own copy of the random generator; handed back to the game at closing. */
   rng: RngState;
   /** Team members who didn't turn up today, and why. */
-  absent: { id: number; name: string; excuse: string }[];
+  absent: { id: number; name: string; excuse: string; special?: SpecialStaffId }[];
+  /** Choice cards: when they come, the one on screen, and what was answered. */
+  moments: MomentsToday;
 }
 
 /** The player's numbers for a day, so far or in total. */
@@ -144,6 +147,10 @@ export interface DaySummary extends DayTally {
   neptune: NeptuneResult | null;
   /** Absences and mishaps in the team today. */
   staffNews: string[];
+  /** The choice cards answered today. */
+  moments: MomentResult[];
+  /** What the answers gained or spent. */
+  momentsCash: number;
 }
 
 export function newGame(seed: number, difficulty: Difficulty = 'normal'): GameState {
@@ -266,7 +273,7 @@ export function openRestaurant(state: GameState): OpenDay {
   for (const person of state.team) {
     const special = person.special && SPECIAL_STAFF[person.special];
     if (special?.absenceChance && chance(rng, special.absenceChance)) {
-      absent.push({ id: person.id, name: person.name, excuse: pick(rng, special.excuses ?? []) });
+      absent.push({ id: person.id, name: person.name, excuse: pick(rng, special.excuses ?? []), special: person.special });
     }
   }
   const working = state.team.filter((person) => !absent.some((a) => a.id === person.id));
@@ -282,12 +289,30 @@ export function openRestaurant(state: GameState): OpenDay {
     progress: startDay(state.day, [today, ...rivalsToday], conditionsFor(state)),
     rng,
     absent,
+    // Moments get their own generator, so they never change who comes in or what they order.
+    moments: planMoments((state.rng.s ^ Math.imul(state.day + 1, 0x9e3779b1)) >>> 0),
   };
 }
 
 /** Plays one tick (five in-game minutes). */
 export function playTick(open: OpenDay): void {
   stepDay(open.rng, open.progress);
+}
+
+/**
+ * Checks for a choice card before the next tick. Returns true while one is waiting
+ * for an answer: the clock should stop until answerMoment() is called.
+ */
+export function momentDue(open: OpenDay): boolean {
+  return checkMoments(open.moments, {
+    progress: open.progress,
+    adrianAway: open.absent.some((a) => a.special === 'adrian'),
+  });
+}
+
+/** Answers the choice card on screen with its first (0) or second (1) answer. */
+export function answerTheMoment(open: OpenDay, choice: 0 | 1): MomentResult | null {
+  return answerMoment(open.moments, open.progress, choice);
 }
 
 /** The player's results from a list of party outcomes. */
@@ -432,7 +457,8 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
   }
   const wages = teamWages(state);
   const { rent, utilities } = weeklyBillsDue(playerBefore, state.day);
-  const profit = tally.revenue - tally.ingredientCost - wages - rent - utilities;
+  const momentsCash = open.moments.cash;
+  const profit = tally.revenue - tally.ingredientCost - wages - rent - utilities + momentsCash;
 
   const nextDay = state.day + 1;
   const news: NewsItem[] = [];
@@ -571,6 +597,8 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
       goalCompleted,
       neptune,
       staffNews,
+      moments: open.moments.results,
+      momentsCash,
     },
   };
 }

@@ -6,7 +6,7 @@
 import { useSyncExternalStore } from 'react';
 import { loadPrefs, savePrefs, type SoundPrefs } from '../save/prefs';
 
-export type SoundName = 'ding' | 'coin' | 'seagull' | 'goal' | 'fanfare' | 'sad' | 'doorbell';
+export type SoundName = 'ding' | 'coin' | 'seagull' | 'goal' | 'fanfare' | 'sad' | 'doorbell' | 'card';
 
 let prefs: SoundPrefs = loadPrefs();
 const listeners = new Set<() => void>();
@@ -170,6 +170,11 @@ export function play(name: SoundName): void {
     case 'doorbell':
       tone(2093, t, 0.5, { volume: 0.08 });
       tone(2637, t + 0.12, 0.7, { volume: 0.08 });
+      break;
+    case 'card':
+      // A choice card: a soft "ding-dong" asking for attention.
+      tone(1319, t, 0.3, { type: 'triangle', volume: 0.12 });
+      tone(988, t + 0.18, 0.5, { type: 'triangle', volume: 0.12 });
       break;
     case 'goal':
       [C5, E5, G5].forEach((f, i) => tone(f, t + i * 0.12, 0.3, { type: 'triangle', volume: 0.14 }));

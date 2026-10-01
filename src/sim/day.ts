@@ -28,7 +28,7 @@ import type { GroupId } from '../data/groups';
 import type { SpecialStaffId } from '../data/personal';
 
 /** A party sitting in a restaurant. Only exists during the day, so it is never saved. */
-interface Visit {
+export interface Visit {
   party: Party;
   tablesUsed: number;
   /** Which tables they sit at: inside tables first, then the terrace. */
@@ -46,6 +46,8 @@ interface Visit {
   leaveAt: number;
   /** How the meal went (0–100), once the food has arrived. */
   satisfaction: number | null;
+  /** Points added to (or taken off) how happy they end up, from things that happened during their visit. */
+  mood: number;
 }
 
 /** A party that gave up and left, remembered briefly so the restaurant view can show them going. */
@@ -56,7 +58,7 @@ interface Walkout {
 }
 
 /** What is happening inside one restaurant right now. */
-interface Floor {
+export interface Floor {
   freeTables: number;
   visits: Visit[];
   /** Orders waiting for a chef, oldest first. */
@@ -190,7 +192,7 @@ function progressRestaurant(
         waiterSkill: averageLevel(restaurant.waiters, 'skill'),
         ambiance: restaurant.ambiance,
       });
-      const satisfaction = satisfactionScore(factors);
+      const satisfaction = Math.max(0, Math.min(100, satisfactionScore(factors) + visit.mood));
       updateReputation(restaurant, party, satisfaction);
       outcomes.push({
         restaurant: restaurant.id,
@@ -301,7 +303,7 @@ function regularsOrder(restaurant: Restaurant, order: MenuDish[]): MenuDish[] {
 }
 
 /** Seats a party that has chosen (or booked) a restaurant, if there's a free table. */
-function seat(
+export function seat(
   rng: RngState,
   progress: DayInProgress,
   index: number,
@@ -335,6 +337,7 @@ function seat(
     eating: false,
     leaveAt: 0,
     satisfaction: null,
+    mood: 0,
   });
 }
 

@@ -8,13 +8,16 @@ import type { DecorId } from '../data/decor';
 import type { EquipmentId, ExtraId, TemplateId } from '../data/dishes';
 import type { LocationId } from '../data/locations';
 import type { CampaignId } from '../data/marketing';
+import { MOMENTS } from '../data/moments';
 import type { TipId } from '../data/mewa';
 import { importSaveCode, loadGame, saveGame } from '../save/save';
 import * as actions from '../sim/actions';
 import { minuteOfDay } from '../sim/clock';
 import { floorView, type FloorView } from '../sim/day';
 import {
+  answerTheMoment,
   closeDay,
+  momentDue,
   newGame,
   openRestaurant,
   playTick,
@@ -25,6 +28,7 @@ import {
   type GameState,
   type OpenDay,
 } from '../sim/game';
+import type { MomentResult } from '../sim/moments';
 import type { Supplier } from '../sim/types';
 import { play, startAmbience, stopAmbience } from './sound';
 
@@ -58,6 +62,10 @@ export interface LiveDay extends DayTally {
   floor: FloorView;
   /** Excuses from anyone who didn't turn up today. */
   absent: string[];
+  /** A choice card waiting for an answer; the clock stops until it gets one. */
+  moment: { title: string; text: string; choices: [string, string] } | null;
+  /** What the last answer did; the day screen shows it for a few seconds. */
+  lastMoment: MomentResult | null;
 }
 
 interface GameStore {
@@ -73,6 +81,8 @@ interface GameStore {
 
   open: () => void;
   tick: () => void;
+  /** Answers the choice card on screen with its first (0) or second (1) answer. */
+  answerMoment: (choice: 0 | 1) => void;
   setSpeed: (speed: Speed) => void;
   planNextDay: () => void;
   setPlanTab: (tab: PlanTab) => void;
@@ -103,14 +113,19 @@ interface GameStore {
 }
 
 function liveFrom(openDay: OpenDay): LiveDay {
-  const { progress } = openDay;
+  const { progress, moments } = openDay;
   const minute = minuteOfDay(Math.max(0, progress.tick - 1));
+  const pending = moments.pending && MOMENTS[moments.pending.id];
   return {
     ...tallyFor(progress.outcomes, 'player'),
     minute,
     closing: minute >= balance.clock.closeMinute,
     floor: floorView(progress, 0),
     absent: openDay.absent.map((a) => a.excuse),
+    moment: pending
+      ? { title: pending.title, text: pending.text, choices: [pending.choices[0].label, pending.choices[1].label] }
+      : null,
+    lastMoment: moments.results[moments.results.length - 1] ?? null,
   };
 }
 
@@ -146,6 +161,13 @@ export const useGame = create<GameStore>((set, get) => ({
   tick: () => {
     const { openDay, game, live } = get();
     if (!openDay) return;
+    // A choice card stops the clock until it is answered.
+    if (openDay.moments.pending) return;
+    if (momentDue(openDay)) {
+      play('card');
+      set({ live: liveFrom(openDay) });
+      return;
+    }
     playTick(openDay);
     if (openDay.progress.done) {
       const { state, summary } = closeDay(game, openDay);
@@ -159,6 +181,14 @@ export const useGame = create<GameStore>((set, get) => ({
       if (live && next.guestsServed > live.guestsServed) play('ding');
       set({ live: next });
     }
+  },
+
+  answerMoment: (choice) => {
+    const { openDay } = get();
+    if (!openDay) return;
+    const result = answerTheMoment(openDay, choice);
+    if (result && result.cash < 0) play('coin');
+    set({ live: liveFrom(openDay) });
   },
 
   setSpeed: (speed) => set({ speed }),

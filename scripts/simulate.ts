@@ -5,7 +5,7 @@
 import { RIVAL_IDS, RIVALS, type RivalId } from '../src/data/rivals';
 import { isInSeason, isMonday } from '../src/sim/calendar';
 import { wageOf } from '../src/sim/finance';
-import { closeDay, newGame, openRestaurant, playTick, type GameState } from '../src/sim/game';
+import { answerTheMoment, closeDay, momentDue, newGame, openRestaurant, playTick, type GameState } from '../src/sim/game';
 import { isFairDay, neptuneScore } from '../src/sim/neptune';
 import { createPlayerRestaurant } from '../src/sim/setup';
 import { staffOf } from '../src/sim/staff';
@@ -90,7 +90,11 @@ function playSeason(strategy: Strategy, seed: number): SeasonResult {
     }
 
     const open = openRestaurant(state);
-    while (!open.progress.done) playTick(open);
+    while (!open.progress.done) {
+      // A player who only watches: every choice card gets the answer that doesn't help.
+      if (momentDue(open)) answerTheMoment(open, 1);
+      playTick(open);
+    }
     for (const o of open.progress.outcomes) {
       if (o.restaurant === null) continue;
       if (o.satisfaction !== null) {
