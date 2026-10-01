@@ -5,13 +5,11 @@
 // or the moon and stars), drifting clouds, then the houses and the street. See project.md section 9.1.1.
 
 import type { LocationId } from '../../data/locations';
+import { STREET_STYLES, type Landmark, type StreetStyle } from './streetStyle';
 import type { Weather } from '../../data/weather';
 import { hex, mix, Pixels, type Rgb } from './raster';
 import { LOW_WALL, PLINTH, type RoomLayout, type RoomLook } from './room';
-import { AWNING_COLOURS, drawTownhouse, FACADE_COLOURS, frontWidth, type Gable, type TownhouseFront } from './townhouse';
-
-/** Streets paved with granite all the way across; the others have cobbles between granite pavements. */
-export const GRANITE_STREETS: readonly LocationId[] = ['dluga'];
+import { AWNING_COLOURS, drawTownhouse, FACADE_COLOURS, frontWidth, GRANARY_COLOURS, type TownhouseFront } from './townhouse';
 
 const C = {
   cobbleA: hex('#a99d91'),
@@ -32,6 +30,20 @@ const C = {
   dial: hex('#2f4b7a'),
   stone: hex('#e9e1d2'),
   opening: hex('#2b2630'),
+  brickDark: hex('#7a3322'),
+  roof: hex('#6e3426'),
+  roofLight: hex('#8a4632'),
+  timber: hex('#4a3020'),
+  timberLight: hex('#7a5a3e'),
+  plank: hex('#6e5036'),
+  slabA: hex('#bdbab2'),
+  slabB: hex('#c8c5bd'),
+  slabGap: hex('#9a978f'),
+  water: hex('#3f86ad'),
+  waterDeep: hex('#2f6a8e'),
+  waterLight: hex('#9fd0e6'),
+  quay: hex('#b3a999'),
+  quayEdge: hex('#8a8175'),
   sky: { sunny: hex('#bfe0f0'), cloudy: hex('#d3dde3'), rain: hex('#a4b4c0'), heatwave: hex('#ffe3a8') } as Record<Weather, Rgb>,
   dusk: hex('#3d4a74'),
   rain: hex('#e6eef3'),
@@ -61,13 +73,13 @@ interface Sample {
 }
 
 /** A row of townhouses along a street, `length` units long, the same every time for the same seed. */
-function rowOfHouses(seed: number, length: number, minHeight: number, maxHeight: number, dusk: boolean): House[] {
+function rowOfHouses(seed: number, length: number, minHeight: number, maxHeight: number, dusk: boolean, style: StreetStyle): House[] {
   let s = seed >>> 0;
   const rnd = () => {
     s = (Math.imul(s, 1103515245) + 12345) >>> 0;
     return (s >>> 8) / 16777216;
   };
-  const gables: Gable[] = ['scroll', 'stepped', 'scroll', 'pointed', 'attic', 'scroll', 'stepped'];
+  const { gables, ...chance } = style.houses;
   const houses: House[] = [];
   let lastColour = -1;
   for (let u = 0; u < length; ) {
@@ -76,20 +88,22 @@ function rowOfHouses(seed: number, length: number, minHeight: number, maxHeight:
     let colour = Math.floor(rnd() * FACADE_COLOURS.length);
     if (colour === lastColour) colour = (colour + 1) % FACADE_COLOURS.length;
     lastColour = colour;
+    const granary = rnd() < chance.granary;
     const shop = rnd() >= 0.2;
-    const awning = shop && rnd() < 0.5;
+    const awning = shop && rnd() < chance.awning;
     const front = drawTownhouse(
       {
+        kind: granary ? 'granary' : 'townhouse',
         bays,
         height: minHeight + Math.floor(rnd() * (maxHeight - minHeight)),
         gable: gables[Math.floor(rnd() * gables.length)],
-        colour: FACADE_COLOURS[colour],
+        colour: granary ? GRANARY_COLOURS[colour % GRANARY_COLOURS.length] : FACADE_COLOURS[colour],
         ground: shop ? 'shop' : 'arcade',
         pediment: (['triangle', 'arch', 'flat'] as const)[Math.floor(rnd() * 3)],
         awning: awning ? AWNING_COLOURS[Math.floor(rnd() * AWNING_COLOURS.length)] : null,
-        sign: !awning && rnd() < 0.6,
-        flowers: rnd() < 0.35,
-        flag: rnd() < 0.2,
+        sign: !awning && rnd() < chance.sign,
+        flowers: rnd() < chance.flowers,
+        flag: rnd() < chance.flag,
         seed: seed + houses.length * 31,
       },
       dusk,
@@ -118,9 +132,8 @@ function houseSample(row: House[], u: number, z: number): Sample | null {
  * near the top, a white gallery, then the spire in tiers of green copper and gold, up to the
  * gilded figure of King Sigismund Augustus on the very top.
  */
-function townHall(from: number, to: number, height: number, u: number, z: number): Rgb | null {
-  const width = to - from;
-  const local = u - from;
+function townHall(local: number, z: number, height: number): Rgb | null {
+  const width = LANDMARK_WIDTH.townHall;
   const dx = local - width / 2;
   const fromMiddle = Math.abs(dx);
   if (z >= height) {
@@ -266,6 +279,90 @@ function puddle(x: number, y: number): Rgb | null {
   return d < 0.25 && dx < 0 ? C.puddleShine : C.puddle;
 }
 
+/**
+ * St. Mary's Basilica: the huge flat-topped brick tower with tall blind niches, a crenellated
+ * parapet, slender corner turrets and a small copper lantern, then the long nave under its steep roof.
+ */
+function stMarys(local: number, z: number, height: number): Rgb | null {
+  const tower = 30;
+  if (local < tower) {
+    const dx = local - tower / 2;
+    const fromMiddle = Math.abs(dx);
+    if (z >= height) {
+      const g = z - height;
+      if (g < 2) return mod(Math.floor(local), 3) === 2 ? null : C.brickDark;
+      for (const turret of [1.5, tower - 1.5]) {
+        if (g < 12 && Math.abs(local - turret) < 1.6 * (1 - (g - 2) / 10)) return g >= 10 ? C.gold : C.spire;
+      }
+      if (g < 9 && fromMiddle < tower * 0.32 * (1 - (g - 2) / 9)) return dx < 0 ? C.spireLight : C.spire;
+      if (g >= 9 && g < 18 && fromMiddle < 0.8) return g >= 16 ? C.gold : C.spire;
+      return null;
+    }
+    if (local < 1) return mix(C.brick, C.shadow, 0.35);
+    const column = mod(Math.floor(local) - 3, 5);
+    if (local >= 3 && local < tower - 3 && column < 2 && z > height * 0.2 && z < height - 5) {
+      // A tall blind niche with a pointed top.
+      if (z > height - 7 && column === 1) return C.brick;
+      return C.brickDark;
+    }
+    return mod(Math.floor(z), 4) === 0 ? mix(C.brick, C.shadow, 0.12) : C.brick;
+  }
+  // The nave: brick with tall windows, under a steep tiled roof, ending in a gable with turrets.
+  const n = local - tower;
+  if (n >= 52) return null;
+  const wall = height * 0.7;
+  const roofTop = wall + 16;
+  if (z < wall) {
+    if (mod(n, 10) >= 4 && mod(n, 10) < 6 && z > wall * 0.3 && z < wall - 4) return C.opening;
+    return mod(Math.floor(z), 4) === 0 ? mix(C.brick, C.shadow, 0.12) : C.brick;
+  }
+  if (n >= 46) {
+    // The east gable with three slender turrets.
+    const g = z - wall;
+    for (const t of [46.5, 49, 51.5]) if (Math.abs(n - t) < 0.9 && g < 26 - Math.abs(t - 49) * 3) return g > 20 - Math.abs(t - 49) * 3 ? C.spire : C.brick;
+    return g < 16 ? C.brick : null;
+  }
+  if (z < roofTop) return mod(Math.floor(z), 3) === 0 ? C.roofLight : C.roof;
+  return null;
+}
+
+/**
+ * The Żuraw, the medieval port crane on the Motława: two brick towers, and the dark timber
+ * crane housing between and over them under its pitched roof.
+ */
+function crane(local: number, z: number, height: number): Rgb | null {
+  const width = LANDMARK_WIDTH.crane;
+  const timberBottom = height * 0.66;
+  const timberTop = height * 0.9;
+  const roofPeak = height + 6;
+  if (z >= timberTop) {
+    const mid = (4 + width) / 2;
+    const half = (width - 4) / 2 + 1;
+    const reach = half * (1 - (z - timberTop) / (roofPeak - timberTop));
+    if (Math.abs(local - mid) < reach) return mod(Math.floor(z), 3) === 0 ? C.roofLight : C.roof;
+    return null;
+  }
+  if (z >= timberBottom && local >= 4) {
+    // Timber planks between dark beams, with a few small openings.
+    if (mod(Math.floor(z - timberBottom), 9) === 0 || mod(Math.floor(local), 10) === 4) return C.timber;
+    if (mod(Math.floor(local), 10) === 8 && mod(Math.floor(z), 9) > 3 && mod(Math.floor(z), 9) < 7) return C.opening;
+    return mod(Math.floor(local), 2) === 0 ? C.timberLight : C.plank;
+  }
+  const leftTower = local < 11;
+  const towerTop = leftTower ? height * 0.8 : height * 0.74;
+  if (leftTower || local >= width - 11) {
+    if (z >= towerTop) return z < towerTop + 4 && Math.abs(local - (leftTower ? 5.5 : width - 5.5)) < 5.5 * (1 - (z - towerTop) / 4) ? C.roof : null;
+    if (local < 1) return mix(C.brick, C.shadow, 0.35);
+    if (mod(Math.floor(z), 14) > 8 && mod(Math.floor(z), 14) < 12 && Math.abs(local - (leftTower ? 5.5 : width - 5.5)) < 1) return C.opening;
+    return mod(Math.floor(z), 4) === 0 ? mix(C.brick, C.shadow, 0.12) : C.brick;
+  }
+  if (z < timberBottom) return mod(Math.floor(z), 4) === 0 ? mix(C.brick, C.shadow, 0.12) : C.brick;
+  return null;
+}
+
+const LANDMARK_WIDTH: Record<Landmark, number> = { townHall: 16, stMarys: 82, crane: 48 };
+const LANDMARKS: Record<Landmark, (local: number, z: number, height: number) => Rgb | null> = { townHall, stMarys, crane };
+
 /** Light granite slabs in staggered rows, flecked, each slab a slightly different shade. */
 function granite(x: number, y: number, slab: number): Rgb {
   const row = Math.floor(y / (slab * 0.7));
@@ -278,7 +375,27 @@ function granite(x: number, y: number, slab: number): Rgb {
   return tile < 3 ? C.graniteA : tile < 5 ? C.graniteB : C.graniteC;
 }
 
-function ground(layout: RoomLayout, x: number, y: number, look?: RoomLook, graniteStreet = false): Rgb {
+/** Big smooth concrete slabs, as on the new streets of Granary Island. */
+function slabs(x: number, y: number): Rgb {
+  if (mod(x, 14) < 0.6 || mod(y, 14) < 0.6) return C.slabGap;
+  return mod(Math.floor(x / 14) + Math.floor(y / 14), 2) === 0 ? C.slabA : C.slabB;
+}
+
+/** The Motława: ripples on the water, darker further out, deep blue after dusk. */
+function river(x: number, y: number, from: number, look?: RoomLook): Rgb {
+  const out = y - from;
+  let colour = out > 30 ? C.waterDeep : C.water;
+  const fx = Math.floor(x / 7);
+  const fy = Math.floor(y / 3);
+  if (((fx * 73 + fy * 151) >>> 0) % 11 === 0 && mod(x, 7) < 4) colour = C.waterLight;
+  if (look?.weather === 'rain') colour = mix(colour, C.shadow, 0.2);
+  return colour;
+}
+
+/** Where the quay ends and the river begins, in front of the street. */
+export const riverFrom = (layout: RoomLayout) => layout.streetY + 30;
+
+function ground(layout: RoomLayout, x: number, y: number, look?: RoomLook, style: StreetStyle = STREET_STYLES.ogarna): Rgb {
   const { edgeX: roomX } = layout;
   // The pavement runs along the house fronts; the przedproże and its steps stand on it.
   const roomY = layout.roomY + LOW_WALL.thick;
@@ -286,9 +403,16 @@ function ground(layout: RoomLayout, x: number, y: number, look?: RoomLook, grani
   const curb = (x < 0 && y >= roomY + 10 && y < roomY + 11.5) || (x >= roomX && y >= 10 && y < 11.5 && x > roomX + 1);
   if (curb) return C.curb;
   if (pavement) return granite(x, y, 8);
+  if (style.river) {
+    const water = riverFrom(layout);
+    if (y >= water) return river(x, y, water, look);
+    // The quay's stone edge.
+    if (y >= water - 2) return y >= water - 0.8 ? C.quayEdge : C.quay;
+  }
   const wet = look?.weather === 'rain' ? puddle(x, y) : null;
   if (wet) return wet;
-  if (graniteStreet) return granite(x, y, 12);
+  if (style.paving === 'granite') return granite(x, y, 12);
+  if (style.paving === 'slabs') return slabs(x, y);
   // Cobbles in staggered rows.
   const row = Math.floor(y / 4);
   const shift = mod(row, 2) === 0 ? 0 : 2.5;
@@ -307,8 +431,9 @@ export function drawStreet(
   height: number,
   marginX: number,
   marginY: number,
-  graniteStreet = false,
+  location: LocationId = 'ogarna',
 ): Pixels {
+  const style = STREET_STYLES[location];
   const img = new Pixels(width, height);
   const { roomX } = layout;
   // Next door's houses line up with the restaurant's front wall.
@@ -317,13 +442,18 @@ export function drawStreet(
   // Everything outside stands on the street, a plinth lower than the restaurant's floor.
   const oy = layout.origin.oy + marginY + PLINTH;
   // Three rows of houses: behind the back wall, above the left wall, and next door on the left.
-  const behind = rowOfHouses(1997, width + 40, 56, 74, look.dusk);
-  // The Town Hall tower, further back on the right, its green spire peeking over the roofs.
-  const from = roomX + 30;
+  const behind = rowOfHouses(1997, width + 40, 56, 74, look.dusk, style);
+  // The street's landmark, further back on the right, peeking over the roofs.
+  const from = roomX + (style.landmark === 'stMarys' ? 16 : 30);
   const room = oy + (from + 11) / 2 - 4;
-  const tower = { from, to: from + 16, height: Math.max(84, Math.round(room - 40)) };
-  const above = rowOfHouses(1410, roomY + 1, 56, 72, look.dusk);
-  const nextDoor = rowOfHouses(1308, width + 40, 28, 42, look.dusk);
+  const landmark = style.landmark && {
+    draw: LANDMARKS[style.landmark],
+    from,
+    to: from + LANDMARK_WIDTH[style.landmark],
+    height: Math.max(84, Math.round(room - 40)) + (style.landmark === 'stMarys' ? 8 : 0),
+  };
+  const above = rowOfHouses(1410, roomY + 1, 56, 72, look.dusk, style);
+  const nextDoor = rowOfHouses(1308, width + 40, 28, 42, look.dusk, style);
 
   for (let py = 0; py < height; py++) {
     for (let px = 0; px < width; px++) {
@@ -348,14 +478,14 @@ export function drawStreet(
         z = sx / 2 - sy;
         sample = z >= 0 ? houseSample(behind, sx, z) : null;
         haze = 0.15;
-        if (sample === null && z >= 0 && sx >= tower.from && sx < tower.to) {
-          const brick = townHall(tower.from, tower.to, tower.height, sx, z);
-          sample = brick ? { colour: brick, glow: false } : null;
+        if (sample === null && landmark && z >= 0 && sx >= landmark.from && sx < landmark.to) {
+          const colour = landmark.draw(sx - landmark.from, z, landmark.height);
+          sample = colour ? { colour, glow: false } : null;
           haze = 0.3;
         }
       }
       if (z < 0) {
-        sample = { colour: ground(layout, (sx + 2 * sy) / 2, (2 * sy - sx) / 2, look, graniteStreet), glow: false };
+        sample = { colour: ground(layout, (sx + 2 * sy) / 2, (2 * sy - sx) / 2, look, style), glow: false };
         haze = 0;
       }
       // The sky stays see-through: the sky picture and the clouds show behind.

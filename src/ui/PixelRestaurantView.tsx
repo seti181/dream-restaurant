@@ -32,7 +32,7 @@ import {
 } from './pixel/room';
 import type { Carry, PersonKind } from './pixel/sprites';
 import { useGame } from './store';
-import { drawCloud, drawRainTile, drawSky, drawStreet, GRANITE_STREETS } from './pixel/street';
+import { drawCloud, drawRainTile, drawSky, drawStreet } from './pixel/street';
 import { useFittingScale } from './useFittingScale';
 
 /** World units a guest walks per second at 1× speed. */
@@ -297,6 +297,14 @@ export function canTend(guests: TableGuests | null): boolean {
   return guests !== null && guests.stage !== 'eating' && guests.visitor === null;
 }
 
+/** Little animations for some pieces of the scene: steam over pots, pigeons, the busker, boats. */
+const PIECE_CLASSES: Record<string, string> = {
+  steam: 'pixel steam',
+  pigeon: 'pixel pecking',
+  busker: 'pixel busking',
+  boat: 'pixel bobbing',
+};
+
 export function PixelRestaurantView({
   floor,
   weather,
@@ -350,7 +358,7 @@ export function PixelRestaurantView({
   const streetWidth = layout.width + 2 * marginX;
   const streetHeight = layout.height + 2 * marginY;
   const street = useMemo(
-    () => imageUrl(drawStreet(layout, look, streetWidth, streetHeight, marginX, marginY, GRANITE_STREETS.includes(floor.location))),
+    () => imageUrl(drawStreet(layout, look, streetWidth, streetHeight, marginX, marginY, floor.location)),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [layout, look.weather, look.dusk, streetWidth, streetHeight, floor.location],
   );
@@ -378,7 +386,7 @@ export function PixelRestaurantView({
           <img
             key={p.key}
             src={urlOf(p.image.pixels)}
-            className={p.kind === 'steam' ? 'pixel steam' : p.kind === 'pigeon' ? 'pixel pecking' : p.kind === 'busker' ? 'pixel busking' : 'pixel'}
+            className={PIECE_CLASSES[p.kind ?? ''] ?? 'pixel'}
             alt=""
             style={{ left: at(p.px), top: at(p.py), width: at(p.image.pixels.width), zIndex: zOf(p.depth) }}
           />

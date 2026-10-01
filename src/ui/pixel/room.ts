@@ -4,6 +4,7 @@
 
 import type { DecorId } from '../../data/decor';
 import type { EquipmentId } from '../../data/dishes';
+import type { LocationId } from '../../data/locations';
 import type { Weather } from '../../data/weather';
 import type { FloorView, TableGuests } from '../../sim/day';
 import { box, placeOn, project, solid, type Faces, type Origin } from './iso';
@@ -325,7 +326,7 @@ export interface ScenePiece {
   /** For bubbles and coins: the guests this piece shows, and their table. */
   guests?: TableGuests;
   table?: number;
-  kind?: 'guest' | 'chef' | 'steam' | 'queue' | 'pigeon' | 'busker';
+  kind?: 'guest' | 'chef' | 'steam' | 'queue' | 'pigeon' | 'busker' | 'boat';
   busy?: boolean;
 }
 
@@ -720,7 +721,7 @@ export function scenePieces(
     addTable(slot, floor.tables[floor.insideTables + i] ?? null, true, floor.insideTables + i),
   );
 
-  pieces.push(...buildingPieces(layout, floor), ...streetPieces(layout, look));
+  pieces.push(...buildingPieces(layout, floor), ...streetPieces(layout, look, floor.location));
 
   // The kitchen: chefs behind the island, a pot each, the pizza oven at the side.
   const k = layout.kitchenX;
@@ -980,7 +981,15 @@ export type StreetThing =
   | 'bike'
   | 'pigeons'
   | 'amberStall'
-  | 'musician';
+  | 'musician'
+  | 'cat'
+  | 'barrels'
+  | 'przedproze'
+  | 'neptune'
+  | 'bollard'
+  | 'gull'
+  | 'boat'
+  | 'galleon';
 
 /** How far each thing reaches from where it stands, so routes keep clear of it. */
 export const STREET_THING_REACH: Record<StreetThing, number> = {
@@ -995,51 +1004,120 @@ export const STREET_THING_REACH: Record<StreetThing, number> = {
   pigeons: 4,
   amberStall: 12,
   musician: 3,
+  cat: 2,
+  barrels: 5,
+  przedproze: 5.5,
+  neptune: 12,
+  bollard: 2,
+  gull: 2,
+  boat: 8,
+  galleon: 18,
 };
+
+/** What stands in each of the free spots along a street; the lamps, the square's trees and the menu board are always there. */
+interface StreetPlan {
+  /** The pavement on the right, along the houses behind (five spots). */
+  right: StreetThing[];
+  /** The little square to the right of the restaurant (three spots). */
+  square: StreetThing[];
+  /** The pavement on the left, in front of next door (five spots). */
+  left: StreetThing[];
+  /** Across the street, on the left (three spots). */
+  across: StreetThing[];
+}
+
+const STREET_PLANS: Record<LocationId, StreetPlan> = {
+  // Quiet: trees, benches, flower tubs, and the cat who visits every windowsill.
+  ogarna: {
+    right: ['tree', 'bench', 'tub', 'bike', 'tree'],
+    square: ['pigeons', 'tree', 'bench'],
+    left: ['bench', 'tree', 'tub', 'cat', 'tree'],
+    across: ['tree', 'lamp', 'bench'],
+  },
+  // Beer Street: barrel tables outside the pubs, and a musician.
+  piwna: {
+    right: ['barrels', 'barrels', 'tub', 'bike', 'tree'],
+    square: ['pigeons', 'barrels', 'musician'],
+    left: ['barrels', 'tree', 'tub', 'bike', 'tree'],
+    across: ['tree', 'lamp', 'bench'],
+  },
+  // Stone terraces with gargoyles in front of the houses, amber everywhere.
+  mariacka: {
+    right: ['przedproze', 'przedproze', 'tub', 'tub', 'przedproze'],
+    square: ['pigeons', 'amberStall', 'musician'],
+    left: ['przedproze', 'przedproze', 'tub', 'tub', 'tree'],
+    across: ['tree', 'lamp', 'bench'],
+  },
+  // The Royal Way: cafés all along, and the Neptune Fountain on the square.
+  dluga: {
+    right: ['cafe', 'cafeRed', 'tub', 'bike', 'cafe'],
+    square: ['pigeons', 'neptune', 'musician'],
+    left: ['cafeRed', 'cafe', 'tub', 'bike', 'tree'],
+    across: ['tree', 'lamp', 'bench'],
+  },
+  // The waterfront: riverside cafés, an amber stall for the tourists, bollards and boats on the Motława.
+  pobrzeze: {
+    right: ['cafe', 'cafeRed', 'tub', 'bike', 'tree'],
+    square: ['pigeons', 'amberStall', 'musician'],
+    left: ['cafe', 'tree', 'tub', 'bike', 'tree'],
+    across: ['bollard', 'lamp', 'bench'],
+  },
+  // Granary Island: a café, rows of bikes, young trees.
+  spichrzow: {
+    right: ['cafe', 'bike', 'bike', 'bike', 'tree'],
+    square: ['pigeons', 'tree', 'bench'],
+    left: ['cafe', 'tree', 'tub', 'bike', 'tree'],
+    across: ['tree', 'lamp', 'bench'],
+  },
+};
+
+/** Things that sit a little further from the house fronts, because they're deeper. */
+const DEEP: StreetThing[] = ['cafe', 'cafeRed', 'barrels', 'przedproze'];
 
 /**
  * Where the street furniture stands: on the pavements beside the restaurant and on the open
- * cobbles to either side, never in front of the room and never on the way in.
+ * cobbles to either side, never in front of the room and never on the way in. Each street has
+ * its own (STREET_PLANS); on Długie Pobrzeże, boats float on the river beyond the quay.
  */
-export function streetFurniture(layout: RoomLayout): { thing: StreetThing; x: number; y: number }[] {
+export function streetFurniture(layout: RoomLayout, location: LocationId = 'ogarna'): { thing: StreetThing; x: number; y: number }[] {
   const { edgeX, edgeY, streetY } = layout;
   const frontY = layout.roomY + LOW_WALL.thick;
   const { x1: d1 } = layout.door;
-  return [
-    // The pavement on the right, along the houses behind: cafés under umbrellas.
+  const plan = STREET_PLANS[location];
+  const pavement = (thing: StreetThing) => (DEEP.includes(thing) ? 7 : 4);
+  const things: { thing: StreetThing; x: number; y: number }[] = [
     { thing: 'lamp', x: edgeX + 12, y: 8 },
-    { thing: 'cafe', x: edgeX + 31, y: 7 },
-    { thing: 'cafeRed', x: edgeX + 51, y: 7 },
-    { thing: 'tub', x: edgeX + 68, y: 4 },
-    { thing: 'bike', x: edgeX + 82, y: 4 },
     { thing: 'lamp', x: edgeX + 96, y: 8 },
-    { thing: 'tree', x: edgeX + 118, y: 4 },
-    // A little square to the right of the restaurant: trees, a bench, pigeons, the amber stall and a musician.
     { thing: 'tree', x: edgeX + 36, y: 44 },
     { thing: 'bench', x: edgeX + 30, y: 60 },
     { thing: 'tree', x: edgeX + 70, y: 76 },
     { thing: 'lamp', x: edgeX + 56, y: 52 },
-    { thing: 'pigeons', x: edgeX + 46, y: 88 },
-    { thing: 'amberStall', x: edgeX + 94, y: 34 },
-    { thing: 'musician', x: edgeX + 96, y: 62 },
-    // The pavement on the left, in front of next door.
     { thing: 'lamp', x: -14, y: frontY + 8 },
-    { thing: 'cafeRed', x: -40, y: frontY + 7 },
-    { thing: 'tree', x: -66, y: frontY + 4 },
-    { thing: 'tub', x: -86, y: frontY + 4 },
-    { thing: 'bike', x: -100, y: frontY + 4 },
     { thing: 'lamp', x: -116, y: frontY + 8 },
-    { thing: 'tree', x: -140, y: frontY + 4 },
-    // Across the street, to the left.
-    { thing: 'tree', x: -40, y: streetY + 22 },
-    { thing: 'lamp', x: -70, y: streetY + 18 },
-    { thing: 'bench', x: -104, y: streetY + 20 },
     // The menu board at the foot of the steps.
     { thing: 'menuBoard', x: d1 + 3, y: edgeY + 4 },
   ];
+  [31, 51, 68, 82, 118].forEach((dx, i) => things.push({ thing: plan.right[i], x: edgeX + dx, y: pavement(plan.right[i]) }));
+  // The square: something small near the bench, something big at the back, someone standing.
+  [[46, 88], [94, 34], [96, 62]].forEach(([dx, y], i) => things.push({ thing: plan.square[i], x: edgeX + dx, y }));
+  [-40, -66, -86, -100, -140].forEach((x, i) => things.push({ thing: plan.left[i], x, y: frontY + pavement(plan.left[i]) }));
+  [[-40, 22], [-70, 18], [-104, 20]].forEach(([x, dy], i) => things.push({ thing: plan.across[i], x, y: streetY + dy }));
+  if (location === 'pobrzeze') {
+    // More bollards along the quay (a gull on one), and boats on the Motława.
+    things.push(
+      { thing: 'bollard', x: -150, y: streetY + 25 },
+      { thing: 'gull', x: edgeX + 40, y: streetY + 25 },
+      { thing: 'bollard', x: edgeX + 110, y: streetY + 25 },
+      { thing: 'galleon', x: -70, y: streetY + 62 },
+      { thing: 'boat', x: edgeX + 70, y: streetY + 46 },
+      { thing: 'boat', x: -190, y: streetY + 44 },
+    );
+  }
+  return things;
 }
 
 function streetThing(thing: StreetThing, lit: boolean): SpriteImage {
+  const big = thing === 'galleon' || thing === 'neptune';
   return drawn(`street:${thing}:${lit}`, (img, lo) => {
     const iron: Faces = { top: C.ironLight, left: C.iron, right: C.iron };
     switch (thing) {
@@ -1135,6 +1213,103 @@ function streetThing(thing: StreetThing, lit: boolean): SpriteImage {
         }
         return;
       }
+      case 'cat': {
+        // A ginger cat sitting on the pavement, tail curled round.
+        const fur: Faces = { top: hex('#e9a23b'), left: hex('#d98b2b'), right: hex('#b8701e') };
+        box(img, lo, { x0: -1.5, x1: 1.5, y0: -1, y1: 1, z0: 0, z1: 3.5 }, fur);
+        box(img, lo, { x0: -1.2, x1: 1.2, y0: -0.6, y1: 1, z0: 3.5, z1: 5.5 }, fur);
+        box(img, lo, { x0: -1.2, x1: -0.6, y0: 0, y1: 0.6, z0: 5.5, z1: 6.3 }, fur);
+        box(img, lo, { x0: 0.6, x1: 1.2, y0: 0, y1: 0.6, z0: 5.5, z1: 6.3 }, fur);
+        box(img, lo, { x0: 1.5, x1: 3.5, y0: 0, y1: 0.8, z0: 0, z1: 0.8 }, fur);
+        return;
+      }
+      case 'barrels': {
+        // A beer barrel as a standing table, with two stools and a glass of beer on top.
+        const oak: Faces = { top: hex('#a0663a'), left: hex('#8a5233'), right: hex('#6b3d24') };
+        box(img, lo, { x0: -2, x1: 2, y0: -2, y1: 2, z0: 0, z1: 9 }, oak);
+        for (const z of [1.5, 7]) box(img, lo, { x0: -2.1, x1: 2.1, y0: -2.1, y1: 2.1, z0: z, z1: z + 0.6 }, iron);
+        box(img, lo, { x0: -0.5, x1: 0.5, y0: -0.5, y1: 0.5, z0: 9, z1: 10.6 }, solid(hex('#e9b23b')));
+        box(img, lo, { x0: -0.5, x1: 0.5, y0: -0.5, y1: 0.5, z0: 10.6, z1: 11.2 }, solid(C.cloth));
+        for (const x of [-4.5, 3.5]) {
+          box(img, lo, { x0: x, x1: x + 1, y0: -0.5, y1: 0.5, z0: 0, z1: 5 }, oak);
+          box(img, lo, { x0: x - 0.4, x1: x + 1.4, y0: -0.9, y1: 0.9, z0: 5, z1: 5.6 }, oak);
+        }
+        return;
+      }
+      case 'przedproze': {
+        // A Mariacka terrace: a raised stone platform with a carved balustrade and a gargoyle.
+        const stone: Faces = { top: C.sandstone, left: C.sandstoneShade, right: C.sandstoneDark };
+        box(img, lo, { x0: -5, x1: 5, y0: -3.5, y1: 3.5, z0: 0, z1: 3 }, stone);
+        for (let x = -5; x < 5; x += 2) box(img, lo, { x0: x, x1: x + 0.8, y0: 2.8, y1: 3.5, z0: 3, z1: 6 }, stone);
+        box(img, lo, { x0: -5, x1: 5, y0: 2.7, y1: 3.5, z0: 6, z1: 6.8 }, stone);
+        box(img, lo, { x0: -5, x1: -4, y0: -3.5, y1: 3.5, z0: 3, z1: 7.5 }, stone);
+        box(img, lo, { x0: 4, x1: 5, y0: -3.5, y1: 3.5, z0: 3, z1: 7.5 }, stone);
+        // The gargoyle: a stone dragon's head sticking out at the corner, mouth open.
+        const grey: Faces = { top: hex('#9a948a'), left: hex('#7f796f'), right: hex('#68625a') };
+        box(img, lo, { x0: 5, x1: 7.5, y0: 2, y1: 3.4, z0: 1.4, z1: 2.8 }, grey);
+        box(img, lo, { x0: 7, x1: 7.6, y0: 2.3, y1: 3.1, z0: 1.4, z1: 1.9 }, solid(C.outline));
+        box(img, lo, { x0: -1.5, x1: 1.5, y0: -2, y1: 1, z0: 3, z1: 5 }, { top: C.terracottaDark, left: C.terracotta, right: C.terracottaDark });
+        for (let f = 0; f < 3; f++) box(img, lo, { x0: -1.2 + f, x1: -0.4 + f, y0: -1.2, y1: -0.4, z0: 5, z1: 6 }, solid(C.flowers[f]));
+        return;
+      }
+      case 'neptune': {
+        // The Neptune Fountain: a basin behind an iron railing, and the bronze god with his golden trident.
+        const stone: Faces = { top: C.sandstone, left: C.sandstoneShade, right: C.sandstoneDark };
+        box(img, lo, { x0: -9, x1: 9, y0: -9, y1: 9, z0: 0, z1: 3 }, stone);
+        box(img, lo, { x0: -8, x1: 8, y0: -8, y1: 8, z0: 3, z1: 3.2 }, solid(hex('#6fb0d0')));
+        for (let k = -9; k <= 9; k += 3) {
+          for (const [x, y] of [[k, 9], [9, k]]) {
+            box(img, lo, { x0: x - 0.3, x1: x + 0.3, y0: y - 0.3, y1: y + 0.3, z0: 3, z1: 6.5 }, iron);
+            box(img, lo, { x0: x - 0.3, x1: x + 0.3, y0: y - 0.3, y1: y + 0.3, z0: 6.5, z1: 7.2 }, solid(C.gold));
+          }
+        }
+        box(img, lo, { x0: -9, x1: 9, y0: 8.8, y1: 9.2, z0: 5.5, z1: 6 }, iron);
+        box(img, lo, { x0: 8.8, x1: 9.2, y0: -9, y1: 9, z0: 5.5, z1: 6 }, iron);
+        box(img, lo, { x0: -2.5, x1: 2.5, y0: -2.5, y1: 2.5, z0: 3, z1: 12 }, stone);
+        box(img, lo, { x0: -3, x1: 3, y0: -3, y1: 3, z0: 12, z1: 13 }, stone);
+        const bronze: Faces = { top: hex('#5f7a5a'), left: hex('#4a6247'), right: hex('#3a4d38') };
+        box(img, lo, { x0: -1.2, x1: 1.2, y0: -1, y1: 1, z0: 13, z1: 22 }, bronze);
+        box(img, lo, { x0: -0.8, x1: 0.8, y0: -0.8, y1: 0.8, z0: 22, z1: 24.5 }, bronze);
+        box(img, lo, { x0: 1.2, x1: 3, y0: -0.4, y1: 0.4, z0: 19, z1: 19.8 }, bronze);
+        box(img, lo, { x0: 2.6, x1: 3.2, y0: -0.3, y1: 0.3, z0: 13, z1: 29 }, solid(C.gold));
+        for (const x of [1.8, 2.6, 3.4]) box(img, lo, { x0: x, x1: x + 0.5, y0: -0.3, y1: 0.3, z0: 29, z1: 31 }, solid(C.gold));
+        box(img, lo, { x0: 1.8, x1: 3.9, y0: -0.3, y1: 0.3, z0: 28.6, z1: 29.2 }, solid(C.gold));
+        // Water spouting into the basin.
+        for (const [x, y] of [[-2.8, 0], [0, -2.8]]) box(img, lo, { x0: x - 0.3, x1: x + 0.3, y0: y - 0.3, y1: y + 0.3, z0: 3.2, z1: 8 }, solid(hex('#d6ecf5')));
+        return;
+      }
+      case 'bollard':
+      case 'gull': {
+        // An iron mooring bollard on the quay (with a gull on it, sometimes).
+        box(img, lo, { x0: -1.2, x1: 1.2, y0: -1.2, y1: 1.2, z0: 0, z1: 3.5 }, iron);
+        box(img, lo, { x0: -1.6, x1: 1.6, y0: -1.6, y1: 1.6, z0: 3.5, z1: 4.3 }, iron);
+        return;
+      }
+      case 'boat': {
+        // A little white motorboat.
+        const hull: Faces = { top: C.cloth, left: hex('#efe9df'), right: hex('#cfc6b8') };
+        box(img, lo, { x0: -7, x1: 6, y0: -2.5, y1: 2.5, z0: 0, z1: 2.5 }, hull);
+        box(img, lo, { x0: -7, x1: 6, y0: -2.5, y1: 2.5, z0: 0, z1: 0.8 }, solid(hex('#2f5f86')));
+        box(img, lo, { x0: -4, x1: 0, y0: -1.8, y1: 1.8, z0: 2.5, z1: 5 }, { top: C.cloth, left: hex('#5b7590'), right: hex('#4d6a88') });
+        box(img, lo, { x0: 5, x1: 5.4, y0: -0.2, y1: 0.2, z0: 2.5, z1: 6 }, iron);
+        box(img, lo, { x0: 5.4, x1: 7, y0: -0.1, y1: 0.1, z0: 4.8, z1: 6 }, solid(C.clothEdge));
+        return;
+      }
+      case 'galleon': {
+        // The tourist galleon: a dark wooden hull with a gold stripe, two masts with white sails, red flags.
+        const hull: Faces = { top: hex('#7a4a2c'), left: hex('#5a3a28'), right: hex('#3f2819') };
+        box(img, lo, { x0: -17, x1: 15, y0: -4, y1: 4, z0: 0, z1: 6 }, hull);
+        box(img, lo, { x0: -17, x1: 15, y0: -4.05, y1: 4.05, z0: 4, z1: 4.7 }, solid(C.gold));
+        box(img, lo, { x0: -17, x1: -10, y0: -4, y1: 4, z0: 6, z1: 10 }, hull);
+        box(img, lo, { x0: 15, x1: 20, y0: -0.4, y1: 0.4, z0: 6, z1: 7 }, hull);
+        for (const m of [-5, 6]) {
+          box(img, lo, { x0: m - 0.4, x1: m + 0.4, y0: -0.4, y1: 0.4, z0: 6, z1: 34 }, hull);
+          box(img, lo, { x0: m - 5, x1: m + 5, y0: 0.4, y1: 0.8, z0: 13, z1: 21 }, solid(C.cloth));
+          box(img, lo, { x0: m - 4, x1: m + 4, y0: 0.4, y1: 0.8, z0: 23, z1: 30 }, solid(C.cloth));
+          box(img, lo, { x0: m + 0.4, x1: m + 3, y0: -0.1, y1: 0.1, z0: 32, z1: 34 }, solid(C.clothEdge));
+        }
+        return;
+      }
       case 'musician':
         return;
       case 'bench': {
@@ -1178,16 +1353,19 @@ function streetThing(thing: StreetThing, lit: boolean): SpriteImage {
         return;
       }
     }
-  });
+  }, big ? 128 : 96);
 }
 
-function streetPieces(layout: RoomLayout, look: RoomLook): ScenePiece[] {
+function streetPieces(layout: RoomLayout, look: RoomLook, location: LocationId): ScenePiece[] {
   const o = layout.origin;
-  return streetFurniture(layout).flatMap(({ thing, x, y }, i): ScenePiece[] => {
+  return streetFurniture(layout, location).flatMap(({ thing, x, y }, i): ScenePiece[] => {
     // An accordion player, swaying to the music.
     if (thing === 'musician') return [{ ...piece(o, `street${i}`, personImage('musician', 'front', 'stand'), x, y, -PLINTH, x + y), kind: 'busker' }];
     const placed = piece(o, `street${i}`, streetThing(thing, look.dusk && thing === 'lamp'), x, y, -PLINTH, x + y);
     if (thing === 'pigeons') return [{ ...placed, kind: 'pigeon' }];
+    if (thing === 'boat' || thing === 'galleon') return [{ ...placed, kind: 'boat' }];
+    // A gull resting on the bollard.
+    if (thing === 'gull') return [placed, { ...piece(o, `street${i}gull`, gullImage(), x, y, -PLINTH + 4.3, x + y + 0.1), kind: 'pigeon' }];
     // The amber seller stands behind the stall.
     if (thing === 'amberStall') return [placed, piece(o, `street${i}seller`, personImage('amberSeller', 'front', 'stand'), x + 11, y, -PLINTH, x + y + 11)];
     return [placed];

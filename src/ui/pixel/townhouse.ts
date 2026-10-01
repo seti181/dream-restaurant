@@ -11,6 +11,8 @@ export type Gable = 'scroll' | 'stepped' | 'pointed' | 'attic';
 type Pediment = 'triangle' | 'arch' | 'flat';
 
 export interface TownhouseSpec {
+  /** A townhouse (the default), or a brick granary like those on Granary Island. */
+  kind?: 'townhouse' | 'granary';
   /** Windows across: 2 to 4. */
   bays: number;
   /** From the ground to the top of the main cornice, in art pixels. */
@@ -43,6 +45,9 @@ export const FACADE_COLOURS = [
   '#e9b7b3', '#f0c9a0', '#e6bd62', '#efe4cc', '#a9d4c2', '#8fb3a5',
   '#c25b43', '#b9cde0', '#f3eee4', '#d98b6a', '#c9a3c4', '#e8c07a',
 ].map(hex);
+
+/** Granary brick, from deep red to warm orange. */
+export const GRANARY_COLOURS = ['#9c4630', '#a8553a', '#8a3f2c', '#b0603f'].map(hex);
 
 /** Awnings: red, beige, bottle green and navy. */
 export const AWNING_COLOURS = ['#b8322a', '#d9c7a3', '#3f7a52', '#2f5f86'].map(hex);
@@ -92,7 +97,83 @@ function gableHeightOf(kind: Gable, w: number): number {
   return Math.round(w * 0.6) + 3;
 }
 
+/**
+ * A granary on Granary Island: plain brick under a tall stepped gable, rows of small windows
+ * with green shutters, a column of loading doors up the middle and the hoist beam at the top.
+ */
+function drawGranary(spec: TownhouseSpec, dusk: boolean): TownhouseFront {
+  const w = frontWidth(spec.bays);
+  const gableHeight = Math.round(w * 0.9) + 4;
+  const H = spec.height + gableHeight;
+  const image = new Pixels(w, H);
+  const glow = new Pixels(w, H);
+  const rnd = random(spec.seed);
+  const brick = spec.colour;
+  const mortar = mix(brick, C.ink, 0.14);
+  const shutter = hex('#3f6b4a');
+  const timber = hex('#4a3020');
+  const top = H - spec.height;
+  const peak = top - gableHeight + 4;
+  // Half the width at a row: the full width below the eaves, narrowing in steps up the gable.
+  const halfAt = (y: number) => (y >= top ? w / 2 : (w / 2) * (1 - (Math.floor((top - y) / 3) * 3) / (top - peak)));
+  for (let y = peak; y < H; y++) {
+    const half = halfAt(y);
+    if (half <= 0.5) continue;
+    for (let x = Math.round(w / 2 - half); x < Math.round(w / 2 + half); x++) {
+      let colour = y % 3 === 0 ? mortar : brick;
+      if (x === Math.round(w / 2 - half)) colour = mix(brick, C.white, 0.18);
+      if (x === Math.round(w / 2 + half) - 1) colour = mix(brick, C.ink, 0.3);
+      image.set(x, y, colour);
+    }
+  }
+  const middle = spec.bays % 2 === 1 ? Math.floor(spec.bays / 2) : -1;
+  for (let y = peak + 7; y < H - 13; y += 9) {
+    for (let b = 0; b < spec.bays; b++) {
+      const x = 3 + b * 6;
+      // Only where the gable is wide enough around the window.
+      if (halfAt(y) < Math.abs(x + 1.5 - w / 2) + 2.5) continue;
+      if (b === middle) {
+        // The loading doors, one above the other.
+        image.fillRect(x, y - 1, 4, 6, timber);
+        image.fillRect(x + 1, y, 2, 4, hex('#6b4a30'));
+        continue;
+      }
+      image.set(x, y, shutter);
+      image.set(x, y + 1, shutter);
+      image.set(x, y + 2, shutter);
+      image.set(x + 3, y, shutter);
+      image.set(x + 3, y + 1, shutter);
+      image.set(x + 3, y + 2, shutter);
+      const lit = dusk && rnd() > 0.5;
+      for (let k = 0; k < 3; k++) {
+        image.set(x + 1, y + k, lit ? C.lit : C.glassDark);
+        image.set(x + 2, y + k, lit ? C.lit : C.glassDark);
+        if (lit) {
+          glow.set(x + 1, y + k, C.white);
+          glow.set(x + 2, y + k, C.white);
+        }
+      }
+    }
+  }
+  // The hoist beam at the top of the gable, with its rope.
+  const mid = Math.floor(w / 2);
+  image.fillRect(mid - 1, peak - 2, 2, 3, timber);
+  image.set(mid, peak + 1, C.iron);
+  image.set(mid, peak + 2, C.iron);
+  // Big arched doors on the ground floor.
+  const doorTop = H - 10;
+  image.fillRect(2, doorTop + 1, w - 4, 9, timber);
+  image.fillRect(3, doorTop, w - 6, 1, timber);
+  for (let x = 4; x < w - 3; x += 3) image.fillRect(x, doorTop + 2, 1, 7, hex('#6b4a30'));
+  if (dusk) {
+    image.fillRect(3, doorTop + 2, w - 6, 3, C.litWarm);
+    glow.fillRect(3, doorTop + 2, w - 6, 3, C.white);
+  }
+  return { image, glow, gableHeight };
+}
+
 export function drawTownhouse(spec: TownhouseSpec, dusk: boolean): TownhouseFront {
+  if (spec.kind === 'granary') return drawGranary(spec, dusk);
   const w = frontWidth(spec.bays);
   const gableHeight = gableHeightOf(spec.gable, w);
   const H = spec.height + gableHeight;

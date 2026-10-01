@@ -8,7 +8,7 @@ import { dishName, money } from './format';
 import { FoodIcon } from './PixelIcon';
 import type { GroupId } from '../data/groups';
 import { MewaTip } from './Mewa';
-import { MomentCard, MomentResultNote } from './MomentCard';
+import { MomentCard, MomentResultNote, NoteClose } from './MomentCard';
 import { GROUP_COLOURS } from './pixel/sprites';
 import { canTend, PixelRestaurantView } from './PixelRestaurantView';
 import { isFavourite } from '../sim/seating';
@@ -227,7 +227,33 @@ function GullNote() {
     return () => window.clearTimeout(timer);
   }, [last]);
   if (!last || shownOut === last) return null;
-  return <p className={`gull-warning ${last.shooed ? 'good' : 'bad'}`}>{last.shooed ? '🎉' : '🐦'} {last.text}</p>;
+  return (
+    <p className={`gull-warning ${last.shooed ? 'good' : 'bad'}`}>
+      <span>
+        {last.shooed ? '🎉' : '🐦'} {last.text}
+      </span>
+      <NoteClose onClose={() => setShownOut(last)} />
+    </p>
+  );
+}
+
+/** How long the gull warning stays up, in real seconds; the gull itself stays until it's shooed or gone. */
+const GULL_WARNING_SECONDS = 5;
+
+/** "A gull is eyeing a plate!": shown when a gull lands, for a few seconds, or until closed. */
+function GullWarning() {
+  const [shown, setShown] = useState(true);
+  useEffect(() => {
+    const timer = window.setTimeout(() => setShown(false), GULL_WARNING_SECONDS * 1000);
+    return () => window.clearTimeout(timer);
+  }, []);
+  if (!shown) return null;
+  return (
+    <p className="gull-warning">
+      <span>🐦 {GULLS.warning}</span>
+      <NoteClose onClose={() => setShown(false)} />
+    </p>
+  );
 }
 
 export function DayScreen() {
@@ -356,9 +382,14 @@ export function DayScreen() {
           {/* Short notes at the top of the scene, stacked so they never sit on top of each other. */}
           {!live.moment && (
             <div className="scene-notes">
-              {live.floor.gull && <p className="gull-warning">🐦 {GULLS.warning}</p>}
+              {live.floor.gull && <GullWarning />}
               {!live.floor.gull && <GullNote />}
-              {seatNote && <p className="gull-warning good">🪑 {seatNote.text}</p>}
+              {seatNote && (
+                <p className="gull-warning good">
+                  <span>🪑 {seatNote.text}</span>
+                  <NoteClose onClose={() => setSeatNote(null)} />
+                </p>
+              )}
               <MomentResultNote />
               {speed === 0 && <p className="paused">Paused. Tap 1× to carry on.</p>}
             </div>

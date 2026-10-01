@@ -176,8 +176,10 @@ describe('walking in and out', () => {
   });
 
   it('keeps the street furniture off every route guests and passers-by take', () => {
+    const blocked: string[] = [];
     for (const [tables, terrace] of [[12, 4], [6, 0], [9, 2]]) {
       const layout = roomLayout(tables, terrace);
+      const furniture = LOCATION_IDS.flatMap((location) => streetFurniture(layout, location).map((thing) => ({ location, ...thing })));
       const routes = [
         ...Array.from({ length: tables + terrace }, (_, t) => seatsAt(layout, tables, t).map((seat) => walkPath(layout, tables, t, seat))).flat(),
         ...[0, 1, 2].flatMap((lane) => [passerByPath(layout, lane, true, 400), passerByPath(layout, lane, false, 400)]),
@@ -190,13 +192,14 @@ describe('walking in and out', () => {
           for (let k = 0; k <= 20; k++) {
             const x = a.x + ((b.x - a.x) * k) / 20;
             const y = a.y + ((b.y - a.y) * k) / 20;
-            for (const thing of streetFurniture(layout)) {
-              expect(Math.hypot(thing.x - x, thing.y - y), thing.thing).toBeGreaterThan(STREET_THING_REACH[thing.thing]);
+            for (const { location, thing, x: tx, y: ty } of furniture) {
+              if (Math.hypot(tx - x, ty - y) <= STREET_THING_REACH[thing]) blocked.push(`${location}: ${thing} at ${tx}, ${ty}`);
             }
           }
         }
       }
     }
+    expect([...new Set(blocked)]).toEqual([]);
   });
 
   it('walks a party that is moved from one table to another, via the door, seat to seat', () => {

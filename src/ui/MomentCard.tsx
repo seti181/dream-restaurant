@@ -30,6 +30,15 @@ export function MomentCard() {
   );
 }
 
+/** The ✕ on the short notes over the restaurant, to close one straight away. */
+export function NoteClose({ onClose }: { onClose: () => void }) {
+  return (
+    <button type="button" className="note-close" aria-label="Close" onClick={onClose}>
+      ✕
+    </button>
+  );
+}
+
 /** What the last answer did, for a little while afterwards. */
 export function MomentResultNote() {
   const last = useGame((s) => s.live?.lastMoment ?? null);
@@ -42,8 +51,11 @@ export function MomentResultNote() {
   if (!last || shownOut === last) return null;
   return (
     <p key={last.minute} className="moment-result">
-      {last.result}
-      {last.cash !== 0 && <strong> {last.cash > 0 ? '+' : '−'}{Math.abs(Math.round(last.cash))} zł</strong>}
+      <span>
+        {last.result}
+        {last.cash !== 0 && <strong> {last.cash > 0 ? '+' : '−'}{Math.abs(Math.round(last.cash))} zł</strong>}
+      </span>
+      <NoteClose onClose={() => setShownOut(last)} />
     </p>
   );
 }

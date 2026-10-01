@@ -1298,6 +1298,14 @@ h2.spaced {
   50% { transform: rotate(-3deg); }
 }
 
+.pixel.bobbing {
+  animation: bobbing 2.6s steps(2) infinite;
+}
+
+@keyframes bobbing {
+  50% { transform: translateY(1px); }
+}
+
 .pixel-bubble,
 .pixel-coin,
 .pixel-badge {
@@ -2021,5 +2029,28 @@ button.stat.open {
   position: static;
   transform: none;
   max-width: 100%;
+}
+
+/* Notes with a ✕: the text, then the button, which can be tapped even though the notes let taps through. */
+.scene-notes > .gull-warning,
+.scene-notes > .moment-result {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding-right: 4px;
+}
+
+.note-close {
+  flex: none;
+  min-width: 48px;
+  min-height: 48px;
+  margin: -10px -2px -10px 0;
+  border: none;
+  background: none;
+  color: #8a7466;
+  font: inherit;
+  font-size: 1.1rem;
+  cursor: pointer;
+  pointer-events: auto;
 }
 
