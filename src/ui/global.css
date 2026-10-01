@@ -1280,6 +1280,24 @@ h2.spaced {
   50% { transform: translateY(-3px); opacity: 0.4; }
 }
 
+/* Pigeons bob for crumbs; the accordion player sways. Steps keep it pixel-crisp and cheap. */
+.pixel.pecking {
+  animation: pecking 1.3s steps(2) infinite;
+}
+
+@keyframes pecking {
+  60% { transform: translateY(1px); }
+}
+
+.pixel.busking {
+  transform-origin: 50% 100%;
+  animation: busking 1.8s steps(2) infinite;
+}
+
+@keyframes busking {
+  50% { transform: rotate(-3deg); }
+}
+
 .pixel-bubble,
 .pixel-coin,
 .pixel-badge {

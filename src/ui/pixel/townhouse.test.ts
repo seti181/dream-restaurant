@@ -10,6 +10,10 @@ const spec = (gable: Gable, more: Partial<TownhouseSpec> = {}): TownhouseSpec =>
   colour: FACADE_COLOURS[0],
   ground: 'shop',
   pediment: 'triangle',
+  awning: null,
+  sign: false,
+  flowers: false,
+  flag: false,
   seed: 7,
   ...more,
 });

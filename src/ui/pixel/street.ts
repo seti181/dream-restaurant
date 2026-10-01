@@ -8,7 +8,7 @@ import type { LocationId } from '../../data/locations';
 import type { Weather } from '../../data/weather';
 import { hex, mix, Pixels, type Rgb } from './raster';
 import { LOW_WALL, PLINTH, type RoomLayout, type RoomLook } from './room';
-import { drawTownhouse, FACADE_COLOURS, frontWidth, type Gable, type TownhouseFront } from './townhouse';
+import { AWNING_COLOURS, drawTownhouse, FACADE_COLOURS, frontWidth, type Gable, type TownhouseFront } from './townhouse';
 
 /** Streets paved with granite all the way across; the others have cobbles between granite pavements. */
 export const GRANITE_STREETS: readonly LocationId[] = ['dluga'];
@@ -27,6 +27,11 @@ const C = {
   shadow: hex('#3b2a22'),
   brick: hex('#a24a33'),
   spire: hex('#4b6a5c'),
+  spireLight: hex('#6f9283'),
+  gold: hex('#e6b83e'),
+  dial: hex('#2f4b7a'),
+  stone: hex('#e9e1d2'),
+  opening: hex('#2b2630'),
   sky: { sunny: hex('#bfe0f0'), cloudy: hex('#d3dde3'), rain: hex('#a4b4c0'), heatwave: hex('#ffe3a8') } as Record<Weather, Rgb>,
   dusk: hex('#3d4a74'),
   rain: hex('#e6eef3'),
@@ -39,6 +44,9 @@ const C = {
   puddle: hex('#9fb3c2'),
   puddleShine: hex('#d6e2ea'),
 };
+
+/** Remainder that stays positive for negative numbers too. */
+const mod = (value: number, by: number) => ((value % by) + by) % by;
 
 interface House {
   from: number;
@@ -68,14 +76,20 @@ function rowOfHouses(seed: number, length: number, minHeight: number, maxHeight:
     let colour = Math.floor(rnd() * FACADE_COLOURS.length);
     if (colour === lastColour) colour = (colour + 1) % FACADE_COLOURS.length;
     lastColour = colour;
+    const shop = rnd() >= 0.2;
+    const awning = shop && rnd() < 0.5;
     const front = drawTownhouse(
       {
         bays,
         height: minHeight + Math.floor(rnd() * (maxHeight - minHeight)),
         gable: gables[Math.floor(rnd() * gables.length)],
         colour: FACADE_COLOURS[colour],
-        ground: rnd() < 0.2 ? 'arcade' : 'shop',
+        ground: shop ? 'shop' : 'arcade',
         pediment: (['triangle', 'arch', 'flat'] as const)[Math.floor(rnd() * 3)],
+        awning: awning ? AWNING_COLOURS[Math.floor(rnd() * AWNING_COLOURS.length)] : null,
+        sign: !awning && rnd() < 0.6,
+        flowers: rnd() < 0.35,
+        flag: rnd() < 0.2,
         seed: seed + houses.length * 31,
       },
       dusk,
@@ -99,18 +113,54 @@ function houseSample(row: House[], u: number, z: number): Sample | null {
   return null;
 }
 
-/** The Town Hall tower: brick, a white cornice, and a green copper spire. */
+/**
+ * The Main Town Hall's tower: a brick shaft with stone bands and tall windows, the clock face
+ * near the top, a white gallery, then the spire in tiers of green copper and gold, up to the
+ * gilded figure of King Sigismund Augustus on the very top.
+ */
 function townHall(from: number, to: number, height: number, u: number, z: number): Rgb | null {
   const width = to - from;
   const local = u - from;
-  const fromMiddle = Math.abs(local - width / 2);
+  const dx = local - width / 2;
+  const fromMiddle = Math.abs(dx);
   if (z >= height) {
     const g = z - height;
-    const reach = (width / 2) * (1 - g / 40);
-    return g < 40 && fromMiddle < reach ? C.spire : null;
+    // The gallery: a balustrade with gold pinnacles on the corners.
+    if (g < 3) {
+      if (fromMiddle > width / 2 - 1.5) return C.gold;
+      return g < 1 || g >= 2 || Math.floor(local) % 2 === 0 ? C.stone : null;
+    }
+    const tier = (from: number, to: number, w0: number, w1: number) => g >= from && g < to && fromMiddle < w0 + ((w1 - w0) * (g - from)) / (to - from);
+    // The first lantern, with dark arched openings.
+    if (tier(3, 13, width * 0.34, width * 0.3)) {
+      if (fromMiddle < 1 && g >= 6 && g < 11) return C.opening;
+      return dx < -width * 0.15 ? C.spireLight : C.spire;
+    }
+    if (tier(13, 15, width * 0.36, width * 0.36)) return C.gold;
+    if (tier(15, 23, width * 0.24, width * 0.16)) return dx < -width * 0.08 ? C.spireLight : C.spire;
+    if (tier(23, 25, 1.6, 1.6)) return C.gold;
+    if (tier(25, 34, 0.7, 0.5)) return C.gold;
+    // The king on top.
+    if (tier(34, 38, 1.4, 0.8)) return C.gold;
+    return null;
   }
   if (local < 1) return mix(C.brick, C.shadow, 0.35);
-  if (z >= height - 2) return C.trim;
+  if (z >= height - 2) return C.stone;
+  // The clock: a blue face with a gold rim and gold hands.
+  const clock = { z: height - 9, r: 4.6 };
+  const dz = z - clock.z;
+  const d = Math.hypot(dx, dz);
+  if (d <= clock.r) {
+    if (d > clock.r - 1.2) return C.gold;
+    if ((Math.abs(dx) < 0.6 && dz > 0 && dz < 3.2) || (Math.abs(dz) < 0.6 && dx > 0 && dx < 2.4)) return C.gold;
+    return C.dial;
+  }
+  // Stone bands and tall pointed windows down the shaft.
+  if (mod(height - z, 22) < 1.5) return C.stone;
+  const inBand = mod(height - z, 22);
+  if (z < height - 16 && inBand > 5 && inBand < 16 && (Math.abs(dx + 3) < 1 || Math.abs(dx - 3) < 1)) {
+    return inBand < 6.5 ? C.stone : C.opening;
+  }
   return (Math.floor(z / 3) + Math.floor(local / 6)) % 7 === 0 ? mix(C.brick, C.shadow, 0.2) : C.brick;
 }
 
@@ -202,8 +252,6 @@ export function drawRainTile(): Pixels {
   return img;
 }
 
-/** Remainder that stays positive for negative numbers too. */
-const mod = (value: number, by: number) => ((value % by) + by) % by;
 
 /** The ground at a world point: pavement along the house fronts, cobbles on the street. */
 /** Puddles on the cobbles on a rainy day, reflecting the sky. */

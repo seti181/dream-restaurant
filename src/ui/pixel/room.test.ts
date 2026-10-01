@@ -6,7 +6,7 @@ import * as actions from '../../sim/actions';
 import { answerTheMoment, newGame, openRestaurant, playTick, type GameState } from '../../sim/game';
 import { specialCandidate } from '../../sim/staff';
 import { drawCloud, drawSky, drawStreet } from './street';
-import { PLINTH, drawRoom, guestKind, leaveQueuePath, movePath, queueSpot, passerByPath, streetFurniture, roomLayout, scenePieces, seatsAt, servePath, waiterSpot, walkPath, type RoomLook } from './room';
+import { PLINTH, drawRoom, guestKind, leaveQueuePath, movePath, queueSpot, passerByPath, streetFurniture, STREET_THING_REACH, roomLayout, scenePieces, seatsAt, servePath, waiterSpot, walkPath, type RoomLook } from './room';
 import { HEADROOM, PERSON, personPixels, SEATED_ROWS, type PersonKind } from './sprites';
 
 const look = (insideTables: number): RoomLook => ({ decor: [], equipment: ['stove'], weather: 'sunny', dusk: false, insideTables });
@@ -190,7 +190,9 @@ describe('walking in and out', () => {
           for (let k = 0; k <= 20; k++) {
             const x = a.x + ((b.x - a.x) * k) / 20;
             const y = a.y + ((b.y - a.y) * k) / 20;
-            for (const thing of streetFurniture(layout)) expect(Math.hypot(thing.x - x, thing.y - y), thing.thing).toBeGreaterThan(3);
+            for (const thing of streetFurniture(layout)) {
+              expect(Math.hypot(thing.x - x, thing.y - y), thing.thing).toBeGreaterThan(STREET_THING_REACH[thing.thing]);
+            }
           }
         }
       }

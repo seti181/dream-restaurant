@@ -278,6 +278,15 @@ const MOUSTACHE: Overlay = {
 const BADGE: Overlay = { x: 4, y: 12, facing: 'front', rows: ['r', 'z'] };
 /** Security's earpiece wire. */
 const EARPIECE: Overlay = { x: 13, y: 8, facing: 'front', rows: ['L', 'L', 'L'] };
+/** An accordion held across the chest: white and black keys on the left, red bellows with white folds. */
+const ACCORDION: Overlay = {
+  x: 2,
+  y: 11,
+  facing: 'front',
+  rows: ['oooooooooooo', 'owwoRzRzRzRo', 'owKoRzRzRzRo', 'owwoRzRzRzRo', 'owKoRzRzRzRo', 'oooooooooooo'],
+};
+/** A headscarf, for the amber seller. */
+const HEADSCARF: Overlay = { x: 1, y: -1, rows: ['...oooooooooo..', '..oSSSSSSSSSSo.', '.oSSSSSSSSSSSSo', '.oSo........oSo'] };
 /** Lechia Gdańsk's green and white stripes. */
 const STRIPES: Overlay = { x: 3, y: 11, facing: 'front', rows: ['.z.z.z.z.', '.z.z.z.z.', '.z.z.z.z.'] };
 
@@ -292,7 +301,9 @@ export type PersonKind =
   | 'chef'
   | 'walesa'
   | 'guard'
-  | 'footballer';
+  | 'footballer'
+  | 'musician'
+  | 'amberSeller';
 
 export interface Look {
   palette: Palette;
@@ -312,6 +323,9 @@ const ACCESSORY_COLOURS = {
   A: '#d6d0c4',
   Q: '#8a6a4a',
   D: '#5e4632',
+  R: '#b5452f',
+  S: '#d9412b',
+  w: '#fbfaf6',
 };
 
 /** Hair colours to vary between guests of the same kind. */
@@ -365,6 +379,16 @@ export function lookOf(kind: PersonKind, variant = 0): Look {
       return {
         palette: withAccessories({ ...GUEST_PALETTES.students, h: '#4a3426', H: '#2e2018', c: '#1f7a3a', C: '#16602d', d: '#ffffff', p: '#ffffff', P: '#d6d0c4', z: '#ffffff' }),
         overlays: [STRIPES],
+      };
+    case 'musician':
+      return {
+        palette: withAccessories({ ...GUEST_PALETTES.locals, h: '#55545e', H: '#3f3e47', c: '#2f5f86', C: '#24496a', d: '#f4f1ea', p: '#3b3a44', P: '#2a2930' }),
+        overlays: [FLAT_CAP, ACCORDION],
+      };
+    case 'amberSeller':
+      return {
+        palette: withAccessories({ ...GUEST_PALETTES.locals, h: '#8a5233', H: '#6b3d24', c: '#e9a23b', C: '#c98a2b', d: '#fbf3e4' }),
+        overlays: [HEADSCARF],
       };
     case 'regular':
       return {

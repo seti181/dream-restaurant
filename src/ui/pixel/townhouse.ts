@@ -1,7 +1,8 @@
 // A Gdańsk townhouse front, drawn flat (like a photo taken straight on) and then laid onto the
 // slanted house rows of the street (street.ts). Modelled on ul. Długa: tall narrow houses in pink,
 // mint, ochre and white, white cornices between the floors, framed windows with little pediments,
-// a shop or an arcade on the ground floor, and a gable on top: Dutch scrolls with stone urns,
+// a shop or an arcade on the ground floor (with a striped awning or a painted sign), flower
+// boxes and Gdańsk's flag here and there, and a gable on top: Dutch scrolls with stone urns,
 // steps, a plain point, or an attic wall with a balustrade. See project.md section 6.14, part 6.
 
 import { hex, mix, Pixels, type Rgb } from './raster';
@@ -18,6 +19,14 @@ export interface TownhouseSpec {
   colour: Rgb;
   ground: 'shop' | 'arcade';
   pediment: Pediment;
+  /** A striped awning over the shop window, in this colour; or none. */
+  awning: Rgb | null;
+  /** A painted shop sign over the window, when there's no awning. */
+  sign: boolean;
+  /** Flower boxes under the first-floor windows. */
+  flowers: boolean;
+  /** Gdańsk's flag hanging from the top floor (three windows across only). */
+  flag: boolean;
   seed: number;
 }
 
@@ -35,6 +44,12 @@ export const FACADE_COLOURS = [
   '#c25b43', '#b9cde0', '#f3eee4', '#d98b6a', '#c9a3c4', '#e8c07a',
 ].map(hex);
 
+/** Awnings: red, beige, bottle green and navy. */
+export const AWNING_COLOURS = ['#b8322a', '#d9c7a3', '#3f7a52', '#2f5f86'].map(hex);
+
+/** Gdańsk's flag as a hanging banner: the golden crown over two white crosses on red, with a swallowtail. */
+const FLAG = ['.y.y.', 'yyyyy', 'rrrrr', 'rrwrr', 'rwwwr', 'rrwrr', 'rrrrr', 'rrwrr', 'rwwwr', 'rrwrr', 'rrrrr', 'rr.rr'];
+
 const C = {
   ink: hex('#3b2433'),
   white: hex('#ffffff'),
@@ -51,6 +66,12 @@ const C = {
   doorLight: hex('#7a5236'),
   gold: hex('#e6b83e'),
   iron: hex('#2e2a33'),
+  stripe: hex('#f4f1ea'),
+  signBoard: hex('#2f4a3a'),
+  box: hex('#9c5a33'),
+  leaf: hex('#4f8a43'),
+  flowers: [hex('#d9412b'), hex('#f08aa0'), hex('#f4c531')],
+  red: hex('#c8102e'),
 };
 
 /** Width of a front with this many windows across. */
@@ -131,7 +152,23 @@ export function drawTownhouse(spec: TownhouseSpec, dusk: boolean): TownhouseFron
       } else {
         rect(x - 2, y + 1, x + 5, y + 2, trimShade);
       }
+      // Flower boxes on the sills of the first floor.
+      if (spec.flowers && f === floors - 1) {
+        for (let k = -1; k < 4; k++) image.set(x + k, y + 9, k % 2 === 0 ? C.leaf : C.flowers[(b + k + 3) % 3]);
+        rect(x - 1, y + 10, x + 4, y + 11, C.box);
+      }
     }
+  }
+
+  // Gdańsk's flag, hanging from a rod over the middle window of the top floor.
+  if (spec.flag && spec.bays === 3 && floors >= 2) {
+    const fx = 8;
+    rect(fx - 1, top + 3, fx + 6, top + 4, C.iron);
+    FLAG.forEach((row, k) => {
+      [...row].forEach((ch, i) => {
+        if (ch !== '.') image.set(fx + i, top + 4 + k, ch === 'r' ? C.red : ch === 'w' ? C.white : C.gold);
+      });
+    });
   }
 
   // The main cornice along the top, with a shadow underneath.
@@ -159,6 +196,20 @@ export function drawTownhouse(spec: TownhouseSpec, dusk: boolean): TownhouseFron
     else {
       rect(2, groundTop + 4, shopRight, base - 2, C.glass);
       rect(3, groundTop + 5, 4, base - 3, C.glassLight);
+    }
+    if (spec.awning) {
+      // A striped awning over the shop window, scalloped along the bottom, with its shadow.
+      for (let k = 0; k < 4; k++) {
+        for (let x = 1; x < shopRight + 1; x++) {
+          if (k === 3 && x % 2 === 1) continue;
+          image.set(x, groundTop + 2 + k, Math.floor((x - 1) / 2) % 2 === 0 ? spec.awning : C.stripe);
+        }
+      }
+      if (!dusk) rect(2, groundTop + 6, shopRight, groundTop + 7, C.glassDark);
+    } else if (spec.sign) {
+      // A painted sign with gilded letters.
+      rect(2, groundTop, shopRight, groundTop + 3, C.signBoard);
+      for (let x = 3; x < shopRight - 1; x++) if ((x * 7 + spec.seed) % 5 !== 0) image.set(x, groundTop + 1, C.gold);
     }
     const dx = w - 6;
     const doorTop = Math.max(groundTop + 2, base - 9);

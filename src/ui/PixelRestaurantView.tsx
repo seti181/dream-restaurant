@@ -378,7 +378,7 @@ export function PixelRestaurantView({
           <img
             key={p.key}
             src={urlOf(p.image.pixels)}
-            className={p.kind === 'steam' ? 'pixel steam' : 'pixel'}
+            className={p.kind === 'steam' ? 'pixel steam' : p.kind === 'pigeon' ? 'pixel pecking' : p.kind === 'busker' ? 'pixel busking' : 'pixel'}
             alt=""
             style={{ left: at(p.px), top: at(p.py), width: at(p.image.pixels.width), zIndex: zOf(p.depth) }}
           />

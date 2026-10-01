@@ -325,7 +325,7 @@ export interface ScenePiece {
   /** For bubbles and coins: the guests this piece shows, and their table. */
   guests?: TableGuests;
   table?: number;
-  kind?: 'guest' | 'chef' | 'steam' | 'queue';
+  kind?: 'guest' | 'chef' | 'steam' | 'queue' | 'pigeon' | 'busker';
   busy?: boolean;
 }
 
@@ -967,9 +967,35 @@ function buildingPieces(layout: RoomLayout, floor: FloorView): ScenePiece[] {
   return pieces;
 }
 
-// ---------- Street life: lamp posts, benches, trees, flower tubs and the menu board ----------
+// ---------- Street life: lanterns, benches, trees, flower tubs, cafés, bikes, pigeons, the amber stall ----------
 
-export type StreetThing = 'lamp' | 'bench' | 'tree' | 'tub' | 'menuBoard';
+export type StreetThing =
+  | 'lamp'
+  | 'bench'
+  | 'tree'
+  | 'tub'
+  | 'menuBoard'
+  | 'cafe'
+  | 'cafeRed'
+  | 'bike'
+  | 'pigeons'
+  | 'amberStall'
+  | 'musician';
+
+/** How far each thing reaches from where it stands, so routes keep clear of it. */
+export const STREET_THING_REACH: Record<StreetThing, number> = {
+  lamp: 3,
+  bench: 3,
+  tree: 3,
+  tub: 3,
+  menuBoard: 3,
+  cafe: 5,
+  cafeRed: 5,
+  bike: 6,
+  pigeons: 4,
+  amberStall: 12,
+  musician: 3,
+};
 
 /**
  * Where the street furniture stands: on the pavements beside the restaurant and on the open
@@ -980,25 +1006,30 @@ export function streetFurniture(layout: RoomLayout): { thing: StreetThing; x: nu
   const frontY = layout.roomY + LOW_WALL.thick;
   const { x1: d1 } = layout.door;
   return [
-    // The pavement on the right, along the houses behind.
+    // The pavement on the right, along the houses behind: cafés under umbrellas.
     { thing: 'lamp', x: edgeX + 12, y: 8 },
-    { thing: 'tree', x: edgeX + 34, y: 4 },
-    { thing: 'bench', x: edgeX + 52, y: 4 },
-    { thing: 'tub', x: edgeX + 74, y: 4 },
+    { thing: 'cafe', x: edgeX + 31, y: 7 },
+    { thing: 'cafeRed', x: edgeX + 51, y: 7 },
+    { thing: 'tub', x: edgeX + 68, y: 4 },
+    { thing: 'bike', x: edgeX + 82, y: 4 },
     { thing: 'lamp', x: edgeX + 96, y: 8 },
     { thing: 'tree', x: edgeX + 118, y: 4 },
-    // A little square of trees and benches to the right of the restaurant.
+    // A little square to the right of the restaurant: trees, a bench, pigeons, the amber stall and a musician.
     { thing: 'tree', x: edgeX + 36, y: 44 },
     { thing: 'bench', x: edgeX + 30, y: 60 },
     { thing: 'tree', x: edgeX + 70, y: 76 },
     { thing: 'lamp', x: edgeX + 56, y: 52 },
+    { thing: 'pigeons', x: edgeX + 46, y: 88 },
+    { thing: 'amberStall', x: edgeX + 94, y: 34 },
+    { thing: 'musician', x: edgeX + 96, y: 62 },
     // The pavement on the left, in front of next door.
     { thing: 'lamp', x: -14, y: frontY + 8 },
-    { thing: 'bench', x: -44, y: frontY + 3 },
+    { thing: 'cafeRed', x: -40, y: frontY + 7 },
     { thing: 'tree', x: -66, y: frontY + 4 },
-    { thing: 'tub', x: -88, y: frontY + 4 },
-    { thing: 'lamp', x: -112, y: frontY + 8 },
-    { thing: 'tree', x: -138, y: frontY + 4 },
+    { thing: 'tub', x: -86, y: frontY + 4 },
+    { thing: 'bike', x: -100, y: frontY + 4 },
+    { thing: 'lamp', x: -116, y: frontY + 8 },
+    { thing: 'tree', x: -140, y: frontY + 4 },
     // Across the street, to the left.
     { thing: 'tree', x: -40, y: streetY + 22 },
     { thing: 'lamp', x: -70, y: streetY + 18 },
@@ -1013,15 +1044,99 @@ function streetThing(thing: StreetThing, lit: boolean): SpriteImage {
     const iron: Faces = { top: C.ironLight, left: C.iron, right: C.iron };
     switch (thing) {
       case 'lamp': {
-        // A cast-iron Old Town lamp post, its lantern lit after dusk.
+        // A black double-headed Gdańsk lantern: one post, a crossbar, a lantern at each end, lit after dusk.
         box(img, lo, { x0: -1.5, x1: 1.5, y0: -1.5, y1: 1.5, z0: 0, z1: 3 }, iron);
-        box(img, lo, { x0: -0.5, x1: 0.5, y0: -0.5, y1: 0.5, z0: 3, z1: 28 }, iron);
+        box(img, lo, { x0: -0.5, x1: 0.5, y0: -0.5, y1: 0.5, z0: 3, z1: 30 }, iron);
+        box(img, lo, { x0: -5, x1: 5, y0: -0.5, y1: 0.5, z0: 26, z1: 27 }, iron);
         const glass = lit ? solid(C.lit) : { top: C.glass, left: C.glass, right: mix(C.glass, C.steelLeft, 0.4) };
-        box(img, lo, { x0: -1.5, x1: 1.5, y0: -1.5, y1: 1.5, z0: 28, z1: 33 }, glass);
-        box(img, lo, { x0: -2, x1: 2, y0: -2, y1: 2, z0: 33, z1: 34 }, iron);
-        box(img, lo, { x0: -0.5, x1: 0.5, y0: -0.5, y1: 0.5, z0: 34, z1: 36 }, iron);
+        for (const x of [-4.5, 4.5]) {
+          box(img, lo, { x0: x - 0.5, x1: x + 0.5, y0: -0.5, y1: 0.5, z0: 27, z1: 28 }, iron);
+          box(img, lo, { x0: x - 1.3, x1: x + 1.3, y0: -1.3, y1: 1.3, z0: 28, z1: 32 }, glass);
+          box(img, lo, { x0: x - 1.7, x1: x + 1.7, y0: -1.7, y1: 1.7, z0: 32, z1: 33 }, iron);
+          box(img, lo, { x0: x - 0.4, x1: x + 0.4, y0: -0.4, y1: 0.4, z0: 33, z1: 34.5 }, iron);
+        }
+        box(img, lo, { x0: -0.6, x1: 0.6, y0: -0.6, y1: 0.6, z0: 30, z1: 31.5 }, solid(C.gold));
         return;
       }
+      case 'cafe':
+      case 'cafeRed': {
+        // A café table with two bistro chairs under a square umbrella with a striped valance.
+        const cloth = thing === 'cafeRed' ? C.clothEdge : C.bistro;
+        const canopy: Faces = { top: cloth, left: mix(cloth, C.outline, 0.15), right: mix(cloth, C.outline, 0.3) };
+        for (const x of [-3.5, 2.5]) {
+          box(img, lo, { x0: x, x1: x + 1.5, y0: -0.75, y1: 0.75, z0: 0, z1: 3 }, iron);
+          box(img, lo, { x0: x, x1: x + 1.5, y0: -0.75, y1: 0.75, z0: 3, z1: 3.6 }, iron);
+        }
+        box(img, lo, { x0: -1.5, x1: -1, y0: -0.75, y1: 0.75, z0: 3.6, z1: 7 }, iron);
+        box(img, lo, { x0: 1, x1: 1.5, y0: -0.75, y1: 0.75, z0: 3.6, z1: 7 }, iron);
+        box(img, lo, { x0: -0.4, x1: 0.4, y0: -0.4, y1: 0.4, z0: 0, z1: 5 }, iron);
+        box(img, lo, { x0: -1.8, x1: 1.8, y0: -1.8, y1: 1.8, z0: 5, z1: 5.6 }, solid(C.cloth));
+        box(img, lo, { x0: -0.3, x1: 0.3, y0: -0.3, y1: 0.3, z0: 5.6, z1: 7 }, solid(C.glow));
+        box(img, lo, { x0: -0.3, x1: 0.3, y0: -0.3, y1: 0.3, z0: 5.6, z1: 19 }, { top: C.trim, left: C.trim, right: C.trimDark });
+        box(img, lo, { x0: -5, x1: 5, y0: -5, y1: 5, z0: 19, z1: 20 }, canopy);
+        box(img, lo, { x0: -3.5, x1: 3.5, y0: -3.5, y1: 3.5, z0: 20, z1: 21 }, canopy);
+        for (let k = -5; k < 5; k += 2) {
+          box(img, lo, { x0: k, x1: k + 1, y0: 4.6, y1: 5, z0: 17.8, z1: 19 }, solid(C.cloth));
+          box(img, lo, { x0: 4.6, x1: 5, y0: k, y1: k + 1, z0: 17.8, z1: 19 }, solid(C.cloth));
+        }
+        return;
+      }
+      case 'bike': {
+        // A city bike on its stand, with a basket.
+        const frame = solid(hex('#2f7a8a'));
+        for (const cx of [-4.5, 4.5]) {
+          for (let a = 0; a < 24; a++) {
+            const t = (a / 24) * Math.PI * 2;
+            const x = cx + Math.cos(t) * 3.4;
+            const z = 3.6 + Math.sin(t) * 3.4;
+            box(img, lo, { x0: x - 0.25, x1: x + 0.25, y0: -0.25, y1: 0.25, z0: z - 0.25, z1: z + 0.25 }, solid(C.ironLight));
+          }
+        }
+        for (let k = 0; k <= 8; k++) {
+          const t = k / 8;
+          // Rear wheel to the seat, seat to the handlebars, handlebars down to the front wheel.
+          for (const [x0, z0, x1, z1] of [[-4.5, 3.6, -1.5, 8.5], [-1.5, 8.5, 3.2, 8.5], [3.4, 9.6, 4.5, 3.6], [-4.5, 3.6, 0.5, 3.6], [0.5, 3.6, -1.5, 8.5], [0.5, 3.6, 3.2, 8.5]]) {
+            const x = x0 + (x1 - x0) * t;
+            const z = z0 + (z1 - z0) * t;
+            box(img, lo, { x0: x - 0.35, x1: x + 0.35, y0: -0.35, y1: 0.35, z0: z - 0.35, z1: z + 0.35 }, frame);
+          }
+        }
+        box(img, lo, { x0: -2.6, x1: -0.6, y0: -0.6, y1: 0.6, z0: 8.8, z1: 9.4 }, solid(C.chairDark));
+        box(img, lo, { x0: 3, x1: 3.6, y0: -1.8, y1: 1.8, z0: 9.6, z1: 10.1 }, solid(C.iron));
+        box(img, lo, { x0: 4, x1: 6.4, y0: -1.1, y1: 1.1, z0: 7.4, z1: 9.6 }, { top: C.chair, left: C.chair, right: C.chairDark });
+        return;
+      }
+      case 'pigeons': {
+        // A few grey pigeons pecking at crumbs.
+        const grey: Faces = { top: hex('#b7bcc6'), left: hex('#9aa0ab'), right: hex('#7f8590') };
+        for (const [x, y, flip] of [[-2.5, -1, 0], [1.5, 1.5, 1], [3, -2.5, 0]]) {
+          box(img, lo, { x0: x, x1: x + 2.6, y0: y, y1: y + 1.4, z0: 0.6, z1: 2 }, grey);
+          const hx = flip ? x - 0.6 : x + 2.2;
+          box(img, lo, { x0: hx, x1: hx + 1, y0: y + 0.2, y1: y + 1.2, z0: 1.6, z1: 2.8 }, solid(hex('#6f8a86')));
+          box(img, lo, { x0: x + 0.6, x1: x + 1.6, y0: y + 0.3, y1: y + 1.1, z0: 0, z1: 0.6 }, solid(hex('#c9704a')));
+        }
+        return;
+      }
+      case 'amberStall': {
+        // A market stall selling Baltic amber, under a red-and-white striped roof.
+        const counter: Faces = { top: hex('#2f3f5e'), left: C.tableLeft, right: C.tableRight };
+        box(img, lo, { x0: -8, x1: 8, y0: -3, y1: 3, z0: 0, z1: 7 }, counter);
+        const amber = [hex('#e9a23b'), hex('#d97a1e'), hex('#f4c531'), hex('#b8561a')];
+        for (let k = 0; k < 10; k++) {
+          const x = -7 + (k % 5) * 3;
+          const y = -2 + Math.floor(k / 5) * 2.5;
+          box(img, lo, { x0: x, x1: x + 1.4, y0: y, y1: y + 1.2, z0: 7, z1: 7.8 }, solid(amber[k % 4]));
+        }
+        for (const [x, y] of [[-8, -3], [7.4, -3], [-8, 2.4], [7.4, 2.4]]) {
+          box(img, lo, { x0: x, x1: x + 0.6, y0: y, y1: y + 0.6, z0: 7, z1: 19 }, iron);
+        }
+        for (let k = -9; k < 9; k += 2) {
+          box(img, lo, { x0: k, x1: k + 2, y0: -4, y1: 4, z0: 19, z1: 20 }, solid(Math.floor((k + 9) / 2) % 2 === 0 ? C.clothEdge : C.cloth));
+        }
+        return;
+      }
+      case 'musician':
+        return;
       case 'bench': {
         const slats: Faces = { top: C.tableTop, left: C.tableLeft, right: C.tableRight };
         for (const x of [0.5, 10.5]) box(img, lo, { x0: x, x1: x + 1, y0: 0, y1: 4, z0: 0, z1: 4 }, iron);
@@ -1068,9 +1183,15 @@ function streetThing(thing: StreetThing, lit: boolean): SpriteImage {
 
 function streetPieces(layout: RoomLayout, look: RoomLook): ScenePiece[] {
   const o = layout.origin;
-  return streetFurniture(layout).map(({ thing, x, y }, i) =>
-    piece(o, `street${i}`, streetThing(thing, look.dusk && thing === 'lamp'), x, y, -PLINTH, x + y),
-  );
+  return streetFurniture(layout).flatMap(({ thing, x, y }, i): ScenePiece[] => {
+    // An accordion player, swaying to the music.
+    if (thing === 'musician') return [{ ...piece(o, `street${i}`, personImage('musician', 'front', 'stand'), x, y, -PLINTH, x + y), kind: 'busker' }];
+    const placed = piece(o, `street${i}`, streetThing(thing, look.dusk && thing === 'lamp'), x, y, -PLINTH, x + y);
+    if (thing === 'pigeons') return [{ ...placed, kind: 'pigeon' }];
+    // The amber seller stands behind the stall.
+    if (thing === 'amberStall') return [placed, piece(o, `street${i}seller`, personImage('amberSeller', 'front', 'stand'), x + 11, y, -PLINTH, x + y + 11)];
+    return [placed];
+  });
 }
 
 /**
