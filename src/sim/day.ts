@@ -48,6 +48,8 @@ export interface Visit {
   satisfaction: number | null;
   /** Points added to (or taken off) how happy they end up, from things that happened during their visit. */
   mood: number;
+  /** A merry group that only came for cytrynówka shots. */
+  merry?: boolean;
 }
 
 /** A party that gave up and left, remembered briefly so the restaurant view can show them going. */
@@ -425,6 +427,8 @@ export interface TableGuests {
   eatingFor: number;
   critic: boolean;
   regular: boolean;
+  /** The merry group, here for cytrynówka shots. */
+  merry: boolean;
   /** When they sat down: tells one party at this table from the next. */
   since: number;
 }
@@ -432,9 +436,11 @@ export interface TableGuests {
 export interface FloorView {
   /** The street the restaurant is on: it decides the size of the room. */
   location: LocationId;
-  /** Inside tables first, then terrace tables; null for an empty table. */
+  /** Inside tables first, then terrace tables open today; null for an empty table. */
   tables: (TableGuests | null)[];
   insideTables: number;
+  /** Terrace tables to draw: all of them with a permit, even on days the terrace is closed. */
+  terraceTables: number;
   /** For each chef: busy cooking right now? */
   chefsBusy: boolean[];
   /** One entry per waiter on today: null, or which of the special waiters it is. */
@@ -469,6 +475,7 @@ export function floorView(progress: DayInProgress, index: number, recentMinutes 
         eatingFor: visit.eating && visit.readyAt !== null ? minute - visit.readyAt : 0,
         critic: party.critic ?? false,
         regular: party.regular ?? false,
+        merry: visit.merry ?? false,
         since: visit.seatedAt,
       };
     });
@@ -478,6 +485,7 @@ export function floorView(progress: DayInProgress, index: number, recentMinutes 
     location: restaurant.location,
     tables,
     insideTables: restaurant.tables,
+    terraceTables: restaurant.terraceTables,
     chefsBusy: floor.chefFreeAt.map((freeAt) => freeAt > minute),
     waiters: restaurant.waiters.map((waiter) => waiter.special ?? null),
     decor: restaurant.decor,

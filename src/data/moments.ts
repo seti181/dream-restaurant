@@ -12,7 +12,8 @@ export type MomentId =
   | 'tourGroup'
   | 'stoLat'
   | 'busker'
-  | 'merryTourists';
+  | 'merryTourists'
+  | 'brazilianCouple';
 
 /** What has to be true right now for a moment to happen. The simulation checks these. */
 export type MomentNeed =
@@ -64,6 +65,8 @@ export interface MomentEffect {
   noisyGroup?: { group: GroupId; size: number; minutes: number };
   /** Terrace guests move to free tables inside. */
   moveInside?: boolean;
+  /** A review for the day report: one of the texts, by one of the reviewers. */
+  review?: { stars: number; texts: string[]; reviewers: string[] };
   /** Every chef stops for this many minutes. */
   kitchenPause?: number;
   /** A gamble: the chance this answer works out, and what happens if it doesn't. */
@@ -98,6 +101,7 @@ export const MOMENT_IDS: readonly MomentId[] = [
   'stoLat',
   'busker',
   'merryTourists',
+  'brazilianCouple',
 ];
 
 export const MOMENTS: Record<MomentId, Moment> = {
@@ -301,6 +305,36 @@ export const MOMENTS: Record<MomentId, Moment> = {
       {
         label: 'Sorry, we’re a restaurant',
         effect: { result: 'They sing their way down Długa to find a bar.' },
+      },
+    ],
+  },
+  brazilianCouple: {
+    title: 'A Brazilian couple',
+    text:
+      'A Brazilian couple on their honeymoon ask, with the biggest smiles in Gdańsk, ' +
+      'if they could try a dessert on the house. “Só um pouquinho?”',
+    needs: ['dessertOnMenu'],
+    weight: 3,
+    choices: [
+      {
+        label: 'Com certeza!',
+        effect: {
+          cash: 50,
+          review: {
+            stars: 5,
+            texts: [
+              'Que delícia! The dessert was a gift, and so was the welcome. Obrigado, Gdańsk!',
+              'We came for the amber and stayed for the dessert. Five stars, beijos!',
+              'The best honeymoon dinner in Europe. They even gave us dessert. Muito obrigado!',
+            ],
+            reviewers: ['a honeymoon couple from Rio', 'a honeymoon couple from São Paulo'],
+          },
+          result: 'They share one spoon, leave a 50 zł tip and write you a five-star review. Que fofos!',
+        },
+      },
+      {
+        label: 'Sorry, not today',
+        effect: { result: 'They laugh, order two coffees and wave goodbye. Tchau!' },
       },
     ],
   },

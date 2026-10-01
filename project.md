@@ -301,6 +301,7 @@ While the restaurant is open, the player can help out. Every interaction is opti
    - a family asking the room to sing "Sto lat" for a birthday
    - a street musician offering to play outside
    - a very merry tourist group wanting only cytrynówka shots: a big tip, but the room gets uncomfortable and nobody new comes in while they're there
+   - a Brazilian couple on honeymoon asking for a free dessert: a 50 zł tip and a five-star review
 2. **Tap a waiting guest.** A table showing ⏳ or 😤 can be tapped for a **free drink** (costs a little, buys patience) or **an apology from the chef** (their order jumps the kitchen queue).
 3. **Shoo the gulls.** On terrace days a gull sometimes swoops at a plate. Tap it away in time and the guests laugh; miss it and that table loses its food and writes a funny review.
 4. **Live happy hour.** Replaces the fixed 15:00–18:00 setting: a button during the day starts a one-hour happy hour, once a day. Drinks and everything else at a discount, and more guests come in. The skill is using it in a quiet hour.
@@ -595,3 +596,5 @@ Each item is tested in the browser and on the tablet before the next one starts.
 - 2026-10-01: The day felt too static once the restaurant opened. New milestone M5b, "Interactive service" (section 6.13): choice cards, tapping waiting guests, shooing gulls, a live happy hour button and seating guests yourself. Interactions are optional bonuses; a player who only watches still gets a normal day. They are built and tested one at a time.
 - 2026-10-01: Choice cards: 2–3 random cards a day between 11:45 and 20:30, plus Adrian's text at 12:00 (on days he's away) and Pan Cytrynówka's round at 19:30 (Fridays), never more than 3 in a day. Each card comes at most once a day. Cards use their own random generator, so they never change who comes in. The simulator answers every card with the second ("no") answer, like a player who only watches.
 - 2026-10-01: New choice card, "A very merry group": four tipsy tourists want only cytrynówka shots. Saying yes earns a 500 zł tip, makes guests waiting for food less happy (−10), and keeps new guests away for the 45 minutes they stay (guests who booked still come in). Saying no changes nothing.
+- 2026-10-01: New choice card, "A Brazilian couple": honeymooners ask for a free dessert (only with a dessert on the menu). Yes: a 50 zł tip and a five-star review in the day report (it counts for Mewa's goals). No: nothing happens. The merry group gets a 🥃 bubble.
+- 2026-10-01: The terrace is drawn as soon as the permit is bought (tables, chairs and planters), even before it opens in May or on rainy days; guests only sit there on days it is open.

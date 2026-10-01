@@ -116,6 +116,15 @@ describe('the restaurant before opening', () => {
     expect(floor.decor).toEqual(player.decor);
   });
 
+  it('shows the terrace as soon as the permit is bought, even before it opens in May', () => {
+    const april = { ...newGame(14), terracePermitUntilDay: 200 };
+    const floor = restingFloor(april);
+    expect(floor.terraceTables).toBeGreaterThan(0);
+    expect(floor.tables).toHaveLength(floor.insideTables);
+    expect(restingFloor(newGame(14)).terraceTables).toBe(0);
+    expect(openRestaurant(april).terraceBuilt).toBe(floor.terraceTables);
+  });
+
   it('includes the terrace on days it is open', () => {
     const june = { ...newGame(13), day: 62, weather: 'sunny' as const, terracePermitUntilDay: 200 };
     const floor = restingFloor(june);

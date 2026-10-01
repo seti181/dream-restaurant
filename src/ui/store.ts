@@ -120,7 +120,7 @@ function liveFrom(openDay: OpenDay): LiveDay {
     ...tallyFor(progress.outcomes, 'player'),
     minute,
     closing: minute >= balance.clock.closeMinute,
-    floor: floorView(progress, 0),
+    floor: { ...floorView(progress, 0), terraceTables: openDay.terraceBuilt },
     absent: openDay.absent.map((a) => a.excuse),
     moment: pending
       ? { title: pending.title, text: pending.text, choices: [pending.choices[0].label, pending.choices[1].label] }

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { balance } from '../data/balance';
 import { MOMENT_IDS, MOMENTS, type MomentId } from '../data/moments';
 import { minuteOfDay } from './clock';
+import { floorView } from './day';
 import { specialCandidate } from './staff';
 import {
   answerTheMoment,
@@ -182,6 +183,25 @@ describe('what the answers do', () => {
     expect(open.progress.outcomes.some((o) => o.restaurant === 'player' && o.kind === 'noTable')).toBe(true);
     playUntil(open, until + 10);
     expect(floor.visits).not.toContain(group);
+  });
+
+  it('the merry group shows up in the restaurant view with its shots', () => {
+    const open = openRestaurant(newGame(13));
+    show(open, 'merryTourists');
+    answerTheMoment(open, 0);
+    const table = floorView(open.progress, 0).tables.find((t) => t !== null);
+    expect(table?.merry).toBe(true);
+  });
+
+  it('the Brazilian couple tip and write a five-star review', () => {
+    const state = newGame(14);
+    const open = openRestaurant(state);
+    show(open, 'brazilianCouple');
+    const result = answerTheMoment(open, 0);
+    expect(result?.cash).toBe(50);
+    expect(result?.review?.stars).toBe(5);
+    while (!open.progress.done) playTick(open);
+    expect(closeDay(state, open).summary.reviews).toContainEqual(result!.review);
   });
 
   it('a shower sends the terrace guests inside, if there’s room', () => {

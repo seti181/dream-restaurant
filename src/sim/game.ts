@@ -96,6 +96,8 @@ export interface OpenDay {
   absent: { id: number; name: string; excuse: string; special?: SpecialStaffId }[];
   /** Choice cards: when they come, the one on screen, and what was answered. */
   moments: MomentsToday;
+  /** Terrace tables to draw, even if the terrace is closed today. */
+  terraceBuilt: number;
 }
 
 /** The player's numbers for a day, so far or in total. */
@@ -213,6 +215,12 @@ export function terraceOpenOn(state: GameState, day: number): boolean {
   return inSeason && dry && state.terracePermitUntilDay !== null && day <= state.terracePermitUntilDay;
 }
 
+/** Terrace tables the player has: all of them while the permit is valid, whether or not the terrace is open today. */
+export function terraceTablesBuilt(state: GameState): number {
+  const permit = state.terracePermitUntilDay !== null && state.day <= state.terracePermitUntilDay;
+  return permit ? Math.floor(LOCATIONS[playerOf(state).location].terraceSeats / balance.service.seatsPerTable) : 0;
+}
+
 /** Names of every event on today, calendar and surprise. */
 export function eventsToday(state: GameState): string[] {
   const surprises = state.events
@@ -246,13 +254,12 @@ export function awarenessToday(state: GameState): Record<GroupId, number> {
  */
 export function restingFloor(state: GameState): FloorView {
   const player = playerOf(state);
-  const terraceTables = terraceOpenOn(state, state.day)
-    ? Math.floor(LOCATIONS[player.location].terraceSeats / balance.service.seatsPerTable)
-    : 0;
+  const terraceTables = terraceOpenOn(state, state.day) ? terraceTablesBuilt(state) : 0;
   return {
     location: player.location,
     tables: Array<null>(player.tables + terraceTables).fill(null),
     insideTables: player.tables,
+    terraceTables: terraceTablesBuilt(state),
     chefsBusy: state.team.filter((person) => person.role === 'chef').map(() => false),
     waiters: state.team.filter((person) => person.role === 'waiter').map((person) => person.special ?? null),
     ordersWaiting: 0,
@@ -291,6 +298,7 @@ export function openRestaurant(state: GameState): OpenDay {
     absent,
     // Moments get their own generator, so they never change who comes in or what they order.
     moments: planMoments((state.rng.s ^ Math.imul(state.day + 1, 0x9e3779b1)) >>> 0),
+    terraceBuilt: terraceTablesBuilt(state),
   };
 }
 
@@ -505,10 +513,10 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
 
   const outcomes = open.progress.outcomes;
   const groups = groupDays(outcomes, playerBefore, playerAfter);
-  const reviews = outcomes
-    .filter((o) => o.restaurant === playerBefore.id && o.review !== null)
-    .map((o) => o.review!)
-    .sort((a, b) => Number(b.critic) - Number(a.critic));
+  const reviews = [
+    ...outcomes.filter((o) => o.restaurant === playerBefore.id && o.review !== null).map((o) => o.review!),
+    ...open.moments.results.flatMap((m) => (m.review ? [m.review] : [])),
+  ].sort((a, b) => Number(b.critic) - Number(a.critic));
   const lunchSetsSold = outcomes
     .filter((o) => o.restaurant === playerBefore.id && o.kind === 'served')
     .reduce((sum, o) => sum + o.order.filter((d) => d.fromLunchSet).length / 2, 0);

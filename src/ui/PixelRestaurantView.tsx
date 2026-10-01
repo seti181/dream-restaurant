@@ -52,6 +52,8 @@ const zOf = (depth: number) => Math.round(depth * 2) + 1000;
 function bubbleFor(guests: TableGuests): string | null {
   // The Friday regular wants one thing, and the whole room knows it.
   if (guests.regular && guests.stage !== 'eating') return '🍋';
+  // The merry group is here for the shots, all the way through.
+  if (guests.merry) return '🥃';
   if (guests.stage === 'ordering') return '💬';
   if (guests.stage === 'waiting') {
     if (guests.impatience > 0.8) return '😤';
@@ -256,7 +258,7 @@ export function PixelRestaurantView({
 }) {
   const speed = useGame((s) => s.speed);
   const maxTables = Math.floor(LOCATIONS[floor.location].maxSeats / balance.service.seatsPerTable);
-  const terraceTables = floor.tables.length - floor.insideTables;
+  const terraceTables = Math.max(floor.terraceTables, floor.tables.length - floor.insideTables);
   const layout = useMemo(() => roomLayout(maxTables, terraceTables), [maxTables, terraceTables]);
 
   const dusk = minute >= 19 * 60 + 30;

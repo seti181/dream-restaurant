@@ -10,7 +10,8 @@ import { MOMENT_IDS, MOMENTS, type MomentEffect, type MomentId, type MomentNeed 
 import { minuteOfDay, ticksPerDay } from './clock';
 import { seat, type DayInProgress, type Visit } from './day';
 import { templateOf } from './menu';
-import { chance, createRng, nextFloat, nextInt, type RngState } from './rng';
+import { chance, createRng, nextFloat, nextInt, pick, type RngState } from './rng';
+import type { Review } from './types';
 
 /** A moment on screen, waiting for an answer. */
 export interface PendingMoment {
@@ -30,6 +31,8 @@ export interface MomentResult {
   /** Złoty gained or spent. */
   cash: number;
   minute: number;
+  /** A review the answer earned, for the day report. */
+  review: Review | null;
 }
 
 /** Today's moments. Only lives while the day runs, so it is never saved. */
@@ -168,7 +171,7 @@ function apply(
   today: MomentsToday,
   progress: DayInProgress,
   pending: PendingMoment,
-): { result: string; cash: number } {
+): { result: string; cash: number; review: Review | null } {
   if (effect.chance !== undefined && effect.otherwise && !chance(today.rng, effect.chance)) {
     return apply(effect.otherwise, today, progress, pending);
   }
@@ -204,7 +207,7 @@ function apply(
     // They only drink: nothing for the kitchen, and they leave when the bottle is empty.
     const visit = floor.visits.find((v) => v.party === party);
     if (visit) {
-      Object.assign(visit, { order: [], eating: true, readyAt: minute, leaveAt: minute + minutes });
+      Object.assign(visit, { order: [], eating: true, readyAt: minute, leaveAt: minute + minutes, merry: true });
       floor.closedUntil = minute + minutes;
     }
   }
@@ -218,7 +221,15 @@ function apply(
       bookedAt: restaurant.id,
     }, minute);
   }
-  return { result: effect.result, cash };
+  const review: Review | null = effect.review
+    ? {
+        stars: effect.review.stars,
+        text: pick(today.rng, effect.review.texts),
+        reviewer: pick(today.rng, effect.review.reviewers),
+        critic: false,
+      }
+    : null;
+  return { result: effect.result, cash, review };
 }
 
 /** Answers the moment on screen with its first (0) or second (1) choice. */
@@ -226,7 +237,7 @@ export function answerMoment(today: MomentsToday, progress: DayInProgress, choic
   const pending = today.pending;
   if (!pending) return null;
   const moment = MOMENTS[pending.id];
-  const { result, cash } = apply(moment.choices[choice].effect, today, progress, pending);
+  const { result, cash, review } = apply(moment.choices[choice].effect, today, progress, pending);
   const entry: MomentResult = {
     id: pending.id,
     title: moment.title,
@@ -234,6 +245,7 @@ export function answerMoment(today: MomentsToday, progress: DayInProgress, choic
     result,
     cash,
     minute: pending.minute,
+    review,
   };
   today.results.push(entry);
   today.cash += cash;
