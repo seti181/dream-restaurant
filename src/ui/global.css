@@ -1428,3 +1428,20 @@ h2.spaced {
 }
 
 .restaurant-view .scene-label.on-dark { fill: #fdf6e3; opacity: 0.9; }
+
+.perf-meter {
+  position: fixed;
+  left: 8px;
+  bottom: 8px;
+  z-index: 60;
+  padding: 4px 10px;
+  border-radius: 8px;
+  background: rgba(60, 122, 58, 0.9);
+  color: #fff;
+  font: 600 0.85rem ui-monospace, Consolas, monospace;
+  pointer-events: none;
+}
+
+.perf-meter.slow {
+  background: rgba(181, 69, 47, 0.95);
+}
