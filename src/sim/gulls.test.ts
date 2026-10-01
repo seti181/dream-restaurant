@@ -34,7 +34,7 @@ function gullDue(seed = 31): OpenDay {
 
 describe('gulls on the terrace', () => {
   it('only come on days the terrace is open', () => {
-    expect(openRestaurant(newGame(30)).gulls.slots).toEqual([]);
+    expect(openRestaurant({ ...newGame(30), terracePermitUntilDay: null }).gulls.slots).toEqual([]);
     const slots = openRestaurant(terraceDay(30)).gulls.slots;
     expect(slots.length).toBeGreaterThanOrEqual(balance.gulls.perDay.min);
     expect(slots.length).toBeLessThanOrEqual(balance.gulls.perDay.max);

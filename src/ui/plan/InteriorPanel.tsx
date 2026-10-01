@@ -52,9 +52,12 @@ function TerraceCard() {
 
   let status = `Open ${MONTH_NAMES[firstMonth - 1]} to ${MONTH_NAMES[lastMonth - 1]} with a permit.`;
   if (hasPermit) {
+    const inSeason = dateOf(game.day).month >= firstMonth;
     status = terraceOpenOn(game, game.day)
       ? `Open today! Permit valid until ${formatDate(dateOf(game.terracePermitUntilDay!))}.`
-      : `Permit ready. The terrace opens on 1 ${MONTH_NAMES[firstMonth - 1]}.`;
+      : inSeason
+        ? 'Closed today because of the rain. The tables wait for sunnier weather.'
+        : `Permit ready. The terrace opens on 1 ${MONTH_NAMES[firstMonth - 1]}.`;
   }
 
   return (

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { balance } from '../data/balance';
+import * as actions from './actions';
 import { runDay } from './day';
 import { closeDay, newGame, openRestaurant, playerOf, playTick, restingFloor, starRating, tallyFor, teamWages } from './game';
 
@@ -33,7 +34,8 @@ describe('a new game', () => {
 
 describe('a day played tick by tick', () => {
   it('ends exactly as if it had been played in one go', () => {
-    const state = newGame(4);
+    // Without a terrace, so no gulls (they come on top of the day itself).
+    const state = { ...newGame(4), terracePermitUntilDay: null };
     const open = openRestaurant(state);
     const atOpening = structuredClone(open.progress.restaurants);
     while (!open.progress.done) playTick(open);
@@ -116,13 +118,15 @@ describe('the restaurant before opening', () => {
     expect(floor.decor).toEqual(player.decor);
   });
 
-  it('shows the terrace as soon as the permit is bought, even before it opens in May', () => {
-    const april = { ...newGame(14), terracePermitUntilDay: 200 };
-    const floor = restingFloor(april);
+  it('opens the terrace from the first day once the permit is bought, and draws it even when it rains', () => {
+    const permit = { ...actions.buyTerracePermit(newGame(14)), weather: 'sunny' as const };
+    expect(restingFloor(permit).tables.length).toBeGreaterThan(restingFloor(permit).insideTables);
+    const rainy = { ...permit, weather: 'rain' as const };
+    const floor = restingFloor(rainy);
     expect(floor.terraceTables).toBeGreaterThan(0);
     expect(floor.tables).toHaveLength(floor.insideTables);
-    expect(restingFloor(newGame(14)).terraceTables).toBe(0);
-    expect(openRestaurant(april).terraceBuilt).toBe(floor.terraceTables);
+    expect(restingFloor({ ...newGame(14), terracePermitUntilDay: null }).terraceTables).toBe(0);
+    expect(openRestaurant(rainy).terraceBuilt).toBe(floor.terraceTables);
   });
 
   it('includes the terrace on days it is open', () => {

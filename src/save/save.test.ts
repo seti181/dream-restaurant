@@ -111,7 +111,8 @@ describe('upgrading version 1 saves (from before M3)', () => {
 
   it('fills in the new fields with their starting values', () => {
     const game = newGame(21);
-    expect(migrate(versionOneSave(game))).toEqual({ ...game, weather: 'cloudy' });
+    // Games saved before M3 had no terrace permit, and keep it that way.
+    expect(migrate(versionOneSave(game))).toEqual({ ...game, weather: 'cloudy', terracePermitUntilDay: null });
   });
 
   it('keeps the player’s progress', () => {
