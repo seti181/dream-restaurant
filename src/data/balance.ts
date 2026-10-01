@@ -250,6 +250,8 @@ export const balance = {
   finance: {
     /** Paid every Monday, together with the week's rent. */
     weeklyUtilities: 400,
+    /** Warn when cash would last fewer than this many days of wages and rent. */
+    lowCashDays: 7,
   },
 
   neptune: {

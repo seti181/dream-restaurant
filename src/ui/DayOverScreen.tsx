@@ -73,6 +73,7 @@ export function DayOverScreen() {
   const summary = useGame((s) => s.summary);
   const planNextDay = useGame((s) => s.planNextDay);
   const saved = useGame((s) => s.saved);
+  const gameOver = useGame((s) => s.game.gameOver);
   if (!summary) return null;
 
   return (
@@ -195,7 +196,7 @@ export function DayOverScreen() {
             {saved ? '✓ Progress saved' : 'Couldn’t save this time. Your browser may be blocking storage.'}
           </span>
           <button type="button" className="primary" onClick={planNextDay}>
-            {summary.neptune ? 'To the Golden Neptune ceremony!' : 'Plan tomorrow'}
+            {gameOver ? 'Continue' : summary.neptune ? 'To the Golden Neptune ceremony!' : 'Plan tomorrow'}
           </button>
         </footer>
       </div>

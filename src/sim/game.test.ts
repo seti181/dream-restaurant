@@ -65,6 +65,13 @@ describe('closing the day', () => {
     expect(next.day).toBe(state.day + 1);
   });
 
+  it('ends the game when the money runs out', () => {
+    const { state, open } = playWholeDay(8);
+    expect(closeDay(state, open).state.gameOver).toBe(false);
+    const { state: broke } = closeDay({ ...state, cash: -1_000_000 }, open);
+    expect(broke.gameOver).toBe(true);
+  });
+
   it('charges rent on Monday but not on Tuesday', () => {
     const { state, open } = playWholeDay(7);
     const monday = closeDay(state, open);

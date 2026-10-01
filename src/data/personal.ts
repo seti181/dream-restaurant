@@ -2,6 +2,6 @@
 
 /** Shown when the player wins the Golden Neptune. */
 export const ENDING = {
-  title: 'Parabens!',
-  message: 'Now you are ready to open your dream restaurant in real WORLD!!!',
+  title: 'Parabéns!!!',
+  message: 'You passed a test! Now You are ready to open Your dream restaurant in the real WORLD!!!',
 };

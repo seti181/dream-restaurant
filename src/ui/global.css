@@ -1086,3 +1086,17 @@ h2.spaced {
 .buy.left {
   align-items: flex-start;
 }
+
+/* ---------- Game over ---------- */
+
+.game-over-load {
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.ceremony .choice-cards {
+  grid-template-columns: 1fr 1fr;
+  max-width: 640px;
+  margin: 0 auto;
+  text-align: left;
+}

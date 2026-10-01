@@ -170,6 +170,14 @@ describe('upgrading version 4 saves (from before difficulty)', () => {
   });
 });
 
+describe('upgrading version 5 saves (from before game over)', () => {
+  it('lets older games carry on, even ones in debt', () => {
+    const game = { ...newGame(52), cash: -500 };
+    const { gameOver: _g, ...old } = game;
+    expect(migrate({ saveVersion: 5, savedAt: '', game: old })).toEqual(game);
+  });
+});
+
 describe('save codes', () => {
   it('turn a game into text and back again, Polish letters and all', () => {
     let game = newGame(61);

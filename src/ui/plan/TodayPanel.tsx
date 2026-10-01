@@ -1,5 +1,6 @@
 // Planning overview: where you are, what's on, and anything that needs attention.
 
+import { balance } from '../../data/balance';
 import { LOCATIONS } from '../../data/locations';
 import { WEATHER } from '../../data/weather';
 import { weeklyBillsDue } from '../../sim/finance';
@@ -17,6 +18,12 @@ export function planWarnings(game: GameState): string[] {
   if (player.menu.length === 0) warnings.push('Your menu is empty, so no guests can order. Add a dish on the Menu tab.');
   if (player.chefs.length === 0) warnings.push('Nobody is cooking! Hire a chef on the Staff tab.');
   if (player.waiters.length === 0) warnings.push('No waiters: orders will be very slow. Hire one on the Staff tab.');
+  const dailyCosts = teamWages(game) + LOCATIONS[player.location].rentPerDay;
+  if (game.cash < dailyCosts * balance.finance.lowCashDays) {
+    warnings.push(
+      'Money is running low! If it runs out at the end of a day, the restaurant has to close for good. Cut costs or win back guests.',
+    );
+  }
   return warnings;
 }
 

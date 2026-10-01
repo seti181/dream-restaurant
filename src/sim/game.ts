@@ -77,6 +77,8 @@ export interface GameState {
   season: SeasonTally;
   /** Golden Neptunes won. */
   trophies: number;
+  /** True once the money ran out at the end of a day: the restaurant has closed for good. */
+  gameOver: boolean;
   /** The player's restaurant first, then the rivals. */
   restaurants: Restaurant[];
 }
@@ -161,6 +163,7 @@ export function newGame(seed: number, difficulty: Difficulty = 'normal'): GameSt
     goal: startGoal(FIRST_GOAL),
     season: { ratings: {}, fairGuests: {} },
     trophies: 0,
+    gameOver: false,
     restaurants: [
       createPlayerRestaurant(start.name, start.menu, staffOf(team, 'chef'), staffOf(team, 'waiter')),
       ...RIVAL_IDS.map(createRivalRestaurant),
@@ -467,6 +470,8 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
       goal,
       season,
       trophies,
+      // Running out of money ends the game.
+      gameOver: state.gameOver || cash <= 0,
       restaurants,
     },
     summary: {

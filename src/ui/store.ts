@@ -28,9 +28,9 @@ import type { Supplier } from '../sim/types';
 
 /**
  * Plan: time paused, getting ready. Open: the day is playing. Day over: the results.
- * Ceremony: the Golden Neptune, after the Fair's last day.
+ * Ceremony: the Golden Neptune, after the Fair's last day. Game over: the money ran out.
  */
-export type Phase = 'plan' | 'open' | 'dayOver' | 'ceremony';
+export type Phase = 'plan' | 'open' | 'dayOver' | 'ceremony' | 'gameOver';
 
 /** 0 = paused. */
 export type Speed = 0 | 1 | 2 | 4;
@@ -105,10 +105,12 @@ function liveFrom(openDay: OpenDay): LiveDay {
   };
 }
 
+const startingGame = loadGame() ?? newGame(Date.now() >>> 0);
+
 export const useGame = create<GameStore>((set, get) => ({
   // Carry on from the saved game, or start a new one with a fresh seed.
-  game: loadGame() ?? newGame(Date.now() >>> 0),
-  phase: 'plan',
+  game: startingGame,
+  phase: startingGame.gameOver ? 'gameOver' : 'plan',
   speed: 1,
   openDay: null,
   live: null,
@@ -117,6 +119,7 @@ export const useGame = create<GameStore>((set, get) => ({
   saved: null,
 
   open: () => {
+    if (get().phase !== 'plan' || get().game.gameOver) return;
     // Save the plan first, so menu and staff changes survive if the app closes mid-day.
     const saved = saveGame(get().game);
     const openDay = openRestaurant(get().game);
@@ -144,8 +147,9 @@ export const useGame = create<GameStore>((set, get) => ({
   setSpeed: (speed) => set({ speed }),
 
   planNextDay: () => {
-    // After the Fair's last report comes the Golden Neptune ceremony.
-    if (get().phase === 'dayOver' && get().summary?.neptune) set({ phase: 'ceremony' });
+    // After the Fair's last report comes the Golden Neptune ceremony, unless the money ran out.
+    if (get().game.gameOver) set({ phase: 'gameOver', summary: null });
+    else if (get().phase === 'dayOver' && get().summary?.neptune) set({ phase: 'ceremony' });
     else set({ phase: 'plan', summary: null, planTab: 'today' });
   },
 
@@ -174,19 +178,25 @@ export const useGame = create<GameStore>((set, get) => ({
 
   importSave: (code) => {
     const game = importSaveCode(code);
-    if (!game || get().phase !== 'plan') return false;
-    set({ game, planTab: 'today', saved: saveGame(game) });
+    if (!game || !canStartOver()) return false;
+    set({ game, phase: game.gameOver ? 'gameOver' : 'plan', planTab: 'today', saved: saveGame(game) });
     return true;
   },
 
   startNewGame: (difficulty) => {
-    if (get().phase !== 'plan') return;
+    if (!canStartOver()) return;
     const game = newGame(Date.now() >>> 0, difficulty);
-    set({ game, planTab: 'today', saved: saveGame(game) });
+    set({ game, phase: 'plan', planTab: 'today', saved: saveGame(game) });
   },
   upgradeMenuBoard: () => plan((game) => actions.upgradeMenuBoard(game)),
   setSupplier: (supplier) => plan((game) => actions.setSupplier(game, supplier)),
 }));
+
+/** A new or loaded game can replace the current one while planning, or after a game over. */
+function canStartOver(): boolean {
+  const { phase } = useGame.getState();
+  return phase === 'plan' || phase === 'gameOver';
+}
 
 /** Applies a planning action. Plans can only change while time is paused before opening. */
 function plan(action: (game: GameState) => GameState): void {

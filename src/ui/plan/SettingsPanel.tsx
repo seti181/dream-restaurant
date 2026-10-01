@@ -7,7 +7,7 @@ import type { Difficulty } from '../../sim/game';
 import { money } from '../format';
 import { useGame } from '../store';
 
-const DIFFICULTIES: { difficulty: Difficulty; name: string; description: string }[] = [
+export const DIFFICULTIES: { difficulty: Difficulty; name: string; description: string }[] = [
   {
     difficulty: 'relaxed',
     name: 'Relaxed',
@@ -38,12 +38,45 @@ function ConfirmButton({ label, confirmLabel, onConfirm }: { label: string; conf
   );
 }
 
+/** Paste a save code to carry on from it. */
+export function LoadSaveCode({ confirm = true }: { confirm?: boolean }) {
+  const importSave = useGame((s) => s.importSave);
+  const [pasted, setPasted] = useState('');
+  const [message, setMessage] = useState('');
+  const load = () => {
+    const ok = importSave(pasted);
+    setMessage(ok ? '✓ Loaded! Welcome back.' : 'That doesn’t look like a save code. Check it was copied whole.');
+    if (ok) setPasted('');
+  };
+
+  return (
+    <>
+      <textarea
+        className="code-box"
+        rows={4}
+        value={pasted}
+        placeholder="Paste a save code here"
+        onChange={(e) => {
+          setPasted(e.target.value);
+          setMessage('');
+        }}
+      />
+      {confirm ? (
+        <ConfirmButton label="Load this save" confirmLabel="This replaces your current game. Tap again" onConfirm={load} />
+      ) : (
+        <button type="button" className="secondary" onClick={load}>
+          Load this save
+        </button>
+      )}
+      {message && <p className="small">{message}</p>}
+    </>
+  );
+}
+
 function Backup() {
   const game = useGame((s) => s.game);
-  const importSave = useGame((s) => s.importSave);
   const [code, setCode] = useState('');
   const [copied, setCopied] = useState(false);
-  const [pasted, setPasted] = useState('');
   const [message, setMessage] = useState('');
 
   const copy = async () => {
@@ -83,27 +116,10 @@ function Backup() {
         </>
       )}
 
-      <h3 className="spaced">Load a save code</h3>
-      <textarea
-        className="code-box"
-        rows={4}
-        value={pasted}
-        placeholder="Paste a save code here"
-        onChange={(e) => {
-          setPasted(e.target.value);
-          setMessage('');
-        }}
-      />
-      <ConfirmButton
-        label="Load this save"
-        confirmLabel="This replaces your current game. Tap again"
-        onConfirm={() => {
-          const ok = importSave(pasted);
-          setMessage(ok ? '✓ Loaded! Welcome back.' : 'That doesn’t look like a save code. Check it was copied whole.');
-          if (ok) setPasted('');
-        }}
-      />
       {message && <p className="small">{message}</p>}
+
+      <h3 className="spaced">Load a save code</h3>
+      <LoadSaveCode />
     </section>
   );
 }

@@ -105,7 +105,7 @@ export const GOALS: Goal[] = [
 export const HELP: { title: string; text: string }[] = [
   {
     title: 'Cash',
-    text: 'Your money. Takings come in as guests pay; ingredients and wages go out every day, rent and utilities every Monday. If it dips below zero, don’t panic: there’s no game over.',
+    text: 'Your money. Takings come in as guests pay; ingredients and wages go out every day, rent and utilities every Monday. Keep an eye on it: if it runs out at the end of a day, the restaurant has to close for good.',
   },
   {
     title: 'Rating ★',

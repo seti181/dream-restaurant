@@ -73,9 +73,7 @@ Weekly rhythm: every Monday brings rent, a weekly summary and a new small goal f
   - Neptune Score = 60% average rating + 40% share of Old Town guests during the Fair.
   - Winning plays a special ending sequence (section 10).
 - **After the season:** free play continues with no end date.
-- **No-fail rule:** if cash falls below zero, the player picks one of two rescues:
-  - a friendly bank loan with gentle interest
-  - once per season, "Babcia's envelope", a gift with no strings attached
+- **Game over:** if cash is zero or less at the end of a day, the restaurant closes for good. The player can start a new game or load a save code. A warning appears on the Today tab when money runs low.
 - **Difficulty options:**
   - *Relaxed:* more starting cash, calmer rivals
   - *Normal:* the balanced default
@@ -356,7 +354,7 @@ All numbers live in `src/data/` (`balance.ts`, `dishes.ts`, `locations.ts`, `riv
 - Places in Gdańsk that mean something to you both (cameos on the map or in events): **[Mariacka ]**
 - Inside jokes to hide in reviews, staff bios or rival messages: **[ ]**
 - A regular guest based on you: **[give me cytrynowka to my dish ]**
-- Ending: after winning the Golden Neptune, a personal message / credits: **[Parabens! Now you are ready to open your dream restaurant in real WORLD!!! ]**
+- Ending: after winning the Golden Neptune, a personal message / credits: **[Parabéns!!! You passed a test! Now You are ready to open Your dream restaurant in the real WORLD!!!]**
 
 ## 11. Scope
 
@@ -452,7 +450,7 @@ Work in small steps, and test each step in the browser before moving on.
 - All tunables live in `src/data/balance.ts`.
 - The headless simulator runs full seasons with scripted strategies ("do nothing", "cheap and fast", "quality focus", "balanced").
 - **Targets on Normal:**
-  - "do nothing" struggles but survives with help
+  - "do nothing" loses money, like bad decisions do
   - "balanced" becomes profitable by week 3–4
   - a thoughtful player wins the Golden Neptune on the first try, with some tension in the final weeks
 - **Pace target:** about 50 seconds per day at 1× speed, which makes a season about 3–5 hours including planning.
@@ -479,3 +477,5 @@ Work in small steps, and test each step in the browser before moving on.
 - 2026-09-30: Game-wide settings live in `balance.ts`. Numbers that belong to one item (a street's rent, a dish's cost, a rival's prices) live next to that item in its own data file.
 - 2026-09-30: All desserts, including ice cream, need the dessert display. Dessert menu prices are capped at 50 zł.
 - 2026-09-30: `npm run simulate` runs through `tsx`, a dev-only tool that runs TypeScript directly. It never ships to the tablet.
+- 2026-10-01: Running out of money is a game over, replacing the no-fail rescues (bank loan, Babcia's envelope). Doing nothing should lose money, just like bad decisions.
+- 2026-10-01: The Golden Neptune ending reads "Parabéns!!! You passed a test! Now You are ready to open Your dream restaurant in the real WORLD!!!"
