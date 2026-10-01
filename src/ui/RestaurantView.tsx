@@ -83,13 +83,19 @@ function Table({
       <rect x={x - 22} y={y - 8} width={44} height={28} rx={5} className={outdoor ? 'table outdoor' : 'table'} />
       {guests?.stage === 'eating' &&
         [-10, 10].map((dx) => <circle key={dx} cx={x + dx} cy={y + 6} r={6} className="plate" />)}
+      {/* They've paid: a coin floats up from the table. */}
+      {guests?.stage === 'eating' && guests.eatingFor <= 10 && (
+        <text x={x} y={y - 8} className="scene-emoji coin-pop">
+          🪙
+        </text>
+      )}
       {guests?.critic && (
         <text x={x} y={y + 40} className="scene-emoji small-emoji">
           🖋️
         </text>
       )}
       {bubble && (
-        <g className="bubble">
+        <g key={bubble} className="bubble">
           <rect x={x - 17} y={y - 66} width={34} height={30} rx={12} />
           <text x={x} y={y - 44} className="scene-emoji">
             {bubble}

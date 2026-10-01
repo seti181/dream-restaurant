@@ -12,7 +12,10 @@ import { useGame } from './store';
 function Stat({ label, value }: { label: string; value: string | number }) {
   return (
     <div className="stat">
-      <strong>{value}</strong>
+      {/* A new key each time the number changes replays the little bump. */}
+      <strong key={value} className="bump">
+        {value}
+      </strong>
       <span>{label}</span>
     </div>
   );

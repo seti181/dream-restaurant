@@ -5,7 +5,8 @@ import { GROUP_IDS, GROUPS } from '../data/groups';
 import { dateOf, formatDate } from '../sim/calendar';
 import type { DaySummary } from '../sim/game';
 import type { SatisfactionFactors } from '../sim/types';
-import { dishName, money, signedMoney, starRow, stars } from './format';
+import { dishName, money, signedMoney, stars } from './format';
+import { Confetti, StarRow } from './Juice';
 import { MewaTip } from './Mewa';
 import { useGame } from './store';
 
@@ -86,6 +87,7 @@ export function DayOverScreen() {
             {summary.events.length > 0 && ` · ${summary.events.join(' · ')}`}
           </p>
           <h1>{headline(summary)}</h1>
+          {summary.goalCompleted && <Confetti />}
           {summary.goalCompleted && (
             <p className="note goal-complete">
               🎉 Goal complete: {summary.goalCompleted.text}! Mewa drops {money(summary.goalCompleted.reward)} at your
@@ -108,7 +110,9 @@ export function DayOverScreen() {
             <div className="reviews">
               {summary.reviews.slice(0, 4).map((review, i) => (
                 <blockquote key={i} className={review.critic ? 'review critic' : 'review'}>
-                  <span className="review-stars">{starRow(review.stars)}</span>
+                  <span className="review-stars">
+                    <StarRow stars={review.stars} delay={0.2 + i * 0.3} />
+                  </span>
                   <p>“{review.text}”</p>
                   <footer>
                     {review.critic ? '🖋️ ' : '— '}

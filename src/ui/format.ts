@@ -31,11 +31,6 @@ export function dishName(dish: MenuDish): string {
   return dish.name ?? recipeText(dish);
 }
 
-/** "★★★☆☆" for a 1–5 star review. */
-export function starRow(stars: number): string {
-  return '★'.repeat(stars) + '☆'.repeat(5 - stars);
-}
-
 /** "2.4 ★" */
 export function stars(rating: number): string {
   return `${rating.toFixed(1)} ★`;

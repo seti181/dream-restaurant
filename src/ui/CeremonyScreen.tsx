@@ -2,6 +2,7 @@
 
 import { ENDING } from '../data/personal';
 import { playerOf } from '../sim/game';
+import { Confetti } from './Juice';
 import { useGame } from './store';
 
 const ORDINALS = ['first', 'second', 'third', 'fourth', 'fifth'];
@@ -24,7 +25,8 @@ export function CeremonyScreen() {
           <p className="eyebrow">St. Dominic’s Fair · the Golden Neptune</p>
           {neptune.playerWon ? (
             <>
-              <div className="trophy" aria-hidden="true">
+              <Confetti pieces={60} />
+              <div className="trophy trophy-bounce" aria-hidden="true">
                 🏆
               </div>
               <h1>The Golden Neptune goes to {playerOf(game).name}!</h1>
