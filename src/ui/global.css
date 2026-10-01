@@ -1390,3 +1390,31 @@ h2.spaced {
   from { transform: translate(-50%, -100%); opacity: 1; }
   to { transform: translate(-50%, -260%); opacity: 0; }
 }
+
+/* A guest walking: the browser moves them; this steps through the two walking frames. */
+.pixel-walker {
+  position: absolute;
+  left: 0;
+  top: 0;
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
+  pointer-events: none;
+  animation-name: walk-steps;
+  animation-timing-function: steps(2);
+  animation-iteration-count: infinite;
+}
+
+@keyframes walk-steps {
+  to { background-position: var(--walk-shift) 0; }
+}
+
+.pixel-bubble,
+.pixel-coin,
+.pixel-badge {
+  z-index: 5000;
+}
+
+.walker-bubble {
+  left: 50%;
+  top: 4px;
+}

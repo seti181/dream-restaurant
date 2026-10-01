@@ -4,7 +4,6 @@
 
 import type { DecorId } from '../../data/decor';
 import type { EquipmentId } from '../../data/dishes';
-import type { GroupId } from '../../data/groups';
 import type { Weather } from '../../data/weather';
 import type { FloorView, TableGuests } from '../../sim/day';
 import { box, placeOn, project, solid, type Faces, type Origin } from './iso';
@@ -232,24 +231,35 @@ function drawn(key: string, draw: (img: Pixels, o: Origin) => void, size = 96): 
   return result;
 }
 
-/** A person's picture, standing (full height) or seated (top half only). */
-function personImage(kind: GroupId | 'waiter' | 'chef', facing: Facing, seated: boolean): SpriteImage {
-  const key = `person:${kind}:${facing}:${seated}`;
+/** A person's picture in a pose, anchored at the bottom-centre (on the seat or the floor). */
+export function personImage(kind: S.PersonKind, facing: Facing, pose: S.Pose, variant = 0): SpriteImage {
+  const key = `person:${kind}:${facing}:${pose}:${variant % 3}`;
   const cached = spriteCache.get(key);
   if (cached) return cached;
-  const palette = kind === 'waiter' || kind === 'chef' ? S.STAFF_PALETTES[kind] : S.GUEST_PALETTES[kind];
-  let body = S.sprite(facing === 'front' ? S.PERSON : S.PERSON_BACK, palette);
-  if (kind === 'chef') {
-    const withHat = new Pixels(body.width, body.height + S.CHEF_HAT.length - 1);
-    withHat.draw(body, 0, S.CHEF_HAT.length - 1);
-    withHat.draw(S.sprite(S.CHEF_HAT, palette), 0, 0);
-    body = withHat;
-  }
-  if (seated) body = body.crop(0, 0, body.width, body.height - (S.PERSON.length - S.SEATED_ROWS));
-  // Anchor: bottom-centre on the seat or the floor.
-  const result = { pixels: body, dx: -Math.round(body.width / 2), dy: -body.height };
+  const pixels = S.personPixels(kind, facing, pose, variant);
+  const result = { pixels, dx: -Math.round(pixels.width / 2), dy: -pixels.height };
   spriteCache.set(key, result);
   return result;
+}
+
+/** Two walking steps side by side, for a CSS walk cycle. */
+export function walkStrip(kind: S.PersonKind, facing: Facing, variant: number): SpriteImage {
+  const key = `walk:${kind}:${facing}:${variant % 3}`;
+  const cached = spriteCache.get(key);
+  if (cached) return cached;
+  const a = S.personPixels(kind, facing, 'walk1', variant);
+  const b = S.personPixels(kind, facing, 'walk2', variant);
+  const pixels = new Pixels(a.width * 2, a.height);
+  pixels.draw(a, 0, 0);
+  pixels.draw(b, a.width, 0);
+  const result = { pixels, dx: -Math.round(a.width / 2), dy: -a.height };
+  spriteCache.set(key, result);
+  return result;
+}
+
+/** Who sits at a table: the critic and the regular have their own looks. */
+export function guestKind(guests: TableGuests): S.PersonKind {
+  return guests.critic ? 'critic' : guests.regular ? 'regular' : guests.group;
 }
 
 function plainSprite(key: string, rows: readonly string[], palette: S.Palette): SpriteImage {
@@ -270,7 +280,7 @@ export interface ScenePiece {
   depth: number;
   /** For bubbles and coins: the guests this piece shows. */
   guests?: TableGuests;
-  kind?: 'guest' | 'chef' | 'steam' | 'walkout';
+  kind?: 'guest' | 'chef' | 'steam';
   busy?: boolean;
 }
 
@@ -567,14 +577,20 @@ export function drawRoom(layout: RoomLayout, look: RoomLook): Pixels {
 // ---------- Everything stacked on top of the room ----------
 
 /** Furniture and people for this moment of the day, back to front. */
-export function scenePieces(layout: RoomLayout, floor: FloorView, look: RoomLook): ScenePiece[] {
+export function scenePieces(
+  layout: RoomLayout,
+  floor: FloorView,
+  look: RoomLook,
+  /** Tables whose guests are still on their way in (by table number), so not yet seated. */
+  arriving: ReadonlySet<number> = new Set(),
+): ScenePiece[] {
   const o = layout.origin;
   const pieces: ScenePiece[] = [];
   const clothed = look.decor.includes('tablecloths');
 
-  const addTable = (slot: Slot, guests: TableGuests | null, outdoor: boolean) => {
+  const addTable = (slot: Slot, guests: TableGuests | null, outdoor: boolean, tableIndex: number) => {
     const around = seats(slot);
-    const seated = guests ? guests.seated : 0;
+    const seated = guests && !arriving.has(tableIndex) ? guests.seated : 0;
     const eating = guests?.stage === 'eating';
     const style = outdoor ? 'bistro' : clothed ? 'cloth' : 'wood';
     // Chairs (one sprite per chair, each with its own depth).
@@ -603,9 +619,9 @@ export function scenePieces(layout: RoomLayout, floor: FloorView, look: RoomLook
     });
     pieces.push(piece(o, `table${slot.x},${slot.y}`, table, slot.x, slot.y, 0, slot.x + slot.y + TABLE));
     // The guests, each on their chair.
-    if (guests) {
+    if (guests && seated > 0) {
       around.slice(0, seated).forEach((seat, i) => {
-        const image = personImage(guests.group, seat.facing, true);
+        const image = personImage(guestKind(guests), seat.facing, 'sit', tableIndex * 4 + i);
         const p = piece(o, `guest${slot.x},${slot.y},${i}`, image, seat.x, seat.y, SEAT_Z, seatDepth(seat));
         // Only the first sitter carries the table's bubble.
         pieces.push(i === 0 ? { ...p, guests, kind: 'guest' } : p);
@@ -613,8 +629,10 @@ export function scenePieces(layout: RoomLayout, floor: FloorView, look: RoomLook
     }
   };
 
-  layout.inside.slice(0, floor.insideTables).forEach((slot, i) => addTable(slot, floor.tables[i], false));
-  layout.terrace.forEach((slot, i) => addTable(slot, floor.tables[floor.insideTables + i] ?? null, true));
+  layout.inside.slice(0, floor.insideTables).forEach((slot, i) => addTable(slot, floor.tables[i], false, i));
+  layout.terrace.forEach((slot, i) =>
+    addTable(slot, floor.tables[floor.insideTables + i] ?? null, true, floor.insideTables + i),
+  );
 
   // A row of planters along the edge of the terrace.
   if (layout.terraceDepth > 0) {
@@ -642,7 +660,7 @@ export function scenePieces(layout: RoomLayout, floor: FloorView, look: RoomLook
   });
   floor.chefsBusy.forEach((busy, i) => {
     const cx = chefSpots(layout, chefs)[i];
-    pieces.push({ ...piece(o, `chef${i}`, personImage('chef', 'front', false), cx, 18, 0, k + 20 + i * 0.01), kind: 'chef', busy });
+    pieces.push({ ...piece(o, `chef${i}`, personImage('chef', 'front', 'stand'), cx, 18, 0, k + 20 + i * 0.01), kind: 'chef', busy });
     if (busy) {
       const steam = plainSprite('steam', S.STEAM, S.STEAM_COLOURS);
       pieces.push({ ...piece(o, `steam${i}`, steam, cx + 1, 31, 26, 999), kind: 'steam' });
@@ -660,15 +678,10 @@ export function scenePieces(layout: RoomLayout, floor: FloorView, look: RoomLook
     pieces.push(piece(o, 'pizzaOven', oven, k + 1, 30, 0, k + 1 + 30 + 12));
   }
 
-  // Waiters wait by the kitchen; parties who gave up head for the door.
-  for (let i = 0; i < floor.waiters; i++) {
+  // Waiters wait by the kitchen: Tomek and Adrian look like themselves.
+  floor.waiters.forEach((special, i) => {
     const x = k - 10 - i * 12;
-    pieces.push(piece(o, `waiter${i}`, personImage('waiter', 'front', false), x, 46, 0, x + 46));
-  }
-  floor.walkouts.slice(0, 3).forEach((w, i) => {
-    const x = layout.door.x0 + 6 + i * 6;
-    const y = 12 + i * 4;
-    pieces.push({ ...piece(o, `walkout${i}`, personImage(w.group, 'back', false), x, y, 0, x + y), kind: 'walkout' });
+    pieces.push(piece(o, `waiter${i}`, personImage(special ?? 'waiter', 'front', 'stand'), x, 46, 0, x + 46));
   });
 
   // Order tickets waiting on the rail.
@@ -725,4 +738,58 @@ function cord(lamp: ScenePiece, ceiling: number): ScenePiece {
     py: ceiling,
     depth: lamp.depth,
   };
+}
+
+// ---------- Walking in and out ----------
+
+export interface Point {
+  x: number;
+  y: number;
+}
+
+/** The table spot for table number `table` (inside tables first, then the terrace). */
+function slotOf(layout: RoomLayout, insideTables: number, table: number): { slot: Slot; outdoor: boolean } | null {
+  if (table < insideTables) return layout.inside[table] ? { slot: layout.inside[table], outdoor: false } : null;
+  const slot = layout.terrace[table - insideTables];
+  return slot ? { slot, outdoor: true } : null;
+}
+
+/** Where each guest of a table sits, and which way they face. */
+export function seatsAt(layout: RoomLayout, insideTables: number, table: number): (Point & { facing: Facing })[] {
+  const found = slotOf(layout, insideTables, table);
+  return found ? seats(found.slot).map(({ x, y, facing }) => ({ x, y, facing })) : [];
+}
+
+/**
+ * The way from the street to a seat. Inside guests come through the front door, down the
+ * entrance to the gap in front of the tables, along it, and then down the aisle beside their
+ * table. Terrace guests come straight in from the street.
+ */
+export function walkPath(layout: RoomLayout, insideTables: number, table: number, seat: Point): Point[] {
+  const found = slotOf(layout, insideTables, table);
+  if (!found) return [];
+  const aisle = found.slot.x - 5;
+  const end = { x: seat.x, y: seat.y };
+  if (found.outdoor) {
+    const street = layout.roomY + layout.terraceDepth + 6;
+    return [
+      { x: aisle, y: street },
+      { x: aisle, y: seat.y },
+      end,
+    ];
+  }
+  const door = (layout.door.x0 + layout.door.x1) / 2;
+  const corridor = 46;
+  return [
+    { x: door, y: 2 },
+    { x: door, y: corridor },
+    { x: aisle, y: corridor },
+    { x: aisle, y: seat.y },
+    end,
+  ];
+}
+
+/** The stacking order of something standing at a point, matching the scene's pieces. */
+export function depthAt(point: Point): number {
+  return point.x + point.y;
 }

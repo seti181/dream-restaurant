@@ -4,7 +4,9 @@ import { LOCATION_IDS, LOCATIONS } from '../../data/locations';
 import { floorView, startDay, stepDay } from '../../sim/day';
 import * as actions from '../../sim/actions';
 import { newGame, openRestaurant, playTick, type GameState } from '../../sim/game';
-import { drawRoom, roomLayout, scenePieces, type RoomLook } from './room';
+import { specialCandidate } from '../../sim/staff';
+import { drawRoom, roomLayout, scenePieces, seatsAt, walkPath, type RoomLook } from './room';
+import { HEADROOM, PERSON, personPixels, SEATED_ROWS, type PersonKind } from './sprites';
 
 const look = (insideTables: number): RoomLook => ({ decor: [], equipment: ['stove'], weather: 'sunny', dusk: false, insideTables });
 
@@ -65,7 +67,7 @@ describe('the pixel-art room layout', () => {
     expect(new Set(keys).size).toBe(keys.length);
     expect(keys.filter((k) => k.startsWith('table'))).toHaveLength(floor.tables.length);
     expect(keys.filter((k) => k.startsWith('chef'))).toHaveLength(floor.chefsBusy.length);
-    expect(keys.filter((k) => k.startsWith('waiter'))).toHaveLength(floor.waiters);
+    expect(keys.filter((k) => k.startsWith('waiter'))).toHaveLength(floor.waiters.length);
     const seated = floor.tables.reduce((sum, t) => sum + (t?.seated ?? 0), 0);
     expect(keys.filter((k) => k.startsWith('guest'))).toHaveLength(seated);
     // Sorted back to front.
@@ -81,5 +83,59 @@ describe('the pixel-art room layout', () => {
       stepDay(rng, progress);
       expect(() => scenePieces(layout, floorView(progress, 0), look(4))).not.toThrow();
     }
+  });
+});
+
+describe('walking in and out', () => {
+  it('takes inside guests from the front door to their seat, without leaving the room', () => {
+    const layout = roomLayout(12, 4);
+    for (let table = 0; table < 12; table++) {
+      for (const seat of seatsAt(layout, 12, table)) {
+        const path = walkPath(layout, 12, table, seat);
+        expect(path[0]).toEqual({ x: (layout.door.x0 + layout.door.x1) / 2, y: 2 });
+        expect(path.at(-1)).toEqual({ x: seat.x, y: seat.y });
+        for (const p of path) {
+          expect(p.x).toBeGreaterThanOrEqual(0);
+          expect(p.x).toBeLessThanOrEqual(layout.roomX);
+          expect(p.y).toBeLessThanOrEqual(layout.roomY);
+        }
+      }
+    }
+  });
+
+  it('brings terrace guests in from the street', () => {
+    const layout = roomLayout(6, 2);
+    const seat = seatsAt(layout, 6, 6)[0];
+    const path = walkPath(layout, 6, 6, seat);
+    expect(path[0].y).toBeGreaterThan(layout.roomY + layout.terraceDepth);
+    expect(path.at(-1)).toEqual({ x: seat.x, y: seat.y });
+  });
+
+  it('has no route to a table that does not exist', () => {
+    expect(walkPath(roomLayout(6, 0), 4, 9, { x: 0, y: 0 })).toEqual([]);
+  });
+});
+
+describe('characters', () => {
+  const kinds: PersonKind[] = ['tourists', 'students', 'locals', 'office', 'foodies', 'critic', 'regular', 'waiter', 'tomek', 'adrian', 'chef'];
+  it.each(kinds)('%s can be drawn from the front and back, standing, walking and sitting', (kind) => {
+    for (const facing of ['front', 'back'] as const) {
+      for (const pose of ['stand', 'walk1', 'walk2'] as const) {
+        const image = personPixels(kind, facing, pose, 1);
+        expect(image.width).toBe(16);
+        expect(image.height).toBe(PERSON.length + HEADROOM);
+      }
+      expect(personPixels(kind, facing, 'sit').height).toBe(SEATED_ROWS + HEADROOM);
+    }
+  });
+
+  it('shows Tomek and Adrian among the waiters as themselves', () => {
+    const state = newGame(5);
+    const team = [...state.team, specialCandidate('tomek', 98), specialCandidate('adrian', 99)];
+    const open = openRestaurant({ ...state, team, rng: { s: 3 } });
+    playTick(open);
+    const waiters = floorView(open.progress, 0).waiters;
+    expect(waiters).toContain('tomek');
+    expect(waiters.filter((w) => w === null)).toHaveLength(1);
   });
 });

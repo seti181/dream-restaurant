@@ -1,14 +1,34 @@
 // The restaurant view in pixel art: the room as one picture, with furniture and people
-// stacked on top, back to front. Bubbles and coins float above the guests.
-// Each art pixel is drawn as a whole number of screen pixels, so it stays crisp.
+// stacked on top, back to front. Guests walk in from the door to their table and back
+// out when they leave. Bubbles and coins float above them.
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { balance } from '../data/balance';
 import { LOCATIONS } from '../data/locations';
 import type { Weather } from '../data/weather';
 import type { FloorView, TableGuests } from '../sim/day';
+import { project } from './pixel/iso';
 import { imageUrl, type Pixels } from './pixel/raster';
-import { drawRoom, roomLayout, scenePieces, type RoomLook } from './pixel/room';
+import {
+  depthAt,
+  drawRoom,
+  guestKind,
+  roomLayout,
+  scenePieces,
+  seatsAt,
+  walkPath,
+  walkStrip,
+  type Point,
+  type RoomLayout,
+  type RoomLook,
+} from './pixel/room';
+import type { PersonKind } from './pixel/sprites';
+import { useGame } from './store';
+
+/** World units a guest walks per second at 1× speed. */
+const WALK_SPEED = 60;
+/** Seconds between people of the same party setting off. */
+const STAGGER = 0.25;
 
 /** Sprite pictures never change once drawn, so each gets one URL for the whole session. */
 const spriteUrls = new WeakMap<Pixels, string>();
@@ -20,6 +40,9 @@ function urlOf(pixels: Pixels): string {
   }
   return url;
 }
+
+/** Stacking order on screen: pieces and walkers share one scale, so walkers pass between tables. */
+const zOf = (depth: number) => Math.round(depth * 2) + 1000;
 
 /** How a table feels, as an emoji bubble, or null for no bubble. */
 function bubbleFor(guests: TableGuests): string | null {
@@ -63,6 +86,149 @@ function useFittingScale(width: number, height: number) {
   return { wrap, scale };
 }
 
+// ---------- Walking guests ----------
+
+interface Walk {
+  id: string;
+  kind: PersonKind;
+  variant: number;
+  path: Point[];
+  /** Seconds to wait before setting off (people in a party follow each other). */
+  delay: number;
+  angry: boolean;
+  /** For guests walking in: the table they're heading for, and which visit that is. */
+  arrivingAt?: { table: number; since: number };
+}
+
+/** One guest on the move. The browser animates each stretch of the walk; React only steps in between. */
+function Walker({
+  walk,
+  layout,
+  scale,
+  speed,
+  onDone,
+}: {
+  walk: Walk;
+  layout: RoomLayout;
+  scale: number;
+  speed: number;
+  onDone: (walk: Walk) => void;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const animation = useRef<Animation | null>(null);
+  const speedNow = useRef(speed);
+  speedNow.current = speed;
+  const [leg, setLeg] = useState(0);
+  const from = walk.path[leg];
+  const to = walk.path[leg + 1];
+  // Walking towards us shows the face; walking away shows the back.
+  const facing = to && to.x + to.y >= from.x + from.y ? 'front' : 'back';
+  const strip = walkStrip(walk.kind, facing, walk.variant);
+
+  useEffect(() => {
+    if (!to) {
+      onDone(walk);
+      return;
+    }
+    const corner = (p: Point) => {
+      const { sx, sy } = project(layout.origin, p.x, p.y, 0);
+      return `translate(${(sx + strip.dx) * scale}px, ${(sy + strip.dy) * scale}px)`;
+    };
+    const seconds = Math.hypot(to.x - from.x, to.y - from.y) / WALK_SPEED;
+    const anim = ref.current!.animate(
+      [
+        { transform: corner(from), zIndex: zOf(depthAt(from)) },
+        { transform: corner(to), zIndex: zOf(depthAt(to)) },
+      ],
+      { duration: Math.max(1, seconds * 1000), delay: leg === 0 ? walk.delay * 1000 : 0, fill: 'both', easing: 'linear' },
+    );
+    anim.playbackRate = speedNow.current;
+    anim.onfinish = () => setLeg((l) => l + 1);
+    animation.current = anim;
+    return () => anim.cancel();
+  }, [leg, scale, layout, walk, from, to, strip, onDone]);
+
+  // Game speed changes (and pauses) apply to a walk already under way.
+  useEffect(() => {
+    if (animation.current) animation.current.playbackRate = speed;
+  }, [speed]);
+
+  if (!to) return null;
+  return (
+    <div
+      ref={ref}
+      className="pixel-walker"
+      style={{
+        width: (strip.pixels.width / 2) * scale,
+        height: strip.pixels.height * scale,
+        backgroundImage: `url(${urlOf(strip.pixels)})`,
+        backgroundSize: `${strip.pixels.width * scale}px ${strip.pixels.height * scale}px`,
+        ['--walk-shift' as string]: `${-strip.pixels.width * scale}px`,
+        animationDuration: `${0.5 / Math.max(speed, 0.01)}s`,
+        animationPlayState: speed === 0 ? 'paused' : 'running',
+      }}
+    >
+      {walk.angry && <span className="pixel-bubble walker-bubble">😠</span>}
+    </div>
+  );
+}
+
+/**
+ * Watches the tables from one moment to the next: a new party at a table walks in,
+ * and a party that's gone walks out (cross, if they never got their food).
+ */
+function useWalkers(layout: RoomLayout, floor: FloorView) {
+  const known = useRef(new Map<number, TableGuests>());
+  const [walks, setWalks] = useState<Walk[]>([]);
+
+  useEffect(() => {
+    const before = known.current;
+    const now = new Map<number, TableGuests>();
+    floor.tables.forEach((guests, table) => guests && now.set(table, guests));
+    const started: Walk[] = [];
+
+    const walkersFor = (table: number, guests: TableGuests, leaving: boolean) => {
+      const seats = seatsAt(layout, floor.insideTables, table);
+      for (let i = 0; i < guests.seated && i < seats.length; i++) {
+        const path = walkPath(layout, floor.insideTables, table, seats[i]);
+        if (path.length < 2) continue;
+        started.push({
+          id: `${table}:${guests.since}:${i}:${leaving ? 'out' : 'in'}`,
+          kind: guestKind(guests),
+          variant: table * 4 + i,
+          path: leaving ? [...path].reverse() : path,
+          delay: i * STAGGER,
+          angry: leaving && guests.stage !== 'eating',
+          arrivingAt: leaving ? undefined : { table, since: guests.since },
+        });
+      }
+    };
+
+    for (const [table, guests] of now) {
+      const was = before.get(table);
+      if (!was || was.since !== guests.since) walkersFor(table, guests, false);
+    }
+    for (const [table, guests] of before) {
+      const still = now.get(table);
+      if (!still || still.since !== guests.since) walkersFor(table, guests, true);
+    }
+    known.current = now;
+    if (started.length > 0) setWalks((current) => [...current, ...started]);
+  }, [floor, layout]);
+
+  const [done] = useState(() => (walk: Walk) => setWalks((current) => current.filter((w) => w.id !== walk.id)));
+
+  // Tables whose current party still has someone walking in: they aren't seated yet.
+  const arriving = new Set(
+    walks
+      .filter((w) => w.arrivingAt && floor.tables[w.arrivingAt.table]?.since === w.arrivingAt.since)
+      .map((w) => w.arrivingAt!.table),
+  );
+  return { walks, done, arriving };
+}
+
+// ---------- The view ----------
+
 export function PixelRestaurantView({
   floor,
   weather,
@@ -72,49 +238,49 @@ export function PixelRestaurantView({
   weather: Weather;
   minute: number;
 }) {
+  const speed = useGame((s) => s.speed);
   const maxTables = Math.floor(LOCATIONS[floor.location].maxSeats / balance.service.seatsPerTable);
   const terraceTables = floor.tables.length - floor.insideTables;
   const layout = useMemo(() => roomLayout(maxTables, terraceTables), [maxTables, terraceTables]);
 
   const dusk = minute >= 19 * 60 + 30;
-  const roomKey = [floor.decor.join(), floor.equipment.join(), weather, dusk, floor.insideTables].join('|');
+  const { decor, equipment, insideTables } = floor;
+  const roomKey = [decor.join(), equipment.join(), weather, dusk, insideTables].join('|');
+  // The room only needs redrawing when what it shows changes.
   const look: RoomLook = useMemo(
-    () => ({ decor: floor.decor, equipment: floor.equipment, weather, dusk, insideTables: floor.insideTables }),
-    // The room only needs redrawing when what it shows changes.
+    () => ({ decor, equipment, weather, dusk, insideTables }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [roomKey],
   );
   const background = useMemo(() => imageUrl(drawRoom(layout, look)), [layout, look]);
   useEffect(() => () => URL.revokeObjectURL(background), [background]);
 
-  const pieces = scenePieces(layout, floor, look);
+  const { walks, done, arriving } = useWalkers(layout, floor);
+  const pieces = scenePieces(layout, floor, look, arriving);
   const { wrap, scale } = useFittingScale(layout.width, layout.height);
   const at = (n: number) => n * scale;
 
   return (
     <div ref={wrap} className="pixel-wrap">
       <div className="pixel-scene" style={{ width: at(layout.width), height: at(layout.height) }} role="img" aria-label="Your restaurant">
-        <img src={background} className="pixel" alt="" style={{ left: 0, top: 0, width: at(layout.width) }} />
+        <img src={background} className="pixel" alt="" style={{ left: 0, top: 0, width: at(layout.width), zIndex: 0 }} />
         {pieces.map((p) => (
           <img
             key={p.key}
             src={urlOf(p.image.pixels)}
             className={p.kind === 'steam' ? 'pixel steam' : 'pixel'}
             alt=""
-            style={{ left: at(p.px), top: at(p.py), width: at(p.image.pixels.width) }}
+            style={{ left: at(p.px), top: at(p.py), width: at(p.image.pixels.width), zIndex: zOf(p.depth) }}
           />
         ))}
-        {/* Bubbles and coins above the guests, on top of everything. */}
+        {walks.map((walk) => (
+          <Walker key={walk.id} walk={walk} layout={layout} scale={scale} speed={speed} onDone={done} />
+        ))}
+        {/* Bubbles and coins above the seated guests, on top of everything. */}
         {pieces.map((p) => {
-          const x = at(p.px + p.image.pixels.width / 2);
-          const y = at(p.py - 1);
-          if (p.kind === 'walkout') {
-            return (
-              <span key={`${p.key}:bubble`} className="pixel-bubble" style={{ left: x, top: y }}>
-                😠
-              </span>
-            );
-          }
           if (p.kind !== 'guest' || !p.guests) return null;
+          const x = at(p.px + p.image.pixels.width / 2);
+          const y = at(p.py + 4);
           const bubble = bubbleFor(p.guests);
           return (
             <span key={`${p.key}:extras`}>

@@ -19,7 +19,11 @@ import type { Employee, Role, Staff } from './types';
 export function staffOf(team: Employee[], role: Role): Staff[] {
   return team
     .filter((person) => person.role === role)
-    .map(({ skill, speed, trait, specialty }) => ({ skill, speed, trait, specialty }));
+    .map(({ skill, speed, trait, specialty, special }) => {
+      const staff: Staff = { skill, speed, trait, specialty };
+      if (special) staff.special = special;
+      return staff;
+    });
 }
 
 export function starterTeam(): Employee[] {

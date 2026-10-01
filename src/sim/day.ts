@@ -25,6 +25,7 @@ import {
 } from './service';
 import type { DayConditions, Party, PartyOutcome, Restaurant, SatisfactionFactors } from './types';
 import type { GroupId } from '../data/groups';
+import type { SpecialStaffId } from '../data/personal';
 
 /** A party sitting in a restaurant. Only exists during the day, so it is never saved. */
 interface Visit {
@@ -413,6 +414,8 @@ export interface TableGuests {
   eatingFor: number;
   critic: boolean;
   regular: boolean;
+  /** When they sat down: tells one party at this table from the next. */
+  since: number;
 }
 
 export interface FloorView {
@@ -423,7 +426,8 @@ export interface FloorView {
   insideTables: number;
   /** For each chef: busy cooking right now? */
   chefsBusy: boolean[];
-  waiters: number;
+  /** One entry per waiter on today: null, or which of the special waiters it is. */
+  waiters: (SpecialStaffId | null)[];
   decor: DecorId[];
   equipment: EquipmentId[];
   /** Orders waiting for a free chef. */
@@ -454,6 +458,7 @@ export function floorView(progress: DayInProgress, index: number, recentMinutes 
         eatingFor: visit.eating && visit.readyAt !== null ? minute - visit.readyAt : 0,
         critic: party.critic ?? false,
         regular: party.regular ?? false,
+        since: visit.seatedAt,
       };
     });
   }
@@ -463,7 +468,7 @@ export function floorView(progress: DayInProgress, index: number, recentMinutes 
     tables,
     insideTables: restaurant.tables,
     chefsBusy: floor.chefFreeAt.map((freeAt) => freeAt > minute),
-    waiters: restaurant.waiters.length,
+    waiters: restaurant.waiters.map((waiter) => waiter.special ?? null),
     decor: restaurant.decor,
     equipment: restaurant.equipment,
     ordersWaiting: floor.queue.length,

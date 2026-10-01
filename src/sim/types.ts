@@ -20,6 +20,8 @@ export interface Staff {
   trait?: TraitId;
   /** Chefs only. */
   specialty?: Cuisine;
+  /** One of the two waiters from section 10; only the restaurant view uses it. */
+  special?: SpecialStaffId;
 }
 
 /** One of the player's staff, or a job candidate. */
@@ -30,8 +32,6 @@ export interface Employee extends Staff {
   bio: string;
   /** Złoty per day. */
   wage: number;
-  /** One of the two waiters from section 10, with their own quirk. */
-  special?: SpecialStaffId;
 }
 
 /** The player's restaurant or a rival. Both follow exactly the same rules. */

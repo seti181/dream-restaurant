@@ -217,3 +217,144 @@ export const STEAM_COLOURS: Palette = { s: '#ffffff' };
 export const GROUP_COLOURS = Object.fromEntries(
   Object.entries(GUEST_PALETTES).map(([group, palette]) => [group, palette.c]),
 ) as Record<GroupId, string>;
+
+// ---------- Walking, accessories and special characters ----------
+
+/** The legs (last four rows of a person) for the two steps of a walk. */
+export const WALK_LEGS: Record<'walk1' | 'walk2', readonly string[]> = {
+  walk1: ['...opppppppPo...', '...oppPooppPo...', '..obbbo.oppPo...', '..oooo..obbbo...'],
+  walk2: ['...opppppppPo...', '...oppPooppPo...', '...oppPo.obbbo..', '...obbbo..oooo..'],
+};
+
+/** Room above the head for hats. */
+export const HEADROOM = 5;
+
+/** An accessory drawn over the body; y counts from the top of the head (negative = above it). */
+export interface Overlay {
+  rows: readonly string[];
+  x: number;
+  y: number;
+  /** Which way the person must face for it to show. */
+  facing?: 'front' | 'back';
+}
+
+const SUN_HAT: Overlay = {
+  x: 0,
+  y: -3,
+  rows: [
+    '.....oooooo.....',
+    '....oyyyyyyo....',
+    '...oyyyyyyyyo...',
+    '...orrrrrrrro...',
+    'ooyyyyyyyyyyyyoo',
+    '.oooooooooooooo.',
+  ],
+};
+const CAMERA: Overlay = { x: 5, y: 12, facing: 'front', rows: ['oooo', 'oKLo'] };
+const BACKPACK_STRAPS: Overlay = { x: 4, y: 11, facing: 'front', rows: ['B......B', 'B......B', 'B......B', 'B......B'] };
+const BACKPACK: Overlay = {
+  x: 4,
+  y: 11,
+  facing: 'back',
+  rows: ['oooooooo', 'oBBBBBBo', 'oBbbbbBo', 'oBBBBBBo', 'oBBBBBBo', 'oooooooo'],
+};
+const KASHUBIAN_PATTERN: Overlay = { x: 4, y: 12, rows: ['.z.z.z.z', 'z.z.z.z.'] };
+const SCARF: Overlay = { x: 0, y: 10, rows: ['...offffffffo...', '.........ff.....'] };
+const BERET: Overlay = { x: 2, y: -1, rows: ['...ooooooo..', '..oKKKKKKKoo', '.oKKKKKKKKKo'] };
+const FLAT_CAP: Overlay = { x: 1, y: -1, rows: ['...oooooooo...', '..oQQQQQQQQo..', '.oDDDDDDDDDDo.'] };
+const APRON: Overlay = { x: 3, y: 15, facing: 'front', rows: ['oaaaaaaaao', 'oaaaaaaaAo'] };
+const KOMPOT_STAIN: Overlay = { x: 9, y: 15, facing: 'front', rows: ['r'] };
+const SPIKY_HAIR: Overlay = { x: 0, y: -2, rows: ['....o..o..o.....', '...ohoohoohoo...'] };
+const SUNGLASSES: Overlay = { x: 3, y: 6, facing: 'front', rows: ['KKKKooKKKK', 'KKKK..KKKK'] };
+const CHEF_HAT_OVERLAY: Overlay = { x: 0, y: -5, rows: CHEF_HAT };
+
+/** Everyone who can appear in the restaurant. */
+export type PersonKind = GroupId | 'critic' | 'regular' | 'waiter' | 'tomek' | 'adrian' | 'chef';
+
+export interface Look {
+  palette: Palette;
+  overlays: Overlay[];
+}
+
+const ACCESSORY_COLOURS = {
+  y: '#f1d9a0',
+  r: '#b5452f',
+  K: '#2e2a33',
+  L: '#7fb2d3',
+  B: '#3c6b4f',
+  b: '#5f8a52',
+  z: '#fbf3e4',
+  f: '#f1e2c4',
+  a: '#fbf8f2',
+  A: '#d6d0c4',
+  Q: '#8a6a4a',
+  D: '#5e4632',
+};
+
+/** Hair colours to vary between guests of the same kind. */
+const HAIR: Record<GroupId, [string, string][]> = {
+  tourists: [['#e8c06a', '#c99a45'], ['#8a5233', '#6b3d24'], ['#f1d9a0', '#d4b679']],
+  students: [['#4a3426', '#2e2018'], ['#b5452f', '#8c3322'], ['#2e2a33', '#1f1c23']],
+  locals: [['#8a5233', '#6b3d24'], ['#c9c4bd', '#a39e97'], ['#4a3426', '#2e2018']],
+  office: [['#2e2a33', '#1f1c23'], ['#6b3d24', '#4a2a18'], ['#c99a45', '#a07a30']],
+  foodies: [['#a0522d', '#7a3d20'], ['#2e2a33', '#1f1c23'], ['#e8c06a', '#c99a45']],
+};
+
+const GROUP_OVERLAYS: Record<GroupId, Overlay[]> = {
+  tourists: [SUN_HAT, CAMERA],
+  students: [BACKPACK_STRAPS, BACKPACK],
+  locals: [KASHUBIAN_PATTERN],
+  office: [],
+  foodies: [SCARF],
+};
+
+/** How a person looks: their colours and accessories. `variant` picks the hair for guests. */
+export function lookOf(kind: PersonKind, variant = 0): Look {
+  const withAccessories = (palette: Palette) => ({ ...ACCESSORY_COLOURS, ...palette });
+  switch (kind) {
+    case 'waiter':
+      return { palette: withAccessories(STAFF_PALETTES.waiter), overlays: [APRON] };
+    case 'tomek':
+      return {
+        palette: withAccessories({ ...STAFF_PALETTES.waiter, h: '#c97a4a', H: '#9c5a33' }),
+        overlays: [SPIKY_HAIR, APRON, KOMPOT_STAIN],
+      };
+    case 'adrian':
+      return { palette: withAccessories({ ...STAFF_PALETTES.waiter, h: '#2e2a33', H: '#1f1c23' }), overlays: [APRON, SUNGLASSES] };
+    case 'chef':
+      return { palette: withAccessories(STAFF_PALETTES.chef), overlays: [CHEF_HAT_OVERLAY] };
+    case 'critic':
+      return {
+        palette: withAccessories({ ...GUEST_PALETTES.foodies, h: '#c9c4bd', H: '#a39e97', c: '#2e2a33', C: '#1f1c23', d: '#2e2a33' }),
+        overlays: [BERET],
+      };
+    case 'regular':
+      return {
+        palette: withAccessories({ ...GUEST_PALETTES.locals, h: '#55545e', H: '#3f3e47', c: '#f4d03f', C: '#d4ac0d', d: '#f4d03f', p: '#a08a6a', P: '#857055' }),
+        overlays: [FLAT_CAP],
+      };
+    default: {
+      const hair = HAIR[kind][variant % HAIR[kind].length];
+      return { palette: withAccessories({ ...GUEST_PALETTES[kind], h: hair[0], H: hair[1] }), overlays: GROUP_OVERLAYS[kind] };
+    }
+  }
+}
+
+export type Pose = 'stand' | 'sit' | 'walk1' | 'walk2';
+
+/**
+ * A whole person: body, legs for the pose, and accessories, with HEADROOM rows above
+ * for hats. Seated people are cut off at the waist (the table hides the rest).
+ */
+export function personPixels(kind: PersonKind, facing: 'front' | 'back', pose: Pose, variant = 0): Pixels {
+  const look = lookOf(kind, variant);
+  const body: string[] = [...(facing === 'front' ? PERSON : PERSON_BACK)];
+  if (pose === 'walk1' || pose === 'walk2') body.splice(body.length - 4, 4, ...WALK_LEGS[pose]);
+  const image = new Pixels(body[0].length, body.length + HEADROOM);
+  image.draw(sprite(body, look.palette), 0, HEADROOM);
+  for (const overlay of look.overlays) {
+    if (overlay.facing && overlay.facing !== facing) continue;
+    image.draw(sprite(overlay.rows, look.palette), overlay.x, HEADROOM + overlay.y);
+  }
+  return pose === 'sit' ? image.crop(0, 0, image.width, HEADROOM + SEATED_ROWS) : image;
+}
