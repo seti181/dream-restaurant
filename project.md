@@ -311,6 +311,47 @@ While the restaurant is open, the player can help out. Every interaction is opti
 4. **Live happy hour.** Replaces the fixed 15:00–18:00 setting: a button during the day starts a one-hour happy hour, once a day. Drinks and everything else at a discount, and more guests come in. The skill is using it in a quiet hour.
 5. **Seat guests yourself** (as built: "show guests to a better table"). Guests are still seated automatically as they arrive. Until their food comes, the player can tap their table, choose "Move them", and tap a free table; they walk over. Each group has favourite spots: tourists the terrace or the window wall, foodies the window wall, locals the quiet back by the stove, office workers and students near the door. Shown to a favourite spot, they're happier. (The first idea, groups waiting at the door until the player seats them, didn't fit the pace: at 1× a group's whole wait for food is about 1.5 seconds, so waiting for the player would have kept every guest waiting longer.)
 
+### 6.14 Shape and polish (M7)
+
+After the playtests of M5b: the game should feel calmer, more varied and more like Gdańsk, and offer more to do over a season.
+
+**1. A slower day.** One day takes 100 seconds at 1× instead of 50 (×2), so there is time to look after tables, shoo gulls and move guests. 2× and 4× stay.
+
+**2. A shorter season: about 40 days, ending with St. Dominic's Fair (Jarmark Dominikański).** Proposed: six full weeks, Monday 8 July to Sunday 18 August (42 days), which keeps the weekly rhythm (rent, Mewa's goal, the rivals' moves and new job candidates every Monday). The season covers the summer holidays, the tall ships festival (11–14 July), the Fair (27 July – 18 August) and the Fair cook-off (10 August). Easter, Majówka, Juwenalia and Corpus Christi fall outside it; the Amber evening on Mariacka (a personal touch) moves into the season. Everything tied to week numbers is rescaled (Tomek and Adrian, the secret recipe, Mewa's goals, rival reactions), and the economy is rebalanced with the simulator so the targets in section 13 still hold. With the slower day, a season is about 70 minutes of service plus planning: two or three evenings.
+
+**3. The tabs during the day.** Map, Menu, Kitchen, Interior, Staff, Marketing and the reports can be opened while the restaurant is open; the clock pauses while a tab is open. Proposed rules (option B): prices, the menu, marketing and the happy hour change straight away; purchases (tables, decor, equipment) are delivered and new staff start the next morning.
+
+**4. Choice cards: more of them, and more random.**
+- **Rarity:** common, uncommon, rare and very rare cards (like Lech Wałęsa).
+- **A shuffled deck:** a card doesn't come back until most of the others have had their turn, instead of only being less likely for three days.
+- **Cards tied to the calendar and the weather:** the tall ships week, the Fair, a heatwave, a Baltic storm, a rainy evening.
+- **Follow-ups:** some answers come back later (the blogger's post brings foodies the next day; the proposal couple returns for their engagement dinner).
+- **About 15 new cards with a Gdańsk flavour**, for example an amber seller, a film crew shooting on Długa, a lost tourist looking for Westerplatte, a Lechia derby crowd, a wedding photographer, a Kashubian babcia with a recipe, the Hel ferry cancelled, a TikTok influencer, a pierogi-eating contest, a delivery app offering a partnership, and **a Portuguese exchange student** who unlocks cabrito assado and azulejo tiles (section 10).
+
+**5. The background in manager mode.** The planning screens get a pixel-art background instead of plain cream. Concept art comes first: three or four pixel mock-ups (for example a riverside panorama of Długie Pobrzeże with the Żuraw, a manager's desk with Mewa, a banner of Długa's gabled houses with people strolling, and a version that changes with the season), to choose from before anything is built.
+
+**6. More real Gdańsk in the streets** (based on a photo of ul. Długa):
+- ornate Dutch-style gables: curved scroll gables with stone urns and statues, white cornices between floors
+- facades in pink, mint, ochre and white with grey trim, white window frames and decorated window surrounds
+- light granite paving slabs on the main street, cobbles elsewhere
+- shop fronts with awnings (red, beige) and signs, and café umbrellas with tables in front of neighbouring houses
+- black double-headed lanterns
+- the Town Hall tower with its clock face and golden spire
+- small details: flags (Gdańsk's red flag with two crosses and a crown), flower boxes, bikes, pigeons and gulls on the ground, an amber stall, a street musician
+- then each of the six streets looks like itself: Mariacka with przedproża and gargoyles, Długa wide and granite with cafés, Pobrzeże by the river with boats, Spichrzów among the granaries, and so on.
+
+**7. More to do over a season:**
+- **Named regulars with stories**, like Pan Cytrynówka: a few more guests who come back and whose little stories unfold over the season.
+- **Staff growth:** training, morale, days off, and short storylines for the team.
+- **Seasonal ingredients and specials:** what's fresh in July and August (strawberries, blueberries, chanterelles, new potatoes, plums) and a "Dziś polecamy" board for today's special.
+- **Replying to reviews:** a kind reply can win back an unhappy guest.
+- **Attracting passers-by** (C3 in 9.1.1): a waiter offering samples at the door, flyers, a better menu board.
+- **Bigger premises:** a cellar room (piwnica), a bar counter, a kids' corner.
+- **A sticker album ("Gdańsk passport"):** achievements as collectible pixel stickers.
+- **Mewa's finds:** Mewa brings things she found in town (a piece of amber, a lost key, a recipe card) that unlock decor or small events.
+
+Not now (considered and left out): events the player hosts (workshops, tastings, receptions), an autumn and Christmas-market season, a cook-off against the rivals, postcards.
+
 ## 7. Simulation model (implementation notes)
 
 The simulation is pure TypeScript with no UI code. It is deterministic given a seed and advances in **ticks of 5 in-game minutes**.
@@ -465,6 +506,7 @@ Since 2026-10-01 the restaurant view sits in an Old Town street: cobbles, paveme
 - Inside jokes to hide in reviews, staff bios or rival messages: **[two waiters based on people she knows Tomek Graczyk (cheapest, but low skilled causing drastic drop of reputation) and Adrian Żabka (50%chance not coming to work but highest stats) ]**
 - A regular guest based on you: **[he will always shout: give me cytrynowka to my dish!! ]**
 - Ending: after winning the Golden Neptune, a personal message / credits: **[Parabéns!!! You passed a test! Now You are ready to open Your dream restaurant in the real WORLD!!!]**
+- A Portuguese corner (M7): a choice card with a Portuguese exchange student unlocks **cabrito assado** (roast kid goat, a traditional Portuguese dish) for the dish creator and **azulejo tiles** as decor.
 
 ## 11. Scope
 
@@ -572,6 +614,30 @@ Each item is tested in the browser and on the tablet before the next one starts.
 - [x] Weather in the sky: sun and moon, drifting clouds, rain
 - [x] Street life: lamp posts, benches, trees, a menu board and people passing by
 
+**M7 – Shape and polish (section 6.14)**
+
+Each item is tested in the browser and on the tablet before the next one starts.
+
+- [ ] A slower day: 100 seconds at 1× instead of 50
+- [ ] A shorter season: six weeks ending with St. Dominic's Fair, events moved, rebalanced with the simulator
+- [ ] The tabs during the day: open any tab while the restaurant is open (the clock pauses); prices, menu and marketing change straight away, purchases and new staff arrive the next morning
+- [ ] Choice cards: rarity, a shuffled deck, calendar and weather cards, follow-ups
+- [ ] Choice cards: about 15 new cards, including the Portuguese exchange student (cabrito assado and azulejo tiles)
+- [ ] Performance check on the tablet with `?perf` (before adding more art)
+- [ ] Manager-mode background: concept art (3–4 pixel mock-ups) to choose from
+- [ ] Manager-mode background: build the chosen concept
+- [ ] Gdańsk streets: ornate gables, facade colours and details, granite paving
+- [ ] Gdańsk streets: shop fronts, awnings, café umbrellas, double lanterns, the Town Hall clock and golden spire, flags, flower boxes, bikes, pigeons, an amber stall, a street musician
+- [ ] Gdańsk streets: each of the six streets looks like itself
+- [ ] Named regulars with stories
+- [ ] Staff growth: training, morale, days off, storylines
+- [ ] Seasonal ingredients and a "Dziś polecamy" specials board
+- [ ] Replying to reviews
+- [ ] Attracting passers-by
+- [ ] Bigger premises: cellar room, bar counter, kids' corner
+- [ ] Sticker album ("Gdańsk passport")
+- [ ] Mewa's finds
+
 **M6 – Gift day**
 
 - [ ] Final install on her tablet
@@ -667,3 +733,6 @@ Each item is tested in the browser and on the tablet before the next one starts.
 - 2026-10-01: Seat guests yourself, as built: "show guests to a better table". Changed from the first idea (groups waiting at the door for the player) because at 1× five in-game minutes pass in under half a second, so a group's whole wait for its food is only about 1.5 seconds; holding everyone at the door would have made all guests wait longer, and players who only watch would have been worse off. Now guests are seated automatically as before, and the player can move a party (one table, once, before its food arrives) to a free table. Favourite spots (data/groups.ts): tourists the terrace or the window wall, foodies the window wall, locals the back row by the stove, office workers and students the front row by the door; the "window wall" is the column of tables along the wall with the window. A move to a favourite spot adds +6 happiness (balance.seating.favouriteMood). Parties of more than four (two tables) and special guests can't be moved.
 - 2026-10-01: Looking after a table is one tap on the table itself (a 52 px target in the middle of it), for any party still waiting for food, even while they are still walking in; pausing first gives all the time needed. The panel offers 🪑 Move them, 🥤 Free drink and 👨‍🍳 Chef's apology, and says what the group likes. Free tables then show ⭐ (a favourite spot) or 🪑; the party walks from its old seat via the front door area to the new one. The day report counts moves and favourite spots. The room's table grid (3 or 4 columns) now comes from the simulation (sim/seating.ts), so the spots match what is drawn. Mewa's day-two tip explains it. The simulator is unchanged (a player who only watches never moves anyone).
 - 2026-10-01: M5b "Interactive service" is complete: choice cards, looking after a table (free drink, chef's apology, a better table), gulls, the live happy hour, and seating guests at their favourite spots.
+- 2026-10-01: New milestone M7 "Shape and polish" (section 6.14), from playtest feedback: a slower day (×2), a season of about 40 days ending with St. Dominic's Fair, the tabs usable during the day, more and more varied choice cards, a pixel-art background for the planning screens (concept art first), streets that look more like real Gdańsk (ul. Długa), and more to do over a season. M6 (gift day) stays the last milestone.
+- 2026-10-01: Personal touch: a Portuguese exchange student (choice card) unlocks cabrito assado and azulejo tiles.
+- 2026-10-01: Ideas for longer play accepted: named regulars with stories, staff growth, seasonal ingredients and specials, replying to reviews, attracting passers-by, bigger premises, a sticker album, Mewa's finds. Left out: hosted events, an autumn and Christmas-market season, a cook-off against the rivals, postcards.
