@@ -1,65 +1,15 @@
 // The Old Town map: the six streets, where the rivals are, and moving house.
-// A simple schematic for now; the illustrated map arrives in M4.
 
 import { useState } from 'react';
 import { balance } from '../../data/balance';
 import { GROUP_IDS, GROUPS } from '../../data/groups';
-import { LOCATION_IDS, LOCATIONS, type LocationId } from '../../data/locations';
+import { LOCATIONS, type LocationId } from '../../data/locations';
 import { RIVALS, type RivalId } from '../../data/rivals';
 import { afterMove, relocateUnavailableReason } from '../../sim/actions';
 import { playerOf } from '../../sim/game';
 import { money } from '../format';
+import { OldTownMap } from '../OldTownMap';
 import { useGame } from '../store';
-
-/** Map coordinates are metres east and north; SVG's y axis points down, hence the minus. */
-const at = (id: LocationId) => ({ x: LOCATIONS[id].mapPosition.x, y: -LOCATIONS[id].mapPosition.y });
-
-const BADGES: Record<RivalId, string> = { nonnaRosa: 'NR', blyskawica: 'BB', karczma: 'KŻ', spichlerz: 'SB' };
-
-function OldTownMap({ selected, onSelect }: { selected: LocationId; onSelect: (id: LocationId) => void }) {
-  const game = useGame((s) => s.game);
-  const home = playerOf(game).location;
-  const rivals = game.restaurants.slice(1);
-
-  return (
-    <svg className="old-town-map" viewBox="150 -330 900 540" role="img" aria-label="Map of the Old Town">
-      {/* The Motława and the New Motława, with Granary Island between them */}
-      <path d="M 880 -330 C 860 -150, 900 0, 870 210" className="river" />
-      <path d="M 1040 -330 C 1020 -150, 1060 0, 1030 210" className="river" />
-      <text x="915" y="-290" className="map-note">Motława</text>
-
-      {LOCATION_IDS.map((id) => {
-        const { x, y } = at(id);
-        const here = rivals.filter((r) => r.location === id);
-        return (
-          <g
-            key={id}
-            className={`map-spot${id === home ? ' home' : ''}${id === selected ? ' selected' : ''}`}
-            onClick={() => onSelect(id)}
-            role="button"
-            aria-label={LOCATIONS[id].name}
-          >
-            <circle cx={x} cy={y} r={40} />
-            <text x={x} y={y + 9} className="map-icon">
-              {id === home ? '🏠' : '•'}
-            </text>
-            <text x={x} y={y + 68} className="map-label">
-              {LOCATIONS[id].name}
-            </text>
-            {here.map((rival, i) => (
-              <g key={rival.id}>
-                <rect x={x + 26 + i * 44} y={y - 60} width={40} height={26} rx={8} className="map-badge" />
-                <text x={x + 46 + i * 44} y={y - 41} className="map-badge-text">
-                  {BADGES[rival.id as RivalId]}
-                </text>
-              </g>
-            ))}
-          </g>
-        );
-      })}
-    </svg>
-  );
-}
 
 function LocationCard({ id }: { id: LocationId }) {
   const game = useGame((s) => s.game);

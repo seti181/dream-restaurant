@@ -86,12 +86,12 @@ Values below are **starting points**. All tuning lives in `src/data/balance.ts`.
 
 | Location | Rent / day | Foot traffic | Main guests | Notes |
 |---|---|---|---|---|
-| ul. Ogarna | 300 zł | Low | Locals, students | Starting location: quiet and cheap |
-| ul. Piwna | 600 zł | Medium | Locals, tourists | Near St. Mary's Basilica |
-| ul. Mariacka | 900 zł | Medium | Foodies, tourists | Romantic, small premises, great terrace |
-| ul. Długa / Długi Targ | 1,500 zł | Very high | Tourists | Neptune Fountain; expensive |
-| Długie Pobrzeże | 1,100 zł | High in summer | Tourists | Waterfront by the Crane (Żuraw); terrace boom in good weather |
-| Wyspa Spichrzów | 800 zł | Medium | Office workers, students, foodies | Modern Granary Island; lunch-heavy |
+| ul. Ogarna | 600 zł | Low | Locals, students | Starting location: quiet and cheap |
+| ul. Piwna | 1,200 zł | Medium | Locals, tourists | Near St. Mary's Basilica |
+| ul. Mariacka | 1,800 zł | Medium | Foodies, tourists | Romantic, small premises, great terrace |
+| ul. Długa / Długi Targ | 3,000 zł | Very high | Tourists | Neptune Fountain; expensive |
+| Długie Pobrzeże | 2,200 zł | High in summer | Tourists | Waterfront by the Crane (Żuraw); terrace boom in good weather |
+| Wyspa Spichrzów | 1,600 zł | Medium | Office workers, students, foodies | Modern Granary Island; lunch-heavy |
 
 Rules for locations:
 
@@ -430,7 +430,7 @@ Work in small steps, and test each step in the browser before moving on.
 
 **M4 – Gdańsk and personal**
 
-- [ ] Illustrated map and restaurant view
+- [x] Illustrated map and restaurant view
 - [ ] Event texts, rival personalities, review lines
 - [ ] Everything from section 10
 
