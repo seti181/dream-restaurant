@@ -49,6 +49,11 @@ export function DayScreen() {
             <Stat label="No free table" value={live.guestsTurnedAway} />
           </div>
         </div>
+        {live.absent.map((excuse) => (
+          <p key={excuse} className="note small">
+            📵 {excuse}
+          </p>
+        ))}
         <div className="day-progress" aria-hidden="true">
           <div style={{ width: `${progress * 100}%` }} />
         </div>

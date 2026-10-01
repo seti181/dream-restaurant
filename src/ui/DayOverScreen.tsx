@@ -93,6 +93,11 @@ export function DayOverScreen() {
             </p>
           )}
           <p className="said">💬 {guestsSaid(summary.feedback)}</p>
+          {summary.staffNews.map((line) => (
+            <p key={line} className="said small">
+              🧑‍🍳 {line}
+            </p>
+          ))}
           {summary.pairingComments.slice(0, 3).map(({ comment, happy }) => (
             <p key={comment} className="said small">
               {happy ? '😋' : '🤔'} “{comment}”

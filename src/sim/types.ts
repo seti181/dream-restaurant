@@ -4,6 +4,7 @@ import type { Cuisine, EquipmentId, MenuDish } from '../data/dishes';
 import type { DecorId } from '../data/decor';
 import type { GroupId } from '../data/groups';
 import type { LocationId } from '../data/locations';
+import type { SpecialStaffId } from '../data/personal';
 import type { TraitId } from '../data/staff';
 import type { Weather } from '../data/weather';
 
@@ -29,6 +30,8 @@ export interface Employee extends Staff {
   bio: string;
   /** Złoty per day. */
   wage: number;
+  /** One of the two waiters from section 10, with their own quirk. */
+  special?: SpecialStaffId;
 }
 
 /** The player's restaurant or a rival. Both follow exactly the same rules. */

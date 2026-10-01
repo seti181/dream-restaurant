@@ -1,6 +1,7 @@
 // Personal touches from project.md section 10: the things that make this game hers.
 
 import type { GroupId } from './groups';
+import type { TraitId } from './staff';
 
 /** Shown when the player wins the Golden Neptune. */
 export const ENDING = {
@@ -46,4 +47,72 @@ export const REGULAR = {
     'Nice dinner. Still no cytrynówka. I will ask again next Friday.',
     'I asked three times. Nobody brought cytrynówka. The food was good though.',
   ],
+};
+
+// ---------- Two waiters she knows ----------
+
+export type SpecialStaffId = 'tomek' | 'adrian';
+
+export interface SpecialStaff {
+  name: string;
+  bio: string;
+  skill: number;
+  speed: number;
+  trait: TraitId;
+  /** Fixed daily wage, or null to pay the usual rate for their skill and speed. */
+  wage: number | null;
+  /** First day they look for work (a Monday), then again every few weeks until hired. */
+  firstDay: number;
+  everyDays: number;
+  /** Reputation lost with every group on each day they work, and what went wrong. */
+  reputationLossPerDay?: number;
+  mishaps?: string[];
+  /** Chance of not turning up on a given day, and what they say. */
+  absenceChance?: number;
+  excuses?: string[];
+}
+
+export const SPECIAL_STAFF_IDS: readonly SpecialStaffId[] = ['tomek', 'adrian'];
+
+export const SPECIAL_STAFF: Record<SpecialStaffId, SpecialStaff> = {
+  tomek: {
+    name: 'Tomek Graczyk',
+    bio:
+      'Asks for the lowest wage in Gdańsk, and means it. A lovely smile. ' +
+      'Has never once carried three plates at the same time, and never will.',
+    skill: 1,
+    speed: 2,
+    trait: 'cheerful',
+    wage: 180,
+    firstDay: 7,
+    everyDays: 21,
+    reputationLossPerDay: 2,
+    mishaps: [
+      'Tomek dropped a whole tray of pierogi right in front of the window.',
+      'Tomek brought a family three soups they hadn’t ordered and called it “a surprise from the chef”.',
+      'Tomek forgot table four for forty minutes. They have written about it online.',
+      'Tomek spilled kompot all over a tourist’s map of Gdańsk.',
+      'Tomek told a foodie that the pierogi come “from the freezer, but a nice freezer”.',
+    ],
+  },
+  adrian: {
+    name: 'Adrian Zabka',
+    bio:
+      'The best waiter in the Old Town, when he turns up. Remembers every order, every name and every allergy. ' +
+      'His alarm clock is less reliable. Gets paid either way, somehow.',
+    skill: 5,
+    speed: 5,
+    trait: 'calm',
+    wage: null,
+    firstDay: 14,
+    everyDays: 21,
+    absenceChance: 0.5,
+    excuses: [
+      'Adrian didn’t come in today. His text says: “tram broke down, will explain later”.',
+      '“My cat sat on my alarm clock,” says Adrian’s message. No Adrian today.',
+      'No Adrian today. Someone saw him on the beach in Brzeźno.',
+      'Adrian called in: “a family thing”. The family thing is a football match.',
+      'Adrian’s text just says “😴”. No Adrian today.',
+    ],
+  },
 };

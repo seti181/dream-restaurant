@@ -10,6 +10,7 @@ import {
   TRAIT_IDS,
   WAITER_BIOS,
 } from '../data/staff';
+import { SPECIAL_STAFF, SPECIAL_STAFF_IDS, type SpecialStaffId } from '../data/personal';
 import { wageOf } from './finance';
 import { nextFloat, nextInt, pick, type RngState } from './rng';
 import type { Employee, Role, Staff } from './types';
@@ -77,5 +78,31 @@ export function generateCandidates(rng: RngState, firstId: number, takenNames: S
     };
     if (role === 'chef') person.specialty = pick(rng, CUISINES);
     return person;
+  });
+}
+
+/** One of the two special waiters as a job candidate. */
+export function specialCandidate(id: SpecialStaffId, employeeId: number): Employee {
+  const person = SPECIAL_STAFF[id];
+  const { skill, speed, trait } = person;
+  return {
+    id: employeeId,
+    role: 'waiter',
+    name: person.name,
+    bio: person.bio,
+    skill,
+    speed,
+    trait,
+    wage: person.wage ?? wageOf('waiter', { skill, speed }),
+    special: id,
+  };
+}
+
+/** The special waiters looking for work on this day (a Monday): not yet hired, and it's their week. */
+export function specialsLookingForWork(day: number, team: Employee[]): SpecialStaffId[] {
+  return SPECIAL_STAFF_IDS.filter((id) => {
+    const { firstDay, everyDays } = SPECIAL_STAFF[id];
+    const theirWeek = day >= firstDay && (day - firstDay) % everyDays === 0;
+    return theirWeek && !team.some((person) => person.special === id);
   });
 }

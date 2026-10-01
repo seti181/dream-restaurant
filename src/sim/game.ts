@@ -8,7 +8,7 @@ import { GROUP_IDS, type GroupId } from '../data/groups';
 import { CAMPAIGNS, type CampaignId } from '../data/marketing';
 import { FIRST_GOAL, type TipId } from '../data/mewa';
 import { LOCATIONS } from '../data/locations';
-import { SECRET_RECIPE } from '../data/personal';
+import { SECRET_RECIPE, SPECIAL_STAFF } from '../data/personal';
 import { RIVAL_IDS } from '../data/rivals';
 import type { Weather } from '../data/weather';
 import { startDay, stepDay, type DayInProgress } from './day';
@@ -25,9 +25,9 @@ import { goalOf, goalText, nextGoal, startGoal, trackGoal, type GoalState } from
 import { pairingsOf } from './menu';
 import { isFairDay, isNeptuneDay, neptuneResult, type NeptuneResult, type SeasonTally } from './neptune';
 import { planRivalWeek, rivalAwarenessToday } from './rivalAi';
-import { createRng, pick, type RngState } from './rng';
+import { chance, createRng, pick, type RngState } from './rng';
 import { createPlayerRestaurant, createRivalRestaurant } from './setup';
-import { generateCandidates, starterTeam, staffOf } from './staff';
+import { generateCandidates, specialCandidate, specialsLookingForWork, starterTeam, staffOf } from './staff';
 import type { Employee, PartyOutcome, Restaurant, Review, SatisfactionFactors } from './types';
 
 /** A line of news for the morning: an event starting, a surprise, or a rival's move. */
@@ -91,6 +91,8 @@ export interface OpenDay {
   progress: DayInProgress;
   /** The day's own copy of the random generator; handed back to the game at closing. */
   rng: RngState;
+  /** Team members who didn't turn up today, and why. */
+  absent: { id: number; name: string; excuse: string }[];
 }
 
 /** The player's numbers for a day, so far or in total. */
@@ -140,6 +142,8 @@ export interface DaySummary extends DayTally {
   goalCompleted: { text: string; reward: number } | null;
   /** The Golden Neptune, on the day it is awarded. */
   neptune: NeptuneResult | null;
+  /** Absences and mishaps in the team today. */
+  staffNews: string[];
 }
 
 export function newGame(seed: number, difficulty: Difficulty = 'normal'): GameState {
@@ -234,11 +238,28 @@ export function openRestaurant(state: GameState): OpenDay {
   const terraceTables = terraceOpenOn(state, state.day)
     ? Math.floor(LOCATIONS[player.location].terraceSeats / balance.service.seatsPerTable)
     : 0;
-  const today = { ...player, terraceTables, awareness: awarenessToday(state) };
+  // Someone who sometimes doesn't turn up decides this morning.
+  const rng = { ...state.rng };
+  const absent: OpenDay['absent'] = [];
+  for (const person of state.team) {
+    const special = person.special && SPECIAL_STAFF[person.special];
+    if (special?.absenceChance && chance(rng, special.absenceChance)) {
+      absent.push({ id: person.id, name: person.name, excuse: pick(rng, special.excuses ?? []) });
+    }
+  }
+  const working = state.team.filter((person) => !absent.some((a) => a.id === person.id));
+  const today = {
+    ...player,
+    terraceTables,
+    awareness: awarenessToday(state),
+    chefs: staffOf(working, 'chef'),
+    waiters: staffOf(working, 'waiter'),
+  };
   const rivalsToday = rivals.map((rival) => ({ ...rival, awareness: rivalAwarenessToday(rival) }));
   return {
     progress: startDay(state.day, [today, ...rivalsToday], conditionsFor(state)),
-    rng: { ...state.rng },
+    rng,
+    absent,
   };
 }
 
@@ -371,25 +392,42 @@ function addToWeek(week: WeekTally, outcomes: PartyOutcome[]): WeekTally {
 /** Ends the day: pays wages and any weekly bills, and moves on to the next day. */
 export function closeDay(state: GameState, open: OpenDay): { state: GameState; summary: DaySummary } {
   const playerBefore = playerOf(state);
-  const playerAfter = open.progress.restaurants[0];
+  const rng = { ...open.rng };
   const tally = tallyFor(open.progress.outcomes, playerBefore.id);
+
+  // What the team got up to: who didn't come in, and any mishaps that cost reputation.
+  const staffNews = open.absent.map((a) => a.excuse);
+  let playerAfter = { ...open.progress.restaurants[0], chefs: playerBefore.chefs, waiters: playerBefore.waiters };
+  for (const person of state.team) {
+    const special = person.special && SPECIAL_STAFF[person.special];
+    const working = !open.absent.some((a) => a.id === person.id);
+    if (!special?.reputationLossPerDay || !working) continue;
+    const loss = special.reputationLossPerDay;
+    const reputation = { ...playerAfter.reputation };
+    for (const g of GROUP_IDS) reputation[g] = Math.max(0, reputation[g] - loss);
+    playerAfter = { ...playerAfter, reputation };
+    staffNews.push(`${pick(rng, special.mishaps ?? [])} Reputation −${loss} with everyone.`);
+  }
   const wages = teamWages(state);
   const { rent, utilities } = weeklyBillsDue(playerBefore, state.day);
   const profit = tally.revenue - tally.ingredientCost - wages - rent - utilities;
 
-  const rng = { ...open.rng };
   const nextDay = state.day + 1;
   const news: NewsItem[] = [];
   const week = addToWeek(state.week, open.progress.outcomes);
-  let restaurants = open.progress.restaurants;
+  let restaurants = [playerAfter, ...open.progress.restaurants.slice(1)];
   let { candidates, nextEmployeeId } = state;
   let cash = state.cash + profit;
   let nextWeek = week;
 
   if (isMonday(nextDay)) {
-    // A new week brings new faces looking for work...
-    candidates = generateCandidates(rng, nextEmployeeId, namesOf(state.team));
+    // A new week brings new faces looking for work, sometimes familiar ones...
+    const specials = specialsLookingForWork(nextDay, state.team);
+    const taken = namesOf(state.team);
+    for (const id of specials) taken.add(SPECIAL_STAFF[id].name);
+    candidates = generateCandidates(rng, nextEmployeeId, taken);
     nextEmployeeId += candidates.length;
+    for (const id of specials) candidates.push(specialCandidate(id, nextEmployeeId++));
     // ...and the rivals make their moves, having studied last week.
     const planned = planRivalWeek({ ...state, restaurants, week }, rng);
     restaurants = planned.restaurants;
@@ -510,6 +548,7 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
       reviews,
       goalCompleted,
       neptune,
+      staffNews,
     },
   };
 }

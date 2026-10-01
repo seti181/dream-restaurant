@@ -1,12 +1,14 @@
 import { describe, expect, it } from 'vitest';
 import type { MenuDish } from '../data/dishes';
-import { REGULAR, SECRET_RECIPE } from '../data/personal';
+import type { GroupId } from '../data/groups';
+import { REGULAR, SECRET_RECIPE, SPECIAL_STAFF } from '../data/personal';
 import { addDish, dishUnavailableReason } from './actions';
 import { conditionsFor } from './events';
 import { closeDay, newGame, openRestaurant, playerOf, playTick } from './game';
 import { pairingQuality } from './menu';
 import { writeReview } from './reviews';
 import { createRng } from './rng';
+import { specialCandidate, specialsLookingForWork } from './staff';
 
 const FRIDAY = 4;
 const arroz = (extras: MenuDish['extras'] = []): MenuDish => ({ template: 'arrozDeVitela', variant: 'joana', price: 46, extras });
@@ -65,5 +67,56 @@ describe('the Friday regular', () => {
     const review = summary.reviews.find((r) => r.reviewer === REGULAR.name);
     expect(review).toBeDefined();
     expect(review!.stars).toBe(5);
+  });
+});
+
+describe('Tomek and Adrian', () => {
+  it('look for work from weeks 2 and 3, and come back every few weeks until hired', () => {
+    expect(specialsLookingForWork(0, [])).toEqual([]);
+    expect(specialsLookingForWork(7, [])).toEqual(['tomek']);
+    expect(specialsLookingForWork(14, [])).toEqual(['adrian']);
+    expect(specialsLookingForWork(7 + SPECIAL_STAFF.tomek.everyDays, [])).toEqual(['tomek']);
+    expect(specialsLookingForWork(7 + SPECIAL_STAFF.tomek.everyDays, [specialCandidate('tomek', 99)])).toEqual([]);
+  });
+
+  it('join the Monday candidates', () => {
+    const { state } = playDay({ ...newGame(5), day: 6 });
+    const tomek = state.candidates.find((c) => c.special === 'tomek');
+    expect(tomek?.name).toBe('Tomek Graczyk');
+    expect(tomek?.wage).toBe(SPECIAL_STAFF.tomek.wage);
+    expect(Math.min(...state.candidates.filter((c) => c !== tomek).map((c) => c.wage))).toBeGreaterThan(tomek!.wage);
+  });
+
+  it('Tomek costs reputation every day he works', () => {
+    const state = newGame(6);
+    const withTomek = { ...state, team: [...state.team, specialCandidate('tomek', 99)] };
+    const open = openRestaurant(withTomek);
+    while (!open.progress.done) playTick(open);
+    const { state: after, summary } = closeDay(withTomek, open);
+    const loss = SPECIAL_STAFF.tomek.reputationLossPerDay!;
+    for (const [group, rep] of Object.entries(open.progress.restaurants[0].reputation)) {
+      expect(playerOf(after).reputation[group as GroupId]).toBeCloseTo(Math.max(0, rep - loss));
+    }
+    expect(summary.staffNews.some((line) => line.includes('Tomek'))).toBe(true);
+  });
+
+  it('Adrian turns up about half the time, and the restaurant manages without him when he doesn’t', () => {
+    const state = newGame(7);
+    const adrian = specialCandidate('adrian', 99);
+    const team = [...state.team, adrian];
+    let absences = 0;
+    for (let seed = 1; seed <= 60; seed++) {
+      const open = openRestaurant({ ...state, team, rng: createRng(seed) });
+      const waitersToday = open.progress.restaurants[0].waiters.length;
+      if (open.absent.length > 0) {
+        absences++;
+        expect(open.absent[0].name).toBe(adrian.name);
+        expect(waitersToday).toBe(1);
+      } else {
+        expect(waitersToday).toBe(2);
+      }
+    }
+    expect(absences).toBeGreaterThan(15);
+    expect(absences).toBeLessThan(45);
   });
 });

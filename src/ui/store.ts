@@ -54,6 +54,8 @@ export interface LiveDay extends DayTally {
   closing: boolean;
   /** Who is sitting where, for the restaurant view. */
   floor: FloorView;
+  /** Excuses from anyone who didn't turn up today. */
+  absent: string[];
 }
 
 interface GameStore {
@@ -106,6 +108,7 @@ function liveFrom(openDay: OpenDay): LiveDay {
     minute,
     closing: minute >= balance.clock.closeMinute,
     floor: floorView(progress, 0),
+    absent: openDay.absent.map((a) => a.excuse),
   };
 }
 
