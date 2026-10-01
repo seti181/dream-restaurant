@@ -36,7 +36,7 @@ describe('weekly goals', () => {
   it('start with Mewa’s first goal and write it in words', () => {
     const state = newGame(1);
     expect(state.goal).toEqual(startGoal(FIRST_GOAL));
-    expect(goalText(GOALS[FIRST_GOAL])).toBe('Serve 400 guests this week');
+    expect(goalText(GOALS[FIRST_GOAL])).toBe('Serve 300 guests this week');
   });
 
   it('count progress and finish when the target is reached', () => {
@@ -68,11 +68,11 @@ describe('weekly goals', () => {
 
   it('pay the reward on the day the goal is done, once', () => {
     // The same day played twice: once finishing the goal, once not.
-    const almostDone = { ...newGame(3), goal: { ...startGoal(FIRST_GOAL), total: 399 } };
+    const almostDone = { ...newGame(3), goal: { ...startGoal(FIRST_GOAL), total: 299 } };
     const notClose = { ...newGame(3), goal: startGoal(FIRST_GOAL) };
     const finished = playDay(almostDone);
     expect(finished.summary.goalCompleted).toEqual({
-      text: 'Serve 400 guests this week',
+      text: 'Serve 300 guests this week',
       reward: GOALS[FIRST_GOAL].reward,
     });
     expect(finished.state.cash - playDay(notClose).state.cash).toBeCloseTo(GOALS[FIRST_GOAL].reward);

@@ -88,7 +88,7 @@ export interface Goal {
 export const FIRST_GOAL = 0;
 
 export const GOALS: Goal[] = [
-  { kind: 'serveGuests', text: 'Serve {n} guests this week', target: 400, reward: 500 },
+  { kind: 'serveGuests', text: 'Serve {n} guests this week', target: 300, reward: 500 },
   { kind: 'serveGroup', group: 'office', text: 'Serve {n} office workers this week', target: 40, reward: 500 },
   { kind: 'serveGroup', group: 'students', text: 'Serve {n} students this week', target: 60, reward: 500 },
   { kind: 'serveGroup', group: 'tourists', text: 'Serve {n} tourists this week', target: 80, reward: 600 },

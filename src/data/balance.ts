@@ -100,7 +100,7 @@ export const balance = {
 
   choice: {
     /** How tempting "somewhere else" is (a kebab, home, a picnic). Higher = fewer guests eat out. */
-    noRestaurantUtility: 6,
+    noRestaurantUtility: 7,
     /** Restaurants further away than this (metres) are out of walking range. */
     walkRangeMetres: 700,
     /** How many of a menu's best-matching dishes decide how tempting it looks. */
@@ -146,7 +146,7 @@ export const balance = {
 
   interior: {
     /** One more table (seatsPerTable seats), in złoty. */
-    tableCost: 1_500,
+    tableCost: 4_000,
   },
 
   decor: {
@@ -208,8 +208,8 @@ export const balance = {
     /** Skill and speed of an average worker (the scale is 1–5). */
     averageLevel: 3,
     /** Daily wages of an average chef and waiter, in złoty. */
-    chefWage: 350,
-    waiterWage: 250,
+    chefWage: 650,
+    waiterWage: 450,
     /** Each skill or speed point above average adds this share to the wage (and below, takes it off). */
     wageStepPerLevel: 0.1,
     /** How each trait changes a person's skill and speed while they work. */
@@ -249,7 +249,7 @@ export const balance = {
 
   finance: {
     /** Paid every Monday, together with the week's rent. */
-    weeklyUtilities: 400,
+    weeklyUtilities: 1_400,
     /** Warn when cash would last fewer than this many days of wages and rent. */
     lowCashDays: 7,
   },
@@ -279,7 +279,7 @@ export const balance = {
     orderMinutes: 5,
     /** Occupied tables one waiter can look after before service slows down. */
     tablesPerWaiter: 4,
-    eatingMinutes: 30,
+    eatingMinutes: 60,
     /** Order-taking this slow feels like no service at all. */
     slowOrderMinutes: 10,
     /** Service score gained for each waiter skill point above average (lost below). */

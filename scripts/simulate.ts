@@ -10,17 +10,23 @@ import { isFairDay, neptuneScore } from '../src/sim/neptune';
 import { createPlayerRestaurant } from '../src/sim/setup';
 import { staffOf } from '../src/sim/staff';
 import type { Employee, Role, Staff } from '../src/sim/types';
-import { STRATEGIES, type Strategy } from './strategies';
+import { manage, STRATEGIES, type Strategy, type WeekReport } from './strategies';
 
 /** Each strategy plays one season per seed; results are averaged. */
-const SEEDS = [1, 2, 3];
+/** Quick runs can pick their own seeds: `SEEDS=1 npm run simulate`. */
+const seedsFromEnv = (globalThis as { process?: { env: Record<string, string | undefined> } }).process?.env.SEEDS;
+const SEEDS = seedsFromEnv ? seedsFromEnv.split(',').map(Number) : [1, 2, 3];
 
 interface SeasonResult {
   /** Cash at the end of each week. */
   weeklyCash: number[];
   weeklyProfit: number[];
   lowestCash: number;
-  daysInDebt: number;
+  /** The week the money ran out (game over), or null. The season is still played to the end for comparison. */
+  bustWeek: number | null;
+  /** Tables and staff at the end of the season. */
+  tables: number;
+  staff: number;
   guestsServed: number;
   guestsLost: number;
   averageRating: number;
@@ -52,7 +58,9 @@ function playSeason(strategy: Strategy, seed: number): SeasonResult {
     weeklyCash: [],
     weeklyProfit: [],
     lowestCash: state.cash,
-    daysInDebt: 0,
+    bustWeek: null,
+    tables: 0,
+    staff: 0,
     guestsServed: 0,
     guestsLost: 0,
     averageRating: 0,
@@ -62,6 +70,11 @@ function playSeason(strategy: Strategy, seed: number): SeasonResult {
   const ratings = new Map<string, { total: number; count: number }>();
   const fairGuests = new Map<string, number>();
   let allFairGuests = 0;
+  let week: WeekReport = { served: 0, walkedOut: 0, turnedAway: 0, profit: 0 };
+  // Opening-day purchases count towards the first week.
+  const opening = manage(strategy, state, null);
+  weekProfit += opening.cash - state.cash;
+  state = opening;
 
   while (isInSeason(state.day)) {
     const day = state.day;
@@ -69,6 +82,11 @@ function playSeason(strategy: Strategy, seed: number): SeasonResult {
       result.weeklyCash.push(state.cash);
       result.weeklyProfit.push(weekProfit);
       weekProfit = 0;
+      // Money spent on Monday morning counts towards the new week.
+      const before = state.cash;
+      state = manage(strategy, state, week);
+      weekProfit += state.cash - before;
+      week = { served: 0, walkedOut: 0, turnedAway: 0, profit: 0 };
     }
 
     const open = openRestaurant(state);
@@ -91,12 +109,18 @@ function playSeason(strategy: Strategy, seed: number): SeasonResult {
       }
     }
 
-    const next = closeDay(state, open).state;
+    const { state: next, summary } = closeDay(state, open);
     weekProfit += next.cash - state.cash;
+    week.served += summary.guestsServed;
+    week.walkedOut += summary.guestsWalkedOut;
+    week.turnedAway += summary.guestsTurnedAway;
+    week.profit += summary.profit;
     state = next;
     result.lowestCash = Math.min(result.lowestCash, state.cash);
-    if (state.cash < 0) result.daysInDebt++;
+    if (state.gameOver && result.bustWeek === null) result.bustWeek = Math.floor(day / 7) + 1;
   }
+  result.tables = state.restaurants[0].tables;
+  result.staff = state.team.length;
   result.weeklyCash.push(state.cash);
   result.weeklyProfit.push(weekProfit);
 
@@ -126,6 +150,12 @@ function table(headers: string[], rows: string[][]): string {
   return [line(headers), line(widths.map((w) => '-'.repeat(w))), ...rows.map(line)].join('\n');
 }
 
+/** How many seasons went bust, and in which week on average. */
+function bustText(seasons: SeasonResult[]): string {
+  const weeks = seasons.map((s) => s.bustWeek).filter((w): w is number => w !== null);
+  return weeks.length === 0 ? `0/${seasons.length}` : `${weeks.length}/${seasons.length}, wk ${Math.round(mean(weeks))}`;
+}
+
 const started = performance.now();
 const results = STRATEGIES.map((strategy) => ({
   strategy,
@@ -136,7 +166,7 @@ console.log(`\nOld Town Kitchen: season simulation (Normal, seeds ${SEEDS.join('
 
 console.log(
   table(
-    ['Strategy', 'Final cash', 'Lowest cash', 'Days in debt', 'First profitable week', 'Guests served', 'Guests lost', 'Avg rating', 'Fair share', 'Neptune', 'Best rival', 'Won'],
+    ['Strategy', 'Final cash', 'Lowest cash', 'Went bust', 'First profitable week', 'Tables', 'Staff', 'Guests served', 'Guests lost', 'Avg rating', 'Fair share', 'Neptune', 'Best rival', 'Won'],
     results.map(({ strategy, seasons }) => {
       const weeklyProfit = seasons[0].weeklyProfit.map((_, w) => mean(seasons.map((s) => s.weeklyProfit[w])));
       const firstProfitable = weeklyProfit.findIndex((p) => p > 0);
@@ -147,8 +177,10 @@ console.log(
         strategy.name,
         money(mean(seasons.map((s) => s.weeklyCash[s.weeklyCash.length - 1]))),
         money(mean(seasons.map((s) => s.lowestCash))),
-        mean(seasons.map((s) => s.daysInDebt)).toFixed(0),
+        bustText(seasons),
         firstProfitable < 0 ? 'never' : `week ${firstProfitable + 1}`,
+        mean(seasons.map((s) => s.tables)).toFixed(1),
+        mean(seasons.map((s) => s.staff)).toFixed(1),
         Math.round(mean(seasons.map((s) => s.guestsServed))).toLocaleString('en-GB'),
         Math.round(mean(seasons.map((s) => s.guestsLost))).toLocaleString('en-GB'),
         mean(seasons.map((s) => s.averageRating)).toFixed(1),

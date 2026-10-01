@@ -1,4 +1,4 @@
-// The six Old Town locations. See project.md section 6.1.
+﻿// The six Old Town locations. See project.md section 6.1.
 
 import type { GroupId } from './groups';
 
@@ -50,7 +50,7 @@ export const LOCATIONS: Record<LocationId, Location> = {
     blurb:
       'A quiet cobbled street just south of Długa. Cheap rent, loyal neighbours, ' +
       'and a cat who visits every windowsill.',
-    rentPerDay: 300,
+    rentPerDay: 600,
     peakGuestsPerHour: 30,
     trafficLabel: 'Low',
     hourCurve: LUNCH_AND_DINNER,
@@ -67,7 +67,7 @@ export const LOCATIONS: Record<LocationId, Location> = {
     blurb:
       'Beer Street, in the shadow of St. Mary’s Basilica. ' +
       'Locals and tourists wander past in equal measure.',
-    rentPerDay: 600,
+    rentPerDay: 1200,
     peakGuestsPerHour: 60,
     trafficLabel: 'Medium',
     hourCurve: LUNCH_AND_DINNER,
@@ -84,7 +84,7 @@ export const LOCATIONS: Record<LocationId, Location> = {
     blurb:
       'The most romantic street in Gdańsk: amber shops, stone terraces, ' +
       'and gargoyles that watch you eat. Small inside, lovely outside.',
-    rentPerDay: 900,
+    rentPerDay: 1800,
     peakGuestsPerHour: 55,
     trafficLabel: 'Medium',
     hourCurve: EVENING_HEAVY,
@@ -101,7 +101,7 @@ export const LOCATIONS: Record<LocationId, Location> = {
     blurb:
       'The Royal Way, right by the Neptune Fountain. ' +
       'Crowds all day long, and rent to match.',
-    rentPerDay: 1500,
+    rentPerDay: 3000,
     peakGuestsPerHour: 150,
     trafficLabel: 'Very high',
     hourCurve: ALL_DAY,
@@ -118,7 +118,7 @@ export const LOCATIONS: Record<LocationId, Location> = {
     blurb:
       'The waterfront by the old Crane. Quiet in spring, bustling in summer, ' +
       'and the terrace is the best seat in town when the sun is out.',
-    rentPerDay: 1100,
+    rentPerDay: 2200,
     peakGuestsPerHour: 90,
     trafficLabel: 'High in summer',
     hourCurve: ALL_DAY,
@@ -135,7 +135,7 @@ export const LOCATIONS: Record<LocationId, Location> = {
     blurb:
       'Granary Island: modern, busy at lunchtime, and full of offices, students, ' +
       'and people who photograph their food.',
-    rentPerDay: 800,
+    rentPerDay: 1600,
     peakGuestsPerHour: 60,
     trafficLabel: 'Medium',
     hourCurve: LUNCH_HEAVY,

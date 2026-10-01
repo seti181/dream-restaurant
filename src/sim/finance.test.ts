@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { balance } from '../data/balance';
+import { LOCATIONS } from '../data/locations';
 import { dailyWages, wageOf, weeklyBillsDue } from './finance';
 import { isFairDay, neptuneScore } from './neptune';
 import { createPlayerRestaurant } from './setup';
@@ -23,9 +24,10 @@ describe('wages', () => {
 describe('weekly bills', () => {
   it('charges a week of rent and utilities on Mondays only', () => {
     const restaurant = createPlayerRestaurant('Test', [], [], []);
-    expect(weeklyBillsDue(restaurant, 0)).toEqual({ rent: 300 * 7, utilities: balance.finance.weeklyUtilities });
+    const weekOfRent = LOCATIONS[restaurant.location].rentPerDay * 7;
+    expect(weeklyBillsDue(restaurant, 0)).toEqual({ rent: weekOfRent, utilities: balance.finance.weeklyUtilities });
     expect(weeklyBillsDue(restaurant, 1)).toEqual({ rent: 0, utilities: 0 });
-    expect(weeklyBillsDue(restaurant, 7).rent).toBe(300 * 7);
+    expect(weeklyBillsDue(restaurant, 7).rent).toBe(weekOfRent);
   });
 });
 

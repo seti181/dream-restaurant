@@ -182,7 +182,7 @@ Equipment unlocks templates and adds capacity.
 - **Traits:** Cheerful, Perfectionist, Speedy, Chatty, Calm.
 - **Chefs** have a cuisine specialty: Polish, Italian, Grill, or Pastry.
 - **Hiring:** a candidate pool of 3–4 people, refreshed weekly. Each has a name and a short, funny bio.
-- **Starting wages:** chef about 350 zł/day, waiter about 250 zł/day.
+- **Starting wages:** chef about 650 zł/day, waiter about 450 zł/day. Each covers the whole 11-hour day, seven days a week.
 - **Morale:** planned for after the MVP (fair wages and days off keep people happy).
 
 ### 6.6 Interior and terrace
@@ -352,8 +352,8 @@ All numbers live in `src/data/` (`balance.ts`, `dishes.ts`, `locations.ts`, `riv
 - Her name: Joana / the restaurant's default name: **[Joana´s Kitchen ]**
 - Her favourite dish, which becomes a secret recipe with a perfect combo bonus: **[Aroz de Vitela  ]**
 - Places in Gdańsk that mean something to you both (cameos on the map or in events): **[Mariacka ]**
-- Inside jokes to hide in reviews, staff bios or rival messages: **[ ]**
-- A regular guest based on you: **[give me cytrynowka to my dish ]**
+- Inside jokes to hide in reviews, staff bios or rival messages: **[two waiters based on people she knows Tomek Graczyk (cheapest, but low skilled causing drastic drop of reputation) and Adrian Zabka (50%chance not coming to work but highest stats) ]**
+- A regular guest based on you: **[he will always shout: give me cytrynowka to my dish!! ]**
 - Ending: after winning the Golden Neptune, a personal message / credits: **[Parabéns!!! You passed a test! Now You are ready to open Your dream restaurant in the real WORLD!!!]**
 
 ## 11. Scope
@@ -479,3 +479,4 @@ Work in small steps, and test each step in the browser before moving on.
 - 2026-09-30: `npm run simulate` runs through `tsx`, a dev-only tool that runs TypeScript directly. It never ships to the tablet.
 - 2026-10-01: Running out of money is a game over, replacing the no-fail rescues (bank loan, Babcia's envelope). Doing nothing should lose money, just like bad decisions.
 - 2026-10-01: The Golden Neptune ending reads "Parabéns!!! You passed a test! Now You are ready to open Your dream restaurant in the real WORLD!!!"
+- 2026-10-01: First balancing pass (end of M3). Before it, every restaurant was overbooked all day, so money came too easily. Changes: fewer people eat out ("somewhere else" utility 6 → 7); being unknown matters more (awareness weights doubled); meals take 60 minutes, not 30; wages 650/450 zł a day; rents doubled (Ogarna 600 zł a day); utilities 1,400 zł a week; a table costs 4,000 zł; Mewa's first goal is 300 guests. The simulator's pretend players now invest (tables, staff, decor, terrace, marketing), and "balanced" moves to Długa once it can afford to.

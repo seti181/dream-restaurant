@@ -42,7 +42,7 @@ export const GROUP_IDS: readonly GroupId[] = ['tourists', 'students', 'locals', 
 export const GROUPS: Record<GroupId, Group> = {
   tourists: {
     // Location first, then Polish classics.
-    choiceWeights: { taste: 2.5, price: 1, reputation: 1.5, awareness: 1.5, proximity: 3, ambiance: 1, wait: 1 },
+    choiceWeights: { taste: 2.5, price: 1, reputation: 1.5, awareness: 3, proximity: 3, ambiance: 1, wait: 1 },
     name: 'Tourists',
     likes: { tags: ['polish', 'seafood'], categories: ['dessert'], templates: [] },
     priceSensitivity: 0.35,
@@ -56,7 +56,7 @@ export const GROUPS: Record<GroupId, Group> = {
   },
   students: {
     // Price above all.
-    choiceWeights: { taste: 2, price: 3.5, reputation: 1, awareness: 1, proximity: 1.5, ambiance: 0.5, wait: 1 },
+    choiceWeights: { taste: 2, price: 3.5, reputation: 1, awareness: 2, proximity: 1.5, ambiance: 0.5, wait: 1 },
     name: 'Students',
     likes: { tags: ['hearty', 'cheap'], categories: [], templates: ['pizza', 'burger'] },
     priceSensitivity: 0.9,
@@ -71,7 +71,7 @@ export const GROUPS: Record<GroupId, Group> = {
   },
   locals: {
     // Quality and familiarity.
-    choiceWeights: { taste: 2.5, price: 1.5, reputation: 3, awareness: 1.5, proximity: 1.5, ambiance: 1, wait: 1 },
+    choiceWeights: { taste: 2.5, price: 1.5, reputation: 3, awareness: 3, proximity: 1.5, ambiance: 1, wait: 1 },
     name: 'Locals and families',
     likes: { tags: ['polish', 'homemade'], categories: ['dessert'], templates: [] },
     priceSensitivity: 0.6,
@@ -85,7 +85,7 @@ export const GROUPS: Record<GroupId, Group> = {
   },
   office: {
     // Speed, and not walking far on a lunch break.
-    choiceWeights: { taste: 2, price: 1.5, reputation: 1, awareness: 1, proximity: 2.5, ambiance: 0.3, wait: 3.5 },
+    choiceWeights: { taste: 2, price: 1.5, reputation: 1, awareness: 2, proximity: 2.5, ambiance: 0.3, wait: 3.5 },
     name: 'Office workers',
     likes: { tags: ['quick'], categories: ['soup'], templates: [] },
     priceSensitivity: 0.6,
@@ -100,7 +100,7 @@ export const GROUPS: Record<GroupId, Group> = {
   },
   foodies: {
     // Creativity, quality and ambiance; happy to walk and wait.
-    choiceWeights: { taste: 3, price: 0.5, reputation: 2.5, awareness: 1, proximity: 0.5, ambiance: 2.5, wait: 0.5 },
+    choiceWeights: { taste: 3, price: 0.5, reputation: 2.5, awareness: 2, proximity: 0.5, ambiance: 2.5, wait: 0.5 },
     name: 'Foodies',
     likes: { tags: ['premium', 'creative', 'seafood'], categories: [], templates: [] },
     priceSensitivity: 0.2,
