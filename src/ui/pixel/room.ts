@@ -99,6 +99,9 @@ const C = {
   sandstoneShade: hex('#d8ccb3'),
   sandstoneDark: hex('#c4b698'),
   plaster: hex('#e8c07a'),
+  azulejoBlue: hex('#2b5d9b'),
+  azulejoWhite: hex('#f4f7fb'),
+  azulejoGrout: hex('#c9d6e6'),
   iron: hex('#2e2a33'),
   ironLight: hex('#4a4656'),
   bark: hex('#6b4a2e'),
@@ -426,6 +429,17 @@ function rightWall(layout: RoomLayout, look: RoomLook, u: number, z: number): Rg
 }
 
 function wallBase(look: RoomLook, u: number, z: number, colour = C.wallLeft): Rgb {
+  // Azulejo tiles from Coimbra: blue patterns on white, with a blue border on top.
+  if (look.decor.includes('azulejoTiles') && z >= 3 && z < 22 && !(look.decor.includes('panelling') && colour === C.wallLeft)) {
+    if (z >= 20) return C.azulejoBlue;
+    const tu = ((u % 6) + 6) % 6;
+    const tz = (z - 3) % 6;
+    if (tu < 0.6 || tz < 0.6) return C.azulejoGrout;
+    const d = Math.abs(tu - 3) + Math.abs(tz - 3);
+    if (d < 1.2) return C.azulejoBlue;
+    if (d > 1.8 && d < 2.6) return C.azulejoBlue;
+    return C.azulejoWhite;
+  }
   if (look.decor.includes('panelling') && z < 16) {
     if (z >= 14) return C.trim;
     const k = u % 12;

@@ -232,7 +232,10 @@ function DishCreator() {
           <span className="small muted">{CATEGORY_NAMES[category]}</span>
           <div className="chips">
             {TEMPLATE_IDS.filter(
-              (id) => DISH_TEMPLATES[id].category === category && (!DISH_TEMPLATES[id].secret || game.secretRecipe),
+              (id) =>
+                DISH_TEMPLATES[id].category === category &&
+                (!DISH_TEMPLATES[id].secret || game.secretRecipe) &&
+                (!DISH_TEMPLATES[id].unlockable || game.unlocks.includes(id)),
             ).map((id) => {
               const locked = dishUnavailableReason(game, id, DISH_TEMPLATES[id].variants[0].id)?.startsWith('Needs');
               return (
@@ -245,7 +248,8 @@ function DishCreator() {
                   onClick={() => chooseTemplate(id)}
                 >
                   {locked ? '🔒 ' : <FoodIcon template={id} />}
-                  {DISH_TEMPLATES[id].secret && ' ⭐'} {DISH_TEMPLATES[id].name}
+                  {DISH_TEMPLATES[id].secret && ' ⭐'}
+                  {DISH_TEMPLATES[id].unlockable && ' 🇵🇹'} {DISH_TEMPLATES[id].name}
                 </button>
               );
             })}

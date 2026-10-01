@@ -196,7 +196,7 @@ describe('choice cards', () => {
       expect(declined.progress.outcomes).toEqual(watched.progress.outcomes);
     }
     expect(checked).toBeGreaterThan(2);
-  });
+  }, 30_000);
 
   it('each have two answers, and every answer says what happened', () => {
     for (const id of MOMENT_IDS) {

@@ -12,7 +12,7 @@ import { useGame } from '../store';
 
 /** "Pizza" or "Szarlotka, Sernik and Ice cream": the dishes a machine unlocks. */
 function unlocks(id: EquipmentId): string {
-  const names = TEMPLATE_IDS.filter((t) => DISH_TEMPLATES[t].equipment === id && !DISH_TEMPLATES[t].secret).map(
+  const names = TEMPLATE_IDS.filter((t) => DISH_TEMPLATES[t].equipment === id && !DISH_TEMPLATES[t].secret && !DISH_TEMPLATES[t].unlockable).map(
     (t) => DISH_TEMPLATES[t].name,
   );
   return names.length <= 1 ? names.join('') : `${names.slice(0, -1).join(', ')} and ${names.at(-1)}`;

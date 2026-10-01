@@ -9,7 +9,7 @@ import { GROUP_IDS, type GroupId } from '../data/groups';
 import { CAMPAIGNS, type CampaignId } from '../data/marketing';
 import { FIRST_GOAL, type TipId } from '../data/mewa';
 import { LOCATIONS } from '../data/locations';
-import { SECRET_RECIPE, SPECIAL_STAFF, type SpecialStaffId } from '../data/personal';
+import { PORTUGUESE_CORNER, SECRET_RECIPE, SPECIAL_STAFF, type SpecialStaffId } from '../data/personal';
 import { RIVAL_IDS } from '../data/rivals';
 import type { Weather } from '../data/weather';
 import { helpTable, moveParty, startDay, stepDay, type DayInProgress, type FloorView, type Help } from './day';
@@ -89,6 +89,8 @@ export interface GameState {
   momentsSeen: Partial<Record<MomentId, number>>;
   /** Cards drawn since the deck was last shuffled. */
   momentDeck: MomentId[];
+  /** Dishes and decor unlocked by choice cards (the Portuguese corner). */
+  unlocks: string[];
   /** Things coming up because of earlier answers: more of some groups for a while, or a card coming back. */
   upcoming: Upcoming[];
   /** True once the money ran out at the end of a day: the restaurant has closed for good. */
@@ -219,7 +221,9 @@ export function newGame(seed: number, difficulty: Difficulty = 'normal'): GameSt
     secretRecipe: false,
     momentsSeen: {},
     momentDeck: [],
-    upcoming: [],
+    // Ana from Coimbra comes by in week 2 with the Portuguese corner.
+    upcoming: [{ fromDay: PORTUGUESE_CORNER.day, untilDay: PORTUGUESE_CORNER.day, card: PORTUGUESE_CORNER.card }],
+    unlocks: [],
     gameOver: false,
     restaurants: [
       createPlayerRestaurant(start.name, start.menu, staffOf(team, 'chef'), staffOf(team, 'waiter')),
@@ -637,6 +641,14 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
     }),
   ];
   for (const u of upcoming) if (u.news && u.fromDay === nextDay) news.push(u.news);
+  // Anything unlocked today is there tomorrow morning.
+  const unlocked = open.moments.results.flatMap((r) => r.unlock ?? []).filter((id) => !state.unlocks.includes(id));
+  if (unlocked.length > 0) {
+    news.push({
+      title: 'A Portuguese corner',
+      text: 'Ana’s cabrito assado is waiting in the dish creator, and her azulejo tiles are in the Interior tab. Obrigada, Ana!',
+    });
+  }
 
   for (const id of calendarEventsStarting(nextDay)) {
     news.push({ title: CALENDAR_EVENTS[id].name, text: CALENDAR_EVENTS[id].description });
@@ -726,6 +738,7 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
       secretRecipe,
       momentsSeen: { ...state.momentsSeen, ...Object.fromEntries(open.moments.seen.map((id) => [id, state.day])) },
       momentDeck: open.moments.deck,
+      unlocks: [...state.unlocks, ...unlocked],
       upcoming,
       // Running out of money ends the game.
       gameOver: state.gameOver || cash <= 0,

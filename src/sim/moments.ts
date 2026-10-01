@@ -37,6 +37,8 @@ export interface MomentResult {
   review: Review | null;
   /** Something that comes of the answer later. */
   followUp?: MomentEffect['followUp'];
+  /** Dishes or decor the answer unlocked. */
+  unlock?: string[];
 }
 
 /** Today's moments. Only lives while the day runs, so it is never saved. */
@@ -144,6 +146,8 @@ function needMet(need: MomentNeed, { progress, adrianAway }: MomentContext): boo
       return progress.conditions.weather === 'heatwave';
     case 'rainy':
       return progress.conditions.weather === 'rain';
+    case 'evening':
+      return minuteOfDay(progress.tick) >= 17 * 60;
   }
 }
 
@@ -236,7 +240,7 @@ function apply(
   today: MomentsToday,
   progress: DayInProgress,
   pending: PendingMoment,
-): { result: string; cash: number; review: Review | null; followUp?: MomentEffect['followUp'] } {
+): { result: string; cash: number; review: Review | null; followUp?: MomentEffect['followUp']; unlock?: string[] } {
   if (effect.chance !== undefined && effect.otherwise && !chance(today.rng, effect.chance)) {
     return apply(effect.otherwise, today, progress, pending);
   }
@@ -302,7 +306,7 @@ function apply(
         critic: false,
       }
     : null;
-  return { result: effect.result, cash, review, followUp: effect.followUp };
+  return { result: effect.result, cash, review, followUp: effect.followUp, unlock: effect.unlock };
 }
 
 /** Answers the moment on screen with its first (0) or second (1) choice. */
@@ -310,7 +314,7 @@ export function answerMoment(today: MomentsToday, progress: DayInProgress, choic
   const pending = today.pending;
   if (!pending) return null;
   const moment = MOMENTS[pending.id];
-  const { result, cash, review, followUp } = apply(moment.choices[choice].effect, today, progress, pending);
+  const { result, cash, review, followUp, unlock } = apply(moment.choices[choice].effect, today, progress, pending);
   const entry: MomentResult = {
     id: pending.id,
     title: moment.title,
@@ -320,6 +324,7 @@ export function answerMoment(today: MomentsToday, progress: DayInProgress, choic
     minute: pending.minute,
     review,
     followUp,
+    unlock,
   };
   today.results.push(entry);
   today.cash += cash;

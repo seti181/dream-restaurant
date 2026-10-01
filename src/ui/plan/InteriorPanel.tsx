@@ -103,7 +103,10 @@ function DecorShop() {
               .join(' and ')} feel right at home.`
           : `Buy ${balance.decor.itemsForStyle} items of one style to give the room a style that certain guests love.`}
       </p>
-      {DECOR_STYLE_IDS.map((styleId) => (
+      {DECOR_STYLE_IDS.filter((styleId) =>
+        // A style whose items are all still hidden doesn't show yet.
+        DECOR_IDS.some((id) => DECOR[id].style === styleId && (!DECOR[id].unlockable || game.unlocks.includes(id))),
+      ).map((styleId) => (
         <div key={styleId} className="decor-style">
           <h3>
             {DECOR_STYLES[styleId].name}{' '}

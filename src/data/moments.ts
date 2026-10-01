@@ -18,6 +18,21 @@ export type MomentId =
   | 'balticStorm'
   | 'fairStallholder'
   | 'engagementDinner'
+  | 'portugueseStudent'
+  | 'amberSeller'
+  | 'filmCrew'
+  | 'lostTourist'
+  | 'lechiaDerby'
+  | 'weddingPhotographer'
+  | 'kashubianNapkins'
+  | 'helFerry'
+  | 'tiktoker'
+  | 'pierogiContest'
+  | 'deliveryApp'
+  | 'lostPhone'
+  | 'fluffyDog'
+  | 'neptuneCoin'
+  | 'signPainter'
   | 'proposal'
   | 'inspector'
   | 'nonnaBasil'
@@ -31,7 +46,7 @@ export type MomentId =
   | 'walesa';
 
 /** Special guests who sit at a table for a while without ordering from the kitchen. */
-export type Visitor = 'merry' | 'footballer' | 'walesa';
+export type Visitor = 'merry' | 'footballer' | 'walesa' | 'filmCrew';
 
 /** What has to be true right now for a moment to happen. The simulation checks these. */
 export type MomentNeed =
@@ -64,7 +79,9 @@ export type MomentNeed =
   /** A heatwave today. */
   | 'heatwave'
   /** Rain today. */
-  | 'rainy';
+  | 'rainy'
+  /** From five in the afternoon. */
+  | 'evening';
 
 /** How often a card turns up, compared with the others. The weights are in balance.ts. */
 export type Rarity = 'common' | 'uncommon' | 'rare' | 'veryRare';
@@ -116,6 +133,8 @@ export interface MomentEffect {
   /** A gamble: the chance this answer works out, and what happens if it doesn't. */
   chance?: number;
   otherwise?: MomentEffect;
+  /** Dishes or decor this answer unlocks, from the next morning (see `unlockable` in dishes.ts and decor.ts). */
+  unlock?: string[];
   /**
    * Something that comes of it later: in `inDays` days, more of some groups for `days` days
    * (with a line in the morning news), or another card that comes back that day.
@@ -165,6 +184,21 @@ export const MOMENT_IDS: readonly MomentId[] = [
   'balticStorm',
   'fairStallholder',
   'engagementDinner',
+  'portugueseStudent',
+  'amberSeller',
+  'filmCrew',
+  'lostTourist',
+  'lechiaDerby',
+  'weddingPhotographer',
+  'kashubianNapkins',
+  'helFerry',
+  'tiktoker',
+  'pierogiContest',
+  'deliveryApp',
+  'lostPhone',
+  'fluffyDog',
+  'neptuneCoin',
+  'signPainter',
   'proposal',
   'inspector',
   'nonnaBasil',
@@ -774,6 +808,302 @@ export const MOMENTS: Record<MomentId, Moment> = {
         label: 'Sorry, not tonight',
         effect: { result: 'They go to Nonna Rosa’s instead. She gives them a free tiramisu.' },
       },
+    ],
+  },
+  portugueseStudent: {
+    title: 'A taste of Portugal',
+    text:
+      'Ana, an Erasmus student from Coimbra, has been homesick all week. She offers to show your chef how her avó ' +
+      'makes cabrito assado, and she has brought a box of blue azulejo tiles from her family’s old house.',
+    needs: [],
+    rarity: 'common',
+    followUpOnly: true,
+    choices: [
+      {
+        label: 'Obrigada, Ana!',
+        effect: {
+          kitchenPause: 15,
+          reputation: { foodies: 2 },
+          unlock: ['cabritoAssado', 'azulejoTiles'],
+          result:
+            'The kitchen smells of rosemary, garlic and white wine. From tomorrow, cabrito assado is in your dish ' +
+            'creator and the azulejo tiles are in the Interior tab.',
+        },
+      },
+      {
+        label: 'Maybe another day',
+        effect: {
+          followUp: { inDays: 3, card: 'portugueseStudent' },
+          result: 'She smiles and says “até logo”. Mewa thinks she’ll be back.',
+        },
+      },
+    ],
+  },
+  amberSeller: {
+    title: 'Baltic amber',
+    text: 'An amber seller asks if he can show his Baltic amber jewellery on your counter, for a small commission.',
+    needs: [],
+    rarity: 'uncommon',
+    choices: [
+      {
+        label: 'Make room on the counter',
+        effect: {
+          cash: 150,
+          awareness: { tourists: 2 },
+          result: 'Tourists buy amber earrings with their coffee. You get 150 zł, and the counter sparkles.',
+        },
+      },
+      { label: 'Not today', effect: { result: 'He sets up by the Neptune fountain instead.' } },
+    ],
+  },
+  filmCrew: {
+    title: 'A film crew',
+    text: 'A film crew shooting a costume drama on Długa want your restaurant as a 1920s café, for one scene. It takes an hour.',
+    needs: ['freeTable'],
+    rarity: 'rare',
+    choices: [
+      {
+        label: 'Lights, camera, pierogi!',
+        effect: {
+          cash: 800,
+          visitors: { who: 'filmCrew', group: 'locals', size: 4, minutes: 60, closesDoor: 'walkIns' },
+          awareness: { tourists: 3, students: 3, locals: 3, office: 3, foodies: 3 },
+          result: 'For an hour your restaurant is a café in old Gdańsk. The crew pays 800 zł, and your door will be on television.',
+        },
+      },
+      {
+        label: 'We’re open for guests',
+        effect: { result: 'They film at the café across the street. You can see the cameras from the window.' },
+      },
+    ],
+  },
+  lostTourist: {
+    title: 'Which way to Westerplatte?',
+    text: 'A lost tourist with an enormous paper map asks the way to Westerplatte.',
+    needs: [],
+    rarity: 'common',
+    choices: [
+      {
+        label: 'Draw him a little map',
+        effect: {
+          awareness: { tourists: 3 },
+          result: 'Bus 106 from the stop by the Green Gate. He promises to tell everyone at his hotel about you.',
+        },
+      },
+      { label: 'Point vaguely north', effect: { result: 'He heads off towards Sopot. Probably.' } },
+    ],
+  },
+  lechiaDerby: {
+    title: 'Derby night',
+    text: 'Lechia Gdańsk play Arka Gdynia tonight! Six fans in green and white ask if you’ll put the match on.',
+    needs: ['roomForSix', 'evening'],
+    rarity: 'uncommon',
+    choices: [
+      {
+        label: 'Biało-zieloni!',
+        effect: {
+          walkIn: { group: 'students', size: 6 },
+          mood: { who: 'waiting', amount: -4 },
+          awareness: { students: 4, locals: 2 },
+          result: 'Every goal shakes the windows. The fans order everything twice; the other guests are less thrilled.',
+        },
+      },
+      { label: 'No football in here', effect: { result: 'They find a bar on Długa. You hear the cheering anyway.' } },
+    ],
+  },
+  weddingPhotographer: {
+    title: 'Wedding photos',
+    text: 'A bride, a groom and a photographer ask if they can take their wedding photos by your door.',
+    needs: [],
+    rarity: 'common',
+    choices: [
+      {
+        label: 'Of course! Smile!',
+        effect: {
+          cash: 100,
+          awareness: { locals: 3 },
+          result: 'Your door is in every photo. They leave 100 zł and a slice of wedding cake for the kitchen.',
+        },
+      },
+      { label: 'We’re a bit busy', effect: { result: 'They pose by the Golden Gate instead.' } },
+    ],
+  },
+  kashubianNapkins: {
+    title: 'Kashubian embroidery',
+    text: 'A lady from Kartuzy sells hand-embroidered Kashubian napkins: blue and yellow flowers on white linen.',
+    needs: [],
+    rarity: 'uncommon',
+    choices: [
+      {
+        label: 'We’ll take a set',
+        effect: {
+          cash: -150,
+          mood: { who: 'waiting', amount: 3 },
+          reputation: { locals: 1 },
+          result: 'The tables look lovely, and the locals notice straight away.',
+        },
+      },
+      { label: 'Not this time', effect: { result: 'She packs them away carefully and moves on.' } },
+    ],
+  },
+  helFerry: {
+    title: 'No ferry to Hel',
+    text: 'The ferry to Hel is cancelled: too much wind on the bay. Eight hungry day-trippers need lunch, right now.',
+    needs: ['roomForSix'],
+    rarity: 'uncommon',
+    choices: [
+      {
+        label: 'Come in, all of you',
+        effect: {
+          walkIn: { group: 'tourists', size: 8 },
+          result: 'Eight wind-blown tourists, eight bowls of soup. The kitchen is busy, but they’re happy.',
+        },
+      },
+      { label: 'Sorry, we’re full', effect: { result: 'They head for the nearest kebab.' } },
+    ],
+  },
+  tiktoker: {
+    title: 'A TikToker',
+    text: 'A TikToker wants to film “the best pierogi in Gdańsk” at your place, as long as the pierogi are free.',
+    needs: [],
+    rarity: 'common',
+    choices: [
+      {
+        label: 'Action!',
+        effect: {
+          chance: 0.7,
+          cash: -40,
+          awareness: { students: 6, foodies: 2 },
+          result: 'The video has thousands of views by the evening. Students are already asking for “the TikTok pierogi”.',
+          otherwise: {
+            cash: -40,
+            awareness: { students: 1 },
+            result: 'The video gets twelve views. Eleven of them are his mum.',
+          },
+        },
+      },
+      { label: 'Not today', effect: { result: 'He films a kebab instead.' } },
+    ],
+  },
+  pierogiContest: {
+    title: 'A pierogi contest',
+    text: 'Four students want to settle, once and for all, who can eat the most pierogi. They’d like a table and a referee.',
+    needs: ['freeTable'],
+    rarity: 'uncommon',
+    choices: [
+      {
+        label: 'Let the contest begin!',
+        effect: {
+          walkIn: { group: 'students', size: 4 },
+          cash: 120,
+          mood: { who: 'waiting', amount: 3 },
+          result: 'The winner manages 34. The whole room cheers, and they pay for every single one.',
+        },
+      },
+      { label: 'Not a good idea', effect: { result: 'They go to Bar Błyskawica. Pani Halina says yes.' } },
+    ],
+  },
+  deliveryApp: {
+    title: 'A delivery app',
+    text: 'Someone from a delivery app offers to put your restaurant on it. More orders from home, but they take a cut.',
+    needs: [],
+    rarity: 'uncommon',
+    choices: [
+      {
+        label: 'Sign us up',
+        effect: {
+          cash: 250,
+          followUp: {
+            inDays: 1,
+            days: 3,
+            groups: { office: 1.2, students: 1.2 },
+            news: {
+              title: 'Delivery bikes at your door',
+              text: 'Your dishes are on the delivery app now, and office workers and students have spotted them.',
+            },
+          },
+          result: 'The first orders come in straight away: 250 zł today, and more to come.',
+        },
+      },
+      { label: 'We cook for our guests', effect: { result: 'He shrugs and cycles off.' } },
+    ],
+  },
+  lostPhone: {
+    title: 'A forgotten phone',
+    text: 'There’s a phone under one of the tables. Its owner, a tourist, left ten minutes ago.',
+    needs: ['guestsIn'],
+    rarity: 'common',
+    choices: [
+      {
+        label: 'Run after her!',
+        effect: {
+          waiterAway: 5,
+          reputation: { tourists: 2 },
+          review: {
+            stars: 5,
+            texts: ['They ran after me with my phone! The nicest people in Gdańsk, and the soup was lovely too.'],
+            reviewers: ['a tourist who nearly lost everything'],
+          },
+          result: 'She’s almost at the Green Gate when your waiter catches up. She nearly cries.',
+        },
+      },
+      { label: 'Keep it at the bar', effect: { result: 'She comes back an hour later, very relieved.' } },
+    ],
+  },
+  fluffyDog: {
+    title: 'A very fluffy dog',
+    text: 'A guest asks if her very fluffy dog can come in with her.',
+    needs: [],
+    rarity: 'common',
+    choices: [
+      {
+        label: 'Dogs welcome!',
+        effect: {
+          chance: 0.85,
+          reputation: { locals: 1 },
+          mood: { who: 'waiting', amount: 2 },
+          result: 'The dog lies under the table like a perfect gentleman. Everyone wants to stroke him.',
+          otherwise: {
+            cash: -20,
+            result: 'The dog is a perfect gentleman, apart from one sausage taken off a plate. You buy the guest a new one.',
+          },
+        },
+      },
+      { label: 'Sorry, no dogs', effect: { result: 'The dog waits outside, looking tragic.' } },
+    ],
+  },
+  neptuneCoin: {
+    title: 'A coin for Neptune',
+    text: 'A little boy asks if you have a coin for Neptune’s fountain. Throw one in, they say, and you’ll come back to Gdańsk.',
+    needs: [],
+    rarity: 'common',
+    choices: [
+      {
+        label: 'Here you go!',
+        effect: {
+          cash: -5,
+          reputation: { tourists: 1, locals: 1 },
+          result: 'Plop! He wishes for ice cream. His parents bring him in for some.',
+        },
+      },
+      { label: 'No coins today', effect: { result: 'He finds one in his pocket after all.' } },
+    ],
+  },
+  signPainter: {
+    title: 'Gold letters',
+    text: 'A sign painter offers to paint your restaurant’s name above the door in gold letters, the old Gdańsk way.',
+    needs: [],
+    rarity: 'rare',
+    choices: [
+      {
+        label: 'Gold letters, please',
+        effect: {
+          cash: -400,
+          awareness: { tourists: 2, students: 2, locals: 2, office: 2, foodies: 2 },
+          result: 'Your name shines in gold above the door. People stop to take photos of it.',
+        },
+      },
+      { label: 'Maybe next year', effect: { result: 'He paints the bakery’s sign instead. It looks wonderful.' } },
     ],
   },
 };

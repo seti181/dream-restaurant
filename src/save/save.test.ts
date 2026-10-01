@@ -211,6 +211,19 @@ describe('upgrading version 9 saves (from before the shuffled deck of cards)', (
   });
 });
 
+describe('upgrading version 10 saves (from before the Portuguese corner)', () => {
+  it('schedules Ana’s visit once, and keeps the rest', () => {
+    const game = newGame(57);
+    const { unlocks: _u, ...old } = { ...game, upcoming: [] };
+    const upgraded = migrate({ saveVersion: 10, savedAt: '', game: old })!;
+    expect(upgraded.unlocks).toEqual([]);
+    expect(upgraded.upcoming.filter((u) => u.card === 'portugueseStudent')).toHaveLength(1);
+    // A save that already has her visit doesn't get a second one.
+    const twice = migrate({ saveVersion: 10, savedAt: '', game: { ...upgraded, unlocks: undefined } })!;
+    expect(twice.upcoming.filter((u) => u.card === 'portugueseStudent')).toHaveLength(1);
+  });
+});
+
 describe('save codes', () => {
   it('turn a game into text and back again, Polish letters and all', () => {
     let game = newGame(61);

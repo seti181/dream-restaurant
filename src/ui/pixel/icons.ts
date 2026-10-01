@@ -63,6 +63,11 @@ export const FOOD_ICONS: Record<TemplateId, IconArt> = {
   schabowy: { rows: plated(['..oooooooo..', '.oggggggggo.', 'oggGgggGggpo']), palette: { ...base, g: '#d9a066', G: '#b8794a', p: '#f1e2c4' } },
   golabki: { rows: plated(['.oooo..oooo.', 'olLlloolLllo', 'orrrrrrrrrro']), palette: { ...base, l: '#a8c97a', L: '#7fa35a', r: '#d9502f' } },
   arrozDeVitela: { rows: plated(['...oooooo...', '.ooRRkkRRoo.', 'oRRRkkkkRRRo']), palette: { ...base, R: '#f6eedc', k: '#8a5233' } },
+  // Roast kid goat with golden potatoes and a sprig of rosemary.
+  cabritoAssado: {
+    rows: plated(['....oooo.o..', '..ommmmmoLo.', '.ommMmmmmyo.', 'oyymmmmmyyyo']),
+    palette: { ...base, m: '#9c5a33', M: '#c97a4a', y: '#e9b84a', L: '#5f8a52' },
+  },
   szarlotka: { rows: plated(['....ooooo...', '...occccco..', '..oaaaaaaao.', '.obbbbbbbbbo']), palette: { ...base, c: '#c99a5a', a: '#f4e3a1', b: '#d9a066' } },
   sernik: { rows: plated(['....ooooo...', '...occccco..', '..oaaaaaaao.', '.obbbbbbbbbo']), palette: { ...base, c: '#8a5233', a: '#fbecc0', b: '#d9a066' } },
   iceCream: {

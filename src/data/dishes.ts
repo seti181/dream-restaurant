@@ -41,6 +41,7 @@ export type TemplateId =
   | 'schabowy'
   | 'golabki'
   | 'arrozDeVitela'
+  | 'cabritoAssado'
   | 'saladBowl'
   | 'szarlotka'
   | 'sernik'
@@ -76,6 +77,8 @@ export interface DishTemplate {
   variants: Variant[];
   /** A secret recipe stays hidden in the dish creator until it has been found. */
   secret?: boolean;
+  /** Hidden in the dish creator until a choice card unlocks it (see data/moments.ts). */
+  unlockable?: boolean;
 }
 
 /** One line on a restaurant's menu. */
@@ -94,7 +97,7 @@ export interface MenuDish {
 
 export const TEMPLATE_IDS: readonly TemplateId[] = [
   'zurek', 'barszcz', 'fishSoup', 'tomatoSoup',
-  'pierogi', 'pizza', 'pasta', 'burger', 'friedCod', 'schabowy', 'golabki', 'arrozDeVitela', 'saladBowl',
+  'pierogi', 'pizza', 'pasta', 'burger', 'friedCod', 'schabowy', 'golabki', 'arrozDeVitela', 'cabritoAssado', 'saladBowl',
   'szarlotka', 'sernik', 'iceCream',
   'coffee', 'kompot', 'lemonade', 'cytrynowka',
 ];
@@ -270,6 +273,21 @@ export const DISH_TEMPLATES: Record<TemplateId, DishTemplate> = {
     tags: ['hearty', 'homemade'],
     variants: [{ id: 'joana', name: 'slow-cooked veal with rice, Joana’s way', ingredientCost: 14, tags: [] }],
     secret: true,
+  },
+  cabritoAssado: {
+    name: 'Cabrito assado',
+    category: 'main',
+    cuisine: null,
+    equipment: 'stove',
+    prepMinutes: 18,
+    baseQuality: 72,
+    referencePrice: 62,
+    tags: ['hearty', 'homemade', 'premium'],
+    variants: [
+      { id: 'batatas', name: 'roast kid goat with roast potatoes, Coimbra style', ingredientCost: 22, tags: [] },
+      { id: 'arroz', name: 'roast kid goat with oven-baked rice', ingredientCost: 20, tags: [] },
+    ],
+    unlockable: true,
   },
   saladBowl: {
     name: 'Salad bowl',

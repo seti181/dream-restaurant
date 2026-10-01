@@ -2,11 +2,11 @@ import { describe, expect, it } from 'vitest';
 import { balance } from '../data/balance';
 import type { MenuDish } from '../data/dishes';
 import type { GroupId } from '../data/groups';
-import { REGULAR, SECRET_RECIPE, SPECIAL_STAFF } from '../data/personal';
-import { addDish, dishUnavailableReason } from './actions';
+import { PORTUGUESE_CORNER, REGULAR, SECRET_RECIPE, SPECIAL_STAFF } from '../data/personal';
+import { addDish, decorUnavailableReason, dishUnavailableReason } from './actions';
 import { dateOf, nextDayOn } from './calendar';
 import { calendarEventsOn, conditionsFor } from './events';
-import { closeDay, newGame, openRestaurant, playerOf, playTick } from './game';
+import { answerTheMoment, closeDay, momentDue, newGame, openRestaurant, playerOf, playTick } from './game';
 import { pairingQuality } from './menu';
 import { writeReview } from './reviews';
 import { createRng } from './rng';
@@ -138,5 +138,51 @@ describe('Mariacka', () => {
     expect(calendarEventsOn(july20)).toContain('amberEvening');
     expect(calendarEventsOn(july20 - 1)).not.toContain('amberEvening');
     expect(conditionsFor({ ...newGame(8), day: july20 }).locations.mariacka).toBeGreaterThan(1);
+  });
+});
+
+describe('the Portuguese corner', () => {
+  /** Plays the day Ana comes, answering her card. */
+  function anasDay(answer: 0 | 1) {
+    const state = { ...newGame(60), day: PORTUGUESE_CORNER.day };
+    const open = openRestaurant(state);
+    expect(open.moments.queued).toEqual([PORTUGUESE_CORNER.card]);
+    // Ana's card comes first that day; any other card later on gets a "no".
+    const cards: string[] = [];
+    while (!open.progress.done) {
+      if (momentDue(open)) {
+        const id = open.moments.pending!.id;
+        cards.push(id);
+        answerTheMoment(open, id === PORTUGUESE_CORNER.card ? answer : 1);
+      }
+      playTick(open);
+    }
+    expect(cards[0]).toBe(PORTUGUESE_CORNER.card);
+    return { state, next: closeDay(state, open).state };
+  }
+
+  it('Ana from Coimbra comes by in week 2', () => {
+    expect(newGame(61).upcoming).toContainEqual(
+      expect.objectContaining({ fromDay: PORTUGUESE_CORNER.day, card: PORTUGUESE_CORNER.card }),
+    );
+    expect(dateOf(PORTUGUESE_CORNER.day).weekday).toBe(1);
+  });
+
+  it('saying yes unlocks cabrito assado and the azulejo tiles from the next morning', () => {
+    const before = { ...newGame(62), cash: 1e6, menuSlots: 12 };
+    expect(dishUnavailableReason(before, 'cabritoAssado', 'batatas')).toBe('Not discovered yet');
+    expect(decorUnavailableReason(before, 'azulejoTiles')).toBe('Not discovered yet');
+    const { next } = anasDay(0);
+    expect(next.unlocks).toEqual(expect.arrayContaining(['cabritoAssado', 'azulejoTiles']));
+    expect(next.news.map((n) => n.title)).toContain('A Portuguese corner');
+    const rich = { ...next, cash: 1e6, menuSlots: 12 };
+    expect(dishUnavailableReason(rich, 'cabritoAssado', 'batatas')).toBeNull();
+    expect(decorUnavailableReason(rich, 'azulejoTiles')).toBeNull();
+  });
+
+  it('saying no brings her back three days later', () => {
+    const { state, next } = anasDay(1);
+    expect(next.unlocks).toEqual([]);
+    expect(next.upcoming).toContainEqual(expect.objectContaining({ fromDay: state.day + 3, card: PORTUGUESE_CORNER.card }));
   });
 });

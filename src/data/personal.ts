@@ -27,6 +27,13 @@ export const SECRET_RECIPE = {
   },
 } as const;
 
+/** The Portuguese corner: a choice card on this day brings cabrito assado and azulejo tiles. */
+export const PORTUGUESE_CORNER = {
+  card: 'portugueseStudent',
+  /** Tuesday of week 2. */
+  day: 8,
+} as const;
+
 /** A regular guest who comes every week and always wants the same thing. */
 export const REGULAR = {
   name: 'Pan Cytrynówka, your Friday regular',

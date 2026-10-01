@@ -55,7 +55,7 @@ function urlOf(pixels: Pixels): string {
 /** Stacking order on screen: pieces and walkers share one scale, so walkers pass between tables. */
 const zOf = (depth: number) => Math.round(depth * 2) + 1000;
 
-const VISITOR_BUBBLES: Record<Visitor, string> = { merry: '🥃', footballer: '⚽', walesa: '✌️' };
+const VISITOR_BUBBLES: Record<Visitor, string> = { merry: '🥃', footballer: '⚽', walesa: '✌️', filmCrew: '🎬' };
 
 /** How a table feels, as an emoji bubble, or null for no bubble. */
 function bubbleFor(guests: TableGuests): string | null {

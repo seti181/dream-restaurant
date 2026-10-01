@@ -2,7 +2,7 @@
 
 import type { GroupId } from './groups';
 
-export type DecorStyle = 'hanseatic' | 'maritime' | 'rustic' | 'modern';
+export type DecorStyle = 'hanseatic' | 'maritime' | 'rustic' | 'modern' | 'portuguese';
 
 export type DecorId =
   | 'chandelier'
@@ -16,7 +16,8 @@ export type DecorId =
   | 'tiledStove'
   | 'pendantLights'
   | 'plantWall'
-  | 'communalTable';
+  | 'communalTable'
+  | 'azulejoTiles';
 
 export interface DecorItem {
   name: string;
@@ -24,9 +25,11 @@ export interface DecorItem {
   cost: number;
   /** Ambiance points added (the restaurant's ambiance runs from 0 to 100). */
   ambiance: number;
+  /** Hidden in the shop until a choice card unlocks it (see data/moments.ts). */
+  unlockable?: boolean;
 }
 
-export const DECOR_STYLE_IDS: readonly DecorStyle[] = ['hanseatic', 'maritime', 'rustic', 'modern'];
+export const DECOR_STYLE_IDS: readonly DecorStyle[] = ['hanseatic', 'maritime', 'rustic', 'modern', 'portuguese'];
 
 export const DECOR_STYLES: Record<DecorStyle, { name: string; description: string; favouredBy: GroupId[] }> = {
   hanseatic: {
@@ -49,6 +52,11 @@ export const DECOR_STYLES: Record<DecorStyle, { name: string; description: strin
     description: 'Clean lines, plants and good lighting. Quick lunches feel at home.',
     favouredBy: ['office', 'students'],
   },
+  portuguese: {
+    name: 'Portuguese corner',
+    description: 'Blue and white azulejo tiles, like a café in Lisbon or Coimbra.',
+    favouredBy: ['tourists', 'foodies'],
+  },
 };
 
 export const DECOR_IDS: readonly DecorId[] = [
@@ -56,6 +64,7 @@ export const DECOR_IDS: readonly DecorId[] = [
   'shipsInBottles', 'lanterns', 'seaChart',
   'tablecloths', 'clayPots', 'tiledStove',
   'pendantLights', 'plantWall', 'communalTable',
+  'azulejoTiles',
 ];
 
 export const DECOR: Record<DecorId, DecorItem> = {
@@ -71,4 +80,5 @@ export const DECOR: Record<DecorId, DecorItem> = {
   pendantLights: { name: 'Designer pendant lights', style: 'modern', cost: 2_200, ambiance: 7 },
   plantWall: { name: 'Living plant wall', style: 'modern', cost: 2_800, ambiance: 8 },
   communalTable: { name: 'Long oak communal table', style: 'modern', cost: 3_000, ambiance: 9 },
+  azulejoTiles: { name: 'Azulejo tiles from Coimbra', style: 'portuguese', cost: 2_500, ambiance: 10, unlockable: true },
 };

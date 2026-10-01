@@ -5,8 +5,9 @@
 import { FIRST_GOAL } from '../data/mewa';
 import type { GameState } from '../sim/game';
 import { startGoal } from '../sim/goals';
+import { PORTUGUESE_CORNER } from '../data/personal';
 
-export const SAVE_VERSION = 10;
+export const SAVE_VERSION = 11;
 const SAVE_KEY = 'old-town-kitchen/save';
 
 interface SaveFile {
@@ -120,6 +121,16 @@ function upgradeFrom9(game: Record<string, unknown>): Record<string, unknown> {
   return { momentDeck: [], upcoming: [], ...game };
 }
 
+function upgradeFrom10(game: Record<string, unknown>): Record<string, unknown> {
+  // Version 11 adds the Portuguese corner: Ana from Coimbra comes by on day 8, or tomorrow if that's past.
+  const day = Math.max(PORTUGUESE_CORNER.day, (game.day as number) ?? 0);
+  const upcoming = (game.upcoming as { card?: string }[] | undefined) ?? [];
+  const unlocks = (game.unlocks as string[] | undefined) ?? [];
+  const already = upcoming.some((u) => u.card === PORTUGUESE_CORNER.card) || unlocks.length > 0;
+  const visit = { fromDay: day, untilDay: day, card: PORTUGUESE_CORNER.card };
+  return { ...game, unlocks, upcoming: already ? upcoming : [...upcoming, visit] };
+}
+
 /**
  * Brings a save from any older version up to date, one version at a time.
  * Returns null for saves that can't be understood.
@@ -167,6 +178,10 @@ export function migrate(data: unknown): GameState | null {
   if (version === 9) {
     game = upgradeFrom9(game as unknown as Record<string, unknown>) as unknown as GameState;
     version = 10;
+  }
+  if (version === 10) {
+    game = upgradeFrom10(game as unknown as Record<string, unknown>) as unknown as GameState;
+    version = 11;
   }
 
   return looksLikeGame(game) ? game : null;

@@ -49,6 +49,7 @@ export function dishUnavailableReason(
 ): string | null {
   const player = playerOf(state);
   if (DISH_TEMPLATES[template].secret && !state.secretRecipe) return 'A secret recipe, not found yet';
+  if (DISH_TEMPLATES[template].unlockable && !state.unlocks.includes(template)) return 'Not discovered yet';
   const needs = DISH_TEMPLATES[template].equipment;
   if (needs !== null && !player.equipment.includes(needs)) return `Needs a ${EQUIPMENT[needs].name.toLowerCase()}`;
   if (!DISH_TEMPLATES[template].variants.some((v) => v.id === variant)) return 'Unknown recipe';
@@ -195,6 +196,7 @@ export function buyTable(state: GameState): GameState {
 }
 
 export function decorUnavailableReason(state: GameState, id: DecorId): string | null {
+  if (DECOR[id].unlockable && !state.unlocks.includes(id)) return 'Not discovered yet';
   if (playerOf(state).decor.includes(id)) return 'Already in your dining room';
   return cantAfford(state, DECOR[id].cost);
 }

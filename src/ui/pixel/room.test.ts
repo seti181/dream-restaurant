@@ -63,6 +63,17 @@ describe('the pixel-art room layout', () => {
     for (const kind of ['walesa', 'guard', 'footballer'] as const) expect(personPixels(kind, 'front', 'sit').width).toBe(PERSON[0].length);
   });
 
+  it('puts azulejo tiles on the walls when they are bought', () => {
+    const layout = roomLayout(6, 2);
+    const plain = drawRoom(layout, look(4));
+    const tiled = drawRoom(layout, { ...look(4), decor: ['azulejoTiles'] });
+    let changed = 0;
+    for (let y = 0; y < plain.height; y += 2) for (let x = 0; x < plain.width; x += 2) {
+      if (JSON.stringify(plain.get(x, y)) !== JSON.stringify(tiled.get(x, y))) changed++;
+    }
+    expect(changed).toBeGreaterThan(100);
+  });
+
   it('draws the street and the sky big enough to fill the frame together', () => {
     const layout = roomLayout(6, 2);
     const street = drawStreet(layout, look(4), layout.width + 80, layout.height + 40, 40, 20);
