@@ -494,7 +494,7 @@ Work in small steps, and test each step in the browser before moving on.
 - [x] Pixel art: choose sources and palette, and approve one sample scene (section 9.1)
 - [x] Pixel art: restaurant view (rooms, furniture, decor, equipment, terrace)
 - [x] Pixel art: characters (guests, staff, Mewa, special characters) with animations, and guests walking in and out
-- [ ] Pixel art: Old Town map, food icons and UI icons
+- [x] Pixel art: Old Town map, food icons and UI icons
 - [ ] Restaurant view while planning: a tab next to the Map that shows the restaurant before opening
 - [ ] Balancing with the simulator plus playtests on the real tablet
 - [ ] Performance check on the tablet
@@ -561,3 +561,4 @@ Work in small steps, and test each step in the browser before moving on.
 - 2026-10-01: While planning (before opening), a tab next to the Map shows the restaurant view: the empty room with the team in place, so purchases can be seen straight away.
 - 2026-10-01: Character looks: tourists wear straw sun hats and cameras, students carry backpacks, locals wear Kashubian-patterned jumpers, office workers a shirt and tie, foodies a cream scarf; hair colours vary. Waiters wear white aprons; the food critic a black beret; the Friday regular a lemon shirt and flat cap; Tomek has messy ginger hair and a kompot stain; Adrian wears sunglasses. People are drawn facing us or with their backs to us (not diagonally), with a two-step walk. Guests walk from the door (or the street, for the terrace) to their seat, at about 60 world units a second at 1× speed, and back out; those who gave up leave with a 😠.
 - 2026-10-01: Waiters carry the food: when a table's meal is ready, a free waiter walks from their spot by the kitchen to the table with a full tray, pauses to serve, and walks back with the empty tray. If every waiter is already out, the food arrives without a walk.
+- 2026-10-01: Pixel art for the map and icons: the Old Town map is drawn in code from above (streets of gabled houses, the Motława, Granary Island, St. Mary's, the Neptune Fountain, the Green Gate, the Żuraw); street markers, names and rival signs stay as large, clearly lettered buttons on top. Every dish and drink has a pixel icon; cash, stars, weather and Mewa use pixel icons too.

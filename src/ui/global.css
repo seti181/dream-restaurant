@@ -851,85 +851,6 @@ h2.spaced {
   grid-template-columns: 3fr 2fr;
 }
 
-.old-town-map {
-  width: 100%;
-  border-radius: 16px;
-  background: #f4ecdc;
-}
-
-.old-town-map .land { fill: #efe2c6; }
-.old-town-map .street { stroke: #fbf5e8; stroke-width: 22; stroke-linecap: round; }
-.old-town-map .lane { stroke: #f7eedc; stroke-width: 10; }
-.old-town-map .river { fill: none; stroke: #8fc1d8; stroke-width: 46; stroke-linecap: butt; }
-.old-town-map .granary { fill: #9c4a2f; stroke: #6e3220; stroke-width: 1.5; }
-.old-town-map .brick { fill: #a9472f; stroke: #6e3220; stroke-width: 1.5; }
-.old-town-map .roof { fill: #4f6f63; }
-.old-town-map .church-window { fill: #f6e3c4; }
-.old-town-map .fountain { fill: #bfe0f0; stroke: #8a8070; stroke-width: 3; }
-.old-town-map .trident { fill: none; stroke: #c9a227; stroke-width: 3; stroke-linecap: round; }
-.old-town-map .green-gate { fill: #c98f5a; stroke: #6e3220; stroke-width: 1.5; }
-.old-town-map .gate-arch { fill: #6e3220; }
-.old-town-map .crane-wood { fill: #4a3426; }
-.old-town-map .boat { fill: #8a5233; }
-.old-town-map .sail { fill: #fdf6e3; stroke: #c9b89a; }
-.old-town-map .small { font-size: 16px; text-anchor: middle; }
-.old-town-map .river-name { font-size: 18px; text-anchor: middle; }
-
-.map-note {
-  fill: var(--sea);
-  font-size: 22px;
-  font-style: italic;
-}
-
-.map-spot {
-  cursor: pointer;
-}
-
-.map-spot circle {
-  fill: #fff;
-  stroke: var(--sea);
-  stroke-width: 4;
-}
-
-.map-label-bg {
-  fill: rgba(255, 255, 255, 0.9);
-  stroke: #d8cbb6;
-}
-
-.map-spot.home circle {
-  fill: #f9dcd4;
-  stroke: var(--brick);
-}
-
-.map-spot.selected circle {
-  stroke: var(--amber);
-  stroke-width: 10;
-}
-
-.map-icon {
-  font-size: 30px;
-  text-anchor: middle;
-  fill: var(--sea);
-}
-
-.map-label {
-  font-size: 19px;
-  font-weight: 700;
-  text-anchor: middle;
-  fill: var(--ink);
-}
-
-.map-badge {
-  fill: var(--sea);
-}
-
-.map-badge-text {
-  font-size: 16px;
-  font-weight: 700;
-  text-anchor: middle;
-  fill: #fff;
-}
-
 .move {
   margin-top: 16px;
   padding: 14px 16px;
@@ -1204,14 +1125,7 @@ h2.spaced {
   background: #eef4f7;
 }
 
-.old-town-map .map-heart {
-  font-size: 30px;
-  fill: #d9412b;
-  text-anchor: middle;
-  stroke: #fff;
-  stroke-width: 3;
-  paint-order: stroke;
-}
+
 
 .mute {
   min-width: 56px;
@@ -1429,4 +1343,94 @@ h2.spaced {
 .dish-row > .pixel-icon {
   flex: none;
   margin-right: 10px;
+}
+
+/* ---------- The pixel-art Old Town map ---------- */
+
+.pixel-map-wrap {
+  min-width: 0;
+}
+
+.pixel-map {
+  position: relative;
+  overflow: hidden;
+  border: 3px solid #3b2433;
+  border-radius: 12px;
+}
+
+.map-note {
+  position: absolute;
+  transform: translateX(-50%);
+  font-size: 0.75rem;
+  font-style: italic;
+  color: var(--sea);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.map-marker {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transform: translate(-50%, -26px);
+}
+
+.map-pin {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  padding: 0;
+  border: 3px solid #3b2433;
+  border-radius: 50%;
+  background: #fffaf0;
+  box-shadow: 0 3px 0 rgba(59, 36, 51, 0.35);
+}
+
+.map-pin.home {
+  background: #f9dcd4;
+  border-color: var(--brick);
+}
+
+.map-pin[aria-pressed='true'] {
+  outline: 4px solid var(--amber);
+  outline-offset: 1px;
+}
+
+.map-name {
+  margin-top: 3px;
+  padding: 1px 8px;
+  border: 2px solid #3b2433;
+  border-radius: 8px;
+  background: rgba(255, 250, 240, 0.95);
+  font-size: 0.8rem;
+  font-weight: 700;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.map-rivals {
+  position: absolute;
+  top: -8px;
+  left: 40px;
+  display: flex;
+  gap: 3px;
+  pointer-events: none;
+}
+
+.map-badge {
+  padding: 1px 5px;
+  border-radius: 6px;
+  background: var(--sea);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.map-mewa {
+  position: absolute;
+  top: -6px;
+  right: 46px;
+  pointer-events: none;
 }
