@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { balance } from '../data/balance';
-import { dayOffUnavailableReason, hire, toggleDayOff } from './actions';
+import { courseCost, courseUnavailableReason, dayOffUnavailableReason, giveRaise, hire, toggleCourse, toggleDayOff } from './actions';
 import { newGame, openRestaurant, teamWages, type GameState } from './game';
-import { moodOf, moraleAfterDay, staffOf } from './staff';
+import { fairWageOf, moodOf, moraleAfterDay, specialCandidate, staffOf, underpaid } from './staff';
 import type { Employee } from './types';
 
 const m = balance.staff.morale;
@@ -113,5 +113,67 @@ describe('days off', () => {
     expect(teamWages(off)).toBe(teamWages(state));
 
     expect(krystyna(toggleDayOff(off, chef.id, state.day)).dayOff).toBeUndefined();
+  });
+});
+
+describe('training and fair wages', () => {
+  it('costs more for each level reached, and needs someone left to do the job', () => {
+    const state = newGame(1);
+    const chef = krystyna(state);
+    expect(courseCost(chef, 'skill')).toBe(balance.staff.training.costPerLevel * (chef.skill + 1));
+    expect(courseUnavailableReason(state, chef.id, 'skill', state.day)).toBe('Someone has to cook');
+    const two = twoChefs();
+    expect(courseUnavailableReason(two, chef.id, 'skill', two.day)).toBeNull();
+    expect(courseUnavailableReason({ ...two, cash: 0 }, chef.id, 'skill', two.day)).toBe('Not enough cash');
+    const best = { ...two, team: two.team.map((p) => (p.id === chef.id ? { ...p, skill: 5 } : p)) };
+    expect(courseUnavailableReason(best, chef.id, 'skill', two.day)).toBe('Already the best');
+    const off = toggleDayOff(two, chef.id, two.day);
+    expect(courseUnavailableReason(off, chef.id, 'skill', two.day)).toBe('Has the day off');
+  });
+
+  it('is paid when booked, and cancelling gives the money back', () => {
+    const state = twoChefs();
+    const chef = krystyna(state);
+    const booked = toggleCourse(state, chef.id, 'speed', state.day);
+    expect(krystyna(booked).course).toEqual({ day: state.day, stat: 'speed' });
+    expect(booked.cash).toBe(state.cash - courseCost(chef, 'speed'));
+    expect(dayOffUnavailableReason(booked, chef.id, state.day)).toBe('On a course that day');
+    const cancelled = toggleCourse(booked, chef.id, 'speed', state.day);
+    expect(krystyna(cancelled).course).toBeUndefined();
+    expect(cancelled.cash).toBe(state.cash);
+  });
+
+  it('keeps them away for the day, and brings them back a level better, happier and worth more', () => {
+    const state = toggleCourse(twoChefs(), krystyna(twoChefs()).id, 'skill', 0);
+    const chef = krystyna(state);
+    expect(openRestaurant(state).progress.restaurants[0].chefs).toHaveLength(1);
+    const after = moraleAfterDay(state.team, 0, { ids: state.team.map((p) => p.id), sick: [] });
+    const back = after.team.find((p) => p.id === chef.id)!;
+    expect(back.skill).toBe(chef.skill + 1);
+    expect(back.morale).toBe(chef.morale + balance.staff.training.morale);
+    expect(back.course).toBeUndefined();
+    expect(after.news.join(' ')).toContain(`skill ${chef.skill + 1}`);
+    expect(underpaid(back)).toBe(true);
+  });
+
+  it('tires the underpaid faster, until a raise to the fair wage cheers them up', () => {
+    const state = twoChefs();
+    const chef = { ...krystyna(state), skill: 4, trait: 'calm' as const, morale: 50 };
+    const team = state.team.map((p) => (p.id === chef.id ? chef : p));
+    const worked = moraleAfterDay([chef], 3, { ids: [chef.id], sick: [] }).team[0];
+    expect(worked.morale).toBe(50 - m.workDay - m.underpaidWorkDay);
+
+    const raised = giveRaise({ ...state, team }, chef.id);
+    const after = krystyna(raised);
+    expect(after.wage).toBe(fairWageOf(chef));
+    expect(after.morale).toBe(50 + m.raise);
+    expect(underpaid(after)).toBe(false);
+    // Nothing to raise when the wage is already fair.
+    expect(giveRaise(raised, chef.id)).toBe(raised);
+  });
+
+  it('never counts Tomek as underpaid: his low wage is his own idea', () => {
+    const tomek = specialCandidate('tomek', 99);
+    expect(underpaid({ ...tomek, skill: 5, speed: 5 })).toBe(false);
   });
 });

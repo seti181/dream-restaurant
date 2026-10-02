@@ -294,6 +294,12 @@ export const balance = {
     candidatePool: { min: 3, max: 4 },
     /** How common each level (1 to 5) is among candidates. */
     candidateLevelWeights: [1, 3, 4, 3, 1],
+    /** One-day courses: a level up in skill or speed costs this many złoty for each level reached (3 → 4 costs 4×)... */
+    training: {
+      costPerLevel: 1_000,
+      /** ...and people enjoy learning something new: morale. */
+      morale: 5,
+    },
     /** How everyone feels about the job, from 0 to 100. See project.md section 6.14 (staff growth). */
     morale: {
       /** New starters, and the team you start with. */
@@ -308,6 +314,10 @@ export const balance = {
       /** Below this, someone is tired, and works this much slower (never below 1). */
       tiredBelow: 40,
       tiredSpeedLoss: 0.5,
+      /** Lost on top of a day's work by someone paid less than their fair wage (after a course, say)... */
+      underpaidWorkDay: 1.5,
+      /** ...and won by a raise to the fair wage. */
+      raise: 10,
       /** Below this, they're worn out, and each morning they may call in sick. */
       wornOutBelow: 15,
       sickChance: 0.5,

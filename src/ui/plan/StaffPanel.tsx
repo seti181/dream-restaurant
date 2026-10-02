@@ -2,10 +2,10 @@
 
 import { useState, type ReactNode } from 'react';
 import { balance } from '../../data/balance';
-import { CUISINE_NAMES, TRAITS } from '../../data/staff';
-import { dayOffUnavailableReason } from '../../sim/actions';
+import { COURSES, CUISINE_NAMES, TRAITS } from '../../data/staff';
+import { courseCost, courseUnavailableReason, dayOffUnavailableReason } from '../../sim/actions';
 import { teamWages } from '../../sim/game';
-import { moodOf, offOn, type Mood } from '../../sim/staff';
+import { fairWageOf, moodOf, offOn, underpaid, type Mood } from '../../sim/staff';
 import type { Employee } from '../../sim/types';
 import { money } from '../format';
 import { dayOffDay, useGame } from '../store';
@@ -67,6 +67,11 @@ function PersonCard({ person, action, onTeam = false }: { person: Employee; acti
             <dd>
               <Morale person={person} />
             </dd>
+            <dt>Training</dt>
+            <dd className="courses">
+              <CourseButton person={person} stat="skill" />
+              <CourseButton person={person} stat="speed" />
+            </dd>
           </>
         )}
         {trait && (
@@ -80,8 +85,14 @@ function PersonCard({ person, action, onTeam = false }: { person: Employee; acti
       </dl>
       <p className="bio">“{person.bio}”</p>
       <footer>
-        <span className="wage">{money(person.wage)} a day</span>
-        <span className="person-actions">{action}</span>
+        <span className="wage">
+          {money(person.wage)} a day
+          {onTeam && underpaid(person) && <span className="fair-wage"> · worth {money(fairWageOf(person))}</span>}
+        </span>
+        <span className="person-actions">
+          {onTeam && underpaid(person) && <RaiseButton person={person} />}
+          {action}
+        </span>
       </footer>
     </article>
   );
@@ -98,6 +109,38 @@ function GoodbyeButton({ person }: { person: Employee }) {
       onBlur={() => setConfirming(false)}
     >
       {confirming ? 'Tap again to say goodbye' : 'Say goodbye'}
+    </button>
+  );
+}
+
+function CourseButton({ person, stat }: { person: Employee; stat: 'skill' | 'speed' }) {
+  const game = useGame((s) => s.game);
+  const open = useGame((s) => s.phase === 'open');
+  const toggleCourse = useGame((s) => s.toggleCourse);
+  const day = dayOffDay();
+  const course = COURSES[person.role][stat];
+  const booked = person.course?.day === day && person.course.stat === stat;
+  const reason = booked ? null : courseUnavailableReason(game, person.id, stat, day);
+  // Only the course they're booked on shows when it's that day; the other one waits.
+  if (person.course && !booked) return null;
+  return (
+    <button
+      type="button"
+      className={booked ? 'secondary chosen' : 'secondary'}
+      disabled={reason !== null}
+      onClick={() => toggleCourse(person.id, stat)}
+    >
+      {booked ? `📚 ${course.name} ${open ? 'tomorrow' : 'today'} ✓` : `📚 ${course.name}`}
+      <span className="small">{booked ? 'tap to cancel' : (reason ?? `${money(courseCost(person, stat))} · ${stat} +1`)}</span>
+    </button>
+  );
+}
+
+function RaiseButton({ person }: { person: Employee }) {
+  const giveRaise = useGame((s) => s.giveRaise);
+  return (
+    <button type="button" className="secondary" onClick={() => giveRaise(person.id)}>
+      Raise to {money(fairWageOf(person))}
     </button>
   );
 }
@@ -136,7 +179,8 @@ export function StaffPanel() {
         {game.team.length > 0 && (
           <p className="muted small">
             Every day’s work tires people a little; a day off puts them right (+{balance.staff.morale.dayOff} morale). Tired
-            people work a little slower, so give days off on quiet days, when someone else can cover.
+            people work a little slower, so give days off on quiet days, when someone else can cover. A one-day course makes
+            someone a level better, and worth a fair raise.
           </p>
         )}
         <div className="people">

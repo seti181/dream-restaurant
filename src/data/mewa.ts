@@ -5,7 +5,7 @@ import type { GroupId } from './groups';
 
 // ---------- Tutorial tips (the first three days) ----------
 
-export type TipId = 'welcome' | 'speed' | 'report' | 'prices' | 'hiring' | 'helpTables' | 'happyHour' | 'farewell' | 'daysOff';
+export type TipId = 'welcome' | 'speed' | 'report' | 'prices' | 'hiring' | 'helpTables' | 'happyHour' | 'farewell' | 'daysOff' | 'training';
 
 export interface Tip {
   /** When the tip appears: on this day, on this screen. */
@@ -14,7 +14,7 @@ export interface Tip {
   text: string;
 }
 
-export const TIP_IDS: readonly TipId[] = ['welcome', 'speed', 'report', 'prices', 'hiring', 'helpTables', 'happyHour', 'farewell', 'daysOff'];
+export const TIP_IDS: readonly TipId[] = ['welcome', 'speed', 'report', 'prices', 'hiring', 'helpTables', 'happyHour', 'farewell', 'daysOff', 'training'];
 
 export const TIPS: Record<TipId, Tip> = {
   welcome: {
@@ -59,6 +59,13 @@ export const TIPS: Record<TipId, Tip> = {
     text:
       'Your team works every day, and it shows. Tired people cook and serve a little slower. ' +
       'Give someone a day off in the Staff tab on a quiet day, when someone else can cover.',
+  },
+  training: {
+    day: 9,
+    screen: 'plan',
+    text:
+      'Good people can get even better. In the Staff tab, send someone on a one-day course for skill or speed. ' +
+      'Afterwards they’re worth a little more, so remember the raise, or they’ll tire faster.',
   },
   helpTables: {
     day: 1,
@@ -180,6 +187,10 @@ export const HELP: { title: string; text: string }[] = [
   {
     title: 'Morale and days off',
     text: 'Every day of work tires people a little; a day off puts them right. Below 40 morale, someone is tired and works a little slower. Below 15 they’re worn out and may stay in bed, if someone else can do their job. Cheerful people tire more slowly. Days off are paid, and someone has to be left to cook and to serve.',
+  },
+  {
+    title: 'Training and fair wages',
+    text: 'A one-day course makes someone a level better in skill or speed. The higher the level, the dearer the course, and they’re away that day. A better person is worth a higher wage: until you give them the raise, they tire faster.',
   },
   {
     title: 'Regulars',

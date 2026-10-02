@@ -33,7 +33,7 @@ import { regularsDay, regularsNews, type RegularStories, type RegularVisitReport
 import { planRivalWeek, rivalAwarenessToday } from './rivalAi';
 import { chance, createRng, pick, type RngState } from './rng';
 import { createPlayerRestaurant, createRivalRestaurant } from './setup';
-import { generateCandidates, moodOf, moraleAfterDay, offOn, specialCandidate, specialsLookingForWork, starterTeam, staffOf } from './staff';
+import { awayOn, generateCandidates, moodOf, moraleAfterDay, specialCandidate, specialsLookingForWork, starterTeam, staffOf } from './staff';
 import type { Employee, PartyOutcome, Restaurant, Review, SatisfactionFactors } from './types';
 
 /** A line of news for the morning: an event starting, a surprise, or a rival's move. */
@@ -302,7 +302,7 @@ export function awarenessToday(state: GameState): Record<GroupId, number> {
 export function restingFloor(state: GameState): FloorView {
   const player = playerOf(state);
   const terraceTables = terraceOpenOn(state, state.day) ? terraceTablesBuilt(state) : 0;
-  const atWork = state.team.filter((person) => !offOn(person, state.day));
+  const atWork = state.team.filter((person) => !awayOn(person, state.day));
   return {
     location: player.location,
     tables: Array<null>(player.tables + terraceTables).fill(null),
@@ -331,13 +331,13 @@ export function openRestaurant(state: GameState): OpenDay {
     const special = person.special && SPECIAL_STAFF[person.special];
     if (special?.absenceChance && chance(rng, special.absenceChance)) {
       absent.push({ id: person.id, name: person.name, excuse: pick(rng, special.excuses ?? []), special: person.special });
-    } else if (moodOf(person.morale) === 'wornOut' && !offOn(person, state.day) && chance(rng, balance.staff.morale.sickChance)) {
+    } else if (moodOf(person.morale) === 'wornOut' && !awayOn(person, state.day) && chance(rng, balance.staff.morale.sickChance)) {
       // Worn out: they stay in bed today, unless there's nobody else to do their job.
-      const cover = state.team.some((p) => p.role === person.role && p.id !== person.id && !offOn(p, state.day));
+      const cover = state.team.some((p) => p.role === person.role && p.id !== person.id && !awayOn(p, state.day));
       if (cover) absent.push({ id: person.id, name: person.name, excuse: `${person.name} is worn out and stayed in bed today.`, sick: true });
     }
   }
-  const working = state.team.filter((person) => !absent.some((a) => a.id === person.id) && !offOn(person, state.day));
+  const working = state.team.filter((person) => !absent.some((a) => a.id === person.id) && !awayOn(person, state.day));
   const today = {
     ...player,
     terraceTables,

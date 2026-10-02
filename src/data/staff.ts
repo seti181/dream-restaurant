@@ -61,6 +61,18 @@ export const WAITER_BIOS = [
   'Writes poems about the specials on the back of order slips.',
 ];
 
+/** One-day courses that make someone a level better; the cost is in balance.ts (balance.staff.training). */
+export const COURSES: Record<'chef' | 'waiter', Record<'skill' | 'speed', { name: string; done: string }>> = {
+  chef: {
+    skill: { name: 'Cooking course', done: 'learned three new ways with dill at the culinary school' },
+    speed: { name: 'Kitchen rush workshop', done: 'came back from the kitchen rush workshop chopping twice as fast' },
+  },
+  waiter: {
+    skill: { name: 'Service and wine course', done: 'came back from the service course pouring wine like a sommelier' },
+    speed: { name: 'Fast floor workshop', done: 'learned to carry four plates and a smile at a jog' },
+  },
+};
+
 /** The team you start with. */
 export const STARTER_TEAM = [
   {

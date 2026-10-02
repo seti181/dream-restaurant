@@ -37,6 +37,8 @@ export interface Employee extends Staff {
   morale: number;
   /** A day they have off (the day number), if one is planned. */
   dayOff?: number;
+  /** A one-day course they're booked on: the day, and what it improves. */
+  course?: { day: number; stat: 'skill' | 'speed' };
 }
 
 /** The player's restaurant or a rival. Both follow exactly the same rules. */

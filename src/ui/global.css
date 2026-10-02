@@ -526,6 +526,25 @@ button {
   font-variant-numeric: tabular-nums;
 }
 
+.fair-wage {
+  color: var(--brick);
+  font-weight: 400;
+}
+
+.courses {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.courses button {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 4px 12px;
+  text-align: left;
+}
+
 .person-actions {
   display: flex;
   flex-wrap: wrap;

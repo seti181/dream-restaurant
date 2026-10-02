@@ -13,7 +13,7 @@ import { playerOf, type Difficulty, type GameState } from './game';
 import { dateOf, daysInMonth, nextDayOn } from './calendar';
 import { ambianceWith } from './interior';
 import { recipeKey } from './menu';
-import { offOn, staffOf } from './staff';
+import { awayOn, fairWageOf, offOn, onCourseOn, staffOf, underpaid } from './staff';
 import type { Employee, Restaurant, Supplier } from './types';
 
 function withPlayer(state: GameState, changes: Partial<Restaurant>): GameState {
@@ -115,13 +115,19 @@ export function letGo(state: GameState, employeeId: number): GameState {
   return withTeam(state, state.team.filter((person) => person.id !== employeeId));
 }
 
-/** Why this person can't have that day off, or null if they can: someone has to cook and serve. */
+/** Why this person can't be away from work that day, or null if they can: someone has to cook and serve. */
+function awayUnavailableReason(state: GameState, person: Employee, day: number): string | null {
+  const cover = state.team.filter((p) => p.role === person.role && p.id !== person.id && !awayOn(p, day));
+  if (cover.length === 0) return person.role === 'chef' ? 'Someone has to cook' : 'Someone has to serve';
+  return null;
+}
+
+/** Why this person can't have that day off, or null if they can. */
 export function dayOffUnavailableReason(state: GameState, employeeId: number, day: number): string | null {
   const person = state.team.find((p) => p.id === employeeId);
   if (!person) return 'Not on the team';
-  const cover = state.team.filter((p) => p.role === person.role && p.id !== person.id && !offOn(p, day));
-  if (cover.length === 0) return person.role === 'chef' ? 'Someone has to cook' : 'Someone has to serve';
-  return null;
+  if (onCourseOn(person, day)) return 'On a course that day';
+  return awayUnavailableReason(state, person, day);
 }
 
 /** Gives someone that day off, or takes the day off back if they already have it. */
@@ -134,6 +140,43 @@ export function toggleDayOff(state: GameState, employeeId: number, day: number):
   }
   if (dayOffUnavailableReason(state, employeeId, day) !== null) return state;
   return withTeam(state, state.team.map((p) => (p.id === employeeId ? { ...p, dayOff: day } : p)));
+}
+
+/** What a course costs: so much for each level it takes someone to. */
+export function courseCost(person: Employee, stat: 'skill' | 'speed'): number {
+  return balance.staff.training.costPerLevel * (person[stat] + 1);
+}
+
+/** Why this person can't go on that course on that day, or null if they can. */
+export function courseUnavailableReason(state: GameState, employeeId: number, stat: 'skill' | 'speed', day: number): string | null {
+  const person = state.team.find((p) => p.id === employeeId);
+  if (!person) return 'Not on the team';
+  if (person[stat] >= 5) return 'Already the best';
+  if (person.course) return 'Already booked on a course';
+  if (offOn(person, day)) return 'Has the day off';
+  return awayUnavailableReason(state, person, day) ?? cantAfford(state, courseCost(person, stat));
+}
+
+/** Books someone on a one-day course (paid now), or cancels it with the money back. */
+export function toggleCourse(state: GameState, employeeId: number, stat: 'skill' | 'speed', day: number): GameState {
+  const person = state.team.find((p) => p.id === employeeId);
+  if (!person) return state;
+  if (person.course?.day === day && person.course.stat === stat) {
+    const { course: _cancelled, ...rest } = person;
+    const team = state.team.map((p) => (p.id === employeeId ? rest : p));
+    return { ...withTeam(state, team), cash: state.cash + courseCost(person, stat) };
+  }
+  if (courseUnavailableReason(state, employeeId, stat, day) !== null) return state;
+  const team = state.team.map((p) => (p.id === employeeId ? { ...p, course: { day, stat } } : p));
+  return { ...withTeam(state, team), cash: state.cash - courseCost(person, stat) };
+}
+
+/** Raises someone's wage to what their skill and speed are worth, which cheers them up. */
+export function giveRaise(state: GameState, employeeId: number): GameState {
+  const person = state.team.find((p) => p.id === employeeId);
+  if (!person || !underpaid(person)) return state;
+  const morale = Math.min(100, person.morale + balance.staff.morale.raise);
+  return withTeam(state, state.team.map((p) => (p.id === employeeId ? { ...p, wage: fairWageOf(p), morale } : p)));
 }
 
 // ---------- Kitchen ----------

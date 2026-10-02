@@ -3,6 +3,7 @@
 import { balance } from '../data/balance';
 import {
   CHEF_BIOS,
+  COURSES,
   CUISINES,
   FIRST_NAMES,
   HOMETOWNS,
@@ -43,6 +44,21 @@ export function moodOf(morale: number): Mood {
 /** True if this person has the given day off. */
 export const offOn = (person: Employee, day: number) => person.dayOff === day;
 
+/** True if this person is booked on a course on the given day. */
+export const onCourseOn = (person: Employee, day: number) => person.course?.day === day;
+
+/** True if this person isn't at work that day: a day off, or a course. */
+export const awayOn = (person: Employee, day: number) => offOn(person, day) || onCourseOn(person, day);
+
+/** What someone's skill and speed are worth (Tomek's famously low wage is his own idea, so it's always fair). */
+export function fairWageOf(person: Employee): number {
+  if (person.special && SPECIAL_STAFF[person.special].wage !== null) return person.wage;
+  return wageOf(person.role, person);
+}
+
+/** True if someone is paid less than their skill and speed are worth (after a course, say). */
+export const underpaid = (person: Employee) => person.wage < fairWageOf(person);
+
 /**
  * The team after a day: those who worked are a little more tired, those who rested (a day off,
  * or a day in bed) feel better. Returns the team and a line for the day report about anyone
@@ -60,9 +76,18 @@ export function moraleAfterDay(
     // Hired during the day: they start tomorrow.
     if (!morning.ids.includes(person.id)) return person;
     const rested = offOn(person, day) || morning.sick.includes(person.id);
-    const tiring = person.trait === 'cheerful' ? m.cheerfulWorkDay : m.workDay;
-    const morale = Math.max(0, Math.min(100, person.morale + (rested ? m.dayOff : -tiring)));
+    const course = onCourseOn(person, day) ? person.course! : null;
+    const tiring = (person.trait === 'cheerful' ? m.cheerfulWorkDay : m.workDay) + (underpaid(person) ? m.underpaidWorkDay : 0);
+    const change = rested ? m.dayOff : course ? balance.staff.training.morale : -tiring;
+    const morale = Math.max(0, Math.min(100, person.morale + change));
     if (offOn(person, day)) news.push(`${person.name} had the day off and comes back rested.`);
+    // Back from a course a level better, and worth a little more.
+    const learned = course ? { [course.stat]: Math.min(5, person[course.stat] + 1) } : {};
+    if (course) {
+      const fair = fairWageOf({ ...person, ...learned });
+      const wage = fair > person.wage ? ` A fair wage for that is now ${fair} zł a day.` : '';
+      news.push(`${person.name} ${COURSES[person.role][course.stat].done}: ${course.stat} ${person[course.stat] + 1}!${wage}`);
+    }
     const before = moodOf(person.morale);
     const now = moodOf(morale);
     if (now === 'tired' && before !== 'tired' && before !== 'wornOut') {
@@ -70,8 +95,13 @@ export function moraleAfterDay(
     } else if (now === 'wornOut' && before !== 'wornOut') {
       news.push(`${person.name} is worn out and might call in sick. A day off, please!`);
     }
-    const { dayOff: _done, ...rest } = person;
-    return person.dayOff !== undefined && person.dayOff <= day ? { ...rest, morale } : { ...person, morale };
+    const { dayOff, course: booked, ...rest } = { ...person, ...learned };
+    return {
+      ...rest,
+      morale,
+      ...(dayOff !== undefined && dayOff > day ? { dayOff } : {}),
+      ...(booked && booked.day > day ? { course: booked } : {}),
+    };
   });
   return { team: after, news };
 }
