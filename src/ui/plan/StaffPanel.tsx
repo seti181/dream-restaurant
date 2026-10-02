@@ -1,11 +1,35 @@
 // The team and this week's job candidates.
 
 import { useState, type ReactNode } from 'react';
+import { balance } from '../../data/balance';
 import { CUISINE_NAMES, TRAITS } from '../../data/staff';
+import { dayOffUnavailableReason } from '../../sim/actions';
 import { teamWages } from '../../sim/game';
+import { moodOf, offOn, type Mood } from '../../sim/staff';
 import type { Employee } from '../../sim/types';
 import { money } from '../format';
-import { useGame } from '../store';
+import { dayOffDay, useGame } from '../store';
+
+const MOODS: Record<Mood, string> = {
+  happy: '😊 In good spirits',
+  fine: '🙂 Fine',
+  tired: '😩 Tired: works a little slower',
+  wornOut: '🤒 Worn out: may call in sick',
+};
+
+/** How someone feels about the job: a little bar and a word. */
+function Morale({ person }: { person: Employee }) {
+  const mood = moodOf(person.morale);
+  const low = mood === 'tired' || mood === 'wornOut';
+  return (
+    <span className="morale">
+      <span className="morale-bar" aria-hidden="true">
+        <span className={low ? 'low' : undefined} style={{ width: `${person.morale}%` }} />
+      </span>
+      {MOODS[mood]}
+    </span>
+  );
+}
 
 /** "●●●○○" for a level from 1 to 5. */
 function Dots({ level }: { level: number }) {
@@ -17,7 +41,7 @@ function Dots({ level }: { level: number }) {
   );
 }
 
-function PersonCard({ person, action }: { person: Employee; action: ReactNode }) {
+function PersonCard({ person, action, onTeam = false }: { person: Employee; action: ReactNode; onTeam?: boolean }) {
   const trait = person.trait ? TRAITS[person.trait] : null;
   return (
     <article className="person">
@@ -37,6 +61,14 @@ function PersonCard({ person, action }: { person: Employee; action: ReactNode })
         <dd>
           <Dots level={person.speed} />
         </dd>
+        {onTeam && (
+          <>
+            <dt>Morale</dt>
+            <dd>
+              <Morale person={person} />
+            </dd>
+          </>
+        )}
         {trait && (
           <>
             <dt>Trait</dt>
@@ -49,7 +81,7 @@ function PersonCard({ person, action }: { person: Employee; action: ReactNode })
       <p className="bio">“{person.bio}”</p>
       <footer>
         <span className="wage">{money(person.wage)} a day</span>
-        {action}
+        <span className="person-actions">{action}</span>
       </footer>
     </article>
   );
@@ -70,6 +102,26 @@ function GoodbyeButton({ person }: { person: Employee }) {
   );
 }
 
+function DayOffButton({ person }: { person: Employee }) {
+  const game = useGame((s) => s.game);
+  const open = useGame((s) => s.phase === 'open');
+  const toggleDayOff = useGame((s) => s.toggleDayOff);
+  const day = dayOffDay();
+  const when = open ? 'tomorrow' : 'today';
+  const off = offOn(person, day);
+  const reason = off ? null : dayOffUnavailableReason(game, person.id, day);
+  return (
+    <button
+      type="button"
+      className={off ? 'secondary chosen' : 'secondary'}
+      disabled={reason !== null}
+      onClick={() => toggleDayOff(person.id)}
+    >
+      {off ? `🛌 Off ${when} ✓` : reason ?? `Day off ${when}`}
+    </button>
+  );
+}
+
 export function StaffPanel() {
   const game = useGame((s) => s.game);
   const hire = useGame((s) => s.hire);
@@ -81,9 +133,25 @@ export function StaffPanel() {
           Your team <span className="muted">· {money(teamWages(game))} a day in wages</span>
         </h2>
         {game.team.length === 0 && <p className="note warning">Nobody works here yet. Hire someone on the right!</p>}
+        {game.team.length > 0 && (
+          <p className="muted small">
+            Every day’s work tires people a little; a day off puts them right (+{balance.staff.morale.dayOff} morale). Tired
+            people work a little slower, so give days off on quiet days, when someone else can cover.
+          </p>
+        )}
         <div className="people">
           {game.team.map((person) => (
-            <PersonCard key={person.id} person={person} action={<GoodbyeButton person={person} />} />
+            <PersonCard
+              key={person.id}
+              person={person}
+              onTeam
+              action={
+                <>
+                  <DayOffButton person={person} />
+                  <GoodbyeButton person={person} />
+                </>
+              }
+            />
           ))}
         </div>
       </section>

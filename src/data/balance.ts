@@ -294,6 +294,24 @@ export const balance = {
     candidatePool: { min: 3, max: 4 },
     /** How common each level (1 to 5) is among candidates. */
     candidateLevelWeights: [1, 3, 4, 3, 1],
+    /** How everyone feels about the job, from 0 to 100. See project.md section 6.14 (staff growth). */
+    morale: {
+      /** New starters, and the team you start with. */
+      start: 80,
+      /** Lost for every day worked (Cheerful people tire more slowly)... */
+      workDay: 1.5,
+      cheerfulWorkDay: 1,
+      /** ...and won back by a day off (or a day in bed). */
+      dayOff: 15,
+      /** From this, someone is in good spirits (it shows; no other effect). */
+      happyFrom: 70,
+      /** Below this, someone is tired, and works this much slower (never below 1). */
+      tiredBelow: 40,
+      tiredSpeedLoss: 0.5,
+      /** Below this, they're worn out, and each morning they may call in sick. */
+      wornOutBelow: 15,
+      sickChance: 0.5,
+    },
   },
 
   /** What changes between Relaxed and Normal. See project.md section 5. */

@@ -33,6 +33,10 @@ export interface Employee extends Staff {
   bio: string;
   /** Złoty per day. */
   wage: number;
+  /** How they feel about the job, 0–100 (see balance.staff.morale). */
+  morale: number;
+  /** A day they have off (the day number), if one is planned. */
+  dayOff?: number;
 }
 
 /** The player's restaurant or a rival. Both follow exactly the same rules. */

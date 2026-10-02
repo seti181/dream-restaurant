@@ -2,6 +2,7 @@
 // prints the results. Run with `npm run simulate`. See project.md section 13.
 // It uses the real game loop, so weather, events and the rivals' weekly moves all play their part.
 
+import { balance } from '../src/data/balance';
 import { RIVAL_IDS, RIVALS, type RivalId } from '../src/data/rivals';
 import { isInSeason, isMonday } from '../src/sim/calendar';
 import { wageOf } from '../src/sim/finance';
@@ -60,6 +61,7 @@ function startingGame(strategy: Strategy, seed: number): GameState {
     role,
     name: `${role} ${i + 1}`,
     bio: '',
+    morale: balance.staff.morale.start,
     wage: wageOf(role, person),
   });
   const team = [...strategy.chefs.map(hire('chef')), ...strategy.waiters.map(hire('waiter'))];

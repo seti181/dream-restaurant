@@ -13,7 +13,7 @@ import { playerOf, type Difficulty, type GameState } from './game';
 import { dateOf, daysInMonth, nextDayOn } from './calendar';
 import { ambianceWith } from './interior';
 import { recipeKey } from './menu';
-import { staffOf } from './staff';
+import { offOn, staffOf } from './staff';
 import type { Employee, Restaurant, Supplier } from './types';
 
 function withPlayer(state: GameState, changes: Partial<Restaurant>): GameState {
@@ -113,6 +113,27 @@ export function hire(state: GameState, candidateId: number): GameState {
 export function letGo(state: GameState, employeeId: number): GameState {
   if (!state.team.some((person) => person.id === employeeId)) return state;
   return withTeam(state, state.team.filter((person) => person.id !== employeeId));
+}
+
+/** Why this person can't have that day off, or null if they can: someone has to cook and serve. */
+export function dayOffUnavailableReason(state: GameState, employeeId: number, day: number): string | null {
+  const person = state.team.find((p) => p.id === employeeId);
+  if (!person) return 'Not on the team';
+  const cover = state.team.filter((p) => p.role === person.role && p.id !== person.id && !offOn(p, day));
+  if (cover.length === 0) return person.role === 'chef' ? 'Someone has to cook' : 'Someone has to serve';
+  return null;
+}
+
+/** Gives someone that day off, or takes the day off back if they already have it. */
+export function toggleDayOff(state: GameState, employeeId: number, day: number): GameState {
+  const person = state.team.find((p) => p.id === employeeId);
+  if (!person) return state;
+  if (offOn(person, day)) {
+    const { dayOff: _undo, ...rest } = person;
+    return withTeam(state, state.team.map((p) => (p.id === employeeId ? rest : p)));
+  }
+  if (dayOffUnavailableReason(state, employeeId, day) !== null) return state;
+  return withTeam(state, state.team.map((p) => (p.id === employeeId ? { ...p, dayOff: day } : p)));
 }
 
 // ---------- Kitchen ----------

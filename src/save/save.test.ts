@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { newGame, openRestaurant, playTick, closeDay } from '../sim/game';
+import { newGame, openRestaurant, playTick, closeDay, type GameState } from '../sim/game';
 import { exportSaveCode, importSaveCode, loadGame, migrate, saveGame, SAVE_VERSION, type SaveStorage } from './save';
 
 /** A stand-in for the browser's localStorage. */
@@ -257,5 +257,14 @@ describe('upgrading version 12 saves (from before the named regulars)', () => {
     const game = newGame(59);
     const { regulars: _r, ...old } = game;
     expect(migrate({ saveVersion: 12, savedAt: '', game: old })).toEqual(game);
+  });
+});
+
+describe('upgrading version 13 saves (from before morale)', () => {
+  it('starts everyone in good spirits', () => {
+    const game = newGame(60);
+    const noMorale = (people: GameState['team']) => people.map(({ morale: _m, ...person }) => person);
+    const old = { ...game, team: noMorale(game.team), candidates: noMorale(game.candidates) };
+    expect(migrate({ saveVersion: 13, savedAt: '', game: old })).toEqual(game);
   });
 });

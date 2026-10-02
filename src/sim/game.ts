@@ -33,7 +33,7 @@ import { regularsDay, regularsNews, type RegularStories, type RegularVisitReport
 import { planRivalWeek, rivalAwarenessToday } from './rivalAi';
 import { chance, createRng, pick, type RngState } from './rng';
 import { createPlayerRestaurant, createRivalRestaurant } from './setup';
-import { generateCandidates, specialCandidate, specialsLookingForWork, starterTeam, staffOf } from './staff';
+import { generateCandidates, moodOf, moraleAfterDay, offOn, specialCandidate, specialsLookingForWork, starterTeam, staffOf } from './staff';
 import type { Employee, PartyOutcome, Restaurant, Review, SatisfactionFactors } from './types';
 
 /** A line of news for the morning: an event starting, a surprise, or a rival's move. */
@@ -117,7 +117,7 @@ export interface OpenDay {
   /** The day's own copy of the random generator; handed back to the game at closing. */
   rng: RngState;
   /** Team members who didn't turn up today, and why. */
-  absent: { id: number; name: string; excuse: string; special?: SpecialStaffId }[];
+  absent: { id: number; name: string; excuse: string; special?: SpecialStaffId; sick?: boolean }[];
   /** The team as it was this morning: they work (and are paid) today, whoever is hired or let go meanwhile. */
   team: Employee[];
   /** Choice cards: when they come, the one on screen, and what was answered. */
@@ -302,13 +302,14 @@ export function awarenessToday(state: GameState): Record<GroupId, number> {
 export function restingFloor(state: GameState): FloorView {
   const player = playerOf(state);
   const terraceTables = terraceOpenOn(state, state.day) ? terraceTablesBuilt(state) : 0;
+  const atWork = state.team.filter((person) => !offOn(person, state.day));
   return {
     location: player.location,
     tables: Array<null>(player.tables + terraceTables).fill(null),
     insideTables: player.tables,
     terraceTables: terraceTablesBuilt(state),
-    chefsBusy: state.team.filter((person) => person.role === 'chef').map(() => false),
-    waiters: state.team.filter((person) => person.role === 'waiter').map((person) => person.special ?? null),
+    chefsBusy: atWork.filter((person) => person.role === 'chef').map(() => false),
+    waiters: atWork.filter((person) => person.role === 'waiter').map((person) => person.special ?? null),
     ordersWaiting: 0,
     walkouts: [],
     atTheDoor: [],
@@ -330,9 +331,13 @@ export function openRestaurant(state: GameState): OpenDay {
     const special = person.special && SPECIAL_STAFF[person.special];
     if (special?.absenceChance && chance(rng, special.absenceChance)) {
       absent.push({ id: person.id, name: person.name, excuse: pick(rng, special.excuses ?? []), special: person.special });
+    } else if (moodOf(person.morale) === 'wornOut' && !offOn(person, state.day) && chance(rng, balance.staff.morale.sickChance)) {
+      // Worn out: they stay in bed today, unless there's nobody else to do their job.
+      const cover = state.team.some((p) => p.role === person.role && p.id !== person.id && !offOn(p, state.day));
+      if (cover) absent.push({ id: person.id, name: person.name, excuse: `${person.name} is worn out and stayed in bed today.`, sick: true });
     }
   }
-  const working = state.team.filter((person) => !absent.some((a) => a.id === person.id));
+  const working = state.team.filter((person) => !absent.some((a) => a.id === person.id) && !offOn(person, state.day));
   const today = {
     ...player,
     terraceTables,
@@ -651,6 +656,13 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
     reputation: addToGroups(playerAfter.reputation, regularsToday.reputation),
     awareness: addToGroups(playerAfter.awareness, regularsToday.awareness),
   };
+  // A day's work makes people a little tired; a day off (or in bed) puts them right.
+  const morale = moraleAfterDay(state.team, state.day, {
+    ids: open.team.map((person) => person.id),
+    sick: open.absent.filter((a) => a.sick).map((a) => a.id),
+  });
+  staffNews.push(...morale.news);
+  playerAfter = { ...playerAfter, chefs: staffOf(morale.team, 'chef'), waiters: staffOf(morale.team, 'waiter') };
   // Whoever worked today is paid today; anyone hired during the day starts tomorrow.
   const wages = teamWages({ ...state, team: open.team });
   const { rent, utilities } = weeklyBillsDue(playerBefore, state.day);
@@ -789,6 +801,7 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
       secretRecipe,
       momentsSeen: { ...state.momentsSeen, ...Object.fromEntries(open.moments.seen.map((id) => [id, state.day])) },
       regulars: regularsToday.stories,
+      team: morale.team,
       unlocks: [...state.unlocks, ...unlocked],
       upcoming,
       // Running out of money ends the game.

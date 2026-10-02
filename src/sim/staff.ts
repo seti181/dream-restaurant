@@ -15,15 +15,65 @@ import { wageOf } from './finance';
 import { nextFloat, nextInt, pick, type RngState } from './rng';
 import type { Employee, Role, Staff } from './types';
 
-/** The simulation's view of the team members in one role. */
+/** The simulation's view of the team members in one role. Tired people work a little slower. */
 export function staffOf(team: Employee[], role: Role): Staff[] {
   return team
     .filter((person) => person.role === role)
-    .map(({ skill, speed, trait, specialty, special }) => {
-      const staff: Staff = { skill, speed, trait, specialty };
+    .map(({ skill, speed, trait, specialty, special, morale }) => {
+      const tired = moodOf(morale) === 'tired' || moodOf(morale) === 'wornOut';
+      const slower = tired ? balance.staff.morale.tiredSpeedLoss : 0;
+      const staff: Staff = { skill, speed: Math.max(1, speed - slower), trait, specialty };
       if (special) staff.special = special;
       return staff;
     });
+}
+
+// ---------- Morale and days off ----------
+
+export type Mood = 'happy' | 'fine' | 'tired' | 'wornOut';
+
+/** How someone is doing, from their morale. */
+export function moodOf(morale: number): Mood {
+  const { happyFrom, tiredBelow, wornOutBelow } = balance.staff.morale;
+  if (morale < wornOutBelow) return 'wornOut';
+  if (morale < tiredBelow) return 'tired';
+  return morale >= happyFrom ? 'happy' : 'fine';
+}
+
+/** True if this person has the given day off. */
+export const offOn = (person: Employee, day: number) => person.dayOff === day;
+
+/**
+ * The team after a day: those who worked are a little more tired, those who rested (a day off,
+ * or a day in bed) feel better. Returns the team and a line for the day report about anyone
+ * who rested or is getting tired.
+ */
+export function moraleAfterDay(
+  team: Employee[],
+  day: number,
+  /** Who was on the team this morning, and who of them was ill in bed. */
+  morning: { ids: number[]; sick: number[] },
+): { team: Employee[]; news: string[] } {
+  const m = balance.staff.morale;
+  const news: string[] = [];
+  const after = team.map((person) => {
+    // Hired during the day: they start tomorrow.
+    if (!morning.ids.includes(person.id)) return person;
+    const rested = offOn(person, day) || morning.sick.includes(person.id);
+    const tiring = person.trait === 'cheerful' ? m.cheerfulWorkDay : m.workDay;
+    const morale = Math.max(0, Math.min(100, person.morale + (rested ? m.dayOff : -tiring)));
+    if (offOn(person, day)) news.push(`${person.name} had the day off and comes back rested.`);
+    const before = moodOf(person.morale);
+    const now = moodOf(morale);
+    if (now === 'tired' && before !== 'tired' && before !== 'wornOut') {
+      news.push(`${person.name} is getting tired. A day off would do wonders.`);
+    } else if (now === 'wornOut' && before !== 'wornOut') {
+      news.push(`${person.name} is worn out and might call in sick. A day off, please!`);
+    }
+    const { dayOff: _done, ...rest } = person;
+    return person.dayOff !== undefined && person.dayOff <= day ? { ...rest, morale } : { ...person, morale };
+  });
+  return { team: after, news };
 }
 
 export function starterTeam(): Employee[] {
@@ -31,6 +81,7 @@ export function starterTeam(): Employee[] {
     ...person,
     id: index + 1,
     wage: wageOf(person.role, person),
+    morale: balance.staff.morale.start,
   }));
 }
 
@@ -79,6 +130,7 @@ export function generateCandidates(rng: RngState, firstId: number, takenNames: S
       speed,
       trait: pick(rng, TRAIT_IDS),
       wage: wageOf(role, { skill, speed }),
+      morale: balance.staff.morale.start,
     };
     if (role === 'chef') person.specialty = pick(rng, CUISINES);
     return person;
@@ -98,6 +150,7 @@ export function specialCandidate(id: SpecialStaffId, employeeId: number): Employ
     speed,
     trait,
     wage: person.wage ?? wageOf('waiter', { skill, speed }),
+    morale: balance.staff.morale.start,
     special: id,
   };
 }

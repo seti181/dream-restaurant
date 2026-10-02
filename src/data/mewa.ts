@@ -5,7 +5,7 @@ import type { GroupId } from './groups';
 
 // ---------- Tutorial tips (the first three days) ----------
 
-export type TipId = 'welcome' | 'speed' | 'report' | 'prices' | 'hiring' | 'helpTables' | 'happyHour' | 'farewell';
+export type TipId = 'welcome' | 'speed' | 'report' | 'prices' | 'hiring' | 'helpTables' | 'happyHour' | 'farewell' | 'daysOff';
 
 export interface Tip {
   /** When the tip appears: on this day, on this screen. */
@@ -14,7 +14,7 @@ export interface Tip {
   text: string;
 }
 
-export const TIP_IDS: readonly TipId[] = ['welcome', 'speed', 'report', 'prices', 'hiring', 'helpTables', 'happyHour', 'farewell'];
+export const TIP_IDS: readonly TipId[] = ['welcome', 'speed', 'report', 'prices', 'hiring', 'helpTables', 'happyHour', 'farewell', 'daysOff'];
 
 export const TIPS: Record<TipId, Tip> = {
   welcome: {
@@ -52,6 +52,13 @@ export const TIPS: Record<TipId, Tip> = {
     text:
       'One chef cooks one order at a time. If guests walk out waiting, the Staff tab has people ' +
       'looking for work. New faces turn up every Monday.',
+  },
+  daysOff: {
+    day: 4,
+    screen: 'plan',
+    text:
+      'Your team works every day, and it shows. Tired people cook and serve a little slower. ' +
+      'Give someone a day off in the Staff tab on a quiet day, when someone else can cover.',
   },
   helpTables: {
     day: 1,
@@ -169,6 +176,10 @@ export const HELP: { title: string; text: string }[] = [
   {
     title: 'Rivals',
     text: 'Four friendly rivals compete for the same hungry guests. Every Monday each makes a move, and they notice when you win over their favourite customers.',
+  },
+  {
+    title: 'Morale and days off',
+    text: 'Every day of work tires people a little; a day off puts them right. Below 40 morale, someone is tired and works a little slower. Below 15 they’re worn out and may stay in bed, if someone else can do their job. Cheerful people tire more slowly. Days off are paid, and someone has to be left to cook and to serve.',
   },
   {
     title: 'Regulars',

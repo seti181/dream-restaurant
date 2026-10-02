@@ -128,6 +128,8 @@ interface GameStore {
   setDishPrice: (index: number, price: number) => void;
   hire: (candidateId: number) => void;
   letGo: (employeeId: number) => void;
+  /** A day off today (before opening) or tomorrow (during the day), or back to work. */
+  toggleDayOff: (employeeId: number) => void;
   setLunchSet: (soupIndex: number, mainIndex: number) => void;
   setLunchSetPrice: (price: number) => void;
   clearLunchSet: () => void;
@@ -311,6 +313,7 @@ export const useGame = create<GameStore>((set, get) => ({
   setDishPrice: (index, price) => plan((game) => actions.setDishPrice(game, index, price), 'now'),
   hire: (candidateId) => plan((game) => actions.hire(game, candidateId)),
   letGo: (employeeId) => plan((game) => actions.letGo(game, employeeId)),
+  toggleDayOff: (employeeId) => plan((game) => actions.toggleDayOff(game, employeeId, dayOffDay())),
   setLunchSet: (soupIndex, mainIndex) => plan((game) => actions.setLunchSet(game, soupIndex, mainIndex), 'now'),
   setLunchSetPrice: (price) => plan((game) => actions.setLunchSetPrice(game, price), 'now'),
   clearLunchSet: () => plan((game) => actions.clearLunchSet(game), 'now'),
@@ -340,6 +343,12 @@ export const useGame = create<GameStore>((set, get) => ({
   upgradeMenuBoard: () => plan((game) => actions.upgradeMenuBoard(game)),
   setSupplier: (supplier) => plan((game) => actions.setSupplier(game, supplier), 'now'),
 }));
+
+/** The day a day off is for: today while planning, tomorrow once the restaurant is open. */
+export function dayOffDay(): number {
+  const { phase, game } = useGame.getState();
+  return phase === 'open' ? game.day + 1 : game.day;
+}
 
 /** A new or loaded game can replace the current one while planning, or after a game over. */
 function canStartOver(): boolean {

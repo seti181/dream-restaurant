@@ -48,6 +48,8 @@ interface Plan {
   interactive?: boolean;
   /** Menu positions of a soup and a main for the lunch set. */
   lunchSet?: [number, number];
+  /** Gives a day off (Monday to Thursday) to anyone whose morale is below this, where someone else can cover. */
+  dayOffBelow?: number;
 }
 
 export interface Strategy {
@@ -108,6 +110,17 @@ export function manage(strategy: Strategy, state: GameState, week: WeekReport | 
     if (plan.tablesPerWaiter && playerOf(s).waiters.length * plan.tablesPerWaiter < playerOf(s).tables) {
       const waiter = bestCandidate(s, 'waiter', plan);
       if (waiter) s = actions.hire(s, waiter.id);
+    }
+  }
+
+  // A day off this week for anyone who's flagging, spread over the quieter days so someone can always cover.
+  if (plan.dayOffBelow !== undefined) {
+    for (const role of ['chef', 'waiter'] as const) {
+      s.team
+        .filter((person) => person.role === role && person.morale < plan.dayOffBelow!)
+        .forEach((person, i) => {
+          s = actions.toggleDayOff(s, person.id, s.day + (i % 4));
+        });
     }
   }
 
@@ -205,6 +218,7 @@ export const STRATEGIES: Strategy[] = [
       decorItems: 3,
       campaigns: ['social'],
       premiumSupplier: true,
+      dayOffBelow: 55,
     },
   },
   {
@@ -232,6 +246,7 @@ export const STRATEGIES: Strategy[] = [
       terrace: true,
       lunchSet: [0, 3],
       relocate: { to: 'dluga', whenCash: 45_000 },
+      dayOffBelow: 55,
     },
   },
 ];
