@@ -73,48 +73,48 @@ describe('named regulars', () => {
   });
 
   it('tell the next part of their story on each visit, and like you more when their wish comes true', () => {
-    const first = regularsDay({}, [visit('marek', 'served')], 'player');
+    const first = regularsDay({}, [visit('filip', 'served')], 'player');
     expect(first.visits).toEqual([
-      { id: 'marek', mood: 'happy', story: REGULARS.marek.chapters[0], note: REGULARS.marek.wishMet, friends: false },
+      { id: 'filip', mood: 'happy', story: REGULARS.filip.chapters[0], note: REGULARS.filip.wishMet, friends: false },
     ]);
-    expect(first.stories.marek).toEqual({ visits: 1, happy: 1 });
+    expect(first.stories.filip).toEqual({ visits: 1, happy: 1 });
     expect(first.reputation.office).toBe(balance.regulars.happyReputation);
 
-    const noWish = regularsDay(first.stories, [visit('marek', 'served', false)], 'player');
-    expect(noWish.visits[0]).toMatchObject({ mood: 'okay', story: REGULARS.marek.chapters[1], note: REGULARS.marek.wishMissed });
-    expect(noWish.stories.marek).toEqual({ visits: 2, happy: 1 });
+    const noWish = regularsDay(first.stories, [visit('filip', 'served', false)], 'player');
+    expect(noWish.visits[0]).toMatchObject({ mood: 'okay', story: REGULARS.filip.chapters[1], note: REGULARS.filip.wishMissed });
+    expect(noWish.stories.filip).toEqual({ visits: 2, happy: 1 });
     expect(noWish.reputation).toEqual({});
 
-    const slow = regularsDay(first.stories, [visit('marek', 'served', true, balance.regulars.happyFrom - 1)], 'player');
-    expect(slow.visits[0]).toMatchObject({ mood: 'okay', note: REGULARS.marek.notHappy });
+    const slow = regularsDay(first.stories, [visit('filip', 'served', true, balance.regulars.happyFrom - 1)], 'player');
+    expect(slow.visits[0]).toMatchObject({ mood: 'okay', note: REGULARS.filip.notHappy });
   });
 
   it('keep their story for next week when they can’t get a table or give up waiting', () => {
-    const stories: RegularStories = { ola: { visits: 2, happy: 1 } };
+    const stories: RegularStories = { weronika: { visits: 2, happy: 1 } };
     for (const kind of ['noTable', 'walkedOut'] as const) {
-      const day = regularsDay(stories, [visit('ola', kind)], 'player');
-      expect(day.stories.ola).toEqual({ visits: 2, happy: 1 });
+      const day = regularsDay(stories, [visit('weronika', kind)], 'player');
+      expect(day.stories.weronika).toEqual({ visits: 2, happy: 1 });
       expect(day.visits[0]).toMatchObject({ mood: 'missed', note: null });
     }
-    expect(regularsDay(stories, [visit('ola', 'noTable')], 'player').visits[0].story).toBe(REGULARS.ola.missed);
+    expect(regularsDay(stories, [visit('weronika', 'noTable')], 'player').visits[0].story).toBe(REGULARS.weronika.missed);
   });
 
   it('become friends of the house after enough happy visits, and tell everyone', () => {
-    const chapters = REGULARS.zbigniew.chapters.length;
-    const enough = { zbigniew: { visits: chapters, happy: balance.regulars.friendsVisits - 1 } };
-    const friends = regularsDay(enough, [visit('zbigniew', 'served')], 'player');
-    expect(friends.visits[0]).toMatchObject({ story: REGULARS.zbigniew.ending.friends, friends: true });
+    const chapters = REGULARS.henryk.chapters.length;
+    const enough = { henryk: { visits: chapters, happy: balance.regulars.friendsVisits - 1 } };
+    const friends = regularsDay(enough, [visit('henryk', 'served')], 'player');
+    expect(friends.visits[0]).toMatchObject({ story: REGULARS.henryk.ending.friends, friends: true });
     expect(friends.reputation.locals).toBe(balance.regulars.happyReputation + balance.regulars.friendsReputation);
     expect(friends.awareness.locals).toBe(balance.regulars.friendsAwareness);
 
-    const notYet = { zbigniew: { visits: chapters, happy: 0 } };
-    const polite = regularsDay(notYet, [visit('zbigniew', 'served')], 'player');
-    expect(polite.visits[0]).toMatchObject({ story: REGULARS.zbigniew.ending.polite, friends: false });
+    const notYet = { henryk: { visits: chapters, happy: 0 } };
+    const polite = regularsDay(notYet, [visit('henryk', 'served')], 'player');
+    expect(polite.visits[0]).toMatchObject({ story: REGULARS.henryk.ending.polite, friends: false });
     expect(polite.awareness).toEqual({});
 
     // Afterwards they keep coming, with a little moment each time.
-    const later = regularsDay(friends.stories, [visit('zbigniew', 'served')], 'player');
-    expect(later.visits[0].story).toBe(REGULARS.zbigniew.after[0]);
+    const later = regularsDay(friends.stories, [visit('henryk', 'served')], 'player');
+    expect(later.visits[0].story).toBe(REGULARS.henryk.after[0]);
   });
 
   it('only count at the player’s own restaurant', () => {
@@ -129,18 +129,18 @@ describe('named regulars', () => {
 
   it('come in on their day, and the day report tells their story', () => {
     let state = newGame(4);
-    const { firstDay } = REGULARS.marek;
+    const { firstDay } = REGULARS.filip;
     while (state.day < firstDay) state = playDay(state).state;
-    expect(state.news.map((n) => n.text)).toContain(REGULARS.marek.intro);
-    // Give Marek his lunch set.
+    expect(state.news.map((n) => n.text)).toContain(REGULARS.filip.intro);
+    // Give Filip his lunch set.
     const player = state.restaurants[0];
     const soup = player.menu.find((d) => d.template === 'zurek')!;
     const main = player.menu.find((d) => d.template === 'pierogi')!;
     const lunchSet = { soup: recipeKey(soup), main: recipeKey(main), price: 40 };
     state = { ...state, restaurants: [{ ...player, lunchSet }, ...state.restaurants.slice(1)] };
     const { state: next, summary } = playDay(state);
-    expect(summary.regulars.map((r) => r.id)).toEqual(['marek']);
-    if (summary.regulars[0].mood !== 'missed') expect(summary.regulars[0].note).not.toBe(REGULARS.marek.wishMissed);
-    expect(next.regulars.marek?.visits ?? 0).toBe(summary.regulars[0].mood === 'missed' ? 0 : 1);
+    expect(summary.regulars.map((r) => r.id)).toEqual(['filip']);
+    if (summary.regulars[0].mood !== 'missed') expect(summary.regulars[0].note).not.toBe(REGULARS.filip.wishMissed);
+    expect(next.regulars.filip?.visits ?? 0).toBe(summary.regulars[0].mood === 'missed' ? 0 : 1);
   });
 });

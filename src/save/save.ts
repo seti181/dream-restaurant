@@ -8,7 +8,7 @@ import type { GameState } from '../sim/game';
 import { startGoal } from '../sim/goals';
 import { PORTUGUESE_CORNER } from '../data/personal';
 
-export const SAVE_VERSION = 15;
+export const SAVE_VERSION = 16;
 const SAVE_KEY = 'old-town-kitchen/save';
 
 interface SaveFile {
@@ -161,6 +161,15 @@ function upgradeFrom14(game: Record<string, unknown>): Record<string, unknown> {
   return { ...game, team };
 }
 
+function upgradeFrom15(game: Record<string, unknown>): Record<string, unknown> {
+  // Version 16 renames three regulars, so their names don't clash with the rival owners:
+  // Marek is now Filip, Pan Zbigniew is Pan Henryk, and Ola is Weronika. Their stories carry on.
+  const renamed: Record<string, string> = { marek: 'filip', zbigniew: 'henryk', ola: 'weronika' };
+  const stories = (game.regulars as Record<string, unknown> | undefined) ?? {};
+  const regulars = Object.fromEntries(Object.entries(stories).map(([id, story]) => [renamed[id] ?? id, story]));
+  return { ...game, regulars };
+}
+
 /**
  * Brings a save from any older version up to date, one version at a time.
  * Returns null for saves that can't be understood.
@@ -228,6 +237,10 @@ export function migrate(data: unknown): GameState | null {
   if (version === 14) {
     game = upgradeFrom14(game as unknown as Record<string, unknown>) as unknown as GameState;
     version = 15;
+  }
+  if (version === 15) {
+    game = upgradeFrom15(game as unknown as Record<string, unknown>) as unknown as GameState;
+    version = 16;
   }
 
   return looksLikeGame(game) ? game : null;

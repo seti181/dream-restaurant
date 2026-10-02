@@ -213,7 +213,7 @@ export const balance = {
     /** ...and tell everyone: reputation and awareness with their group. */
     friendsReputation: 3,
     friendsAwareness: 10,
-    /** The dearest main a student can afford (Ola's wish). */
+    /** The dearest main a student can afford (Weronika's wish). */
     cheapMainPrice: 34,
   },
 

@@ -276,3 +276,12 @@ describe('upgrading version 14 saves (from before the team’s stories)', () => 
     expect(migrate({ saveVersion: 14, savedAt: '', game: old })).toEqual(game);
   });
 });
+
+describe('upgrading version 15 saves (from before three regulars were renamed)', () => {
+  it('carries their stories on under their new names', () => {
+    const story = { visits: 2, happy: 1 };
+    const old = { ...newGame(62), regulars: { marek: story, zbigniew: story, ola: story, fletcher: story } };
+    const upgraded = migrate({ saveVersion: 15, savedAt: '', game: old })!;
+    expect(upgraded.regulars).toEqual({ filip: story, henryk: story, weronika: story, fletcher: story });
+  });
+});

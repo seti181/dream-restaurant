@@ -5,7 +5,7 @@
 
 import type { GroupId } from './groups';
 
-export type RegularId = 'marek' | 'fletcher' | 'zbigniew' | 'ola';
+export type RegularId = 'filip' | 'fletcher' | 'henryk' | 'weronika';
 
 /** What makes a regular's visit: a soup, pierogi, the lunch set, or a main they can afford. */
 export type RegularWish = 'soup' | 'pierogi' | 'lunchSet' | 'cheapMain';
@@ -44,11 +44,11 @@ export interface Regular {
   after: string[];
 }
 
-export const REGULAR_IDS: RegularId[] = ['marek', 'fletcher', 'zbigniew', 'ola'];
+export const REGULAR_IDS: RegularId[] = ['filip', 'fletcher', 'henryk', 'weronika'];
 
 export const REGULARS: Record<RegularId, Regular> = {
-  marek: {
-    name: 'Marek',
+  filip: {
+    name: 'Filip',
     group: 'office',
     emoji: '💻',
     weekday: 3,
@@ -58,29 +58,29 @@ export const REGULARS: Record<RegularId, Regular> = {
     firstDay: 3,
     wish: 'lunchSet',
     intro:
-      'Marek, from an office on Granary Island, booked a table for 12:30 today. He asked if you do a lunch set. ' +
+      'Filip, from an office on Granary Island, booked a table for 12:30 today. He asked if you do a lunch set. ' +
       '“I only have forty minutes,” he said. “Every Thursday.”',
     wishMet: 'He had the lunch set and was back at his desk in forty minutes, as promised.',
     wishMissed: 'He asked for the lunch set. There wasn’t one. He typed something sad into his phone.',
     notHappy: 'He gave you three stars in his head. You could tell.',
-    missed: 'Marek came for lunch, found no table and ate a drożdżówka on the bridge. Next Thursday, then.',
+    missed: 'Filip came for lunch, found no table and ate a drożdżówka on the bridge. Next Thursday, then.',
     chapters: [
       'A young man with a laptop and a lanyard ate with one hand and typed with the other. ' +
-        'Marek’s start-up on Granary Island is making an app. “For what?” “We’re still deciding.”',
-      'Marek’s app is for finding a free table in a restaurant. He tested it here. It said you were full. You were.',
-      'The investors said no. Marek ate his lunch very slowly and didn’t open the laptop once.',
-      'A new idea: an app that tells you what your friends had for lunch. Marek photographed his plate from six angles. “For the database.”',
+        'Filip’s start-up on Granary Island is making an app. “For what?” “We’re still deciding.”',
+      'Filip’s app is for finding a free table in a restaurant. He tested it here. It said you were full. You were.',
+      'The investors said no. Filip ate his lunch very slowly and didn’t open the laptop once.',
+      'A new idea: an app that tells you what your friends had for lunch. Filip photographed his plate from six angles. “For the database.”',
     ],
     ending: {
       friends:
-        'The investors said yes! Marek’s whole team comes for lunch on Thursdays now, ' +
+        'The investors said yes! Filip’s whole team comes for lunch on Thursdays now, ' +
         'and every office on Granary Island has heard about you.',
-      polite: 'The investors said yes! Marek celebrated with a quick lunch, shook your hand and ran back to the office.',
+      polite: 'The investors said yes! Filip celebrated with a quick lunch, shook your hand and ran back to the office.',
     },
     after: [
-      'Marek’s app sent you a notification about yourself. He apologised.',
-      'Marek closed the laptop and just ate. “Doctor’s orders,” he said.',
-      'Marek brought the new intern, who also had a laptop.',
+      'Filip’s app sent you a notification about yourself. He apologised.',
+      'Filip closed the laptop and just ate. “Doctor’s orders,” he said.',
+      'Filip brought the new intern, who also had a laptop.',
     ],
   },
   fletcher: {
@@ -120,8 +120,8 @@ export const REGULARS: Record<RegularId, Regular> = {
       'Mr Fletcher has bought an amber ring. He says it’s for nobody. He’s blushing.',
     ],
   },
-  zbigniew: {
-    name: 'Pan Zbigniew',
+  henryk: {
+    name: 'Pan Henryk',
     group: 'locals',
     emoji: '⚓',
     weekday: 1,
@@ -136,29 +136,29 @@ export const REGULARS: Record<RegularId, Regular> = {
     wishMet: 'He had his soup and said it was nearly as good as his Danusia’s. High praise.',
     wishMissed: 'He looked for a soup on the menu, sighed, and had what there was.',
     notHappy: 'He didn’t complain. He never does. But he left his crossword unfinished.',
-    missed: 'Pan Zbigniew came by at one, saw no free table and went home with his newspaper. Next Tuesday, then.',
+    missed: 'Pan Henryk came by at one, saw no free table and went home with his newspaper. Next Tuesday, then.',
     chapters: [
       'A quiet man in a navy jumper took the corner table. Forty years on the cranes at the shipyard. ' +
         '“From up there you could see all of Gdańsk,” he said. “Now I see your menu.”',
-      'Pan Zbigniew brought a photo of the shipyard in August 1980, the gates full of flowers and flags. ' +
+      'Pan Henryk brought a photo of the shipyard in August 1980, the gates full of flowers and flags. ' +
         '“That one is me,” he said, tapping a tiny dot. “Probably.”',
-      'His granddaughter Zosia got into the Maritime University in Gdynia! Pan Zbigniew told every table. Twice.',
-      'Pan Zbigniew fixed the wobbly table by the door with a folded beer mat and a crane operator’s eye. “Level,” he said. It is.',
+      'His granddaughter Zosia got into the Maritime University in Gdynia! Pan Henryk told every table. Twice.',
+      'Pan Henryk fixed the wobbly table by the door with a folded beer mat and a crane operator’s eye. “Level,” he said. It is.',
     ],
     ending: {
       friends:
-        'Pan Zbigniew brought his old yellow shipyard helmet and asked if it could live by the kitchen. ' +
+        'Pan Henryk brought his old yellow shipyard helmet and asked if it could live by the kitchen. ' +
         '“It should be somewhere with people,” he said. Every local in the Old Town knows whose it is.',
-      polite: 'Pan Zbigniew shook your hand at the door. “Good place,” he said. “Could be a great one.” He’ll still come on Tuesdays.',
+      polite: 'Pan Henryk shook your hand at the door. “Good place,” he said. “Could be a great one.” He’ll still come on Tuesdays.',
     },
     after: [
-      'Pan Zbigniew told the story of the crane that got stuck in 1978. It gets longer every week.',
-      'Pan Zbigniew read the paper at the corner table and did the crossword out loud.',
-      'Pan Zbigniew brought Zosia, in her new uniform. She ordered for both of them.',
+      'Pan Henryk told the story of the crane that got stuck in 1978. It gets longer every week.',
+      'Pan Henryk read the paper at the corner table and did the crossword out loud.',
+      'Pan Henryk brought Zosia, in her new uniform. She ordered for both of them.',
     ],
   },
-  ola: {
-    name: 'Ola',
+  weronika: {
+    name: 'Weronika',
     group: 'students',
     emoji: '✏️',
     weekday: 2,
@@ -169,30 +169,30 @@ export const REGULARS: Record<RegularId, Regular> = {
     wish: 'cheapMain',
     intro:
       'A note under the door: “Table for one, today at 18:30? I can’t pay much for a main, ' +
-      'but I’ll draw you something. Ola (Academy of Fine Arts)”',
+      'but I’ll draw you something. Weronika (Academy of Fine Arts)”',
     wishMet: 'She found a main she could afford and ate every crumb.',
     wishMissed: 'Every main was a bit dear for a student. She had a kompot and drew the bread basket.',
-    notHappy: 'Ola’s drawing tonight was a bit gloomy. Grey pencil only.',
-    missed: 'Ola came with her sketchbook, found every table taken and drew the queue instead. See you next Wednesday.',
+    notHappy: 'Weronika’s drawing tonight was a bit gloomy. Grey pencil only.',
+    missed: 'Weronika came with her sketchbook, found every table taken and drew the queue instead. See you next Wednesday.',
     chapters: [
       'A student with paint on her sleeves drew your whole dining room in ten minutes flat. ' +
-        '“Sorry,” said Ola. “I draw everything. Your lamps are very drawable.”',
-      'Ola drew the chef. The chef pretended not to notice and stood up a little straighter.',
-      'Exam week at the Academy. Ola drew nothing at all, ate in silence and stared at the ceiling. ' +
+        '“Sorry,” said Weronika. “I draw everything. Your lamps are very drawable.”',
+      'Weronika drew the chef. The chef pretended not to notice and stood up a little straighter.',
+      'Exam week at the Academy. Weronika drew nothing at all, ate in silence and stared at the ceiling. ' +
         '“Perspective,” she whispered. “I hate perspective.”',
-      'Ola passed! Her teacher chose her drawings of your restaurant for the summer show in the Great Armoury. ' +
+      'Weronika passed! Her teacher chose her drawings of your restaurant for the summer show in the Great Armoury. ' +
         '“Is that okay?” she asked. “You’re in it.”',
     ],
     ending: {
       friends:
-        'Ola brought the drawing from the show, framed, and hung it by the door herself. ' +
+        'Weronika brought the drawing from the show, framed, and hung it by the door herself. ' +
         'Students keep stopping to look at it, and then coming in.',
-      polite: 'Ola’s show was a success. She gave the framed drawing to her mum, but promised you a postcard of it.',
+      polite: 'Weronika’s show was a success. She gave the framed drawing to her mum, but promised you a postcard of it.',
     },
     after: [
-      'Ola drew Mewa on a napkin. Mewa looked offended, then flattered.',
-      'Ola brought three friends from the Academy. All of them drew the same lamp.',
-      'Ola is painting the Żuraw now, but she still comes on Wednesdays.',
+      'Weronika drew Mewa on a napkin. Mewa looked offended, then flattered.',
+      'Weronika brought three friends from the Academy. All of them drew the same lamp.',
+      'Weronika is painting the Żuraw now, but she still comes on Wednesdays.',
     ],
   },
 };

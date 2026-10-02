@@ -302,7 +302,7 @@ const HEADSCARF: Overlay = { x: 1, y: -1, rows: ['...oooooooooo..', '..oSSSSSSSS
 const STRIPES: Overlay = { x: 3, y: 11, facing: 'front', rows: ['.z.z.z.z.', '.z.z.z.z.', '.z.z.z.z.'] };
 
 // The named regulars (data/regulars.ts).
-/** Marek's thin steel glasses (his eyes show through), and his office lanyard. */
+/** Filip's thin steel glasses (his eyes show through), and his office lanyard. */
 const GLASSES: Overlay = { x: 4, y: 5, facing: 'front', rows: ['ggg..ggg', 'g.gggg.g', 'g.g..g.g'] };
 const LANYARD: Overlay = { x: 6, y: 11, facing: 'front', rows: ['L.L', '.L.', '.w.'] };
 /** Mr Fletcher's khaki bucket hat. */
@@ -311,9 +311,9 @@ const BUCKET_HAT: Overlay = {
   y: -2,
   rows: ['...oooooooo...', '..offffffffo..', '.offffffffffo.', 'oooooooooooooo'],
 };
-/** Pan Zbigniew's white moustache, drooping a little at the ends. */
+/** Pan Henryk's white moustache, drooping a little at the ends. */
 const DROOPING_MOUSTACHE: Overlay = { x: 5, y: 8, facing: 'front', rows: ['.wwww.', 'w....w'] };
-/** Ola's sketchbook under her arm, and paint on her trousers. */
+/** Weronika's sketchbook under her arm, and paint on her trousers. */
 const SKETCHBOOK: Overlay = { x: 10, y: 12, facing: 'front', rows: ['oooo', 'owwo', 'owKo', 'oooo'] };
 const PAINT_SPOTS: Overlay = { x: 4, y: 16, facing: 'front', rows: ['.R..L', '...R.'] };
 
@@ -450,7 +450,7 @@ export function lookOf(kind: PersonKind, variant = 0): Look {
         palette: withAccessories({ ...GUEST_PALETTES.locals, h: '#8a5233', H: '#6b3d24', c: '#e9a23b', C: '#c98a2b', d: '#fbf3e4' }),
         overlays: [HEADSCARF],
       };
-    case 'marek':
+    case 'filip':
       return {
         palette: withAccessories({ ...GUEST_PALETTES.office, g: '#8a979e', h: '#3a2a20', H: '#241a14', c: '#6a7480', C: '#4f5862', d: '#6a7480', p: '#3f5f8a', P: '#2f4868' }),
         overlays: [GLASSES, LANYARD],
@@ -460,12 +460,12 @@ export function lookOf(kind: PersonKind, variant = 0): Look {
         palette: withAccessories({ ...GUEST_PALETTES.tourists, s: '#f4b39a', S: '#d98d76', k: '#e8705e', h: '#d9c08a', H: '#b89e68', c: '#c8302f', C: '#9c2422', d: '#fbfaf6', p: '#c9b48a', P: '#a8946c', f: '#d8c79a' }),
         overlays: [BUCKET_HAT, CAMERA],
       };
-    case 'zbigniew':
+    case 'henryk':
       return {
         palette: withAccessories({ ...GUEST_PALETTES.locals, h: '#e6e2da', H: '#c4bfb6', c: '#2f4a6b', C: '#22374f', d: '#2f4a6b', p: '#4a4a55', P: '#36363f', Q: '#2f4a6b', D: '#22374f' }),
         overlays: [FLAT_CAP, DROOPING_MOUSTACHE],
       };
-    case 'ola':
+    case 'weronika':
       return {
         palette: withAccessories({ ...GUEST_PALETTES.students, h: '#d0607a', H: '#a8455d', c: '#e0b84a', C: '#b8922f', d: '#e0b84a', p: '#3f5f8a', P: '#2f4868', L: '#2f6f8f' }),
         overlays: [SKETCHBOOK, PAINT_SPOTS],
