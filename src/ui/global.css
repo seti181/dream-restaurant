@@ -1886,6 +1886,11 @@ h2.spaced {
   padding-bottom: min(16vw, 15vh);
 }
 
+/* On the day screen the riverside is only a background: the card keeps the room it always had. */
+.screen.with-panorama.behind {
+  padding-bottom: 24px;
+}
+
 .screen.with-panorama > .card {
   position: relative;
   z-index: 1;
@@ -1936,6 +1941,10 @@ h2.spaced {
 
   .screen.with-panorama {
     padding-bottom: min(16vw, 11vh);
+  }
+
+  .screen.with-panorama.behind {
+    padding-bottom: 10px;
   }
 
   .plan-card,

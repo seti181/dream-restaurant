@@ -10,9 +10,11 @@ import type { GroupId } from '../data/groups';
 import { MewaTip } from './Mewa';
 import { MomentCard, MomentResultNote, NoteClose } from './MomentCard';
 import { GROUP_COLOURS } from './pixel/sprites';
-import { canTend, PixelRestaurantView } from './PixelRestaurantView';
+import { PanoramaScreen } from './Panorama';
+import { canTend, DUSK_MINUTE, PixelRestaurantView } from './PixelRestaurantView';
 import { isFavourite } from '../sim/seating';
 import { playerOf } from '../sim/game';
+import { isFairDay } from '../sim/neptune';
 import { specialOf } from '../sim/menu';
 import { FAVOURITE_SPOTS, GROUP_IDS, GROUPS, SPOT_NAMES } from '../data/groups';
 import { GULLS } from '../data/gulls';
@@ -267,6 +269,7 @@ export function DayScreen() {
   const location = useGame((s) => playerOf(s.game).location);
   const moveGuests = useGame((s) => s.moveGuests);
   const weather = useGame((s) => s.game.weather);
+  const day = useGame((s) => s.game.day);
   const speed = useGame((s) => s.speed);
   const tick = useGame((s) => s.tick);
   const special = useGame((s) => specialOf(playerOf(s.game)));
@@ -313,7 +316,7 @@ export function DayScreen() {
   const progress = Math.min(1, (live.minute - openMinute) / (closeMinute - openMinute));
 
   return (
-    <main className="screen">
+    <PanoramaScreen weather={weather} evening={live.minute >= DUSK_MINUTE} fair={isFairDay(day)} behind>
       <div className="card day-card">
         <MewaTip screen="open" />
         <div className="day-header">
@@ -415,6 +418,6 @@ export function DayScreen() {
           <li className="muted">💬 ordering · ⏳ 😤 waiting · tap a table to look after it · 😋 🙂 😐 😞 how the food went · 😠 walked out</li>
         </ul>
       </div>
-    </main>
+    </PanoramaScreen>
   );
 }

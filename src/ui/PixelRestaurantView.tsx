@@ -54,6 +54,9 @@ function urlOf(pixels: Pixels): string {
   return url;
 }
 
+/** From this time the street lamps and windows are lit, and the sky turns to evening. */
+export const DUSK_MINUTE = 19 * 60 + 30;
+
 /** Stacking order on screen: pieces and walkers share one scale, so walkers pass between tables. */
 const zOf = (depth: number) => Math.round(depth * 2) + 1000;
 
@@ -336,7 +339,7 @@ export function PixelRestaurantView({
   const terraceTables = Math.max(floor.terraceTables, floor.tables.length - floor.insideTables);
   const layout = useMemo(() => roomLayout(maxTables, terraceTables), [maxTables, terraceTables]);
 
-  const dusk = minute >= 19 * 60 + 30;
+  const dusk = minute >= DUSK_MINUTE;
   const { decor, equipment, insideTables } = floor;
   const roomKey = [decor.join(), equipment.join(), weather, dusk, insideTables].join('|');
   // The room only needs redrawing when what it shows changes.
