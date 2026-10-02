@@ -1,6 +1,6 @@
 // The restaurant view in pixel art: the room as one picture, with furniture and people
 // stacked on top, back to front. Guests walk in from the door to their table and back
-// out when they leave. Bubbles and coins float above them.
+// out when they leave. Bubbles sit above them, and money floats up when they pay.
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { balance } from '../data/balance';
@@ -10,6 +10,7 @@ import type { Visitor } from '../data/moments';
 import { REGULARS } from '../data/regulars';
 import type { Weather } from '../data/weather';
 import type { FloorView, TableGuests } from '../sim/day';
+import { money } from './format';
 import { project } from './pixel/iso';
 import { imageUrl, type Pixels } from './pixel/raster';
 import {
@@ -60,12 +61,15 @@ function urlOf(pixels: Pixels): string {
 }
 
 /** From this time the street lamps and windows are lit, and the sky turns to evening. */
-export const DUSK_MINUTE = 19 * 60 + 30;
+const DUSK_MINUTE = 19 * 60 + 30;
 
 /** Stacking order on screen: pieces and walkers share one scale, so walkers pass between tables. */
 const zOf = (depth: number) => Math.round(depth * 2) + 1000;
 
 const VISITOR_BUBBLES: Record<Visitor, string> = { merry: '🥃', footballer: '⚽', walesa: '✌️', filmCrew: '🎬' };
+
+/** Guests at least this happy with their food (0–100) show 🙂 or 😋, and send up a heart. */
+const HAPPY = 60;
 
 /** How a table feels, as an emoji bubble, or null for no bubble. */
 function bubbleFor(guests: TableGuests): string | null {
@@ -84,7 +88,7 @@ function bubbleFor(guests: TableGuests): string | null {
   // A reaction when the food arrives, then they just enjoy it.
   if (guests.eatingFor > 15 || guests.satisfaction === null) return null;
   if (guests.satisfaction >= 80) return '😋';
-  if (guests.satisfaction >= 60) return '🙂';
+  if (guests.satisfaction >= HAPPY) return '🙂';
   if (guests.satisfaction >= 40) return '😐';
   return '😞';
 }
@@ -391,6 +395,7 @@ export function PixelRestaurantView({
   // How far out of sight people passing by start and finish, in art pixels.
   const passers = usePassersBy(layout, minute, layout.width + 120, onPasserTap, onFlyerArrives);
   const leavers = useQueueLeavers(layout, floor);
+  const floats = useFloats(floor);
   useEffect(() => () => URL.revokeObjectURL(background), [background]);
 
   const { walks, done, arriving, busyWaiters } = useWalkers(layout, floor);
@@ -502,7 +507,7 @@ export function PixelRestaurantView({
               ⏳
             </span>
           ))}
-        {/* Bubbles and coins above the seated guests, on top of everything. */}
+        {/* Bubbles above the seated guests, on top of everything. */}
         {pieces.map((p) => {
           if (p.kind !== 'guest' || !p.guests) return null;
           const x = at(p.px + p.image.pixels.width / 2);
@@ -525,11 +530,18 @@ export function PixelRestaurantView({
                   🖋️
                 </span>
               )}
-              {p.guests.stage === 'eating' && p.guests.eatingFor <= 10 && (
-                <span className="pixel-coin" style={{ left: x, top: y }}>
-                  🪙
-                </span>
-              )}
+            </span>
+          );
+        })}
+        {/* Money floating up from the tables that have just paid, above their bubbles. */}
+        {floats.map((f) => {
+          const middle = tableMiddle(layout, floor.insideTables, f.table);
+          if (!middle) return null;
+          const { sx, sy } = project(layout.origin, middle.x, middle.y, FLOAT_HEIGHT);
+          return (
+            <span key={f.id} className="pixel-float" style={{ left: sx * scale, top: sy * scale }}>
+              +{money(f.bill)}
+              {f.heart && <span className="pixel-heart">♥</span>}
             </span>
           );
         })}
@@ -537,6 +549,50 @@ export function PixelRestaurantView({
       {look.weather === 'rain' && <Rain scale={scale} />}
     </div>
   );
+}
+
+// ---------- Money floating up ----------
+
+/** Real seconds that the money floats up from a table, the same at any speed. */
+const FLOAT_SECONDS = 1.8;
+/** Where it starts, in world units above the table: just over the guests' bubbles. */
+const FLOAT_HEIGHT = 46;
+
+interface Float {
+  id: string;
+  table: number;
+  bill: number;
+  heart: boolean;
+}
+
+/**
+ * The money each table pays, floating up from it the moment its food arrives (that's when the
+ * party pays), with a heart when they like it.
+ */
+function useFloats(floor: FloorView): Float[] {
+  const [floats, setFloats] = useState<Float[]>([]);
+  const seen = useRef(new Set<string>());
+  const timers = useRef<number[]>([]);
+  useEffect(() => {
+    const pending = timers.current;
+    return () => pending.forEach((timer) => window.clearTimeout(timer));
+  }, []);
+  useEffect(() => {
+    const fresh: Float[] = [];
+    floor.tables.forEach((guests, table) => {
+      if (!guests || guests.bill === 0) return;
+      const id = `${table}:${guests.since}`;
+      if (seen.current.has(id)) return;
+      seen.current.add(id);
+      // Only food that arrived in the last few minutes: not tables that paid before the view opened.
+      if (guests.eatingFor >= balance.clock.tickMinutes) return;
+      fresh.push({ id, table, bill: guests.bill, heart: (guests.satisfaction ?? 0) >= HAPPY });
+    });
+    if (fresh.length === 0) return;
+    setFloats((now) => [...now, ...fresh]);
+    timers.current.push(window.setTimeout(() => setFloats((now) => now.filter((f) => !fresh.includes(f))), FLOAT_SECONDS * 1000));
+  }, [floor]);
+  return floats;
 }
 
 // ---------- A gull on the terrace ----------

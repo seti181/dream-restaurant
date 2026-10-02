@@ -194,53 +194,6 @@ button {
   cursor: default;
 }
 
-/* ---------- The day ---------- */
-
-.day-progress {
-  height: 16px;
-  margin: 8px 0 24px;
-  overflow: hidden;
-  border-radius: 8px;
-  background: var(--sand);
-}
-
-.day-progress div {
-  height: 100%;
-  background: var(--amber);
-  transition: width 0.3s linear;
-}
-
-.stats {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 16px;
-}
-
-.stat {
-  padding: 16px;
-  border-radius: 16px;
-  background: var(--cream);
-  text-align: center;
-}
-
-.stat strong {
-  display: block;
-  font-size: 2rem;
-  font-variant-numeric: tabular-nums;
-}
-
-.stat span {
-  font-size: 0.95rem;
-  color: var(--sea);
-}
-
-.paused {
-  margin: 20px 0 0;
-  text-align: center;
-  font-weight: 600;
-  color: var(--sea);
-}
-
 /* ---------- Shared bits ---------- */
 
 .muted {
@@ -1156,80 +1109,6 @@ h2.spaced {
   text-align: left;
 }
 
-/* ---------- Restaurant view (day screen) ---------- */
-
-.day-card {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  width: min(1200px, 100%);
-  max-height: 100%;
-  padding: 20px 28px;
-}
-
-.day-status {
-  width: 120px;
-  margin: 0;
-}
-
-.day-header {
-  display: flex;
-  align-items: center;
-  gap: 24px;
-}
-
-.day-header .stats {
-  flex: 1;
-  gap: 10px;
-}
-
-.day-header .stat {
-  padding: 8px;
-}
-
-.day-header .stat strong {
-  font-size: 1.5rem;
-}
-
-.day-card .day-progress {
-  margin: 0;
-  height: 10px;
-}
-
-.scene-wrap {
-  position: relative;
-  flex: 1;
-  min-height: 0;
-  display: flex;
-}
-
-.scene-wrap .paused {
-  position: absolute;
-  top: 12px;
-  left: 50%;
-  transform: translateX(-50%);
-  margin: 0;
-  padding: 8px 18px;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.92);
-}
-
-.legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 16px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  font-size: 0.9rem;
-}
-
-.legend li {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
 .swatch {
   width: 14px;
   height: 14px;
@@ -1335,9 +1214,10 @@ h2.spaced {
 
 .perf-meter {
   position: fixed;
-  left: 8px;
+  left: 50%;
   bottom: 8px;
-  z-index: 60;
+  z-index: 200000;
+  transform: translateX(-50%);
   padding: 4px 10px;
   border-radius: 8px;
   background: rgba(60, 122, 58, 0.9);
@@ -1351,10 +1231,6 @@ h2.spaced {
 }
 
 /* ---------- The pixel-art restaurant view ---------- */
-
-.day-card {
-  align-self: stretch;
-}
 
 .pixel-wrap {
   position: relative;
@@ -1416,7 +1292,6 @@ h2.spaced {
 }
 
 .pixel-bubble,
-.pixel-coin,
 .pixel-badge {
   position: absolute;
   transform: translate(-50%, -100%);
@@ -1437,18 +1312,36 @@ h2.spaced {
   font-size: 12px;
 }
 
-.pixel-coin {
-  font-size: 16px;
-  animation: coin-rise 1.4s ease-out forwards;
-}
-
 @keyframes bubble-pop {
   from { transform: translate(-50%, -100%) scale(0.3); opacity: 0; }
 }
 
-@keyframes coin-rise {
-  from { transform: translate(-50%, -100%); opacity: 1; }
-  to { transform: translate(-50%, -260%); opacity: 0; }
+/* Money floating up from a table when it pays, in gold with a dark pixel outline; a heart if they loved it. */
+.pixel-float {
+  position: absolute;
+  z-index: 5005;
+  transform: translate(-50%, -100%);
+  pointer-events: none;
+  white-space: nowrap;
+  line-height: 1;
+  font-size: 17px;
+  font-weight: 800;
+  color: #f6c945;
+  text-shadow: 0 2px 0 #3b2433, 2px 0 0 #3b2433, -2px 0 0 #3b2433, 0 -2px 0 #3b2433;
+  animation: float-up 1.8s ease-out forwards;
+}
+
+.pixel-heart {
+  margin-left: 4px;
+  color: #ef6f8a;
+  font-size: 19px;
+}
+
+@keyframes float-up {
+  0% { transform: translate(-50%, -60%); opacity: 0; }
+  12% { transform: translate(-50%, -100%); opacity: 1; }
+  70% { opacity: 1; }
+  100% { transform: translate(-50%, -300%); opacity: 0; }
 }
 
 /* A guest walking: the browser moves them; this steps through the two walking frames. */
@@ -1469,7 +1362,6 @@ h2.spaced {
 }
 
 .pixel-bubble,
-.pixel-coin,
 .pixel-badge {
   z-index: 5000;
 }
@@ -1771,7 +1663,8 @@ h2.spaced {
 .help-panel {
   position: absolute;
   left: 50%;
-  bottom: 12px;
+  /* Above the round buttons along the bottom. */
+  bottom: 96px;
   z-index: 60000;
   transform: translateX(-50%);
   width: max-content;
@@ -1868,43 +1761,6 @@ h2.spaced {
   font-weight: normal;
 }
 
-/* The happy hour button on the day screen. */
-.happy-hour {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-width: 150px;
-  min-height: 56px;
-  padding: 4px 14px;
-  border: 2px solid var(--amber);
-  border-radius: 14px;
-  background: #fff7e8;
-  color: var(--ink);
-  font-size: 1rem;
-  line-height: 1.2;
-}
-
-.happy-hour span {
-  font-size: 0.8rem;
-  color: #8a7466;
-}
-
-.happy-hour:disabled {
-  opacity: 0.55;
-}
-
-.happy-hour.on {
-  background: var(--amber);
-  border-color: var(--amber);
-  color: #fff;
-  animation: happy-glow 1.6s ease-in-out infinite;
-}
-
-.happy-hour.on span {
-  color: #fff;
-}
-
 @keyframes happy-glow {
   50% {
     box-shadow: 0 0 0 5px rgba(233, 162, 59, 0.3);
@@ -1941,11 +1797,6 @@ h2.spaced {
    * Measured against the height, so a wide but short landscape screen keeps room for the card.
    */
   padding-bottom: min(16vw, 15vh);
-}
-
-/* On the day screen the riverside is only a background: the card keeps the room it always had. */
-.screen.with-panorama.behind {
-  padding-bottom: 24px;
 }
 
 .screen.with-panorama > .card {
@@ -2000,12 +1851,8 @@ h2.spaced {
     padding-bottom: min(16vw, 11vh);
   }
 
-  .screen.with-panorama.behind {
-    padding-bottom: 10px;
-  }
 
-  .plan-card,
-  .day-card {
+  .plan-card {
     padding: 10px 16px;
   }
 
@@ -2073,27 +1920,15 @@ h2.spaced {
   }
 }
 
-/* The day's numbers are buttons: each opens the list behind it. */
-button.stat {
-  border: 2px solid transparent;
-  font: inherit;
-  color: inherit;
-  cursor: pointer;
-}
-
-button.stat.open {
-  border-color: var(--sea);
-  background: #fff;
-}
-
 .stat-panel {
   position: absolute;
-  /* Below the short notes that appear at the top of the scene (a card's result, a gull). */
-  top: 60px;
-  right: 8px;
+  /* Under the panels along the top, on the right, clear of the notes on the left. */
+  top: 84px;
+  right: 12px;
   z-index: 60001;
-  width: min(440px, calc(100% - 16px));
-  max-height: calc(100% - 68px);
+  width: min(440px, calc(100% - 24px));
+  /* Above the speed buttons in the bottom corner. */
+  max-height: calc(100% - 170px);
   overflow: auto;
   box-sizing: border-box;
   padding: 10px 16px 12px;
@@ -2150,43 +1985,6 @@ button.stat.open {
 .stat-bar span {
   display: block;
   height: 100%;
-}
-
-/*
- * The short notes at the top of the scene, one under the other. The first one sits across the
- * scene's top edge, over the progress bar, so it hides as little of the restaurant as it can.
- */
-.scene-notes {
-  position: absolute;
-  top: -22px;
-  left: 50%;
-  z-index: 60000;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  width: max-content;
-  max-width: calc(100% - 32px);
-  transform: translateX(-50%);
-  pointer-events: none;
-}
-
-.scene-notes > .gull-warning,
-.scene-notes > .moment-result,
-.scene-notes > .paused {
-  position: static;
-  transform: none;
-  max-width: 100%;
-}
-
-/* Notes with a ✕: the text, then the button, which can be tapped even though the notes let taps through. */
-.scene-notes > .gull-warning,
-.scene-notes > .moment-result,
-.scene-notes > .paused {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding-right: 4px;
 }
 
 /* A note in the planning screens that can be closed. */
@@ -2286,4 +2084,438 @@ button.stat.open {
   color: var(--brick);
   font-size: 0.85rem;
   font-weight: 700;
+}
+
+/* ---------- The day: the restaurant fills the screen (project.md section 9.3, A) ---------- */
+
+/* A pixel-art frame: a dark outline, a thin gold line inside it and a hard shadow. */
+.frame {
+  box-sizing: border-box;
+  border: 3px solid #3b2433;
+  border-radius: 0;
+  background: var(--cream);
+  box-shadow: inset 0 0 0 2px #e9c27a, 4px 4px 0 rgba(59, 36, 51, 0.35);
+  color: var(--ink);
+}
+
+.day-screen {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  overflow: hidden;
+  /* The street picture fills this; the colour only shows for a moment while it's drawn. */
+  background: #a99d91;
+}
+
+.day-screen .pixel-wrap {
+  border-radius: 0;
+}
+
+/* Along the top: the clock on the left, the day's numbers in the middle, the money on the right. */
+.day-top {
+  position: absolute;
+  top: 10px;
+  left: 12px;
+  right: 12px;
+  z-index: 70000;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  /* Taps between the panels reach the restaurant. */
+  pointer-events: none;
+}
+
+.day-top > * {
+  pointer-events: auto;
+}
+
+.day-clock {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto auto;
+  align-items: center;
+  column-gap: 12px;
+  padding: 4px 14px 9px 12px;
+  line-height: 1.2;
+}
+
+.day-time {
+  grid-row: span 2;
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--brick);
+  font-variant-numeric: tabular-nums;
+}
+
+.day-date {
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.day-week {
+  font-size: 0.9rem;
+  color: var(--sea);
+  white-space: nowrap;
+}
+
+.day-closing {
+  color: var(--brick);
+}
+
+/* How far through the day it is: a thin line along the bottom of the clock. */
+.day-clock-progress {
+  position: absolute;
+  left: 5px;
+  right: 5px;
+  bottom: 4px;
+  height: 3px;
+  background: var(--sand);
+}
+
+.day-clock-progress span {
+  display: block;
+  height: 100%;
+  background: var(--amber);
+  transition: width 0.3s linear;
+}
+
+/* The day's numbers: each opens the list behind it. */
+.day-stats {
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+}
+
+.day-stats .stat {
+  box-sizing: border-box;
+  min-width: 80px;
+  min-height: 52px;
+  padding: 3px 8px 5px;
+  border: 3px solid #3b2433;
+  border-radius: 0;
+  background: var(--cream);
+  box-shadow: inset 0 0 0 2px #e9c27a, 4px 4px 0 rgba(59, 36, 51, 0.35);
+  color: var(--ink);
+  font: inherit;
+  line-height: 1.15;
+  text-align: center;
+}
+
+.day-stats .stat strong {
+  display: block;
+  font-size: 1.3rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.day-stats .stat span {
+  font-size: 0.8rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.day-stats .stat.open {
+  background: #fff;
+  box-shadow: inset 0 0 0 2px var(--sea), 4px 4px 0 rgba(59, 36, 51, 0.35);
+}
+
+.day-money {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 8px 14px;
+  font-size: 1.2rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.day-rating {
+  color: #a8752a;
+}
+
+/* Short notes under the clock, one under the other. */
+.day-notes {
+  position: absolute;
+  top: 86px;
+  left: 12px;
+  z-index: 70000;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  width: min(360px, calc(100% - 24px));
+  /* Above the round buttons; room for the frames' shadows. */
+  max-height: calc(100% - 196px);
+  overflow: hidden;
+  padding: 0 4px 4px 0;
+  /* Taps go through the notes to the restaurant; their ✕ and Mewa's buttons still work. */
+  pointer-events: none;
+}
+
+.day-notes > .gull-warning,
+.day-notes > .moment-result,
+.day-notes > .paused {
+  position: static;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  box-sizing: border-box;
+  width: auto;
+  max-width: 100%;
+  margin: 0;
+  padding: 6px 4px 6px 12px;
+  transform: none;
+  border: 3px solid #3b2433;
+  border-left-width: 7px;
+  border-radius: 0;
+  background: var(--cream);
+  box-shadow: inset 0 0 0 2px #e9c27a, 4px 4px 0 rgba(59, 36, 51, 0.35);
+  color: var(--ink);
+  font-size: 0.95rem;
+  text-align: left;
+}
+
+/* The coloured edge says how it went: red for trouble, green for good news, amber for a card's result. */
+.day-notes > .gull-warning {
+  border-left-color: var(--brick);
+}
+
+.day-notes > .gull-warning.good {
+  border-left-color: var(--leaf);
+}
+
+.day-notes > .moment-result {
+  border-left-color: var(--amber);
+}
+
+.day-notes > .paused {
+  border-left-color: var(--sea);
+  color: var(--sea);
+  font-weight: 600;
+}
+
+.day-notes .mewa {
+  margin: 0;
+  pointer-events: auto;
+}
+
+.day-notes .mewa-bubble {
+  display: block;
+  padding: 8px 12px;
+  border: 3px solid #3b2433;
+  border-radius: 0;
+  background: var(--cream);
+  box-shadow: inset 0 0 0 2px #e9c27a, 4px 4px 0 rgba(59, 36, 51, 0.35);
+  font-size: 0.95rem;
+}
+
+.day-notes .mewa-bubble p {
+  margin: 0 0 6px;
+}
+
+/* Along the bottom on the left: round buttons, each with its name on a little plate. */
+.day-buttons {
+  position: absolute;
+  left: 12px;
+  bottom: 10px;
+  z-index: 70000;
+  display: flex;
+  /* The circles in one line, whatever the length of their names. */
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.round-button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  min-width: 76px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+}
+
+.round-icon {
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+  width: 56px;
+  height: 56px;
+  border: 3px solid #3b2433;
+  border-radius: 50%;
+  background: var(--cream);
+  box-shadow: inset 0 0 0 2px #e9c27a, 3px 3px 0 rgba(59, 36, 51, 0.35);
+  font-size: 1.6rem;
+  line-height: 1;
+}
+
+.round-label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1px 7px 2px;
+  border: 2px solid #3b2433;
+  background: var(--cream);
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1.15;
+  white-space: nowrap;
+}
+
+.round-label small {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #8a7466;
+}
+
+.round-button:active:not(:disabled) .round-icon {
+  transform: translateY(2px);
+  box-shadow: inset 0 0 0 2px #e9c27a, 1px 1px 0 rgba(59, 36, 51, 0.35);
+}
+
+.round-button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.round-button[aria-expanded='true'] .round-icon {
+  background: #fff;
+  box-shadow: inset 0 0 0 2px var(--sea), 3px 3px 0 rgba(59, 36, 51, 0.35);
+}
+
+/* The happy hour while it lasts. */
+.round-button.on .round-icon {
+  background: var(--amber);
+  animation: happy-glow 1.6s ease-in-out infinite;
+}
+
+.round-button.on .round-label {
+  background: var(--amber);
+}
+
+.round-button.on .round-label small {
+  color: var(--ink);
+}
+
+/* Along the bottom on the right: sound, pause and the speeds. */
+.day-controls {
+  position: absolute;
+  right: 12px;
+  bottom: 10px;
+  z-index: 70000;
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+}
+
+.day-controls .speed {
+  gap: 4px;
+}
+
+.day-controls .mute,
+.day-controls .speed button {
+  min-width: 52px;
+  min-height: 48px;
+  border: 2px solid #3b2433;
+  border-radius: 0;
+  background: #f1e2c4;
+  color: var(--ink);
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.day-controls .speed button[aria-pressed='true'] {
+  background: var(--sea);
+  color: #fff;
+}
+
+/* Who's who: the guest groups' colours and what the bubbles mean. */
+.legend-panel {
+  position: absolute;
+  left: 12px;
+  bottom: 96px;
+  z-index: 70001;
+  width: min(400px, calc(100% - 24px));
+  padding: 8px 10px 10px 14px;
+}
+
+.legend-panel header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.legend-panel h2 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.legend-groups,
+.legend-bubbles {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.legend-groups {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin-bottom: 8px;
+}
+
+.legend-groups li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legend-bubbles li {
+  padding: 2px 0;
+  font-size: 0.95rem;
+}
+
+/* Narrow screens: the panels along the top get a little smaller, so they all fit on one row. */
+@media (max-width: 1000px) {
+  .day-time {
+    font-size: 1.6rem;
+  }
+  .day-date,
+  .day-week {
+    font-size: 0.8rem;
+  }
+  .day-stats {
+    gap: 6px;
+  }
+  .day-stats .stat {
+    min-width: 62px;
+    padding: 3px 5px 5px;
+  }
+  .day-stats .stat strong {
+    font-size: 1.1rem;
+  }
+  .day-stats .stat span {
+    font-size: 0.7rem;
+  }
+  .day-money {
+    gap: 10px;
+    padding: 8px 10px;
+    font-size: 1rem;
+  }
+  /* Narrower notes, so they hide less of the terrace. */
+  .day-notes {
+    top: 80px;
+    width: min(300px, calc(100% - 24px));
+  }
+  .day-notes > .gull-warning,
+  .day-notes > .moment-result,
+  .day-notes > .paused,
+  .day-notes .mewa-bubble {
+    font-size: 0.85rem;
+  }
 }

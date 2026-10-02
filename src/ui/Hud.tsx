@@ -1,4 +1,5 @@
-// The bar across the top: date, clock, cash, rating and speed controls.
+// The bar across the top: date, clock, cash, rating and speed controls. During the day the same
+// things sit in small panels in the corners of the day screen instead (see DayScreen).
 
 import { WEATHER } from '../data/weather';
 import { dateOf, formatDate, seasonWeek } from '../sim/calendar';
@@ -17,7 +18,7 @@ const SPEEDS: { speed: Speed; label: string; name: string }[] = [
   { speed: 4, label: '4×', name: 'Four times speed' },
 ];
 
-function SpeedControls() {
+export function SpeedControls() {
   const phase = useGame((s) => s.phase);
   const speed = useGame((s) => s.speed);
   const setSpeed = useGame((s) => s.setSpeed);
@@ -41,7 +42,7 @@ function SpeedControls() {
 }
 
 /** Quick mute for everything; music and sounds can be chosen separately in Settings. */
-function MuteButton() {
+export function MuteButton() {
   const { muted } = useSoundPrefs();
   return (
     <button
@@ -56,7 +57,8 @@ function MuteButton() {
   );
 }
 
-export function Hud() {
+/** The date, weather, cash and rating, as the top bar and the day screen's corners show them. */
+export function useHudFacts() {
   const game = useGame((s) => s.game);
   const phase = useGame((s) => s.phase);
   const live = useGame((s) => s.live);
@@ -65,25 +67,63 @@ export function Hud() {
   // While the day's results are showing, keep showing that day's date.
   const day = phase === 'dayOver' && summary ? summary.day : game.day;
   const weatherId = phase === 'dayOver' && summary ? summary.weather : game.weather;
-  const weather = WEATHER[weatherId];
-  const cash = game.cash + (live ? live.revenue - live.ingredientCost : 0);
+  return {
+    date: formatDate(dateOf(day)),
+    week: seasonWeek(day),
+    weatherId,
+    weather: WEATHER[weatherId],
+    cash: game.cash + (live ? live.revenue - live.ingredientCost : 0),
+    rating: starRating(playerOf(game)),
+  };
+}
+
+/** The weather, with its pixel icon. */
+export function WeatherName({ facts }: { facts: ReturnType<typeof useHudFacts> }) {
+  return (
+    <>
+      <PixelIcon art={WEATHER_ICONS[facts.weatherId]} name={`weather:${facts.weatherId}`} /> {facts.weather.name}
+    </>
+  );
+}
+
+/** Cash, with its coin. */
+export function Cash({ facts }: { facts: ReturnType<typeof useHudFacts> }) {
+  return (
+    <>
+      <PixelIcon art={COIN} name="coin" /> {money(facts.cash)}
+    </>
+  );
+}
+
+/** The star rating, with its star. */
+export function Rating({ facts }: { facts: ReturnType<typeof useHudFacts> }) {
+  return (
+    <>
+      {facts.rating.toFixed(1)} <PixelIcon art={STAR} name="star" label="stars" />
+    </>
+  );
+}
+
+export function Hud() {
+  const live = useGame((s) => s.live);
+  const facts = useHudFacts();
 
   return (
     <header className="hud">
       <div className="hud-date">
-        <strong>{formatDate(dateOf(day))}</strong>
-        <span>Week {seasonWeek(day)}</span>
+        <strong>{facts.date}</strong>
+        <span>Week {facts.week}</span>
       </div>
       <div className="hud-weather" aria-label="Weather">
-        <PixelIcon art={WEATHER_ICONS[weatherId]} name={`weather:${weatherId}`} /> {weather.name}
+        <WeatherName facts={facts} />
       </div>
       {live && <div className="hud-clock">{formatTime(live.minute)}</div>}
       <div className="hud-spacer" />
       <div className="hud-stat" aria-label="Cash">
-        <PixelIcon art={COIN} name="coin" /> {money(cash)}
+        <Cash facts={facts} />
       </div>
       <div className="hud-stat" aria-label="Rating">
-        {starRating(playerOf(game)).toFixed(1)} <PixelIcon art={STAR} name="star" label="stars" />
+        <Rating facts={facts} />
       </div>
       <MuteButton />
       <SpeedControls />

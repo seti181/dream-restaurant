@@ -109,6 +109,27 @@ describe('the restaurant view', () => {
     // At closing time everyone has gone home.
     expect(floorView(progress, 0).tables.every((t) => t === null)).toBe(true);
   });
+
+  it('shows what each party paid once, on its first table, adding up to the takings', () => {
+    const state = newGame(31);
+    const progress = startDay(state.day, state.restaurants);
+    const rng = createRng(31);
+    const bills = new Map<string, number>();
+    while (!progress.done) {
+      stepDay(rng, progress);
+      floorView(progress, 0).tables.forEach((table, i) => {
+        if (!table) return;
+        if (table.stage !== 'eating') expect(table.bill).toBe(0);
+        if (table.bill > 0) bills.set(`${i}:${table.since}`, table.bill);
+      });
+    }
+    const player = playerOf(state).id;
+    const takings = progress.outcomes
+      .filter((o) => o.restaurant === player && o.kind === 'served')
+      .reduce((total, o) => total + o.revenue, 0);
+    expect(takings).toBeGreaterThan(0);
+    expect([...bills.values()].reduce((total, bill) => total + bill, 0)).toBe(takings);
+  });
 });
 
 describe('the queue at the door', () => {

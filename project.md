@@ -387,6 +387,15 @@ All numbers live in `src/data/` (`balance.ts`, `dishes.ts`, `locations.ts`, `riv
 - rating stars
 - speed controls: pause, 1×, 2×, 4×
 
+**During the day** there is no bar: the restaurant and its street fill the screen, and the same things sit in small pixel-framed panels in its corners (section 9.3, A):
+
+- top left: the clock, date and weather, with how far through the day it is;
+- top middle: the day's numbers;
+- top right: cash and stars;
+- bottom left: round buttons for Manage, Happy hour, Flyers and Who's who;
+- bottom right: sound and the speeds;
+- under the clock: short notes.
+
 **Screens:**
 
 - **Restaurant view** (main): a cozy isometric pixel-art room with the dining room, kitchen and terrace. Guests and staff are small 2D sprites with reaction bubbles. See section 9.
@@ -496,7 +505,7 @@ Since 2026-10-01 the restaurant view sits in an Old Town street: cobbles, paveme
 ### 9.2 Audio and juice
 
 - **Audio:** soft background music, café ambience, a till "ding", seagull calls. Made in code with Web Audio (no sound files), or CC0 sources only; a mute toggle is required.
-- **Juice:** coins popping, stars appearing, a small celebration when a goal is reached.
+- **Juice:** coins popping (the money each table pays floats up from it, with a heart from happy guests), stars appearing, a small celebration when a goal is reached.
 
 ### 9.3 Graphics and layout: concepts (chosen 2026-10-02: A, then C, then B)
 
@@ -708,8 +717,8 @@ Each item is tested in the browser and on the tablet before the next one starts.
 - [x] The riverside background during the day too, as on the planning screens
 - [x] Replying to reviews
 - [x] Attracting passers-by: flyers for people walking past
-- [ ] Graphics A: the restaurant fills the screen during the day, with small framed panels in the corners (section 9.3)
-- [ ] Graphics A: money and hearts float up from the tables
+- [x] Graphics A: the restaurant fills the screen during the day, with small framed panels in the corners (section 9.3)
+- [x] Graphics A: money and hearts float up from the tables
 - [ ] Graphics C: a richer room: floor, walls, window and kitchen
 - [ ] Graphics C: richer furniture and decor
 - [ ] Graphics C: bigger, more detailed people
@@ -871,3 +880,12 @@ Each item is tested in the browser and on the tablet before the next one starts.
 - 2026-10-02: Playtest requests: 25% fewer people walking past (one in four five-minute steps brings someone along, at most 3 out at once; the choice now uses the hash's top bits, as its last bits repeat from one step to the next), guests and people walking past another 10% slower (58.5 world units a second; waiters keep 90), and meals another 10% longer: 76 minutes instead of 69 (balance.service.eatingMinutes). Simulator, 10 seasons, before → after: do nothing 23,240 → 20,060 zł (still loses money); cheap and fast bust 10/10 both; quality focus 6,970 zł (6 busts) → 1,861 zł (9 busts in 10, week 5); balanced 34,498 → 38,131 zł (1 bust; it bought fewer tables), now profitable from week 3 instead of week 2, still within the target of week 2–3; Neptune 39.4 → 38.4.
 - 2026-10-02: With 76-minute meals, a booked food critic could give up at a full door after 40 minutes, just before a table freed up (a test caught it). Guests who booked now wait up to 80 minutes (balance.service.bookedWaitFactor 4 → 8), longer than a meal, so their table always frees up in time. Simulator, 10 seasons, with this: do nothing 19,149 zł; cheap and fast bust 10/10; quality focus 2,333 zł (9 busts in 10); balanced 34,261 zł (2 busts in 10, week 6), profitable from week 3; Neptune 38.5.
 - 2026-10-02: Graphics and layout, concept round 3 (section 9.3, pictures in `art/concepts/v3/`, compared with Stardew Valley, Kairosoft's games, Two Point Hospital and others): all three concepts chosen, in this order. A: the restaurant fills the screen during the day, with small framed panels in the corners and money floating up from the tables. C: richer pixel art, the room first, then furniture and decor, then bigger people. B: pixel-framed menus and pop-ups. They are six M7 roadmap items, before the rest of M7.
+- 2026-10-02: Graphics A, first part: during the day the restaurant and its street fill the whole screen. The top bar and the white card are gone during the day (they stay on the other screens), and their contents sit in pixel frames in the corners:
+  - top left: the clock, date and weather, with how far through the day it is;
+  - top middle: the day's four numbers, still tappable for their lists;
+  - top right: cash and stars;
+  - bottom left, round buttons: Manage; Happy hour; Flyers (how many are left, and a tap explains them); Who's who (the colour legend and what the bubbles mean, which used to take a line under the restaurant);
+  - bottom right: sound and the speeds.
+
+  Notes stack under the clock (a gull, who didn't come in, Mewa's tips, a card's result, "Paused"), narrower on small screens. The table helper opens above the round buttons. The restaurant is drawn about 1.6 times bigger (544 → 880 pixels wide at 1364×603). The street now fills the screen, so the riverside background no longer shows during the day. Mewa's tips about the speed and happy hour buttons now say where they are.
+- 2026-10-02: Graphics A, second part: the money each table pays floats up from it the moment its food arrives (that's when the party pays). It's gold with a dark outline, lasts 1.8 seconds at any speed, and replaces the little coin. A heart comes with it when the guests are happy with their food (🙂 or 😋, a score of 60 or more). The heart is set at 60, not at 😋's 80: measured over three seasons for each simulated player, no guest reaches 80 with today's numbers (almost all land between 40 and 60, 😐), so 😋 never shows. Worth a look when balancing.

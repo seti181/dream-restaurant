@@ -30,7 +30,7 @@ export const TIPS: Record<TipId, Tip> = {
     screen: 'open',
     text:
       'The day is on! Guests pick where to eat by taste, price, reputation and how close you are. ' +
-      'Tap 2× or 4× up top if you’re impatient. I always am.',
+      'Tap 2× or 4× in the bottom corner if you’re impatient. I always am.',
   },
   report: {
     day: 0,
@@ -100,7 +100,7 @@ export const TIPS: Record<TipId, Tip> = {
     day: 2,
     screen: 'open',
     text:
-      'Quiet afternoon? Tap 🍹 “Start happy hour” up top: an hour of cheaper food and drinks, and people ' +
+      'Quiet afternoon? Tap 🍹 Happy hour down in the corner: an hour of cheaper food and drinks, and people ' +
       'flock in. Only once a day, so save it for when the tables are empty.',
   },
   farewell: {

@@ -19,26 +19,20 @@ function panoramaUrl(evening: boolean, fair: boolean): string {
   return url;
 }
 
-/** A screen with the sky behind it and the riverside along the bottom, below the card (or behind it). */
+/** A screen with the sky behind it and the riverside along the bottom, below the card. */
 export function PanoramaScreen({
   weather,
   evening,
   fair,
-  behind = false,
   children,
 }: {
   weather: Weather;
   evening: boolean;
   fair: boolean;
-  /** Just a background: the card keeps its full size and may cover the riverside (the day screen). */
-  behind?: boolean;
   children: ReactNode;
 }) {
   return (
-    <main
-      className={behind ? 'screen with-panorama behind' : 'screen with-panorama'}
-      style={{ background: panoramaSky(weather, evening) }}
-    >
+    <main className="screen with-panorama" style={{ background: panoramaSky(weather, evening) }}>
       <div className="panorama" aria-hidden="true">
         <img src={panoramaUrl(evening, fair)} alt="" />
       </div>

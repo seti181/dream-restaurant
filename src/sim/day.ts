@@ -558,6 +558,8 @@ export interface TableGuests {
   satisfaction: number | null;
   /** Minutes since the food arrived. */
   eatingFor: number;
+  /** What the party paid when its food arrived, on its first table only (0 elsewhere, and before). */
+  bill: number;
   critic: boolean;
   regular: boolean;
   /** One of the named regulars with a story, or null. */
@@ -624,6 +626,7 @@ export function floorView(progress: DayInProgress, index: number, recentMinutes 
         impatience: visit.eating ? 0 : Math.min(1, (minute - visit.seatedAt) / patience),
         satisfaction: visit.satisfaction,
         eatingFor: visit.eating && visit.readyAt !== null ? minute - visit.readyAt : 0,
+        bill: visit.eating && i === 0 ? sum(visit.order, (dish) => dish.price) : 0,
         critic: party.critic ?? false,
         regular: party.regular ?? false,
         regularId: party.regularId ?? null,

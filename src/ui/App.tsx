@@ -10,11 +10,13 @@ import { useGame } from './store';
 export function App() {
   const phase = useGame((s) => s.phase);
   const managing = useGame((s) => s.managing);
+  // During the day the restaurant fills the screen, with the clock and the money in its corners.
+  const dayScreen = phase === 'open' && !managing;
   return (
     <div className="app">
-      <Hud />
+      {!dayScreen && <Hud />}
       {(phase === 'plan' || (phase === 'open' && managing)) && <PlanScreen />}
-      {phase === 'open' && !managing && <DayScreen />}
+      {dayScreen && <DayScreen />}
       {phase === 'dayOver' && <DayOverScreen />}
       {phase === 'ceremony' && <CeremonyScreen />}
       {phase === 'gameOver' && <GameOverScreen />}

@@ -1,20 +1,20 @@
-// The day playing out: the clock runs and the counters tick up.
+// The day playing out: the restaurant and its street fill the screen, with the clock, the day's
+// numbers, the money and the buttons in small framed panels in its corners (project.md section 9.3, A).
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import type { TableGuests } from '../sim/day';
 import { balance } from '../data/balance';
 import { formatTime, ticksPerDay } from '../sim/clock';
 import { dishName, money } from './format';
+import { Cash, MuteButton, Rating, SpeedControls, useHudFacts, WeatherName } from './Hud';
 import { FoodIcon } from './PixelIcon';
 import type { GroupId } from '../data/groups';
 import { MewaTip } from './Mewa';
 import { MomentCard, MomentResultNote, NoteClose } from './MomentCard';
 import { GROUP_COLOURS } from './pixel/sprites';
-import { PanoramaScreen } from './Panorama';
-import { canTend, DUSK_MINUTE, PixelRestaurantView } from './PixelRestaurantView';
+import { canTend, PixelRestaurantView } from './PixelRestaurantView';
 import { isFavourite } from '../sim/seating';
 import { playerOf } from '../sim/game';
-import { isFairDay } from '../sim/neptune';
 import { FAVOURITE_SPOTS, GROUP_IDS, GROUPS, SPOT_NAMES } from '../data/groups';
 import { GULLS } from '../data/gulls';
 import { useGame } from './store';
@@ -185,13 +185,51 @@ function HelpPanel({
   );
 }
 
-/** Opens the planning tabs during the day: menu, map, staff and the rest. The clock waits meanwhile. */
-function ManageButton() {
-  const openManager = useGame((s) => s.openManager);
+/** Top left: the time, the date and the weather, with how far through the day it is along the bottom. */
+function ClockPanel({ minute, closing }: { minute: number; closing: boolean }) {
+  const facts = useHudFacts();
+  const { openMinute, closeMinute } = balance.clock;
+  const progress = Math.max(0, Math.min(1, (minute - openMinute) / (closeMinute - openMinute)));
   return (
-    <button type="button" className="happy-hour manage" onClick={openManager}>
-      📋 <strong>Manage</strong>
-      <span>menu, map, staff…</span>
+    <div className="frame day-clock">
+      <strong className="day-time">{formatTime(minute)}</strong>
+      <span className="day-date">{facts.date}</span>
+      <span className="day-week">
+        Week {facts.week} · <WeatherName facts={facts} />
+        {closing && <strong className="day-closing"> · Last orders</strong>}
+      </span>
+      <span className="day-clock-progress" aria-hidden="true">
+        <span style={{ width: `${progress * 100}%` }} />
+      </span>
+    </div>
+  );
+}
+
+/** A round button along the bottom of the day screen, with its name on a little plate underneath. */
+function RoundButton({
+  icon,
+  label,
+  detail,
+  disabled,
+  expanded,
+  onClick,
+}: {
+  icon: ReactNode;
+  label: string;
+  detail?: string;
+  disabled?: boolean;
+  expanded?: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button type="button" className="round-button" disabled={disabled} aria-expanded={expanded} onClick={onClick}>
+      <span className="round-icon" aria-hidden="true">
+        {icon}
+      </span>
+      <span className="round-label">
+        {label}
+        {detail && <small>{detail}</small>}
+      </span>
     </button>
   );
 }
@@ -205,17 +243,52 @@ function HappyHourButton() {
   const { minutes, discount } = balance.happyHour;
   if (hour && minute < hour.until) {
     return (
-      <div className="happy-hour on" role="status">
-        🍹 <strong>Happy hour!</strong>
-        <span>until {formatTime(hour.until)}</span>
+      <div className="round-button on" role="status">
+        <span className="round-icon" aria-hidden="true">
+          🍹
+        </span>
+        <span className="round-label">
+          Happy hour!
+          <small>until {formatTime(hour.until)}</small>
+        </span>
       </div>
     );
   }
   return (
-    <button type="button" className="happy-hour" disabled={hour !== null || closing} onClick={start}>
-      🍹 <strong>{hour ? 'Happy hour done' : 'Start happy hour'}</strong>
-      <span>{hour ? 'see you tomorrow' : `${minutes} min, ${Math.round(discount * 100)}% off`}</span>
-    </button>
+    <RoundButton
+      icon="🍹"
+      label="Happy hour"
+      detail={hour ? 'done for today' : `${minutes} min, ${Math.round(discount * 100)}% off`}
+      disabled={hour !== null || closing}
+      onClick={start}
+    />
+  );
+}
+
+/** Who is who on the street and at the tables, opened from its round button. */
+function WhoIsWho({ flyersLeft, onClose }: { flyersLeft: number; onClose: () => void }) {
+  return (
+    <div className="frame legend-panel" role="dialog" aria-label="Who is who">
+      <header>
+        <h2>Who’s who</h2>
+        <NoteClose onClose={onClose} />
+      </header>
+      <ul className="legend-groups">
+        {GROUP_IDS.map((g) => (
+          <li key={g}>
+            <span className="swatch" style={{ background: GROUP_COLOURS[g] }} />
+            {GROUPS[g].name}
+          </li>
+        ))}
+      </ul>
+      <ul className="legend-bubbles">
+        <li>💬 choosing from the menu</li>
+        <li>⏳ 😤 waiting for their food: tap the table to look after them</li>
+        <li>😋 🙂 😐 😞 how the food went</li>
+        <li>😠 walked out</li>
+        {flyersLeft > 0 && <li>📜 tap someone walking past to hand them a flyer</li>}
+      </ul>
+    </div>
   );
 }
 
@@ -298,21 +371,26 @@ function GullWarning() {
   );
 }
 
+/** How long a short note (a new seat, how flyers work) stays up, in real seconds. */
+const NOTE_SECONDS = 4;
+
 export function DayScreen() {
   const live = useGame((s) => s.live);
   const shooGull = useGame((s) => s.shooGull);
   const handFlyer = useGame((s) => s.handFlyer);
   const flyerArrives = useGame((s) => s.flyerArrives);
+  const openManager = useGame((s) => s.openManager);
   const [selected, setSelected] = useState<{ table: number; since: number } | null>(null);
   const [choosing, setChoosing] = useState(false);
   const [stat, setStat] = useState<StatId | null>(null);
-  const [seatNote, setSeatNote] = useState<{ text: string; at: number } | null>(null);
+  const [legend, setLegend] = useState(false);
+  const [note, setNote] = useState<{ text: string; at: number } | null>(null);
   const location = useGame((s) => playerOf(s.game).location);
   const moveGuests = useGame((s) => s.moveGuests);
   const weather = useGame((s) => s.game.weather);
-  const day = useGame((s) => s.game.day);
   const speed = useGame((s) => s.speed);
   const tick = useGame((s) => s.tick);
+  const facts = useHudFacts();
 
   // Advance the day on a timer; faster speeds tick more often. Paused means no timer.
   useEffect(() => {
@@ -332,10 +410,10 @@ export function DayScreen() {
     }
   }, [selected, stillThere]);
   useEffect(() => {
-    if (!seatNote) return;
-    const timer = window.setTimeout(() => setSeatNote(null), 3500);
+    if (!note) return;
+    const timer = window.setTimeout(() => setNote(null), NOTE_SECONDS * 1000);
     return () => window.clearTimeout(timer);
-  }, [seatNote]);
+  }, [note]);
 
   if (!live) return null;
 
@@ -351,109 +429,115 @@ export function DayScreen() {
     setSelected(null);
     setChoosing(false);
   };
-
-  const { openMinute, closeMinute } = balance.clock;
-  const progress = Math.min(1, (live.minute - openMinute) / (closeMinute - openMinute));
+  const flyers = !live.closing ? live.flyersLeft : 0;
 
   return (
-    <PanoramaScreen weather={weather} evening={live.minute >= DUSK_MINUTE} fair={isFairDay(day)} behind>
-      <div className="card day-card">
-        <MewaTip screen="open" />
-        <div className="day-header">
-          <p className="eyebrow day-status">{live.closing ? 'Closed · last orders' : 'Open for business'}</p>
-          <HappyHourButton />
-          <ManageButton />
-          <div className="stats">
-            {(
-              [
-                ['served', 'Guests served', live.guestsServed],
-                ['takings', 'Takings', money(live.revenue)],
-                ['walkedOut', 'Walked out', live.guestsWalkedOut],
-                ['turnedAway', 'No free table', live.guestsTurnedAway],
-              ] as const
-            ).map(([id, label, value]) => (
-              <Stat key={id} label={label} value={value} open={stat === id} onToggle={() => setStat(stat === id ? null : id)} />
-            ))}
+    <main className="day-screen">
+      <PixelRestaurantView
+        floor={live.floor}
+        weather={weather}
+        minute={live.minute}
+        selectedTable={stillThere ? selected!.table : null}
+        onTableTap={(table) => {
+          const guests = live.floor.tables[table];
+          if (guests) setSelected({ table, since: guests.since });
+        }}
+        onGullTap={shooGull}
+        onPasserTap={flyers > 0 ? handFlyer : undefined}
+        onFlyerArrives={flyerArrives}
+        freeTables={choosing && stillThere ? free : []}
+        onFreeTableTap={(to) => {
+          if (!selected) return;
+          const favourite = moveGuests(selected.table, to);
+          if (favourite !== null) {
+            setNote({
+              text: favourite ? '🪑 Their favourite spot! They’re delighted. ⭐' : '🪑 They follow you to their new table.',
+              at: Date.now(),
+            });
+          }
+          close();
+        }}
+      />
+
+      {/* Along the top: the clock, the day's numbers and the money. */}
+      <div className="day-top">
+        <ClockPanel minute={live.minute} closing={live.closing} />
+        <div className="day-stats">
+          {(
+            [
+              ['served', 'served', live.guestsServed],
+              ['takings', 'takings', money(live.revenue)],
+              ['walkedOut', 'walked out', live.guestsWalkedOut],
+              ['turnedAway', 'no table', live.guestsTurnedAway],
+            ] as const
+          ).map(([id, label, value]) => (
+            <Stat key={id} label={label} value={value} open={stat === id} onToggle={() => setStat(stat === id ? null : id)} />
+          ))}
+        </div>
+        <div className="frame day-money">
+          <span aria-label="Cash">
+            <Cash facts={facts} />
+          </span>
+          <span className="day-rating" aria-label="Rating">
+            <Rating facts={facts} />
+          </span>
+        </div>
+      </div>
+
+      {/* Short notes under the clock, one under the other, each with its ✕: a gull first, it won't wait. */}
+      {!live.moment && (
+        <div className="day-notes">
+          {live.floor.gull && <GullWarning />}
+          {!live.floor.gull && <GullNote />}
+          <MewaTip screen="open" />
+          <AbsenceNotes />
+          {note && (
+            <p key={note.at} className="gull-warning good">
+              <span>{note.text}</span>
+              <NoteClose onClose={() => setNote(null)} />
+            </p>
+          )}
+          <MomentResultNote />
+          <PausedNote speed={speed} />
+        </div>
+      )}
+
+      {/* Along the bottom: the round buttons on the left, sound and speed on the right. */}
+      <div className="day-buttons">
+        <RoundButton icon="📋" label="Manage" onClick={openManager} />
+        <HappyHourButton />
+        <RoundButton
+          icon="📜"
+          label="Flyers"
+          detail={`${flyers} left`}
+          disabled={flyers === 0}
+          onClick={() => setNote({ text: '📜 Tap someone walking past to hand them a flyer.', at: Date.now() })}
+        />
+        <RoundButton icon="👥" label="Who’s who" expanded={legend} onClick={() => setLegend(!legend)} />
+      </div>
+      <div className="frame day-controls">
+        <MuteButton />
+        <SpeedControls />
+      </div>
+
+      {legend && <WhoIsWho flyersLeft={flyers} onClose={() => setLegend(false)} />}
+      {stat && !live.moment && <StatPanel stat={stat} onClose={() => setStat(null)} />}
+      {choosing && stillThere && !live.moment && (
+        <div className="help-panel" role="dialog" aria-label="Choose a table">
+          <p>
+            Tap a free table. <span className="small muted">⭐ marks their favourite spots.</span>
+          </p>
+          <div className="help-buttons">
+            <button type="button" className="secondary" onClick={close} aria-label="Close">
+              ✕
+            </button>
           </div>
         </div>
-        <div className="day-progress" aria-hidden="true">
-          <div style={{ width: `${progress * 100}%` }} />
-        </div>
-        <div className="scene-wrap">
-          <PixelRestaurantView
-            floor={live.floor}
-            weather={weather}
-            minute={live.minute}
-            selectedTable={stillThere ? selected!.table : null}
-            onTableTap={(table) => {
-              const guests = live.floor.tables[table];
-              if (guests) setSelected({ table, since: guests.since });
-            }}
-            onGullTap={shooGull}
-            onPasserTap={live.flyersLeft > 0 && !live.closing ? handFlyer : undefined}
-            onFlyerArrives={flyerArrives}
-            freeTables={choosing && stillThere ? free : []}
-            onFreeTableTap={(to) => {
-              if (!selected) return;
-              const favourite = moveGuests(selected.table, to);
-              if (favourite !== null) {
-                setSeatNote({
-                  text: favourite ? 'Their favourite spot! They’re delighted. ⭐' : 'They follow you to their new table.',
-                  at: Date.now(),
-                });
-              }
-              close();
-            }}
-          />
-          {stat && !live.moment && <StatPanel stat={stat} onClose={() => setStat(null)} />}
-          {choosing && stillThere && !live.moment && (
-            <div className="help-panel" role="dialog" aria-label="Choose a table">
-              <p>
-                Tap a free table. <span className="small muted">⭐ marks their favourite spots.</span>
-              </p>
-              <div className="help-buttons">
-                <button type="button" className="secondary" onClick={close} aria-label="Close">
-                  ✕
-                </button>
-              </div>
-            </div>
-          )}
-          {stillThere && !choosing && !live.moment && (
-            <HelpPanel table={selected!.table} freeTables={free.length} onMove={() => setChoosing(true)} onClose={close} />
-          )}
-          {/* Short notes at the top of the scene, stacked so they never sit on top of each other. */}
-          {!live.moment && (
-            <div className="scene-notes">
-              <AbsenceNotes />
-              {live.floor.gull && <GullWarning />}
-              {!live.floor.gull && <GullNote />}
-              {seatNote && (
-                <p className="gull-warning good">
-                  <span>🪑 {seatNote.text}</span>
-                  <NoteClose onClose={() => setSeatNote(null)} />
-                </p>
-              )}
-              <MomentResultNote />
-              <PausedNote speed={speed} />
-            </div>
-          )}
-          <MomentCard />
-        </div>
-        <ul className="legend" aria-label="Who is who">
-          {GROUP_IDS.map((g) => (
-            <li key={g}>
-              <span className="swatch" style={{ background: GROUP_COLOURS[g] }} />
-              {GROUPS[g].name}
-            </li>
-          ))}
-          <li className="muted">💬 ordering · ⏳ 😤 waiting · tap a table to look after it · 😋 🙂 😐 😞 how the food went · 😠 walked out</li>
-          {live.flyersLeft > 0 && !live.closing && (
-            <li className="muted">
-              Flyers left: {live.flyersLeft} · tap someone walking past to hand them one
-            </li>
-          )}
-        </ul>
-      </div>
-    </PanoramaScreen>
+      )}
+      {stillThere && !choosing && !live.moment && (
+        <HelpPanel table={selected!.table} freeTables={free.length} onMove={() => setChoosing(true)} onClose={close} />
+      )}
+      <MomentCard />
+    </main>
   );
 }
