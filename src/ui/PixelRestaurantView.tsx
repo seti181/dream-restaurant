@@ -39,8 +39,8 @@ import { useFittingScale } from './useFittingScale';
 
 /** World units a waiter walks per second at 1× speed... */
 const WAITER_WALK_SPEED = 90;
-/** ...and guests and people walking past, who take their time (90 slowed by 20%, then by 10% more). */
-const GUEST_WALK_SPEED = 65;
+/** ...and guests and people walking past, who take their time (90 slowed by 20%, then twice by 10% more). */
+const GUEST_WALK_SPEED = 58.5;
 /** Seconds for a waiter's two steps; slower walkers take slower steps. */
 const WAITER_STEP_SECONDS = 0.5;
 /** Seconds between people of the same party setting off. */
@@ -612,7 +612,7 @@ const STROLLERS: { until: number; groups: GroupId[] }[] = [
 ];
 
 /** At most this many people passing by at once, so the street feels alive but never crowded. */
-const MOST_PASSERS = 4;
+const MOST_PASSERS = 3;
 
 /**
  * People strolling past along the street, in their group colours: one may set off every few in-game
@@ -633,8 +633,9 @@ function usePassersBy(
       const n = count.current++;
       // A little hash instead of Math.random, so it never touches the game's dice.
       const roll = (n * 2654435761 + minute * 40503) >>> 0;
-      // With five-minute steps coming every second or so at 1×, one in three brings someone along.
-      if (roll % 3 !== 0) return now;
+      // With five-minute steps coming every second or so at 1×, one in four brings someone along.
+      // (The hash's top bits: they're well mixed, while its last bits repeat from one step to the next.)
+      if (((roll >>> 24) & 3) !== 0) return now;
       const groups = (STROLLERS.find((s) => minute < s.until) ?? STROLLERS[STROLLERS.length - 1]).groups;
       const kind = groups[(roll >>> 4) % groups.length];
       return [

@@ -412,7 +412,7 @@ export const balance = {
     /** Occupied tables one waiter can look after before service slows down. */
     tablesPerWaiter: 4,
     /** Minutes guests stay at the table once their food has come: the meal itself. */
-    eatingMinutes: 69,
+    eatingMinutes: 76,
     /** Order-taking this slow feels like no service at all. */
     slowOrderMinutes: 10,
     /** Service score gained for each waiter skill point above average (lost below). */
@@ -421,8 +421,11 @@ export const balance = {
     doorQueueMax: 2,
     /** ...for at most this many minutes, before they go somewhere else. */
     doorWaitMinutes: 10,
-    /** Guests who booked go to the front of the queue and wait this many times as long. */
-    bookedWaitFactor: 4,
+    /**
+     * Guests who booked go to the front of the queue and wait this many times as long: longer than
+     * a meal takes, so a table always frees up for them in time.
+     */
+    bookedWaitFactor: 8,
   },
 
   satisfaction: {
