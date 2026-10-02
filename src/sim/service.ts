@@ -2,11 +2,11 @@
 // See project.md section 7, step 3.
 
 import { balance } from '../data/balance';
-import type { MenuDish } from '../data/dishes';
+import type { ExtraId, MenuDish } from '../data/dishes';
 import type { Weather } from '../data/weather';
 import { GROUPS, type GroupId } from '../data/groups';
 import { dishAppeal } from './choice';
-import { lunchSetServing, pairingQuality, priceMultiplier, templateOf } from './menu';
+import { freshOn, lunchSetServing, pairingQuality, priceMultiplier, specialOf, templateOf } from './menu';
 import { chance, nextFloat, type RngState } from './rng';
 import type { Party, Restaurant, Staff, Supplier } from './types';
 
@@ -41,9 +41,14 @@ export function pickByAppeal(
   dishes: MenuDish[],
   group: GroupId,
   weather: Weather = 'cloudy',
+  /** Today's special: the board outside talks guests into it. */
+  special: MenuDish | null = null,
 ): MenuDish {
   const weights = dishes.map(
-    (dish) => (balance.orders.baseDishWeight + dishAppeal(dish, group)) * weatherAppetite(dish, weather),
+    (dish) =>
+      (balance.orders.baseDishWeight + dishAppeal(dish, group)) *
+      weatherAppetite(dish, weather) *
+      (dish === special ? balance.specials.orderWeight : 1),
   );
   let roll = nextFloat(rng) * weights.reduce((sum, w) => sum + w, 0);
   for (let i = 0; i < dishes.length; i++) {
@@ -79,17 +84,18 @@ export function chooseOrder(
   const desserts = inCategory('dessert');
   const order: MenuDish[] = [];
   const multiplier = priceMultiplier(restaurant, minute);
+  const special = specialOf(restaurant);
   for (let guest = 0; guest < party.size; guest++) {
     if (lunchSet && chance(rng, GROUPS[party.group].lunchSetAppeal)) {
       order.push(...lunchSetOrder(lunchSet));
     } else {
-      order.push(pickByAppeal(rng, food.length > 0 ? food : menu, party.group, weather));
+      order.push(pickByAppeal(rng, food.length > 0 ? food : menu, party.group, weather, special));
     }
     if (drinks.length > 0 && chance(rng, balance.orders.drinkChance)) {
-      order.push(pickByAppeal(rng, drinks, party.group, weather));
+      order.push(pickByAppeal(rng, drinks, party.group, weather, special));
     }
     if (desserts.length > 0 && chance(rng, balance.orders.dessertChance)) {
-      order.push(pickByAppeal(rng, desserts, party.group, weather));
+      order.push(pickByAppeal(rng, desserts, party.group, weather, special));
     }
   }
   return multiplier === 1 ? order : order.map((dish) => ({ ...dish, price: dish.price * multiplier }));
@@ -118,15 +124,21 @@ export function prepMinutes(order: MenuDish[], chef: Staff, menuSize: number): n
   return (base / speedFactor) * menuSlowdown(menuSize);
 }
 
-/** Average quality (0–100) of an order cooked by this chef. */
-export function orderQuality(order: MenuDish[], chef: Staff, supplier: Supplier = 'market'): number {
+/** Average quality (0–100) of an order cooked by this chef; fresh produce in season tastes better. */
+export function orderQuality(
+  order: MenuDish[],
+  chef: Staff,
+  supplier: Supplier = 'market',
+  inSeason: readonly ExtraId[] = [],
+): number {
   const k = balance.kitchen;
   const supplierBonus = supplier === 'premium' ? balance.supplier.premiumQualityBonus : 0;
   const skillBonus = (effectiveLevel(chef, 'skill') - balance.staff.averageLevel) * k.qualityPerSkillPoint;
   const dishQuality = (dish: MenuDish) => {
     const template = templateOf(dish);
     const specialty = chef.specialty !== undefined && chef.specialty === template.cuisine ? k.specialtyBonus : 0;
-    return template.baseQuality + skillBonus + specialty + supplierBonus + pairingQuality(dish);
+    const fresh = freshOn(dish, inSeason).length > 0 ? balance.seasonal.freshQuality : 0;
+    return template.baseQuality + skillBonus + specialty + supplierBonus + pairingQuality(dish) + fresh;
   };
   const quality = average(order.map(dishQuality), 0);
   return Math.max(0, Math.min(100, quality));

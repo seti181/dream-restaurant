@@ -5,7 +5,7 @@ import type { GroupId } from './groups';
 
 // ---------- Tutorial tips (the first three days) ----------
 
-export type TipId = 'welcome' | 'speed' | 'report' | 'prices' | 'hiring' | 'helpTables' | 'happyHour' | 'farewell' | 'daysOff' | 'training';
+export type TipId = 'welcome' | 'speed' | 'report' | 'prices' | 'hiring' | 'helpTables' | 'happyHour' | 'farewell' | 'daysOff' | 'training' | 'special';
 
 export interface Tip {
   /** When the tip appears: on this day, on this screen. */
@@ -14,7 +14,7 @@ export interface Tip {
   text: string;
 }
 
-export const TIP_IDS: readonly TipId[] = ['welcome', 'speed', 'report', 'prices', 'hiring', 'helpTables', 'happyHour', 'farewell', 'daysOff', 'training'];
+export const TIP_IDS: readonly TipId[] = ['welcome', 'speed', 'report', 'prices', 'hiring', 'helpTables', 'happyHour', 'farewell', 'daysOff', 'training', 'special'];
 
 export const TIPS: Record<TipId, Tip> = {
   welcome: {
@@ -59,6 +59,13 @@ export const TIPS: Record<TipId, Tip> = {
     text:
       'Your team works every day, and it shows. Tired people cook and serve a little slower. ' +
       'Give someone a day off in the Staff tab on a quiet day, when someone else can cover.',
+  },
+  special: {
+    day: 6,
+    screen: 'plan',
+    text:
+      'Summer in Gdańsk means fresh chanterelles and blueberries! Add some in the dish creator, then tap ☆ in the Menu tab ' +
+      'to make a dish today’s special. It goes on the board outside, and fresh produce on it tempts people in.',
   },
   training: {
     day: 9,
@@ -187,6 +194,10 @@ export const HELP: { title: string; text: string }[] = [
   {
     title: 'Morale and days off',
     text: 'Every day of work tires people a little; a day off puts them right. Below 40 morale, someone is tired and works a little slower. Below 15 they’re worn out and may stay in bed, if someone else can do their job. Cheerful people tire more slowly. Days off are paid, and someone has to be left to cook and to serve.',
+  },
+  {
+    title: 'Fresh produce and today’s special',
+    text: 'Some extras are fresh produce with a season: strawberries early in July, new potatoes until August, blueberries and chanterelles all summer, plums from mid-August. In season they make a dish taste better; out of season they’re imported, dearer and not as good. One dish a day can be today’s special, “Dziś polecamy”, on the board outside: more guests order it, it tempts people walking by, and fresh produce on it tempts them more.',
   },
   {
     title: 'Training and fair wages',

@@ -125,6 +125,8 @@ interface GameStore {
 
   addDish: (template: TemplateId, variant: string, extras?: ExtraId[], name?: string) => void;
   removeDish: (index: number) => void;
+  /** Today's special on the board outside ("Dziś polecamy"), or off the board again. */
+  toggleSpecial: (index: number) => void;
   setDishPrice: (index: number, price: number) => void;
   hire: (candidateId: number) => void;
   letGo: (employeeId: number) => void;
@@ -314,6 +316,7 @@ export const useGame = create<GameStore>((set, get) => ({
   addDish: (template, variant, extras, name) =>
     plan((game) => actions.addDish(game, template, variant, extras, name), 'now'),
   removeDish: (index) => plan((game) => actions.removeDish(game, index), 'now'),
+  toggleSpecial: (index) => plan((game) => actions.toggleSpecial(game, index), 'now'),
   setDishPrice: (index, price) => plan((game) => actions.setDishPrice(game, index, price), 'now'),
   hire: (candidateId) => plan((game) => actions.hire(game, candidateId)),
   letGo: (employeeId) => plan((game) => actions.letGo(game, employeeId)),

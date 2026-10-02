@@ -3,11 +3,11 @@
 // but there is always some chance for the others (a softmax, or logit, choice).
 
 import { balance } from '../data/balance';
-import type { MenuDish } from '../data/dishes';
+import type { ExtraId, MenuDish } from '../data/dishes';
 import { GROUPS, type GroupId } from '../data/groups';
 import { LOCATIONS, type LocationId } from '../data/locations';
 import { interiorAppeal } from './interior';
-import { happyHourOn, lunchSetServing, priceMultiplier, tagsOf, templateOf } from './menu';
+import { freshOn, happyHourOn, lunchSetServing, priceMultiplier, specialOf, tagsOf, templateOf } from './menu';
 import { nextFloat, type RngState } from './rng';
 import type { Party, Restaurant } from './types';
 
@@ -21,6 +21,14 @@ export function dishAppeal(dish: MenuDish, group: GroupId): number {
     (likes.categories.includes(template.category) ? 1 : 0) +
     (likes.templates.includes(dish.template) ? 1 : 0);
   return Math.min(1, matches / balance.choice.matchesForFullAppeal);
+}
+
+/** What today's special on the board outside adds to how tempting the restaurant looks. */
+export function specialAppeal(restaurant: Restaurant, inSeason: readonly ExtraId[]): number {
+  const special = specialOf(restaurant);
+  if (!special) return 0;
+  const { appeal, freshAppeal } = balance.specials;
+  return appeal + (freshOn(special, inSeason).length > 0 ? freshAppeal : 0);
 }
 
 /** How tempting a menu looks to a group, 0–1: the average appeal of its best few dishes. */
@@ -50,7 +58,13 @@ export function distanceMetres(a: LocationId, b: LocationId): number {
  * How attractive a restaurant is to a party, or null if it is not an option
  * (out of walking range, nothing on the menu, or nobody to cook).
  */
-export function utility(restaurant: Restaurant, party: Party, expectedWaitMinutes: number, full = false): number | null {
+export function utility(
+  restaurant: Restaurant,
+  party: Party,
+  expectedWaitMinutes: number,
+  full = false,
+  inSeason: readonly ExtraId[] = [],
+): number | null {
   const distance = distanceMetres(party.origin, restaurant.location);
   const range = balance.choice.walkRangeMetres;
   if (distance > range || restaurant.menu.length === 0 || restaurant.chefs.length === 0) return null;
@@ -75,6 +89,8 @@ export function utility(restaurant: Restaurant, party: Party, expectedWaitMinute
     lunchSetTerm +
     // The happy hour board outside.
     (happyHourOn(restaurant, party.arrivalMinute) ? balance.happyHour.appealBonus : 0) +
+    // "Dziś polecamy" on the board, all the more tempting with something fresh in season.
+    specialAppeal(restaurant, inSeason) +
     interiorAppeal(restaurant, party.group) -
     // Through the window, people can see when every table is taken.
     (full ? balance.choice.fullPenalty : 0)
@@ -93,12 +109,13 @@ export function chooseRestaurant(
   restaurants: Restaurant[],
   expectedWaits: number[],
   full: boolean[] = [],
+  inSeason: readonly ExtraId[] = [],
 ): number | null {
   const options: { index: number | null; score: number }[] = [
     { index: null, score: balance.choice.noRestaurantUtility },
   ];
   restaurants.forEach((restaurant, index) => {
-    const score = utility(restaurant, party, expectedWaits[index], full[index] ?? false);
+    const score = utility(restaurant, party, expectedWaits[index], full[index] ?? false, inSeason);
     if (score !== null) options.push({ index, score });
   });
 

@@ -201,6 +201,24 @@ export const balance = {
     restDays: 8,
   },
 
+  /** Fresh produce in season (the seasons are in dishes.ts, on each extra). */
+  seasonal: {
+    /** Quality points for a dish with something fresh in season on it... */
+    freshQuality: 6,
+    /** ...and what that ingredient costs out of season, imported, compared with in season. */
+    outOfSeasonCost: 2,
+  },
+
+  /** "Dziś polecamy": one dish on the board outside as today's special. */
+  specials: {
+    /** How much more often guests order the special than they otherwise would... */
+    orderWeight: 2,
+    /** ...how much more tempting the board makes the restaurant to people walking by... */
+    appeal: 0.25,
+    /** ...and more again when the special has something fresh in season on it. */
+    freshAppeal: 0.5,
+  },
+
   regulars: {
     /** Regulars feel at home: this much happier (0–100) than other guests from the start. */
     atHomeMood: 5,

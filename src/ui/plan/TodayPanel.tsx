@@ -5,6 +5,7 @@ import { LOCATIONS } from '../../data/locations';
 import { WEATHER } from '../../data/weather';
 import { weeklyBillsDue } from '../../sim/finance';
 import { eventsToday, playerOf, teamWages, type GameState } from '../../sim/game';
+import { freshOn, inSeasonOn, produceName, specialOf } from '../../sim/menu';
 import { dishName, money } from '../format';
 import { GoalCard } from '../Mewa';
 import { WEATHER_ICONS } from '../pixel/icons';
@@ -27,6 +28,20 @@ export function planWarnings(game: GameState): string[] {
     );
   }
   return warnings;
+}
+
+/** Today's special on the board outside, or a nudge to choose one. */
+function SpecialLine() {
+  const game = useGame((s) => s.game);
+  const special = specialOf(playerOf(game));
+  if (!special) return <p className="muted">⭐ No special on the board today. Tap ☆ next to a dish in the Menu tab.</p>;
+  const fresh = freshOn(special, inSeasonOn(game.day));
+  return (
+    <p>
+      ⭐ <strong>Dziś polecamy:</strong> {dishName(special)}
+      {fresh.length > 0 && ` · 🌱 fresh ${fresh.map(produceName).join(' and ')}`}
+    </p>
+  );
 }
 
 export function TodayPanel() {
@@ -56,6 +71,7 @@ export function TodayPanel() {
             <strong>{item.title}:</strong> {item.text}
           </p>
         ))}
+        <SpecialLine />
       </section>
 
       <GoalCard />

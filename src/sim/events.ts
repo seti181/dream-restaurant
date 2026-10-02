@@ -12,6 +12,7 @@ import {
   type RandomEventId,
 } from '../data/events';
 import { REGULAR } from '../data/personal';
+import { inSeasonOn } from './menu';
 import { regularsBookings } from './regulars';
 import { WEATHER_IDS, type Weather } from '../data/weather';
 import { dateOf, weekdayOf } from './calendar';
@@ -27,6 +28,7 @@ export const ORDINARY_DAY: DayConditions = {
   locations: {},
   bookings: [],
   ingredientCost: {},
+  inSeason: [],
 };
 
 /** Picks one of several options, each with a weight. */
@@ -90,6 +92,7 @@ export function conditionsFor(state: GameState): DayConditions {
     locations: {},
     bookings: [],
     ingredientCost: {},
+    inSeason: inSeasonOn(state.day),
   };
   for (const id of calendarEventsOn(state.day)) applyEffects(conditions, CALENDAR_EVENTS[id].effects);
 

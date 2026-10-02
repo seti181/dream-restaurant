@@ -3,7 +3,7 @@
 
 import { balance } from '../data/balance';
 import type { DecorId } from '../data/decor';
-import type { EquipmentId, MenuDish } from '../data/dishes';
+import type { EquipmentId, ExtraId, MenuDish } from '../data/dishes';
 import { GROUP_IDS, GROUPS } from '../data/groups';
 import { LOCATIONS, type LocationId } from '../data/locations';
 import { REGULARS, type RegularId } from '../data/regulars';
@@ -118,7 +118,7 @@ function giveUpAt(visit: Visit): number {
 }
 
 /** Chefs who are free take the oldest waiting orders. */
-function startCooking(restaurant: Restaurant, floor: Floor, minute: number): void {
+function startCooking(restaurant: Restaurant, floor: Floor, minute: number, inSeason: readonly ExtraId[]): void {
   if (floor.chefFreeAt.length === 0) return;
   while (floor.queue.length > 0) {
     const chefIndex = floor.chefFreeAt.indexOf(Math.min(...floor.chefFreeAt));
@@ -134,7 +134,7 @@ function startCooking(restaurant: Restaurant, floor: Floor, minute: number): voi
       continue;
     }
     visit.readyAt = readyAt;
-    visit.quality = orderQuality(visit.order, chef, restaurant.supplier) + floor.qualityBonus;
+    visit.quality = orderQuality(visit.order, chef, restaurant.supplier, inSeason) + floor.qualityBonus;
     floor.chefFreeAt[chefIndex] = readyAt;
   }
 }
@@ -200,11 +200,11 @@ function progressRestaurant(
   }
   // Oldest orders first, except that the chef cooks for a table they've apologised to next.
   floor.queue.sort((a, b) => Number(b.apology ?? false) - Number(a.apology ?? false) || a.orderedAt - b.orderedAt);
-  startCooking(restaurant, floor, minute);
+  startCooking(restaurant, floor, minute, conditions.inSeason);
 
   const costMultiplier = conditions.ingredientCost[restaurant.id] ?? 1;
   const ingredients = (order: MenuDish[]) =>
-    sum(order, (dish) => ingredientCostOf(dish, restaurant.supplier)) * costMultiplier;
+    sum(order, (dish) => ingredientCostOf(dish, restaurant.supplier, conditions.inSeason)) * costMultiplier;
 
   for (const visit of [...floor.visits]) {
     const { party } = visit;
@@ -482,7 +482,7 @@ export function stepDay(rng: RngState, progress: DayInProgress): void {
   const isFull = (floor: Floor) => floor.freeTables < 1 && floor.door.length >= balance.service.doorQueueMax;
   const full = floors.map(isFull);
   for (const party of generateParties(rng, day, tick, conditions)) {
-    const index = chooseRestaurant(rng, party, restaurants, waits, full);
+    const index = chooseRestaurant(rng, party, restaurants, waits, full, conditions.inSeason);
     if (index === null) {
       outcomes.push(lostOutcome(party, null, 'elsewhere'));
       continue;

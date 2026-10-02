@@ -1,6 +1,6 @@
 // Shapes of the simulation's state. Everything here is plain data so it can be saved as JSON.
 
-import type { Cuisine, EquipmentId, MenuDish } from '../data/dishes';
+import type { Cuisine, EquipmentId, ExtraId, MenuDish } from '../data/dishes';
 import type { DecorId } from '../data/decor';
 import type { GroupId } from '../data/groups';
 import type { LocationId } from '../data/locations';
@@ -59,6 +59,8 @@ export interface Restaurant {
   supplier: Supplier;
   /** When today's happy hour started (minutes after midnight); only set while a day runs. See balance.happyHour. */
   happyHourFrom?: number;
+  /** "Dziś polecamy": today's special on the board outside (a recipe key), if one is chosen. */
+  special?: string;
   /** "Obiad dnia": a soup and a main (identified by recipe key) at one price, or null. */
   lunchSet: { soup: string; main: string; price: number } | null;
   tables: number;
@@ -128,6 +130,8 @@ export interface DayConditions {
   bookings: Booking[];
   /** Multiplies ingredient costs for a restaurant id (1 if missing). */
   ingredientCost: Record<string, number>;
+  /** Fresh produce in season today (see the extras in data/dishes.ts). */
+  inSeason: ExtraId[];
 }
 
 /** Each factor runs from -1 (awful) through 0 (fine) to +1 (wonderful). */

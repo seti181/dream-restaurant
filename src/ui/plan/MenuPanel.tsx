@@ -15,12 +15,36 @@ import {
 } from '../../data/dishes';
 import { dishUnavailableReason, extraUnavailableReason, priceRange } from '../../sim/actions';
 import { playerOf } from '../../sim/game';
-import { ingredientCostOf, recipeKey, tagsOf, templateOf } from '../../sim/menu';
+import { MONTH_NAMES } from '../../sim/calendar';
+import { extraCost, extrasOf, freshOn, ingredientCostOf, inSeasonOn, produceName, recipeKey, tagsOf, templateOf } from '../../sim/menu';
 import { money, recipeText } from '../format';
 import { FoodIcon } from '../PixelIcon';
 import { useGame } from '../store';
 
 const CATEGORIES: Category[] = ['soup', 'main', 'dessert', 'drink'];
+
+
+/** "🌱 fresh until 20 Jul", or "imported" out of season; nothing for things that keep all year. */
+function seasonLabel(extra: ExtraId, inSeason: readonly ExtraId[]): string | null {
+  const season = EXTRAS[extra].season;
+  if (!season) return null;
+  if (!inSeason.includes(extra)) return 'imported, dearer';
+  const [month, day] = season.until;
+  return `🌱 fresh until ${day} ${MONTH_NAMES[month - 1].slice(0, 3)}`;
+}
+
+/** What a dish's fresh produce is doing right now: in season, or imported. */
+function SeasonNote({ dish, inSeason }: { dish: MenuDish; inSeason: readonly ExtraId[] }) {
+  const fresh = freshOn(dish, inSeason);
+  const imported = extrasOf(dish).filter((extra) => EXTRAS[extra].season && !inSeason.includes(extra));
+  if (fresh.length === 0 && imported.length === 0) return null;
+  return (
+    <span className="small season-note">
+      {fresh.length > 0 && `🌱 Fresh ${fresh.map(produceName).join(' and ')}: tastes better. `}
+      {imported.length > 0 && `Imported ${imported.map(produceName).join(' and ')}: out of season, dearer.`}
+    </span>
+  );
+}
 
 function Tags({ dish }: { dish: MenuDish }) {
   return (
@@ -61,28 +85,47 @@ function PriceStepper({ dish, index }: { dish: MenuDish; index: number }) {
 function CurrentMenu() {
   const game = useGame((s) => s.game);
   const removeDish = useGame((s) => s.removeDish);
+  const toggleSpecial = useGame((s) => s.toggleSpecial);
   const player = playerOf(game);
   const emptySlots = Math.max(0, game.menuSlots - player.menu.length);
+  const inSeason = inSeasonOn(game.day);
 
   return (
     <section className="panel-column">
       <h2>
         Your menu <span className="muted">· {player.menu.length} of {game.menuSlots} dishes</span>
       </h2>
+      <p className="small muted">
+        Tap ☆ to put a dish on the board outside as today’s special, “Dziś polecamy”: more guests order it, and it
+        tempts people walking by, all the more with something fresh in season.
+      </p>
       <ul className="dish-list">
-        {player.menu.map((dish, index) => (
-          <li key={index} className="dish-row">
+        {player.menu.map((dish, index) => {
+          const special = player.special === recipeKey(dish);
+          return (
+          <li key={index} className={special ? 'dish-row special' : 'dish-row'}>
             <FoodIcon template={dish.template} scale={3} />
             <div className="dish-info">
+              {special && <span className="special-label">⭐ Dziś polecamy</span>}
               <strong>{dish.name ?? templateOf(dish).name}</strong>
               <Tags dish={dish} />
               <span className="small muted">{recipeText(dish)}</span>
+              <SeasonNote dish={dish} inSeason={inSeason} />
               <span className="small muted">
-                Ingredients {money(ingredientCostOf(dish, player.supplier))} · usually sells for{' '}
+                Ingredients {money(ingredientCostOf(dish, player.supplier, inSeason))} · usually sells for{' '}
                 {money(templateOf(dish).referencePrice)}
               </span>
             </div>
             <PriceStepper dish={dish} index={index} />
+            <button
+              type="button"
+              className="icon-button"
+              aria-pressed={special}
+              aria-label={special ? 'Take it off the board' : 'Make it today’s special'}
+              onClick={() => toggleSpecial(index)}
+            >
+              {special ? '⭐' : '☆'}
+            </button>
             <button
               type="button"
               className="icon-button"
@@ -92,7 +135,8 @@ function CurrentMenu() {
               ✕
             </button>
           </li>
-        ))}
+          );
+        })}
         {Array.from({ length: emptySlots }, (_, i) => (
           <li key={`empty-${i}`} className="dish-row empty">
             Empty slot: create a dish on the right
@@ -200,6 +244,7 @@ function DishCreator() {
   const [variant, setVariant] = useState('');
   const [extras, setExtras] = useState<ExtraId[]>([]);
   const [name, setName] = useState('');
+  const inSeason = inSeasonOn(game.day);
 
   const chooseTemplate = (id: TemplateId) => {
     setTemplate(id);
@@ -287,7 +332,13 @@ function DishCreator() {
                 disabled={extraUnavailableReason(template, extras, extra) !== null}
                 onClick={() => toggleExtra(extra)}
               >
-                {EXTRAS[extra].name} <span className="muted">+{money(EXTRAS[extra].ingredientCost)}</span>
+                {EXTRAS[extra].name}{' '}
+                <span className="muted">
+                  +{money(extraCost(extra, inSeason))}
+                </span>
+                {seasonLabel(extra, inSeason) && (
+                  <span className={inSeason.includes(extra) ? 'small season-note' : 'small muted'}> {seasonLabel(extra, inSeason)}</span>
+                )}
               </button>
             ))}
           </div>
@@ -309,7 +360,7 @@ function DishCreator() {
               <strong>{name.trim() || recipeText(draft)}</strong>
               <Tags dish={draft} />
               <span className="small muted">
-                Ingredients {money(ingredientCostOf(draft, playerOf(game).supplier))} a portion · usually sells for{' '}
+                Ingredients {money(ingredientCostOf(draft, playerOf(game).supplier, inSeason))} a portion · usually sells for{' '}
                 {money(templateOf(draft).referencePrice)}
               </span>
             </div>

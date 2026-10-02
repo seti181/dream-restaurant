@@ -3,6 +3,7 @@
 import { balance } from '../data/balance';
 import {
   DISH_TEMPLATES,
+  EXTRA_IDS,
   EXTRAS,
   PAIRINGS,
   type DishTemplate,
@@ -12,6 +13,7 @@ import {
   type Tag,
   type Variant,
 } from '../data/dishes';
+import { dateOf, MONTH_NAMES } from './calendar';
 import type { Restaurant, Supplier } from './types';
 
 export function templateOf(dish: MenuDish): DishTemplate {
@@ -70,11 +72,75 @@ export function pairingQuality(dish: MenuDish): number {
   return pairingsOf(dish).reduce((sum, pairing) => sum + pairing.quality, 0);
 }
 
-/** What one portion's ingredients cost from the given supplier. */
-export function ingredientCostOf(dish: MenuDish, supplier: Supplier): number {
+/**
+ * What one portion's ingredients cost from the given supplier. Fresh produce out of season
+ * is imported and dearer: pass what's in season (all of it counts as in season if left out).
+ */
+export function ingredientCostOf(dish: MenuDish, supplier: Supplier, inSeason?: readonly ExtraId[]): number {
   const multiplier = supplier === 'premium' ? balance.supplier.premiumCostMultiplier : 1;
-  const extras = extrasOf(dish).reduce((sum, extra) => sum + EXTRAS[extra].ingredientCost, 0);
+  const extras = extrasOf(dish).reduce((sum, extra) => sum + extraCost(extra, inSeason), 0);
   return (variantOf(dish).ingredientCost + extras) * multiplier;
+}
+
+/** What an extra adds to a portion (from the market): fresh produce out of season is imported, and dearer. */
+export function extraCost(extra: ExtraId, inSeason?: readonly ExtraId[]): number {
+  const imported = inSeason !== undefined && EXTRAS[extra].season !== undefined && !inSeason.includes(extra);
+  return EXTRAS[extra].ingredientCost * (imported ? balance.seasonal.outOfSeasonCost : 1);
+}
+
+// ---------- What's in season, and today's special ----------
+
+/** True if the date (month, day of month) falls within the season, both ends included. */
+function withinSeason(month: number, dayOfMonth: number, season: { from: [number, number]; until: [number, number] }): boolean {
+  const at = month * 100 + dayOfMonth;
+  return at >= season.from[0] * 100 + season.from[1] && at <= season.until[0] * 100 + season.until[1];
+}
+
+/** The fresh produce in season on this day. */
+export function inSeasonOn(day: number): ExtraId[] {
+  const { month, dayOfMonth } = dateOf(day);
+  return EXTRA_IDS.filter((id) => {
+    const season = EXTRAS[id].season;
+    return season !== undefined && withinSeason(month, dayOfMonth, season);
+  });
+}
+
+/** The extras on this dish that are fresh produce in season right now. */
+export function freshOn(dish: MenuDish, inSeason: readonly ExtraId[]): ExtraId[] {
+  return extrasOf(dish).filter((extra) => inSeason.includes(extra));
+}
+
+/** An extra's everyday name, without the Polish in brackets: "chanterelles". */
+export const produceName = (extra: ExtraId) => EXTRAS[extra].name.replace(/ \(.*\)$/, '');
+
+/** The morning news when fresh produce comes into season, or goes out of it. */
+export function seasonNews(yesterday: number, today: number): { title: string; text: string }[] {
+  const before = inSeasonOn(yesterday);
+  const now = inSeasonOn(today);
+  const until = (id: ExtraId) => {
+    const [month, dayOfMonth] = EXTRAS[id].season!.until;
+    return `${dayOfMonth} ${MONTH_NAMES[month - 1]}`;
+  };
+  return [
+    ...now
+      .filter((id) => !before.includes(id))
+      .map((id) => ({
+        title: 'Fresh at the market',
+        text: `The first ${produceName(id)} are in! In season until ${until(id)}: fresh, they make any dish better (dish creator, Menu tab).`,
+      })),
+    ...before
+      .filter((id) => !now.includes(id))
+      .map((id) => ({
+        title: 'Out of season',
+        text: `That’s the last of the ${produceName(id)} for this year. From now on they’re imported: dearer, and not as fresh.`,
+      })),
+  ];
+}
+
+/** Today's special ("Dziś polecamy"), if one is chosen and still on the menu. */
+export function specialOf(restaurant: Restaurant): MenuDish | null {
+  if (!restaurant.special) return null;
+  return restaurant.menu.find((dish) => recipeKey(dish) === restaurant.special) ?? null;
 }
 
 /** The lunch set's dishes and price if it is being served at this minute, otherwise null. */

@@ -88,6 +88,14 @@ export function removeDish(state: GameState, index: number): GameState {
   return withPlayer(state, { menu: menu.filter((_, i) => i !== index), lunchSet: keepSet ? lunchSet : null });
 }
 
+/** Makes a dish today's special ("Dziś polecamy"), or takes it off the board if it already is. */
+export function toggleSpecial(state: GameState, index: number): GameState {
+  const { menu, special } = playerOf(state);
+  if (index < 0 || index >= menu.length) return state;
+  const key = recipeKey(menu[index]);
+  return withPlayer(state, { special: special === key ? undefined : key });
+}
+
 export function setDishPrice(state: GameState, index: number, price: number): GameState {
   const menu = playerOf(state).menu;
   const dish = menu[index];

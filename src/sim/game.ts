@@ -27,7 +27,7 @@ import { weeklyBillsDue } from './finance';
 import { goalOf, goalText, nextGoal, startGoal, trackGoal, type GoalState } from './goals';
 import { planGulls, shooGull, stepGulls, type GullsToday } from './gulls';
 import { answerMoment, checkMoments, planMoments, type MomentResult, type MomentsToday } from './moments';
-import { pairingsOf } from './menu';
+import { pairingsOf, seasonNews } from './menu';
 import { isFairDay, isNeptuneDay, neptuneResult, type NeptuneResult, type SeasonTally } from './neptune';
 import { regularsDay, regularsNews, type RegularStories, type RegularVisitReport } from './regulars';
 import { settleWishes, teamMoment, teamNews } from './teamStories';
@@ -402,6 +402,7 @@ export function updateToday(open: OpenDay, state: GameState): void {
   today.menu = player.menu;
   today.lunchSet = player.lunchSet;
   today.supplier = player.supplier;
+  today.special = player.special;
 }
 
 /** Starts today's happy hour now. Returns false if it was already used today, or the day is over. */
@@ -721,6 +722,7 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
     });
   }
 
+  news.push(...seasonNews(state.day, nextDay));
   news.push(...regularsNews(nextDay, regularsToday.stories));
   // The team's stories, and now and then a small moment for someone (a birthday, pączki).
   const moment = teamMoment(rng, morale.team, nextDay);

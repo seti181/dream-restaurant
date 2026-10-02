@@ -6,7 +6,8 @@ import { GROUP_IDS, GROUPS } from '../data/groups';
 import { REGULARS } from '../data/regulars';
 import { dateOf, formatDate } from '../sim/calendar';
 import { formatTime } from '../sim/clock';
-import type { DaySummary } from '../sim/game';
+import { playerOf, type DaySummary } from '../sim/game';
+import { recipeKey } from '../sim/menu';
 import type { SatisfactionFactors } from '../sim/types';
 import { dishName, money, signedMoney, stars } from './format';
 import { Confetti, StarRow } from './Juice';
@@ -96,6 +97,7 @@ export function DayOverScreen() {
   const planNextDay = useGame((s) => s.planNextDay);
   const saved = useGame((s) => s.saved);
   const gameOver = useGame((s) => s.game.gameOver);
+  const specialKey = useGame((s) => playerOf(s.game).special);
   if (!summary) return null;
 
   return (
@@ -261,7 +263,7 @@ export function DayOverScreen() {
                     <Row
                       key={`${dish.template}/${dish.variant}`}
                       icon={<FoodIcon template={dish.template} />}
-                      label={dishName(dish)}
+                      label={recipeKey(dish) === specialKey ? `⭐ ${dishName(dish)}` : dishName(dish)}
                       value={`× ${count}`}
                     />
                   ))}

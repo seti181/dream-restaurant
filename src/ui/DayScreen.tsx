@@ -13,6 +13,7 @@ import { GROUP_COLOURS } from './pixel/sprites';
 import { canTend, PixelRestaurantView } from './PixelRestaurantView';
 import { isFavourite } from '../sim/seating';
 import { playerOf } from '../sim/game';
+import { specialOf } from '../sim/menu';
 import { FAVOURITE_SPOTS, GROUP_IDS, GROUPS, SPOT_NAMES } from '../data/groups';
 import { GULLS } from '../data/gulls';
 import { useGame } from './store';
@@ -268,6 +269,7 @@ export function DayScreen() {
   const weather = useGame((s) => s.game.weather);
   const speed = useGame((s) => s.speed);
   const tick = useGame((s) => s.tick);
+  const special = useGame((s) => specialOf(playerOf(s.game)));
 
   // Advance the day on a timer; faster speeds tick more often. Paused means no timer.
   useEffect(() => {
@@ -315,7 +317,14 @@ export function DayScreen() {
       <div className="card day-card">
         <MewaTip screen="open" />
         <div className="day-header">
-          <p className="eyebrow day-status">{live.closing ? 'Closed · last orders' : 'Open for business'}</p>
+          <div className="day-status">
+            <p className="eyebrow">{live.closing ? 'Closed · last orders' : 'Open for business'}</p>
+            {special && (
+              <p className="small special-today">
+                ⭐ Dziś polecamy: <strong>{dishName(special)}</strong>
+              </p>
+            )}
+          </div>
           <HappyHourButton />
           <ManageButton />
           <div className="stats">

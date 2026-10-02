@@ -2199,3 +2199,25 @@ button.stat.open {
   opacity: 0.55;
   cursor: default;
 }
+
+/* ---------- Seasonal produce and today's special ---------- */
+
+.season-note {
+  color: var(--leaf);
+}
+
+.dish-row.special {
+  border-radius: 12px;
+  background: #fdf3dc;
+}
+
+.special-label {
+  display: block;
+  color: var(--brick);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.special-today {
+  margin: 2px 0 0;
+}

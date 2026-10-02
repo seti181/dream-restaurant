@@ -417,6 +417,10 @@ export type ExtraId =
   | 'whippedCream'
   | 'honey'
   | 'strawberries'
+  | 'newPotatoes'
+  | 'blueberries'
+  | 'chanterelles'
+  | 'plums'
   | 'cytrynowka';
 
 export interface Extra {
@@ -426,11 +430,17 @@ export interface Extra {
   tags: Tag[];
   /** Kinds of dish it can go on. */
   categories: Category[];
+  /**
+   * For fresh produce: when it's in season, as [month, day] from and until (both included).
+   * In season it's fresher (better quality); out of season it's imported and dearer (balance.seasonal).
+   */
+  season?: { from: [number, number]; until: [number, number] };
 }
 
 export const EXTRA_IDS: readonly ExtraId[] = [
   'dill', 'sourCream', 'friedOnions', 'skwarki', 'oscypek', 'cranberry',
-  'horseradish', 'wildMushrooms', 'chili', 'whippedCream', 'honey', 'strawberries', 'cytrynowka',
+  'horseradish', 'wildMushrooms', 'chili', 'whippedCream', 'honey', 'strawberries',
+  'newPotatoes', 'blueberries', 'chanterelles', 'plums', 'cytrynowka',
 ];
 
 export const EXTRAS: Record<ExtraId, Extra> = {
@@ -445,7 +455,43 @@ export const EXTRAS: Record<ExtraId, Extra> = {
   chili: { name: 'chili', ingredientCost: 1, tags: ['spicy'], categories: ['soup', 'main', 'dessert', 'drink'] },
   whippedCream: { name: 'whipped cream', ingredientCost: 2, tags: ['sweet'], categories: ['soup', 'main', 'dessert', 'drink'] },
   honey: { name: 'honey', ingredientCost: 2, tags: ['sweet', 'homemade'], categories: ['main', 'dessert', 'drink'] },
-  strawberries: { name: 'Kashubian strawberries', ingredientCost: 3, tags: ['sweet', 'polish'], categories: ['main', 'dessert', 'drink'] },
+  // Fresh in summer: Kashubian strawberries early in July, new potatoes until August, then blueberries
+  // and chanterelles all summer, and the first plums for the Fair.
+  strawberries: {
+    name: 'Kashubian strawberries',
+    ingredientCost: 3,
+    tags: ['sweet', 'polish'],
+    categories: ['main', 'dessert', 'drink'],
+    season: { from: [6, 1], until: [7, 20] },
+  },
+  newPotatoes: {
+    name: 'new potatoes (młode ziemniaki)',
+    ingredientCost: 2,
+    tags: ['polish', 'homemade'],
+    categories: ['main'],
+    season: { from: [6, 1], until: [7, 31] },
+  },
+  blueberries: {
+    name: 'blueberries (jagody)',
+    ingredientCost: 3,
+    tags: ['sweet', 'polish'],
+    categories: ['main', 'dessert', 'drink'],
+    season: { from: [7, 1], until: [8, 31] },
+  },
+  chanterelles: {
+    name: 'chanterelles (kurki)',
+    ingredientCost: 4,
+    tags: ['premium', 'polish'],
+    categories: ['soup', 'main'],
+    season: { from: [7, 1], until: [9, 30] },
+  },
+  plums: {
+    name: 'plums (węgierki)',
+    ingredientCost: 2,
+    tags: ['sweet', 'homemade'],
+    categories: ['main', 'dessert'],
+    season: { from: [8, 15], until: [9, 30] },
+  },
   cytrynowka: { name: 'a glass of cytrynówka on the side', ingredientCost: 4, tags: ['polish'], categories: ['soup', 'main'] },
 };
 
@@ -475,6 +521,10 @@ export const PAIRINGS: Pairing[] = [
   { extras: ['whippedCream'], with: { template: 'szarlotka' }, quality: 8, comment: 'Szarlotka with a cloud of cream. Perfect.' },
   { extras: ['strawberries', 'whippedCream'], quality: 10, comment: 'Kashubian strawberries and cream taste like summer.' },
   { extras: ['honey'], with: { template: 'lemonade' }, quality: 6, comment: 'Honey in the lemonade was a lovely touch.' },
+  { extras: ['newPotatoes', 'dill'], quality: 10, comment: 'New potatoes with dill: summer on a plate.' },
+  { extras: ['chanterelles', 'sourCream'], quality: 10, comment: 'Chanterelles in cream taste of a Kashubian forest.' },
+  { extras: ['blueberries', 'sourCream'], quality: 8, comment: 'Blueberries with sour cream, like summers at the lake.' },
+  { extras: ['plums'], with: { template: 'schabowy' }, quality: 8, comment: 'Pork with plums, like Sunday lunch at Babcia’s.' },
   {
     extras: ['cytrynowka'],
     with: { template: 'arrozDeVitela' },
