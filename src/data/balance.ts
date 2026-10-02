@@ -194,10 +194,27 @@ export const balance = {
     /** How often cards of each rarity turn up, compared with each other. */
     rarityWeights: { common: 4, uncommon: 2, rare: 1, veryRare: 0.3 },
     /**
-     * Cards come from a shuffled deck: one that has come up waits until this share of the
-     * others have had their turn too, then the deck is shuffled again.
+     * A card that has come up rests for this many days while the others have their turn.
+     * Only if every card that fits right now is resting does one come back early: the one
+     * seen longest ago.
      */
-    deckRefill: 0.8,
+    restDays: 8,
+  },
+
+  regulars: {
+    /** Regulars feel at home: this much happier (0–100) than other guests from the start. */
+    atHomeMood: 5,
+    /** A regular's visit is a happy one when their wish came true and they were at least this happy (0–100)... */
+    happyFrom: 60,
+    /** ...and then their group likes you this many points more. */
+    happyReputation: 1,
+    /** With this many happy visits by the last part of their story, they become friends of the house... */
+    friendsVisits: 3,
+    /** ...and tell everyone: reputation and awareness with their group. */
+    friendsReputation: 3,
+    friendsAwareness: 10,
+    /** The dearest main a student can afford (Ola's wish). */
+    cheapMainPrice: 34,
   },
 
   gulls: {

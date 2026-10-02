@@ -70,40 +70,39 @@ describe('choice cards', () => {
     expect(weightToday(today({ walesa: 1 }), 'walesa')).toBe(rarityWeights.veryRare);
   });
 
-  it('come from a shuffled deck: a card waits until most of the others have had their turn', () => {
-    // Draw card after card on a busy June-like day, as if every slot were a new day.
-    const open = openRestaurant({ ...newGame(2), weather: 'cloudy' });
+  /** The next random card on day 30 at 13:00, with the given cards last seen on the given days. */
+  function nextRandomCard(momentsSeen: GameState['momentsSeen']): MomentId | undefined {
+    const open = openRestaurant({ ...newGame(2), day: 30, momentsSeen });
     playUntil(open, 13 * 60);
-    show(open, 'tourGroup');
-    answerTheMoment(open, 0);
-    const drawn: MomentId[] = [];
-    for (let i = 0; i < 6; i++) {
-      open.moments.seen = [];
-      open.moments.slots = [minuteOfDay(open.progress.tick)];
-      if (!momentDue(open)) continue;
-      drawn.push(open.moments.pending!.id);
-      open.moments.pending = null;
-    }
-    expect(drawn.length).toBeGreaterThan(3);
-    expect(new Set(drawn).size).toBe(drawn.length);
+    open.moments.slots = [minuteOfDay(open.progress.tick)];
+    return momentDue(open) ? open.moments.pending?.id : undefined;
+  }
+  const randomCards = MOMENT_IDS.filter((id) => !MOMENTS[id].at && !MOMENTS[id].followUpOnly);
+  const allSeenOn = (day: number) => Object.fromEntries(randomCards.map((id) => [id, day]));
+
+  it('rest for a while after they come up, so the others get their turn', () => {
+    // Everything came up yesterday except the herring: the herring comes.
+    const { herring: _rested, ...seenYesterday } = allSeenOn(29);
+    expect(nextRandomCard(seenYesterday)).toBe('herring');
   });
 
-  it('shuffle the deck again once most cards have come up', () => {
-    const today = openRestaurant(newGame(3)).moments;
-    const random = MOMENT_IDS.filter((id) => !MOMENTS[id].at && !MOMENTS[id].followUpOnly);
-    today.deck = random.slice(0, Math.ceil(random.length * balance.moments.deckRefill) - 1);
-    expect(today.deck.length).toBeGreaterThan(0);
-    // One more card drawn: the deck starts over.
-    const open = openRestaurant({ ...newGame(3), momentDeck: today.deck });
-    playUntil(open, 13 * 60);
-    show(open, 'tourGroup');
-    answerTheMoment(open, 0);
-    open.moments.slots = [minuteOfDay(open.progress.tick)];
-    const before = open.moments.deck.length;
-    expect(momentDue(open)).toBe(true);
-    // A fresh card was drawn, which filled the deck to the refill mark: it starts over empty.
-    expect(open.moments.deck.length).toBeLessThan(before + 1);
-    expect(open.moments.deck).toEqual([]);
+  it('if every card that fits is still resting, the one seen longest ago comes back early', () => {
+    expect(nextRandomCard({ ...allSeenOn(29), lostTourist: 30 - balance.moments.restDays + 1 })).toBe('lostTourist');
+  });
+
+  it('over a season, no card comes back before it has rested', () => {
+    let state = newGame(5);
+    const lastDay = new Map<MomentId, number>();
+    for (let i = 0; i < 21; i++) {
+      const open = playDay(state, 0);
+      for (const id of open.moments.seen.filter((card) => randomCards.includes(card))) {
+        const last = lastDay.get(id);
+        if (last !== undefined) expect(state.day - last).toBeGreaterThanOrEqual(balance.moments.restDays);
+        lastDay.set(id, state.day);
+      }
+      state = closeDay(state, open).state;
+    }
+    expect(lastDay.size).toBeGreaterThan(15);
   });
 
   it('some only come at the right time: the shanty choir in the tall ships week, the stall at the Fair', () => {
@@ -245,6 +244,21 @@ describe('what the answers do', () => {
     const visits = open.progress.floors[0].visits;
     expect(visits).toHaveLength(parties + 1);
     expect(visits[visits.length - 1].party).toMatchObject({ group: 'tourists', size: 6 });
+  });
+
+  it('with every table taken, the tour group waits at the front of the queue at the door', () => {
+    const open = openRestaurant(newGame(8));
+    playUntil(open, 13 * 60);
+    const floor = open.progress.floors[0];
+    floor.freeTables = 0;
+    expect(checkNeed(open, 'doorOpen')).toBe(true);
+    expect(checkNeed(open, 'freeTable')).toBe(false);
+    show(open, 'tourGroup');
+    answerTheMoment(open, 0);
+    expect(floor.door[0].party).toMatchObject({ group: 'tourists', size: 6 });
+    // While special guests keep the door shut, no walk-in card comes.
+    floor.closed = { until: 24 * 60, everyone: false };
+    expect(checkNeed(open, 'doorOpen')).toBe(false);
   });
 
   it('a friend covers for Adrian, at noon on a day he doesn’t turn up', () => {

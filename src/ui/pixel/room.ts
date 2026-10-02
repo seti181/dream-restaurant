@@ -300,10 +300,11 @@ export function walkStrip(kind: S.PersonKind, facing: Facing, variant: number, c
   return result;
 }
 
-/** Who sits in a seat at a table: the critic, the regular and some special guests have their own looks. */
+/** Who sits in a seat at a table: the critic, the regulars and some special guests have their own looks. */
 export function guestKind(guests: TableGuests, seat = 0): S.PersonKind {
   if (guests.visitor === 'walesa') return seat === 0 ? 'walesa' : 'guard';
   if (guests.visitor === 'footballer' && seat === 0) return 'footballer';
+  if (guests.regularId) return guests.regularId;
   return guests.critic ? 'critic' : guests.regular ? 'regular' : guests.group;
 }
 

@@ -7,7 +7,7 @@ import type { GameState } from '../sim/game';
 import { startGoal } from '../sim/goals';
 import { PORTUGUESE_CORNER } from '../data/personal';
 
-export const SAVE_VERSION = 11;
+export const SAVE_VERSION = 13;
 const SAVE_KEY = 'old-town-kitchen/save';
 
 interface SaveFile {
@@ -131,6 +131,17 @@ function upgradeFrom10(game: Record<string, unknown>): Record<string, unknown> {
   return { ...game, unlocks, upcoming: already ? upcoming : [...upcoming, visit] };
 }
 
+function upgradeFrom11(game: Record<string, unknown>): Record<string, unknown> {
+  // Version 12 lets each card rest for a while after it comes up, instead of dealing them from a deck.
+  const { momentDeck: _old, ...rest } = game;
+  return rest;
+}
+
+function upgradeFrom12(game: Record<string, unknown>): Record<string, unknown> {
+  // Version 13 brings the named regulars: nobody has come by yet, so every story starts at the beginning.
+  return { regulars: {}, ...game };
+}
+
 /**
  * Brings a save from any older version up to date, one version at a time.
  * Returns null for saves that can't be understood.
@@ -182,6 +193,14 @@ export function migrate(data: unknown): GameState | null {
   if (version === 10) {
     game = upgradeFrom10(game as unknown as Record<string, unknown>) as unknown as GameState;
     version = 11;
+  }
+  if (version === 11) {
+    game = upgradeFrom11(game as unknown as Record<string, unknown>) as unknown as GameState;
+    version = 12;
+  }
+  if (version === 12) {
+    game = upgradeFrom12(game as unknown as Record<string, unknown>) as unknown as GameState;
+    version = 13;
   }
 
   return looksLikeGame(game) ? game : null;

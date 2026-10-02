@@ -3,6 +3,7 @@
 
 import type { ReactNode } from 'react';
 import { GROUP_IDS, GROUPS } from '../data/groups';
+import { REGULARS } from '../data/regulars';
 import { dateOf, formatDate } from '../sim/calendar';
 import { formatTime } from '../sim/clock';
 import type { DaySummary } from '../sim/game';
@@ -49,6 +50,9 @@ function guestsSaid(feedback: SatisfactionFactors | null): string {
   if (complaint) return `Guests ${complaint}.`;
   return 'Guests thought it was fine. Nothing more, nothing less.';
 }
+
+/** How a regular's visit went, at a glance. */
+const MOOD: Record<DaySummary['regulars'][number]['mood'], string> = { happy: '😊', okay: '🙂', missed: '' };
 
 function headline(summary: DaySummary): string {
   if (summary.profit > 0) return 'A good day! 🎉';
@@ -112,6 +116,26 @@ export function DayOverScreen() {
             </p>
           )}
           <p className="said">💬 {guestsSaid(summary.feedback)}</p>
+          {summary.regulars.map((visit) => {
+            const regular = REGULARS[visit.id];
+            return (
+              <p key={visit.id} className={visit.friends ? 'said small regular-story friends' : 'said small regular-story'}>
+                {regular.emoji} <strong>{regular.name}</strong> {visit.story}
+                {visit.note && (
+                  <span className="muted">
+                    {' '}
+                    {MOOD[visit.mood]} {visit.note}
+                  </span>
+                )}
+                {visit.friends && (
+                  <strong>
+                    {' '}
+                    💛 Friends of the house! {GROUPS[regular.group].name} like you more, and more of them have heard of you.
+                  </strong>
+                )}
+              </p>
+            );
+          })}
           {summary.staffNews.map((line) => (
             <p key={line} className="said small">
               🧑‍🍳 {line}

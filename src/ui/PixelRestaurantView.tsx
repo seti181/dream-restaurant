@@ -7,6 +7,7 @@ import { balance } from '../data/balance';
 import { LOCATIONS } from '../data/locations';
 import type { GroupId } from '../data/groups';
 import type { Visitor } from '../data/moments';
+import { REGULARS } from '../data/regulars';
 import type { Weather } from '../data/weather';
 import type { FloorView, TableGuests } from '../sim/day';
 import { project } from './pixel/iso';
@@ -62,6 +63,8 @@ const VISITOR_BUBBLES: Record<Visitor, string> = { merry: '🥃', footballer: '�
 function bubbleFor(guests: TableGuests): string | null {
   // The Friday regular wants one thing, and the whole room knows it.
   if (guests.regular && guests.stage !== 'eating') return '🍋';
+  // The named regulars show who they are until their food comes.
+  if (guests.regularId && guests.stage !== 'eating') return REGULARS[guests.regularId].emoji;
   // Special guests show why they're here, all the way through.
   if (guests.visitor) return VISITOR_BUBBLES[guests.visitor];
   if (guests.stage === 'ordering') return '💬';

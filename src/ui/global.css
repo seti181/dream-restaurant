@@ -550,6 +550,18 @@ button {
   font-size: 1.15rem;
 }
 
+/* A named regular's part of their story: a warm little note in the margin. */
+.said.regular-story {
+  padding: 6px 10px;
+  border-left: 4px solid var(--amber);
+  border-radius: 4px;
+  background: var(--sand);
+}
+
+.said.regular-story.friends {
+  border-left-color: var(--brick);
+}
+
 .report {
   display: grid;
   grid-template-columns: 1.2fr 1fr 1fr;

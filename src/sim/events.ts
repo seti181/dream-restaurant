@@ -12,6 +12,7 @@ import {
   type RandomEventId,
 } from '../data/events';
 import { REGULAR } from '../data/personal';
+import { regularsBookings } from './regulars';
 import { WEATHER_IDS, type Weather } from '../data/weather';
 import { dateOf, weekdayOf } from './calendar';
 import type { GameState } from './game';
@@ -129,5 +130,7 @@ export function conditionsFor(state: GameState): DayConditions {
       regular: true,
     });
   }
+  // The named regulars come on their own days, each with a story to tell.
+  conditions.bookings.push(...regularsBookings(state.day, player.id));
   return conditions;
 }

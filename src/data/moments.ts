@@ -68,8 +68,8 @@ export type MomentNeed =
   | 'adrianAway'
   /** Tomek is working today. */
   | 'tomekWorking'
-  /** Two free tables, and the door open to new guests. */
-  | 'roomForSix'
+  /** The door open to new guests (with every table taken, they wait at the front of the queue). */
+  | 'doorOpen'
   /** A free table, and the door open to new guests. */
   | 'freeTable'
   /** During St. Dominic's Fair. */
@@ -104,7 +104,7 @@ export interface MomentEffect {
   awareness?: Partial<Record<GroupId, number>>;
   /** Someone comes in to wait tables for the rest of the day. */
   helper?: { skill: number; speed: number };
-  /** A group walks in right now. */
+  /** A group walks in right now (or waits at the front of the queue, if every table is taken). */
   walkIn?: { group: GroupId; size: number };
   /**
    * Special guests take a table for a while (until closing at the latest) and order nothing
@@ -344,7 +344,7 @@ export const MOMENTS: Record<MomentId, Moment> = {
   tourGroup: {
     title: 'A tour group',
     text: 'A tour guide with a little flag pops in: “Can you fit six hungry tourists, right now?”',
-    needs: ['roomForSix'],
+    needs: ['doorOpen'],
     rarity: 'common',
     choices: [
       {
@@ -522,7 +522,7 @@ export const MOMENTS: Record<MomentId, Moment> = {
   nonnaBasil: {
     title: 'Nonna Rosa needs basil',
     text: 'Nonna Rosa from the trattoria rushes in, flour on her apron: “Mamma mia, I have no basil left! Can you help me?”',
-    needs: ['freeTable'],
+    needs: ['doorOpen'],
     rarity: 'uncommon',
     choices: [
       {
@@ -630,7 +630,7 @@ export const MOMENTS: Record<MomentId, Moment> = {
   tramStrike: {
     title: 'Tram strike',
     text: 'The trams have stopped all over Gdańsk! Four office workers are stuck in the Old Town and need somewhere to sit.',
-    needs: ['freeTable'],
+    needs: ['doorOpen'],
     rarity: 'uncommon',
     choices: [
       {
@@ -743,7 +743,7 @@ export const MOMENTS: Record<MomentId, Moment> = {
   balticStorm: {
     title: 'A Baltic storm',
     text: 'The sky goes black over the Motława and the rain comes sideways. Four soaked tourists run for your door.',
-    needs: ['rainy', 'freeTable'],
+    needs: ['rainy', 'doorOpen'],
     rarity: 'common',
     choices: [
       {
@@ -784,7 +784,7 @@ export const MOMENTS: Record<MomentId, Moment> = {
   engagementDinner: {
     title: 'An engagement dinner',
     text: 'Remember the ring in the dessert? The happy couple are back, with both families, for their engagement dinner. Eight of them!',
-    needs: ['roomForSix'],
+    needs: ['doorOpen'],
     rarity: 'common',
     followUpOnly: true,
     choices: [
@@ -896,7 +896,7 @@ export const MOMENTS: Record<MomentId, Moment> = {
   lechiaDerby: {
     title: 'Derby night',
     text: 'Lechia Gdańsk play Arka Gdynia tonight! Six fans in green and white ask if you’ll put the match on.',
-    needs: ['roomForSix', 'evening'],
+    needs: ['doorOpen', 'evening'],
     rarity: 'uncommon',
     choices: [
       {
@@ -949,7 +949,7 @@ export const MOMENTS: Record<MomentId, Moment> = {
   helFerry: {
     title: 'No ferry to Hel',
     text: 'The ferry to Hel is cancelled: too much wind on the bay. Eight hungry day-trippers need lunch, right now.',
-    needs: ['roomForSix'],
+    needs: ['doorOpen'],
     rarity: 'uncommon',
     choices: [
       {
@@ -988,7 +988,7 @@ export const MOMENTS: Record<MomentId, Moment> = {
   pierogiContest: {
     title: 'A pierogi contest',
     text: 'Four students want to settle, once and for all, who can eat the most pierogi. They’d like a table and a referee.',
-    needs: ['freeTable'],
+    needs: ['doorOpen'],
     rarity: 'uncommon',
     choices: [
       {

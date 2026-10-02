@@ -47,8 +47,6 @@ export interface MomentsToday {
   day: number;
   /** The last day each card was shown, before today. */
   lastSeen: Partial<Record<MomentId, number>>;
-  /** Cards drawn from the deck since it was last shuffled; they wait until most others have come up. */
-  deck: MomentId[];
   /** Follow-up cards due today (from answers on earlier days); they come before random ones. */
   queued: MomentId[];
   /** Minutes when a random moment is due, earliest first. */
@@ -73,7 +71,6 @@ export function planMoments(
   seed: number,
   day: number,
   lastSeen: Partial<Record<MomentId, number>>,
-  deck: MomentId[] = [],
   queued: MomentId[] = [],
 ): MomentsToday {
   const rng = createRng(seed);
@@ -87,7 +84,7 @@ export function planMoments(
     const minute = Math.round(Math.max(time, earliest) / step) * step;
     if (minute <= lastMinute) slots.push(minute);
   }
-  return { rng, day, lastSeen, deck: [...deck], queued: [...queued], slots, seen: [], pending: null, results: [], cash: 0 };
+  return { rng, day, lastSeen, queued: [...queued], slots, seen: [], pending: null, results: [], cash: 0 };
 }
 
 /** Cards that can come at random (not tied to a time of day, and not only a follow-up). */
@@ -101,11 +98,13 @@ export function weightToday(today: MomentsToday, id: MomentId): number {
   return balance.moments.rarityWeights[moment.rarity];
 }
 
-/** Takes a card out of the deck; once most cards have come up, the deck is shuffled again. */
-function draw(today: MomentsToday, id: MomentId): void {
-  today.deck.push(id);
-  const drawn = RANDOM_CARDS.filter((card) => today.deck.includes(card)).length;
-  if (drawn >= Math.ceil(RANDOM_CARDS.length * balance.moments.deckRefill)) today.deck = [];
+/** Days since a card last came up (before today); a card never seen has rested forever. */
+const daysSince = (today: MomentsToday, id: MomentId) => today.day - (today.lastSeen[id] ?? -Infinity);
+
+/** Picks one of the cards, by how likely each is today. */
+function pickByWeight(today: MomentsToday, options: MomentId[]): MomentId {
+  let roll = nextFloat(today.rng) * options.reduce((sum, id) => sum + weightToday(today, id), 0);
+  return options.find((option) => (roll -= weightToday(today, option)) < 0) ?? options[options.length - 1];
 }
 
 const waiting = (visit: Visit) => !visit.eating && !visit.skipped;
@@ -134,8 +133,8 @@ function needMet(need: MomentNeed, { progress, adrianAway }: MomentContext): boo
       return adrianAway;
     case 'tomekWorking':
       return restaurant.waiters.some((waiter) => waiter.special === 'tomek');
-    case 'roomForSix':
-      return open && floor.freeTables >= 2;
+    case 'doorOpen':
+      return open;
     case 'freeTable':
       return open && floor.freeTables >= 1;
     case 'duringFair':
@@ -197,20 +196,19 @@ export function checkMoments(today: MomentsToday, context: MomentContext): boole
     return true;
   }
   const fitting = RANDOM_CARDS.filter((id) => !today.seen.includes(id) && weightToday(today, id) > 0 && canHappen(id, context));
-  // Fresh cards from the deck first; only if none fits right now can one come round again.
-  const fresh = fitting.filter((id) => !today.deck.includes(id));
-  const possible = fresh.length > 0 ? fresh : fitting;
-  if (possible.length === 0) {
+  if (fitting.length === 0) {
     // Nothing fits right now: try again a little later, if there's still time today.
     today.slots[0] += balance.moments.retryMinutes;
     if (today.slots[0] > balance.moments.lastMinute) today.slots.shift();
     return false;
   }
   today.slots.shift();
-  let roll = nextFloat(today.rng) * possible.reduce((sum, id) => sum + weightToday(today, id), 0);
-  const id = possible.find((option) => (roll -= weightToday(today, option)) < 0) ?? possible[possible.length - 1];
-  draw(today, id);
-  show(today, id, minute, context);
+  // Cards that have rested long enough come first. If every card that fits is still resting,
+  // the one seen longest ago comes back early.
+  const rested = fitting.filter((id) => daysSince(today, id) >= balance.moments.restDays);
+  const longest = Math.max(...fitting.map((id) => daysSince(today, id)));
+  const possible = rested.length > 0 ? rested : fitting.filter((id) => daysSince(today, id) === longest);
+  show(today, pickByWeight(today, possible), minute, context);
   return true;
 }
 
@@ -290,13 +288,14 @@ function apply(
   }
   if (effect.walkIn) {
     const { group, size } = effect.walkIn;
+    // With every table taken, they wait at the front of the queue at the door, like guests who booked.
     seat(today.rng, progress, 0, {
       group,
       size,
       origin: restaurant.location,
       arrivalMinute: minute,
       bookedAt: restaurant.id,
-    }, minute, false);
+    }, minute);
   }
   const review: Review | null = effect.review
     ? {

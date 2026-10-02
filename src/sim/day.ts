@@ -6,12 +6,14 @@ import type { DecorId } from '../data/decor';
 import type { EquipmentId, MenuDish } from '../data/dishes';
 import { GROUP_IDS, GROUPS } from '../data/groups';
 import { LOCATIONS, type LocationId } from '../data/locations';
+import { REGULARS, type RegularId } from '../data/regulars';
 import { chooseRestaurant } from './choice';
 import { minuteOfDay, ticksPerDay } from './clock';
 import { ORDINARY_DAY } from './events';
 import { generateParties } from './guests';
 import { extrasOf, ingredientCostOf, templateOf } from './menu';
 import { writeReview } from './reviews';
+import { wishMet } from './regulars';
 import { chance, type RngState } from './rng';
 import { satisfactionFactors, satisfactionScore, updatedReputation } from './satisfaction';
 import {
@@ -250,6 +252,7 @@ function progressRestaurant(
         satisfaction,
         factors,
         review: maybeReview(rng, restaurant, visit, factors, satisfaction),
+        ...regularVisit(party, restaurant, visit.seatedAt),
       });
       visit.eating = true;
       visit.satisfaction = satisfaction;
@@ -272,6 +275,7 @@ function progressRestaurant(
         satisfaction,
         factors: null,
         review: maybeReview(rng, restaurant, visit, null, satisfaction),
+        ...regularVisit(party, null),
       });
       floor.walkouts.push({ group: party.group, size: party.size, minute });
       leave();
@@ -292,7 +296,15 @@ function lostOutcome(party: Party, restaurant: string | null, kind: 'noTable' | 
     satisfaction: null,
     factors: null,
     review: null,
+    ...regularVisit(party, null),
   };
+}
+
+/** For a named regular's outcome: who it was, and whether their wish came true (only if they ate). */
+function regularVisit(party: Party, restaurant: Restaurant | null, minute = 0): Pick<PartyOutcome, 'regularVisit'> {
+  if (!party.regularId) return {};
+  const met = restaurant !== null && wishMet(restaurant, REGULARS[party.regularId].wish, minute);
+  return { regularVisit: { id: party.regularId, wishMet: met } };
 }
 
 /** A day being played, one tick at a time. It only lives while the day runs, so it is never saved. */
@@ -400,7 +412,8 @@ export function seat(
     eating: false,
     leaveAt: 0,
     satisfaction: null,
-    mood: 0,
+    // Regulars feel at home here.
+    mood: party.regularId ? balance.regulars.atHomeMood : 0,
     extraPatience: 0,
   });
 }
@@ -457,6 +470,7 @@ export function stepDay(rng: RngState, progress: DayInProgress): void {
       bookedAt: booking.restaurant,
       critic: booking.critic,
       regular: booking.regular,
+      regularId: booking.regularId,
     };
     seat(rng, progress, index, party, minute);
   }
@@ -546,6 +560,8 @@ export interface TableGuests {
   eatingFor: number;
   critic: boolean;
   regular: boolean;
+  /** One of the named regulars with a story, or null. */
+  regularId: RegularId | null;
   /** Special guests: the merry group, a footballer, Lech Wałęsa... */
   visitor: Visitor | null;
   /** Help already given while they wait. */
@@ -607,6 +623,7 @@ export function floorView(progress: DayInProgress, index: number, recentMinutes 
         eatingFor: visit.eating && visit.readyAt !== null ? minute - visit.readyAt : 0,
         critic: party.critic ?? false,
         regular: party.regular ?? false,
+        regularId: party.regularId ?? null,
         visitor: visit.visitor ?? null,
         drink: visit.drink ?? false,
         apology: visit.apology ?? false,

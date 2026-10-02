@@ -5,6 +5,7 @@ import type { DecorId } from '../data/decor';
 import type { GroupId } from '../data/groups';
 import type { LocationId } from '../data/locations';
 import type { SpecialStaffId } from '../data/personal';
+import type { RegularId } from '../data/regulars';
 import type { TraitId } from '../data/staff';
 import type { Weather } from '../data/weather';
 
@@ -77,6 +78,8 @@ export interface Party {
   critic?: boolean;
   /** The Friday regular, who always wants cytrynówka with his dish. */
   regular?: boolean;
+  /** One of the named regulars with a story (data/regulars.ts). */
+  regularId?: RegularId;
 }
 
 /** A review left by a guest. */
@@ -98,6 +101,7 @@ export interface Booking {
   minute: number;
   critic: boolean;
   regular?: boolean;
+  regularId?: RegularId;
 }
 
 /** Everything about a day that isn't the restaurants: weather, events and bookings. */
@@ -144,4 +148,6 @@ export interface PartyOutcome {
   factors: SatisfactionFactors | null;
   /** Some parties leave a review. */
   review: Review | null;
+  /** For a named regular: who it was, and whether their wish came true. */
+  regularVisit?: { id: RegularId; wishMet: boolean };
 }

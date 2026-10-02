@@ -29,6 +29,7 @@ import { planGulls, shooGull, stepGulls, type GullsToday } from './gulls';
 import { answerMoment, checkMoments, planMoments, type MomentResult, type MomentsToday } from './moments';
 import { pairingsOf } from './menu';
 import { isFairDay, isNeptuneDay, neptuneResult, type NeptuneResult, type SeasonTally } from './neptune';
+import { regularsDay, regularsNews, type RegularStories, type RegularVisitReport } from './regulars';
 import { planRivalWeek, rivalAwarenessToday } from './rivalAi';
 import { chance, createRng, pick, type RngState } from './rng';
 import { createPlayerRestaurant, createRivalRestaurant } from './setup';
@@ -85,10 +86,10 @@ export interface GameState {
   trophies: number;
   /** True once Mewa has found the secret recipe card. */
   secretRecipe: boolean;
-  /** The last day each choice card came up (for rare cards that rest for a while). */
+  /** The last day each choice card came up (a card rests for a while after it has come up). */
   momentsSeen: Partial<Record<MomentId, number>>;
-  /** Cards drawn since the deck was last shuffled. */
-  momentDeck: MomentId[];
+  /** How far each named regular's story has got. */
+  regulars: RegularStories;
   /** Dishes and decor unlocked by choice cards (the Portuguese corner). */
   unlocks: string[];
   /** Things coming up because of earlier answers: more of some groups for a while, or a card coming back. */
@@ -180,6 +181,8 @@ export interface DaySummary extends DayTally {
   neptune: NeptuneResult | null;
   /** Absences and mishaps in the team today. */
   staffNews: string[];
+  /** The named regulars who came (or tried to) today, and their stories. */
+  regulars: RegularVisitReport[];
   /** The choice cards answered today. */
   moments: MomentResult[];
   /** What the answers and the free drinks gained or spent. */
@@ -220,7 +223,7 @@ export function newGame(seed: number, difficulty: Difficulty = 'normal'): GameSt
     trophies: 0,
     secretRecipe: false,
     momentsSeen: {},
-    momentDeck: [],
+    regulars: {},
     // Ana from Coimbra comes by in week 2 with the Portuguese corner.
     upcoming: [{ fromDay: PORTUGUESE_CORNER.day, untilDay: PORTUGUESE_CORNER.day, card: PORTUGUESE_CORNER.card }],
     unlocks: [],
@@ -348,7 +351,6 @@ export function openRestaurant(state: GameState): OpenDay {
       (state.rng.s ^ Math.imul(state.day + 1, 0x9e3779b1)) >>> 0,
       state.day,
       state.momentsSeen,
-      state.momentDeck,
       state.upcoming.filter((u) => u.card && u.fromDay === state.day).map((u) => u.card!),
     ),
     terraceBuilt: terraceTablesBuilt(state),
@@ -608,6 +610,13 @@ function addToWeek(week: WeekTally, outcomes: PartyOutcome[]): WeekTally {
   return { served, turnedAway };
 }
 
+/** Adds points to some groups' reputation or awareness, keeping each within 0–100. */
+function addToGroups(points: Record<GroupId, number>, change: Partial<Record<GroupId, number>>): Record<GroupId, number> {
+  const result = { ...points };
+  for (const g of GROUP_IDS) result[g] = Math.max(0, Math.min(100, result[g] + (change[g] ?? 0)));
+  return result;
+}
+
 /** Ends the day: pays wages and any weekly bills, and moves on to the next day. */
 export function closeDay(state: GameState, open: OpenDay): { state: GameState; summary: DaySummary } {
   const playerBefore = playerOf(state);
@@ -635,6 +644,13 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
     playerAfter = { ...playerAfter, reputation };
     staffNews.push(`${pick(rng, special.mishaps ?? [])} Reputation −${loss} with everyone.`);
   }
+  // The regulars who came today: the next part of their story, and what they tell their friends.
+  const regularsToday = regularsDay(state.regulars, open.progress.outcomes, playerBefore.id);
+  playerAfter = {
+    ...playerAfter,
+    reputation: addToGroups(playerAfter.reputation, regularsToday.reputation),
+    awareness: addToGroups(playerAfter.awareness, regularsToday.awareness),
+  };
   // Whoever worked today is paid today; anyone hired during the day starts tomorrow.
   const wages = teamWages({ ...state, team: open.team });
   const { rent, utilities } = weeklyBillsDue(playerBefore, state.day);
@@ -684,6 +700,7 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
     });
   }
 
+  news.push(...regularsNews(nextDay, regularsToday.stories));
   for (const id of calendarEventsStarting(nextDay)) {
     news.push({ title: CALENDAR_EVENTS[id].name, text: CALENDAR_EVENTS[id].description });
   }
@@ -771,7 +788,7 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
       trophies,
       secretRecipe,
       momentsSeen: { ...state.momentsSeen, ...Object.fromEntries(open.moments.seen.map((id) => [id, state.day])) },
-      momentDeck: open.moments.deck,
+      regulars: regularsToday.stories,
       unlocks: [...state.unlocks, ...unlocked],
       upcoming,
       // Running out of money ends the game.
@@ -803,6 +820,7 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
       goalCompleted,
       neptune,
       staffNews,
+      regulars: regularsToday.visits,
       moments: open.moments.results,
       momentsCash,
       help: open.help,

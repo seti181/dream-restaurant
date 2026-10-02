@@ -171,6 +171,10 @@ export const HELP: { title: string; text: string }[] = [
     text: 'Four friendly rivals compete for the same hungry guests. Every Monday each makes a move, and they notice when you win over their favourite customers.',
   },
   {
+    title: 'Regulars',
+    text: 'A few guests come back every week on their own day, each hoping for one thing: a soup, pierogi, the lunch set, or a main a student can afford. Each visit tells the next part of their story in the day report. Make them happy and their friends like you more; make them happy often enough and they become friends of the house.',
+  },
+  {
     title: 'The Golden Neptune',
     text: 'Awarded on the last day of St. Dominic’s Fair to the Old Town’s favourite restaurant. Neptune Score = 60% average rating through the season + 40% of all Old Town guests served during the Fair.',
   },

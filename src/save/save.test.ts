@@ -182,7 +182,7 @@ describe('upgrading version 5 saves (from before game over)', () => {
 describe('upgrading version 6 saves (from before the secret recipe)', () => {
   it('starts without the recipe card', () => {
     const game = newGame(53);
-    const { secretRecipe: _s, momentsSeen: _m, momentDeck: _d, upcoming: _u, ...old } = game;
+    const { secretRecipe: _s, momentsSeen: _m, upcoming: _u, ...old } = game;
     expect(migrate({ saveVersion: 6, savedAt: '', game: old })).toEqual(game);
   });
 });
@@ -190,7 +190,7 @@ describe('upgrading version 6 saves (from before the secret recipe)', () => {
 describe('upgrading version 7 saves (from before choice cards were remembered)', () => {
   it('starts with no cards seen', () => {
     const game = newGame(54);
-    const { momentsSeen: _m, momentDeck: _d, upcoming: _u, ...old } = game;
+    const { momentsSeen: _m, upcoming: _u, ...old } = game;
     expect(migrate({ saveVersion: 7, savedAt: '', game: old })).toEqual(game);
   });
 });
@@ -206,7 +206,7 @@ describe('upgrading version 8 saves (from before the live happy hour)', () => {
 describe('upgrading version 9 saves (from before the shuffled deck of cards)', () => {
   it('starts with a fresh deck and nothing coming up', () => {
     const game = newGame(56);
-    const { momentDeck: _d, upcoming: _u, ...old } = game;
+    const { upcoming: _u, ...old } = game;
     expect(migrate({ saveVersion: 9, savedAt: '', game: old })).toEqual(game);
   });
 });
@@ -221,6 +221,13 @@ describe('upgrading version 10 saves (from before the Portuguese corner)', () =>
     // A save that already has her visit doesn't get a second one.
     const twice = migrate({ saveVersion: 10, savedAt: '', game: { ...upgraded, unlocks: undefined } })!;
     expect(twice.upcoming.filter((u) => u.card === 'portugueseStudent')).toHaveLength(1);
+  });
+});
+
+describe('upgrading version 11 saves (from before cards rested instead of coming from a deck)', () => {
+  it('drops the deck and keeps the days each card was last seen', () => {
+    const game = { ...newGame(58), momentsSeen: { busker: 3 } };
+    expect(migrate({ saveVersion: 11, savedAt: '', game: { ...game, momentDeck: ['busker'] } })).toEqual(game);
   });
 });
 
@@ -242,5 +249,13 @@ describe('save codes', () => {
     expect(importSaveCode('hello there')).toBeNull();
     expect(importSaveCode('OTK-this is not base64!!')).toBeNull();
     expect(importSaveCode(`OTK-${btoa('{"not":"a save"}')}`)).toBeNull();
+  });
+});
+
+describe('upgrading version 12 saves (from before the named regulars)', () => {
+  it('starts every regular’s story at the beginning', () => {
+    const game = newGame(59);
+    const { regulars: _r, ...old } = game;
+    expect(migrate({ saveVersion: 12, savedAt: '', game: old })).toEqual(game);
   });
 });

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { balance } from '../../data/balance';
 import { LOCATION_IDS, LOCATIONS } from '../../data/locations';
+import { REGULAR_IDS } from '../../data/regulars';
 import { floorView, startDay, stepDay } from '../../sim/day';
 import * as actions from '../../sim/actions';
 import { answerTheMoment, newGame, openRestaurant, playTick, type GameState } from '../../sim/game';
@@ -235,7 +236,10 @@ describe('walking in and out', () => {
 });
 
 describe('characters', () => {
-  const kinds: PersonKind[] = ['tourists', 'students', 'locals', 'office', 'foodies', 'critic', 'regular', 'waiter', 'tomek', 'adrian', 'chef'];
+  const kinds: PersonKind[] = [
+    ...['tourists', 'students', 'locals', 'office', 'foodies', 'critic', 'regular', 'waiter', 'tomek', 'adrian', 'chef'] as const,
+    ...REGULAR_IDS,
+  ];
   it.each(kinds)('%s can be drawn from the front and back, standing, walking and sitting', (kind) => {
     for (const facing of ['front', 'back'] as const) {
       for (const pose of ['stand', 'walk1', 'walk2'] as const) {
