@@ -268,3 +268,11 @@ describe('upgrading version 13 saves (from before morale)', () => {
     expect(migrate({ saveVersion: 13, savedAt: '', game: old })).toEqual(game);
   });
 });
+
+describe('upgrading version 14 saves (from before the team’s stories)', () => {
+  it('counts everyone as joined on day 0, and knows Pani Krystyna and Kacper', () => {
+    const game = newGame(61);
+    const old = { ...game, team: game.team.map(({ since: _s, starter: _st, ...person }) => person) };
+    expect(migrate({ saveVersion: 14, savedAt: '', game: old })).toEqual(game);
+  });
+});

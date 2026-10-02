@@ -74,8 +74,12 @@ export interface SpecialStaff {
   /** Reputation lost with every group on each day they work, and what went wrong. */
   reputationLossPerDay?: number;
   mishaps?: string[];
-  /** Chance of not turning up on a given day, and what they say. */
+  /** Chance of not turning up on a given day, and what they say... */
   absenceChance?: number;
+  /** ...multiplied by this while they're in good spirits (their story: data/teamStories.ts). */
+  happyAbsenceFactor?: number;
+  /** In the day report when a skill course makes them good enough that the mishaps stop. */
+  trainedNews?: string;
   excuses?: string[];
 }
 
@@ -94,6 +98,7 @@ export const SPECIAL_STAFF: Record<SpecialStaffId, SpecialStaff> = {
     firstDay: 7,
     everyDays: 21,
     reputationLossPerDay: 2,
+    trainedNews: 'Tomek carried three plates across the room without dropping one, and took a bow. No more mishaps!',
     mishaps: [
       'Tomek dropped a whole tray of pierogi right in front of the window.',
       'Tomek brought a family three soups they hadn’t ordered and called it “a surprise from the chef”.',
@@ -114,6 +119,7 @@ export const SPECIAL_STAFF: Record<SpecialStaffId, SpecialStaff> = {
     firstDay: 14,
     everyDays: 21,
     absenceChance: 0.5,
+    happyAbsenceFactor: 0.5,
     excuses: [
       'Adrian didn’t come in today. His text says: “tram broke down, will explain later”.',
       '“My cat sat on my alarm clock,” says Adrian’s message. No Adrian today.',

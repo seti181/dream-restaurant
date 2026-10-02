@@ -300,6 +300,11 @@ export const balance = {
       /** ...and people enjoy learning something new: morale. */
       morale: 5,
     },
+    /** Small moments for the team (a birthday, pączki): the chance each morning, for people who've been there this long. */
+    teamMoments: {
+      chance: 0.15,
+      settledInDays: 7,
+    },
     /** How everyone feels about the job, from 0 to 100. See project.md section 6.14 (staff growth). */
     morale: {
       /** New starters, and the team you start with. */

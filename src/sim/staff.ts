@@ -87,6 +87,8 @@ export function moraleAfterDay(
       const fair = fairWageOf({ ...person, ...learned });
       const wage = fair > person.wage ? ` A fair wage for that is now ${fair} zł a day.` : '';
       news.push(`${person.name} ${COURSES[person.role][course.stat].done}: ${course.stat} ${person[course.stat] + 1}!${wage}`);
+      const trained = person.special && SPECIAL_STAFF[person.special].trainedNews;
+      if (trained && course.stat === 'skill') news.push(trained);
     }
     const before = moodOf(person.morale);
     const now = moodOf(morale);
@@ -110,6 +112,7 @@ export function starterTeam(): Employee[] {
   return STARTER_TEAM.map((person, index) => ({
     ...person,
     id: index + 1,
+    since: 0,
     wage: wageOf(person.role, person),
     morale: balance.staff.morale.start,
   }));

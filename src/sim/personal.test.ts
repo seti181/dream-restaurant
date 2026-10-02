@@ -111,7 +111,8 @@ describe('Tomek and Adrian', () => {
 
   it('Adrian turns up about half the time, and the restaurant manages without him when he doesn’t', () => {
     const state = newGame(7);
-    const adrian = specialCandidate('adrian', 99);
+    // Not especially happy at work: when he is, he turns up more often (see teamStories.test.ts).
+    const adrian = { ...specialCandidate('adrian', 99), morale: 60 };
     const team = [...state.team, adrian];
     let absences = 0;
     for (let seed = 1; seed <= 60; seed++) {

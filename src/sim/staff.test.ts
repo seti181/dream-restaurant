@@ -55,7 +55,7 @@ describe('the team', () => {
     const state = newGame(2);
     const chef = state.candidates.find((c) => c.role === 'chef')!;
     const after = hire(state, chef.id);
-    expect(after.team).toContainEqual(chef);
+    expect(after.team).toContainEqual({ ...chef, since: state.day });
     expect(after.candidates).not.toContainEqual(chef);
     expect(playerOf(after).chefs).toHaveLength(playerOf(state).chefs.length + 1);
     expect(teamWages(after)).toBe(teamWages(state) + chef.wage);

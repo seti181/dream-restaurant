@@ -39,6 +39,10 @@ export interface Employee extends Staff {
   morale: number;
   /** A day they have off (the day number), if one is planned. */
   dayOff?: number;
+  /** The day they joined the team (stories count from it). */
+  since?: number;
+  /** For the team you start with: who they are, for their story (data/teamStories.ts). */
+  starter?: 'krystyna' | 'kacper';
   /** A one-day course they're booked on: the day, and what it improves. */
   course?: { day: number; stat: 'skill' | 'speed' };
 }

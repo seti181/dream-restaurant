@@ -83,6 +83,7 @@ export const STARTER_TEAM = [
     speed: 3,
     trait: 'calm' as const,
     specialty: 'polish' as const,
+    starter: 'krystyna' as const,
   },
   {
     role: 'waiter' as const,
@@ -91,5 +92,6 @@ export const STARTER_TEAM = [
     skill: 3,
     speed: 3,
     trait: 'chatty' as const,
+    starter: 'kacper' as const,
   },
 ];

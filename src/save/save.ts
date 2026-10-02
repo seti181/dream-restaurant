@@ -8,7 +8,7 @@ import type { GameState } from '../sim/game';
 import { startGoal } from '../sim/goals';
 import { PORTUGUESE_CORNER } from '../data/personal';
 
-export const SAVE_VERSION = 14;
+export const SAVE_VERSION = 15;
 const SAVE_KEY = 'old-town-kitchen/save';
 
 interface SaveFile {
@@ -150,6 +150,17 @@ function upgradeFrom13(game: Record<string, unknown>): Record<string, unknown> {
   return { ...game, team: withMorale(game.team), candidates: withMorale(game.candidates) };
 }
 
+function upgradeFrom14(game: Record<string, unknown>): Record<string, unknown> {
+  // Version 15 adds stories for the team: everyone counts as having joined on day 0,
+  // and Pani Krystyna and Kacper are recognised as the team you started with.
+  const starters: Record<string, string> = { 'Pani Krystyna': 'krystyna', Kacper: 'kacper' };
+  const team = (game.team as Record<string, unknown>[]).map((person) => {
+    const starter = !person.special && starters[person.name as string];
+    return { since: 0, ...person, ...(starter ? { starter } : {}) };
+  });
+  return { ...game, team };
+}
+
 /**
  * Brings a save from any older version up to date, one version at a time.
  * Returns null for saves that can't be understood.
@@ -213,6 +224,10 @@ export function migrate(data: unknown): GameState | null {
   if (version === 13) {
     game = upgradeFrom13(game as unknown as Record<string, unknown>) as unknown as GameState;
     version = 14;
+  }
+  if (version === 14) {
+    game = upgradeFrom14(game as unknown as Record<string, unknown>) as unknown as GameState;
+    version = 15;
   }
 
   return looksLikeGame(game) ? game : null;

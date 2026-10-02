@@ -105,7 +105,7 @@ function withTeam(state: GameState, team: Employee[]): GameState {
 export function hire(state: GameState, candidateId: number): GameState {
   const person = state.candidates.find((c) => c.id === candidateId);
   if (!person) return state;
-  const hired = withTeam(state, [...state.team, person]);
+  const hired = withTeam(state, [...state.team, { ...person, since: state.day }]);
   return { ...hired, candidates: state.candidates.filter((c) => c.id !== candidateId) };
 }
 

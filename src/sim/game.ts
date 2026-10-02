@@ -30,6 +30,7 @@ import { answerMoment, checkMoments, planMoments, type MomentResult, type Moment
 import { pairingsOf } from './menu';
 import { isFairDay, isNeptuneDay, neptuneResult, type NeptuneResult, type SeasonTally } from './neptune';
 import { regularsDay, regularsNews, type RegularStories, type RegularVisitReport } from './regulars';
+import { settleWishes, teamMoment, teamNews } from './teamStories';
 import { planRivalWeek, rivalAwarenessToday } from './rivalAi';
 import { chance, createRng, pick, type RngState } from './rng';
 import { createPlayerRestaurant, createRivalRestaurant } from './setup';
@@ -331,7 +332,9 @@ export function openRestaurant(state: GameState): OpenDay {
   const absent: OpenDay['absent'] = [];
   for (const person of state.team) {
     const special = person.special && SPECIAL_STAFF[person.special];
-    if (special?.absenceChance && chance(rng, special.absenceChance)) {
+    // Adrian turns up more often when he's happy at work (his story).
+    const happier = moodOf(person.morale) === 'happy' ? (special?.happyAbsenceFactor ?? 1) : 1;
+    if (special?.absenceChance && chance(rng, special.absenceChance * happier)) {
       absent.push({ id: person.id, name: person.name, excuse: pick(rng, special.excuses ?? []), special: person.special });
     } else if (moodOf(person.morale) === 'wornOut' && !awayOn(person, state.day) && chance(rng, balance.staff.morale.sickChance)) {
       // Worn out: they stay in bed today, unless there's nobody else to do their job.
@@ -644,7 +647,8 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
   for (const person of open.team) {
     const special = person.special && SPECIAL_STAFF[person.special];
     const working = !open.absent.some((a) => a.id === person.id);
-    if (!special?.reputationLossPerDay || !working) continue;
+    // Once a skill course has made Tomek good enough, the mishaps stop (his story).
+    if (!special?.reputationLossPerDay || !working || person.skill > special.skill) continue;
     const loss = special.reputationLossPerDay;
     const reputation = { ...playerAfter.reputation };
     for (const g of GROUP_IDS) reputation[g] = Math.max(0, reputation[g] - loss);
@@ -659,7 +663,10 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
     awareness: addToGroups(playerAfter.awareness, regularsToday.awareness),
   };
   // A day's work makes people a little tired; a day off (or in bed) puts them right.
-  const morale = moraleAfterDay(state.team, state.day, {
+  // Anyone who wished for today off finds out whether they got it.
+  const wishes = settleWishes(state.team, state.day);
+  staffNews.push(...wishes.news);
+  const morale = moraleAfterDay(wishes.team, state.day, {
     ids: open.team.map((person) => person.id),
     sick: open.absent.filter((a) => a.sick).map((a) => a.id),
   });
@@ -715,6 +722,12 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
   }
 
   news.push(...regularsNews(nextDay, regularsToday.stories));
+  // The team's stories, and now and then a small moment for someone (a birthday, pączki).
+  const moment = teamMoment(rng, morale.team, nextDay);
+  const team = moment.team;
+  cash += moment.cash;
+  news.push(...teamNews(team, nextDay));
+  if (moment.news) news.push(moment.news);
   for (const id of calendarEventsStarting(nextDay)) {
     news.push({ title: CALENDAR_EVENTS[id].name, text: CALENDAR_EVENTS[id].description });
   }
@@ -803,7 +816,7 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
       secretRecipe,
       momentsSeen: { ...state.momentsSeen, ...Object.fromEntries(open.moments.seen.map((id) => [id, state.day])) },
       regulars: regularsToday.stories,
-      team: morale.team,
+      team,
       unlocks: [...state.unlocks, ...unlocked],
       upcoming,
       // Running out of money ends the game.
