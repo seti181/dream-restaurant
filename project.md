@@ -498,6 +498,75 @@ Since 2026-10-01 the restaurant view sits in an Old Town street: cobbles, paveme
 - **Audio:** soft background music, café ambience, a till "ding", seagull calls. Made in code with Web Audio (no sound files), or CC0 sources only; a mute toggle is required.
 - **Juice:** coins popping, stars appearing, a small celebration when a goal is reached.
 
+### 9.3 Graphics and layout: concepts (chosen 2026-10-02: A, then C, then B)
+
+Playtest wish (2026-10-02): more detailed pixel art and a better layout, measured against the best management games. Three concepts below, with pictures in `art/concepts/v3/`. The "today" pictures show the game as it is now, for comparison. The layout mock-ups (A and B) are the real game restyled with CSS and a few overlays, at the tablet's 1364×603 layout; the art (C) is drawn by the game's own pixel code (`npx tsx scripts/pixel/concepts-v3.ts`).
+
+**What the best management games do:**
+
+| Game | What it does best | What we take |
+|---|---|---|
+| Stardew Valley | The world fills the screen. The clock, date, weather and money sit together in one small wooden frame in a corner. Menus open as parchment pages in wooden frames, with tabs along the top. Warm window light in the evening. | The small framed corners for the clock and the money (A); wooden frames and ribbon tabs for the menus (B); the evening light (C). |
+| Kairosoft games (Cafeteria Nipponica, Game Dev Story) | Tiny people in a small room fill the whole phone screen. Numbers, hearts and sparkles pop up over people's heads all day, so something nice is always happening. | The whole screen for the restaurant, and money and hearts floating up from the tables (A). |
+| Two Point Hospital | The hospital fills the screen. The controls are a slim strip of icon buttons along the bottom, and windows open over the world only when they're needed. | Round buttons along the bottom edge (A). The day's numbers stay small, with their lists only on a tap (already in). |
+| Theme Hospital, Pizza Syndicate | The cut-away "dollhouse" building, but with a big control panel that takes a large strip of the screen. | Keep the dollhouse (already in); avoid big panels that hide the world (A). |
+| Good Pizza, Great Pizza | One customer at a time, with a big, expressive face: you always know how they feel. Made for phones and tablets: large, clear and easy to tap. | Expressive faces and each group's telltale things on every guest (C). |
+| Coffee Talk, Moonlighter | Coffee Talk's little café at night: warm lamplight against a blue, rainy evening. Moonlighter's shop: rich detail on every shelf and wall. | The evening look (C, evening picture). |
+| Unpacking | Every room is full of small, specific objects that tell you whose home it is. | Jars, a picture of the Żuraw, a chalkboard, a clock and copper pans, so the room feels lived-in and Gdańsk (C). |
+
+**A. The world fills the screen** (`a-world-fills-screen.png`; today: `a-today-day.png`)
+
+- During the day the restaurant and its street fill the whole screen. The red top bar and the white card go, and what they held becomes small pixel-framed panels in the corners, over the sky and the cobbles:
+  - top left: the clock, date and weather;
+  - top middle: the day's four numbers, still tappable for their lists;
+  - top right: cash and stars;
+  - bottom left: round buttons for Manage, Happy hour, Flyers (with how many are left) and Who's who (the colour legend, which now takes a whole line, opens on a tap);
+  - bottom right: pause and the speeds;
+  - left: the notes (who didn't come in, a regular arriving), stacked under the clock, each with its ✕.
+- When a table pays, the money floats up from it ("+38 zł"); a delighted guest sends up a heart. This is the "coins popping" from section 9.2.
+- **Gain:** the restaurant is drawn about **1.6–1.7 times bigger** (at the tablet's layout the room grows from 544 to 921 pixels wide). People and tables are easier to tap, and the extra detail of C can be seen.
+- **Cost:** the corner panels cover a little street and sky (only scenery). The planning screens stay as they are. At the smallest size (850×530) the numbers in the middle would shrink to icons. It's the same DOM as now, so the tablet won't notice.
+- **Effort:** medium: the day screen and the top bar, plus the floating money.
+
+**B. Pixel-framed menus** (`b-pixel-frames-staff.png`, `b-pixel-frames-menu.png`; today: `b-today-staff.png`)
+
+- The planning screens look like a page in a wooden frame, as in Stardew Valley, instead of a white web card:
+  - a walnut frame with a thin gold line around a parchment page;
+  - tabs as ribbon bookmarks, with the open one in brick red;
+  - cards for staff, dishes and candidates with square corners, a dark outline and a gold shadow;
+  - square, bevelled buttons that look pressable, and "Open the restaurant" in green;
+  - headings in a serif, like a printed menu card, while the text stays in today's clean font (section 9.1: readable text);
+  - the top bar in dark wood.
+- **Gain:** the menus look like part of the same pixel world. It's almost all CSS: no new pictures, nothing to download, and the app hardly grows.
+- **Cost:** contrast and readability need checking on every screen. The serif headings use the tablet's own serif font (Noto Serif on Android), so they look a little different from these screenshots, which were made on Windows.
+- **Effort:** small to medium: the shared styles in `global.css`, then a check of every tab, the day report and the pop-ups.
+
+**C. Richer pixel art** (`c-richer-art-day.png`, `c-richer-art-evening.png`, `c-people-before-after.png`)
+
+- **A sample dining room** in the same isometric view:
+  - **Floor:** honey-coloured planks with grain and joints, a red-and-blue folk rug, and soft shadows under the furniture.
+  - **Walls:** textured plaster over wooden panelling. A window looks out onto Gdańsk gables, with curtains and lit windows at dusk. There's a shelf of jars, a print of the Żuraw, a chalkboard menu, a clock, and three brass wall lamps with green shades.
+  - **Kitchen:** Delft-blue tiles and copper pans. The stove has a flame and steam, and the chef works behind a pass with plates under a heat lamp.
+  - **Tables:** checked tablecloths, plates of pierogi and soup, glasses, and a vase by day or a candle in the evening. A fig tree stands in the corner.
+  - **Evening:** the room turns blue and dim, and the lamps and candles throw warm pools of light, just as the street already darkens at dusk.
+- **People** are bigger and more detailed: about 20×37 pixels instead of 14×20, not counting hats and tall hair (the comparison picture shows today's people on top).
+  - Eyes with a shine, eyebrows and blush.
+  - Seven hairstyles: bob, bun, long, short, spiky, bald and a cap.
+  - Clothes with folds.
+  - The telltale things from section 9.1: tourists' straw hats and cameras, students' backpacks, the locals' jumpers with a Kashubian pattern, office workers' glasses and foodies' scarves.
+  - Staff: the waiter in black with a white collar and apron, carrying a tray; the chef in whites and a toque.
+- **Gain:** much more charm and more Gdańsk, and the guests are easy to tell apart without the colour legend.
+- **Cost:** people nearly twice as tall need furniture that grows with them (the sample's tables are 20 units instead of 16), so the same room needs more of the screen, which A gives. Everything is drawn once and kept as pictures, as now, so the detail costs nothing while the day runs; the code grows by a few KB.
+- **Effort:** the biggest of the three. First the room parts and furniture, then the 12 decor items in their styles, then all the people and their poses (sitting, walking, from behind), one step at a time, each checked on the tablet.
+
+**Recommendation:** all three, in this order:
+
+1. **A first.** It makes the restaurant 1.6 times bigger, so the new detail can be seen on the tablet.
+2. **C in steps:** the room (floor, walls, window, kitchen), then the furniture and decor, then the people.
+3. **B** is quick and doesn't depend on the others, so it can go in at any point.
+
+Chosen on 2026-10-02: all three, in this order (see M7 in the roadmap).
+
 ## 10. Personal touches (fill in)
 
 - Her name: Joana / the restaurant's default name: **[Joana´s Kitchen ]**
@@ -639,6 +708,12 @@ Each item is tested in the browser and on the tablet before the next one starts.
 - [x] The riverside background during the day too, as on the planning screens
 - [x] Replying to reviews
 - [x] Attracting passers-by: flyers for people walking past
+- [ ] Graphics A: the restaurant fills the screen during the day, with small framed panels in the corners (section 9.3)
+- [ ] Graphics A: money and hearts float up from the tables
+- [ ] Graphics C: a richer room: floor, walls, window and kitchen
+- [ ] Graphics C: richer furniture and decor
+- [ ] Graphics C: bigger, more detailed people
+- [ ] Graphics B: pixel-framed menus and pop-ups
 - [ ] Attracting passers-by: a waiter offering samples at the door
 - [ ] Bigger premises: cellar room, bar counter, kids' corner
 - [ ] Sticker album ("Gdańsk passport")
@@ -795,3 +870,4 @@ Each item is tested in the browser and on the tablet before the next one starts.
 - 2026-10-02: Playtest request: guests and people walking past slow down by another 10%: 65 world units a second at 1× (from 72; waiters keep 90). The 15% longer meals stay.
 - 2026-10-02: Playtest requests: 25% fewer people walking past (one in four five-minute steps brings someone along, at most 3 out at once; the choice now uses the hash's top bits, as its last bits repeat from one step to the next), guests and people walking past another 10% slower (58.5 world units a second; waiters keep 90), and meals another 10% longer: 76 minutes instead of 69 (balance.service.eatingMinutes). Simulator, 10 seasons, before → after: do nothing 23,240 → 20,060 zł (still loses money); cheap and fast bust 10/10 both; quality focus 6,970 zł (6 busts) → 1,861 zł (9 busts in 10, week 5); balanced 34,498 → 38,131 zł (1 bust; it bought fewer tables), now profitable from week 3 instead of week 2, still within the target of week 2–3; Neptune 39.4 → 38.4.
 - 2026-10-02: With 76-minute meals, a booked food critic could give up at a full door after 40 minutes, just before a table freed up (a test caught it). Guests who booked now wait up to 80 minutes (balance.service.bookedWaitFactor 4 → 8), longer than a meal, so their table always frees up in time. Simulator, 10 seasons, with this: do nothing 19,149 zł; cheap and fast bust 10/10; quality focus 2,333 zł (9 busts in 10); balanced 34,261 zł (2 busts in 10, week 6), profitable from week 3; Neptune 38.5.
+- 2026-10-02: Graphics and layout, concept round 3 (section 9.3, pictures in `art/concepts/v3/`, compared with Stardew Valley, Kairosoft's games, Two Point Hospital and others): all three concepts chosen, in this order. A: the restaurant fills the screen during the day, with small framed panels in the corners and money floating up from the tables. C: richer pixel art, the room first, then furniture and decor, then bigger people. B: pixel-framed menus and pop-ups. They are six M7 roadmap items, before the rest of M7.
