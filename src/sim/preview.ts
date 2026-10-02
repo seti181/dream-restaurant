@@ -39,6 +39,8 @@ export function previewOf(state: GameState, location: LocationId): StreetPreview
       terraceTables: terrace,
       chefsBusy: (rival ? rival.chefs : team.filter((p) => p.role === 'chef')).map(() => false),
       waiters: rival ? rival.waiters.map(() => null) : team.filter((p) => p.role === 'waiter').map((p) => p.special ?? null),
+      chefLooks: rival ? rival.chefs.map((_, i) => i) : team.filter((p) => p.role === 'chef').map((p) => p.id),
+      waiterLooks: rival ? rival.waiters.map((_, i) => i) : team.filter((p) => p.role === 'waiter').map((p) => p.id),
       ordersWaiting: 0,
       walkouts: [],
       atTheDoor: [],

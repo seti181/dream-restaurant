@@ -23,6 +23,8 @@ export interface Staff {
   specialty?: Cuisine;
   /** One of the two waiters from section 10; only the restaurant view uses it. */
   special?: SpecialStaffId;
+  /** Which face they have (their employee number): only the pictures use it. */
+  look?: number;
 }
 
 /** One of the player's staff, or a job candidate. */

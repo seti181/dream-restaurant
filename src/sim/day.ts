@@ -587,6 +587,9 @@ export interface FloorView {
   chefsBusy: boolean[];
   /** One entry per waiter on today: null, or which of the special waiters it is. */
   waiters: (SpecialStaffId | null)[];
+  /** Each chef's and each waiter's face (see Staff.look), in the same order. */
+  chefLooks: number[];
+  waiterLooks: number[];
   decor: DecorId[];
   equipment: EquipmentId[];
   /** Orders waiting for a free chef. */
@@ -641,6 +644,8 @@ export function floorView(progress: DayInProgress, index: number, recentMinutes 
     terraceTables: restaurant.terraceTables,
     chefsBusy: floor.chefFreeAt.map((freeAt) => freeAt > minute),
     waiters: restaurant.waiters.map((waiter) => waiter.special ?? null),
+    chefLooks: restaurant.chefs.map((chef, i) => chef.look ?? i),
+    waiterLooks: restaurant.waiters.map((waiter, i) => waiter.look ?? i),
     decor: restaurant.decor,
     equipment: restaurant.equipment,
     ordersWaiting: floor.queue.length,

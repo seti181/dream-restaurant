@@ -8,7 +8,7 @@ import { answerTheMoment, newGame, openRestaurant, playTick, type GameState } fr
 import { specialCandidate } from '../../sim/staff';
 import { drawCloud, drawSky, drawStreet } from './street';
 import { PLINTH, drawRoom, guestKind, leaveQueuePath, movePath, queueSpot, passerByPath, streetFurniture, STREET_THING_REACH, roomLayout, scenePieces, seatsAt, servePath, waiterSpot, walkPath, type RoomLook } from './room';
-import { HEADROOM, PERSON, personPixels, SEATED_ROWS, type PersonKind } from './sprites';
+import { HEADROOM, PERSON, personPixels, portraitPixels, PORTRAIT_ROWS, SEATED_ROWS, type PersonKind } from './sprites';
 
 const look = (insideTables: number): RoomLook => ({ decor: [], equipment: ['stove'], weather: 'sunny', dusk: false, insideTables });
 
@@ -249,6 +249,27 @@ describe('characters', () => {
       }
       expect(personPixels(kind, facing, 'sit').height).toBe(SEATED_ROWS + HEADROOM);
     }
+  });
+
+  it('draws a portrait of anyone on the team: head and shoulders, with a face for their mood', () => {
+    const fine = portraitPixels('waiter', 2, 'fine');
+    expect(fine.width).toBe(PERSON[0].length);
+    expect(fine.height).toBe(PORTRAIT_ROWS);
+    const same = (a: typeof fine, b: typeof fine) => {
+      for (let y = 0; y < a.height; y++) for (let x = 0; x < a.width; x++) if (String(a.get(x, y)) !== String(b.get(x, y))) return false;
+      return true;
+    };
+    expect(same(fine, portraitPixels('waiter', 2, 'tired'))).toBe(false);
+    expect(same(fine, portraitPixels('waiter', 3, 'fine'))).toBe(false);
+    // Tomek is always happy.
+    expect(same(portraitPixels('tomek', 0, 'fine'), portraitPixels('tomek', 0, 'wornOut'))).toBe(true);
+  });
+
+  it('gives each chef and waiter their own face, the same in the restaurant as on their card', () => {
+    const state = newGame(5);
+    const view = floorView(openRestaurant(state).progress, 0);
+    expect(view.chefLooks).toEqual(state.team.filter((p) => p.role === 'chef').map((p) => p.id));
+    expect(view.waiterLooks).toEqual(state.team.filter((p) => p.role === 'waiter').map((p) => p.id));
   });
 
   it('shows Tomek and Adrian among the waiters as themselves', () => {

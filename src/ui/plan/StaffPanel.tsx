@@ -7,6 +7,8 @@ import { courseCost, courseUnavailableReason, dayOffUnavailableReason } from '..
 import { teamWages } from '../../sim/game';
 import { fairWageOf, moodOf, offOn, underpaid, type Mood } from '../../sim/staff';
 import type { Employee } from '../../sim/types';
+import { imageUrl } from '../pixel/raster';
+import { portraitPixels, PORTRAIT_ROWS } from '../pixel/sprites';
 import { money } from '../format';
 import { dayOffDay, useGame } from '../store';
 
@@ -41,11 +43,28 @@ function Dots({ level }: { level: number }) {
   );
 }
 
+/** Portraits drawn so far, by who and how they feel. */
+const portraits = new Map<string, string>();
+
+/** Someone's pixel face: the same person as in the restaurant, looking as they feel. */
+function Portrait({ person, onTeam }: { person: Employee; onTeam: boolean }) {
+  const kind = person.special ?? person.role;
+  const mood = onTeam ? moodOf(person.morale) : 'fine';
+  const key = `${kind}:${person.id}:${mood}`;
+  let url = portraits.get(key);
+  if (!url) {
+    url = imageUrl(portraitPixels(kind, person.id, mood));
+    portraits.set(key, url);
+  }
+  return <img className="portrait" src={url} alt="" width={48} height={(48 / 16) * PORTRAIT_ROWS} />;
+}
+
 function PersonCard({ person, action, onTeam = false }: { person: Employee; action: ReactNode; onTeam?: boolean }) {
   const trait = person.trait ? TRAITS[person.trait] : null;
   return (
     <article className="person">
       <header>
+        <Portrait person={person} onTeam={onTeam} />
         <strong>{person.name}</strong>
         <span className="role">
           {person.role === 'chef' ? '🧑‍🍳 Chef' : '🍽️ Waiter'}

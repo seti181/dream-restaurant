@@ -265,7 +265,17 @@ const BERET: Overlay = { x: 2, y: -1, rows: ['...ooooooo..', '..oKKKKKKKoo', '.o
 const FLAT_CAP: Overlay = { x: 1, y: -1, rows: ['...oooooooo...', '..oQQQQQQQQo..', '.oDDDDDDDDDDo.'] };
 const APRON: Overlay = { x: 3, y: 15, facing: 'front', rows: ['oaaaaaaaao', 'oaaaaaaaAo'] };
 const KOMPOT_STAIN: Overlay = { x: 9, y: 15, facing: 'front', rows: ['r'] };
-const SPIKY_HAIR: Overlay = { x: 0, y: -2, rows: ['....o..o..o.....', '...ohoohoohoo...'] };
+/** Adrian's spiky blond hair, standing up above his head. */
+const SPIKY_HAIR: Overlay = {
+  x: 0,
+  y: -3,
+  rows: ['.....o....o.....', '....oho..oho.o..', '..oohhhoohhhoho.', '..ohhhhhhhhhhho.'],
+};
+/** The light catching Tomek's bald head. */
+const SHINE: Overlay = { x: 5, y: 1, rows: ['zz', 'z.'] };
+/** Happy eyes, squinting with joy (^ ^), and a big smile. */
+const HAPPY_EYES: Overlay = { x: 4, y: 6, facing: 'front', rows: ['.e....e.', 'ese..ese'] };
+const BIG_SMILE: Overlay = { x: 6, y: 8, facing: 'front', rows: ['mssm', '.mm.'] };
 const SUNGLASSES: Overlay = { x: 3, y: 6, facing: 'front', rows: ['KKKKooKKKK', 'KKKK..KKKK'] };
 const CHEF_HAT_OVERLAY: Overlay = { x: 0, y: -5, rows: CHEF_HAT };
 /** A big white walrus moustache, drooping at the ends. */
@@ -363,21 +373,53 @@ const GROUP_OVERLAYS: Record<GroupId, Overlay[]> = {
   foodies: [SCARF],
 };
 
-/** How a person looks: their colours and accessories. `variant` picks the hair for guests. */
+/** Adrian from the front: a longer face (high forehead, narrow chin) with rabbit front teeth. */
+const ADRIAN_FRONT = [
+  '....oooooooo....',
+  '...ohhhhhhhho...',
+  '..ohhhhhhhhhho..',
+  '..ohhssssssHho..',
+  '..ohssssssssho..',
+  '..osssssssssso..',
+  '..ossessssesso..',
+  '..ossessssesso..',
+  '..oskssmmsskso..',
+  '...oSsmwwmsSo...',
+  '....oSssssSo....',
+  ...PERSON.slice(11),
+];
+
+/** Hair colours for the team, so no two people look alike: `variant` is their employee number. */
+const STAFF_HAIR: [string, string][] = [
+  ['#4a2a18', '#331d10'],
+  ['#c9c4bd', '#a39e97'],
+  ['#e8c06a', '#c99a45'],
+  ['#8a5233', '#6b3d24'],
+  ['#2e2a33', '#1f1c23'],
+  ['#b5452f', '#8c3322'],
+];
+const staffHair = (variant: number) => {
+  const [h, H] = STAFF_HAIR[variant % STAFF_HAIR.length];
+  return { h, H };
+};
+
+/** How a person looks: their colours and accessories. `variant` picks the hair for guests and the team. */
 export function lookOf(kind: PersonKind, variant = 0): Look {
   const withAccessories = (palette: Palette) => ({ ...ACCESSORY_COLOURS, ...palette });
   switch (kind) {
     case 'waiter':
-      return { palette: withAccessories(STAFF_PALETTES.waiter), overlays: [APRON] };
+      return { palette: withAccessories({ ...STAFF_PALETTES.waiter, ...staffHair(variant) }), overlays: [APRON] };
     case 'tomek':
+      // Bald, and always happy.
       return {
-        palette: withAccessories({ ...STAFF_PALETTES.waiter, h: '#c97a4a', H: '#9c5a33' }),
-        overlays: [SPIKY_HAIR, APRON, KOMPOT_STAIN],
+        palette: withAccessories({ ...STAFF_PALETTES.waiter, h: BASE.s, H: BASE.S }),
+        overlays: [SHINE, HAPPY_EYES, BIG_SMILE, APRON, KOMPOT_STAIN],
       };
     case 'adrian':
-      return { palette: withAccessories({ ...STAFF_PALETTES.waiter, h: '#2e2a33', H: '#1f1c23' }), overlays: [APRON, SUNGLASSES] };
+      // Spiky blond hair over a long face (see ADRIAN_FACE) with rabbit teeth.
+      return { palette: withAccessories({ ...STAFF_PALETTES.waiter, h: '#f1d27a', H: '#c9a24a' }), overlays: [SPIKY_HAIR, APRON] };
     case 'chef':
-      return { palette: withAccessories(STAFF_PALETTES.chef), overlays: [CHEF_HAT_OVERLAY] };
+      return { palette: withAccessories({ ...STAFF_PALETTES.chef, ...staffHair(variant) }), overlays: [CHEF_HAT_OVERLAY] };
     case 'critic':
       return {
         palette: withAccessories({ ...GUEST_PALETTES.foodies, h: '#c9c4bd', H: '#a39e97', c: '#2e2a33', C: '#1f1c23', d: '#2e2a33' }),
@@ -454,13 +496,22 @@ const TRAY: Record<Carry, Overlay> = {
   empty: { x: 10, y: 10, rows: ['oooooo'] },
 };
 
-export function personPixels(kind: PersonKind, facing: 'front' | 'back', pose: Pose, variant = 0, carry?: Carry): Pixels {
+export function personPixels(
+  kind: PersonKind,
+  facing: 'front' | 'back',
+  pose: Pose,
+  variant = 0,
+  carry?: Carry,
+  /** More accessories on top, like a face for a mood. */
+  extra: Overlay[] = [],
+): Pixels {
   const look = lookOf(kind, variant);
   if (carry) {
     look.palette = { ...look.palette, F: '#e9a23b', P: '#fdf8ee' };
     look.overlays = [...look.overlays, TRAY[carry]];
   }
-  const body: string[] = [...(facing === 'front' ? PERSON : PERSON_BACK)];
+  look.overlays = [...look.overlays, ...extra];
+  const body: string[] = [...(facing === 'front' ? (kind === 'adrian' ? ADRIAN_FRONT : PERSON) : PERSON_BACK)];
   if (pose === 'walk1' || pose === 'walk2') body.splice(body.length - 4, 4, ...WALK_LEGS[pose]);
   const image = new Pixels(body[0].length, body.length + HEADROOM);
   image.draw(sprite(body, look.palette), 0, HEADROOM);
@@ -469,4 +520,31 @@ export function personPixels(kind: PersonKind, facing: 'front' | 'back', pose: P
     image.draw(sprite(overlay.rows, look.palette), overlay.x, HEADROOM + overlay.y);
   }
   return pose === 'sit' ? image.crop(0, 0, image.width, HEADROOM + SEATED_ROWS) : image;
+}
+
+// ---------- Portraits for the Staff tab ----------
+
+/** How someone feels, as their face shows it. */
+export type FaceMood = 'happy' | 'fine' | 'tired' | 'wornOut';
+
+/** Heavy eyelids, and a drop of sweat for someone worn out. */
+const TIRED_EYES: Overlay = { x: 5, y: 6, facing: 'front', rows: ['S....S'] };
+const SWEAT: Overlay = { x: 13, y: 3, facing: 'front', rows: ['L', 'L'] };
+
+/** Rows of a portrait: the head and shoulders. */
+export const PORTRAIT_ROWS = HEADROOM + 14;
+
+/**
+ * Someone's head and shoulders, facing us, with a face for their mood. Tomek is always happy;
+ * Adrian already grins with his rabbit teeth, so his happy face is the one he has.
+ */
+export function portraitPixels(kind: PersonKind, variant = 0, mood: FaceMood = 'fine'): Pixels {
+  const faces: Record<FaceMood, Overlay[]> = {
+    happy: kind === 'adrian' ? [] : [BIG_SMILE],
+    fine: [],
+    tired: [TIRED_EYES],
+    wornOut: [TIRED_EYES, SWEAT],
+  };
+  const face = kind === 'tomek' ? [] : faces[mood];
+  return personPixels(kind, 'front', 'stand', variant, undefined, face).crop(0, 0, PERSON[0].length, PORTRAIT_ROWS);
 }

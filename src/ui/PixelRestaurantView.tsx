@@ -216,17 +216,18 @@ function useWalkers(layout: RoomLayout, floor: FloorView) {
       const path = servePath(layout, floor.insideTables, table, waiter);
       if (path.length < 2) return;
       const kind = floor.waiters[waiter] ?? 'waiter';
+      const variant = floor.waiterLooks[waiter] ?? waiter;
       const id = `serve:${table}:${guests.since}`;
       started.push({
         id,
         kind,
-        variant: 0,
+        variant,
         path,
         delay: 0,
         angry: false,
         waiter,
         carry: 'full',
-        then: { id: `${id}:back`, kind, variant: 0, path: [...path].reverse(), delay: SERVING_PAUSE, angry: false, waiter, carry: 'empty' },
+        then: { id: `${id}:back`, kind, variant, path: [...path].reverse(), delay: SERVING_PAUSE, angry: false, waiter, carry: 'empty' },
       });
     };
 

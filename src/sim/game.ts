@@ -310,6 +310,8 @@ export function restingFloor(state: GameState): FloorView {
     terraceTables: terraceTablesBuilt(state),
     chefsBusy: atWork.filter((person) => person.role === 'chef').map(() => false),
     waiters: atWork.filter((person) => person.role === 'waiter').map((person) => person.special ?? null),
+    chefLooks: atWork.filter((person) => person.role === 'chef').map((person) => person.id),
+    waiterLooks: atWork.filter((person) => person.role === 'waiter').map((person) => person.id),
     ordersWaiting: 0,
     walkouts: [],
     atTheDoor: [],

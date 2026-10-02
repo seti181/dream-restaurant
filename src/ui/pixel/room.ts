@@ -276,7 +276,7 @@ function drawn(key: string, draw: (img: Pixels, o: Origin) => void, size = 96): 
 
 /** A person's picture in a pose, anchored at the bottom-centre (on the seat or the floor). */
 export function personImage(kind: S.PersonKind, facing: Facing, pose: S.Pose, variant = 0): SpriteImage {
-  const key = `person:${kind}:${facing}:${pose}:${variant % 3}`;
+  const key = `person:${kind}:${facing}:${pose}:${variant % 6}`;
   const cached = spriteCache.get(key);
   if (cached) return cached;
   const pixels = S.personPixels(kind, facing, pose, variant);
@@ -287,7 +287,7 @@ export function personImage(kind: S.PersonKind, facing: Facing, pose: S.Pose, va
 
 /** Two walking steps side by side, for a CSS walk cycle. */
 export function walkStrip(kind: S.PersonKind, facing: Facing, variant: number, carry?: S.Carry): SpriteImage {
-  const key = `walk:${kind}:${facing}:${variant % 3}:${carry ?? ''}`;
+  const key = `walk:${kind}:${facing}:${variant % 6}:${carry ?? ''}`;
   const cached = spriteCache.get(key);
   if (cached) return cached;
   const a = S.personPixels(kind, facing, 'walk1', variant, carry);
@@ -736,7 +736,8 @@ export function scenePieces(
   });
   floor.chefsBusy.forEach((busy, i) => {
     const cx = chefSpots(layout, chefs)[i];
-    pieces.push({ ...piece(o, `chef${i}`, personImage('chef', 'front', 'stand'), cx, 18, 0, k + 20 + i * 0.01), kind: 'chef', busy });
+    const chef = personImage('chef', 'front', 'stand', floor.chefLooks[i] ?? i);
+    pieces.push({ ...piece(o, `chef${i}`, chef, cx, 18, 0, k + 20 + i * 0.01), kind: 'chef', busy });
     if (busy) {
       const steam = plainSprite('steam', S.STEAM, S.STEAM_COLOURS);
       pieces.push({ ...piece(o, `steam${i}`, steam, cx + 1, 31, 26, 999), kind: 'steam' });
@@ -758,7 +759,8 @@ export function scenePieces(
   floor.waiters.forEach((special, i) => {
     if (busyWaiters.has(i)) return;
     const spot = waiterSpot(layout, i);
-    pieces.push(piece(o, `waiter${i}`, personImage(special ?? 'waiter', 'front', 'stand'), spot.x, spot.y, 0, depthAt(spot)));
+    const waiter = personImage(special ?? 'waiter', 'front', 'stand', floor.waiterLooks[i] ?? i);
+    pieces.push(piece(o, `waiter${i}`, waiter, spot.x, spot.y, 0, depthAt(spot)));
   });
 
   // Order tickets waiting on the rail.

@@ -20,10 +20,10 @@ import type { Employee, Role, Staff } from './types';
 export function staffOf(team: Employee[], role: Role): Staff[] {
   return team
     .filter((person) => person.role === role)
-    .map(({ skill, speed, trait, specialty, special, morale }) => {
+    .map(({ id, skill, speed, trait, specialty, special, morale }) => {
       const tired = moodOf(morale) === 'tired' || moodOf(morale) === 'wornOut';
       const slower = tired ? balance.staff.morale.tiredSpeedLoss : 0;
-      const staff: Staff = { skill, speed: Math.max(1, speed - slower), trait, specialty };
+      const staff: Staff = { skill, speed: Math.max(1, speed - slower), trait, specialty, look: id };
       if (special) staff.special = special;
       return staff;
     });

@@ -476,7 +476,15 @@ button {
 }
 
 .person header strong {
+  flex: 1;
   font-size: 1.1rem;
+}
+
+/* A person's pixel face, three times as big, kept crisp. */
+.portrait {
+  flex: none;
+  align-self: center;
+  image-rendering: pixelated;
 }
 
 .role {
