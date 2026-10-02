@@ -7,7 +7,7 @@ import * as actions from '../../sim/actions';
 import { answerTheMoment, newGame, openRestaurant, playTick, type GameState } from '../../sim/game';
 import { specialCandidate } from '../../sim/staff';
 import { drawCloud, drawSky, drawStreet } from './street';
-import { COMMUNAL_TABLE_X, PLINTH, drawRoom, guestKind, leaveQueuePath, movePath, queueSpot, passerByPath, streetFurniture, STREET_THING_REACH, roomLayout, scenePieces, seatsAt, servePath, waiterSpot, walkPath, type RoomLook, type ScenePiece } from './room';
+import { COMMUNAL_TABLE_X, PLINTH, drawRoom, guestKind, toSteps, leaveQueuePath, movePath, queueSpot, passerByPath, streetFurniture, STREET_THING_REACH, roomLayout, scenePieces, seatsAt, servePath, waiterSpot, walkPath, type RoomLook, type ScenePiece } from './room';
 import { HEADROOM, PERSON, personPixels, portraitPixels, PORTRAIT_ROWS, SEATED_ROWS, type PersonKind } from './sprites';
 
 const look = (insideTables: number): RoomLook => ({ decor: [], equipment: ['stove'], weather: 'sunny', dusk: false, insideTables });
@@ -220,6 +220,35 @@ describe('walking in and out', () => {
     }
   });
 
+  it('sends someone who took a flyer round the corner of the building to the steps, never through it', () => {
+    for (const [tables, terrace] of [[6, 0], [9, 2], [12, 4]]) {
+      const layout = roomLayout(tables, terrace);
+      for (const lane of [0, 1, 2]) {
+        const route = passerByPath(layout, lane, true, layout.width + 120);
+        // Anywhere along their way past: a few points on every stretch.
+        for (let leg = 0; leg + 1 < route.length; leg++) {
+          for (const t of [0, 0.3, 0.7]) {
+            const at = {
+              x: route[leg].x + (route[leg + 1].x - route[leg].x) * t,
+              y: route[leg].y + (route[leg + 1].y - route[leg].y) * t,
+              z: route[leg].z,
+            };
+            const path = toSteps(layout, at);
+            expect(path.at(-1)).toMatchObject({ y: layout.streetY });
+            for (let i = 0; i + 1 < path.length; i++) {
+              for (const s of [0, 0.25, 0.5, 0.75, 1]) {
+                const x = path[i].x + (path[i + 1].x - path[i].x) * s;
+                const y = path[i].y + (path[i + 1].y - path[i].y) * s;
+                const inBuilding = x > 0 && x < layout.edgeX && y > 0 && y < layout.edgeY;
+                expect(inBuilding, `from (${at.x}, ${at.y}) through (${x}, ${y})`).toBe(false);
+              }
+            }
+          }
+        }
+      }
+    }
+  });
+
   it('sends a waiter from their spot by the kitchen to the side of the table', () => {
     const layout = roomLayout(6, 2);
     for (let table = 0; table < 8; table++) {
@@ -240,6 +269,13 @@ describe('walking in and out', () => {
       const routes = [
         ...Array.from({ length: tables + terrace }, (_, t) => seatsAt(layout, tables, t).map((seat) => walkPath(layout, tables, t, seat))).flat(),
         ...[0, 1, 2].flatMap((lane) => [passerByPath(layout, lane, true, 400), passerByPath(layout, lane, false, 400)]),
+        // Someone handed a flyer anywhere along their way, heading for the steps.
+        ...[0, 1, 2].flatMap((lane) => {
+          const route = passerByPath(layout, lane, true, 400);
+          return route.slice(1).flatMap((b, i) =>
+            [0.2, 0.6].map((t) => toSteps(layout, { x: route[i].x + (b.x - route[i].x) * t, y: route[i].y + (b.y - route[i].y) * t, z: b.z })),
+          );
+        }),
       ];
       for (const route of routes) {
         for (let i = 1; i < route.length; i++) {

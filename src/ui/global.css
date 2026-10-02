@@ -1016,6 +1016,11 @@ h2.spaced {
   gap: 16px;
 }
 
+/* Mewa's ✕ sits at the end of her buttons. */
+.mewa-buttons .note-close {
+  margin: 0 0 0 auto;
+}
+
 .link-button {
   min-height: 48px;
   padding: 0 8px;
@@ -1474,6 +1479,22 @@ h2.spaced {
   top: 4px;
 }
 
+/* Someone walking past who can be handed a flyer: a tap area of at least 48 px around them. */
+.pixel-walker.tappable {
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.pixel-walker.tappable::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: max(100%, 48px);
+  height: max(100%, 56px);
+  transform: translate(-50%, -50%);
+}
+
 /* Pixel-art icons in the interface. */
 .pixel-icon {
   display: inline-block;
@@ -1608,6 +1629,7 @@ h2.spaced {
 }
 
 .moment-card {
+  position: relative;
   width: min(520px, 100%);
   padding: 20px 24px;
   border-radius: 18px;
@@ -1619,6 +1641,16 @@ h2.spaced {
 
 .moment-card h2 {
   margin: 0 0 8px;
+  /* Room for the ✕ in the corner. */
+  padding-right: 40px;
+}
+
+/* The ✕ in the corner of a choice card. */
+.moment-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  margin: 0;
 }
 
 .moment-card p {
@@ -2149,7 +2181,8 @@ button.stat.open {
 
 /* Notes with a ✕: the text, then the button, which can be tapped even though the notes let taps through. */
 .scene-notes > .gull-warning,
-.scene-notes > .moment-result {
+.scene-notes > .moment-result,
+.scene-notes > .paused {
   display: flex;
   align-items: center;
   gap: 4px;

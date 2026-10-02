@@ -5,7 +5,7 @@ import type { GroupId } from './groups';
 
 // ---------- Tutorial tips (the first three days) ----------
 
-export type TipId = 'welcome' | 'speed' | 'report' | 'prices' | 'hiring' | 'helpTables' | 'happyHour' | 'farewell' | 'daysOff' | 'training' | 'special' | 'replies';
+export type TipId = 'welcome' | 'speed' | 'report' | 'prices' | 'hiring' | 'helpTables' | 'happyHour' | 'farewell' | 'daysOff' | 'training' | 'special' | 'replies' | 'flyers';
 
 export interface Tip {
   /** When the tip appears: on this day, on this screen. */
@@ -14,7 +14,7 @@ export interface Tip {
   text: string;
 }
 
-export const TIP_IDS: readonly TipId[] = ['welcome', 'speed', 'report', 'prices', 'hiring', 'helpTables', 'happyHour', 'farewell', 'daysOff', 'training', 'special', 'replies'];
+export const TIP_IDS: readonly TipId[] = ['welcome', 'speed', 'report', 'prices', 'hiring', 'helpTables', 'happyHour', 'farewell', 'daysOff', 'training', 'special', 'replies', 'flyers'];
 
 export const TIPS: Record<TipId, Tip> = {
   welcome: {
@@ -59,6 +59,13 @@ export const TIPS: Record<TipId, Tip> = {
     text:
       'Your team works every day, and it shows. Tired people cook and serve a little slower. ' +
       'Give someone a day off in the Staff tab on a quiet day, when someone else can cover.',
+  },
+  flyers: {
+    day: 3,
+    screen: 'open',
+    text:
+      'See the people walking past? Tap one to hand them a flyer. Some will come in, and the rest will remember you. ' +
+      'You have a few every day.',
   },
   replies: {
     day: 3,
@@ -205,6 +212,10 @@ export const HELP: { title: string; text: string }[] = [
   {
     title: 'Fresh produce and today’s special',
     text: 'Some extras are fresh produce with a season: strawberries early in July, new potatoes until August, blueberries and chanterelles all summer, plums from mid-August. In season they make a dish taste better; out of season they’re imported, dearer and not as good. One dish a day can be today’s special, “Dziś polecamy”, on the board outside: more guests order it, it tempts people walking by, and fresh produce on it tempts them more.',
+  },
+  {
+    title: 'Flyers',
+    text: 'While the restaurant is open, tap someone walking past to hand them a flyer: a few a day. The better their group likes you, the more likely they are to come in, with their friends. Everyone who takes one has heard of you afterwards.',
   },
   {
     title: 'Replying to reviews',

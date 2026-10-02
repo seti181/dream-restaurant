@@ -25,6 +25,7 @@ import {
 } from './events';
 import { weeklyBillsDue } from './finance';
 import { goalOf, goalText, nextGoal, startGoal, trackGoal, type GoalState } from './goals';
+import { flyerGuestsArrive, handOutFlyer, planFlyers, type FlyersToday } from './flyers';
 import { planGulls, shooGull, stepGulls, type GullsToday } from './gulls';
 import { answerMoment, checkMoments, planMoments, type MomentResult, type MomentsToday } from './moments';
 import { pairingsOf, seasonNews } from './menu';
@@ -130,6 +131,8 @@ export interface OpenDay {
   help: { drinks: number; apologies: number; cash: number };
   /** Gulls on the terrace today. */
   gulls: GullsToday;
+  /** Flyers for people walking past. */
+  flyers: FlyersToday;
   /** Parties the player showed to another table, and how many of those to a favourite spot. */
   seating: { moved: number; favourites: number };
 }
@@ -193,6 +196,8 @@ export interface DaySummary extends DayTally {
   help: { drinks: number; apologies: number; cash: number };
   /** Gulls on the terrace: shooed away, and plates they got. */
   gulls: { shooed: number; stolen: number };
+  /** Flyers handed to people walking past, and the parties (and guests) who came in because of them. */
+  flyers: { handedOut: number; parties: number; guests: number };
   /** Today's happy hour, if there was one. */
   happyHour: { from: number; until: number } | null;
   /** Guests the player showed to another table, and to a favourite spot. */
@@ -368,6 +373,7 @@ export function openRestaurant(state: GameState): OpenDay {
     help: { drinks: 0, apologies: 0, cash: 0 },
     seating: { moved: 0, favourites: 0 },
     gulls: planGulls((state.rng.s ^ Math.imul(state.day + 7, 0x85ebca6b)) >>> 0, terraceTables),
+    flyers: planFlyers((state.rng.s ^ Math.imul(state.day + 13, 0x27d4eb2d)) >>> 0),
   };
 }
 
@@ -380,6 +386,16 @@ export function playTick(open: OpenDay): void {
 /** The player taps the gull on the terrace. Returns true if there was one to shoo. */
 export function shooTheGull(open: OpenDay): boolean {
   return shooGull(open.gulls, open.progress);
+}
+
+/** Hands a flyer to someone from this group walking past: true if they'll come in, false if not, null if no flyers are left. */
+export function handFlyer(open: OpenDay, group: GroupId): boolean | null {
+  return handOutFlyer(open.flyers, open.progress, group);
+}
+
+/** Someone who took a flyer has reached the door: their party comes in. */
+export function flyerArrives(open: OpenDay, group: GroupId): void {
+  flyerGuestsArrive(open.flyers, open.progress, group);
 }
 
 /**
@@ -859,6 +875,7 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
       momentsCash,
       help: open.help,
       gulls: { shooed: open.gulls.shooed, stolen: open.gulls.stolen },
+      flyers: { handedOut: open.flyers.handedOut, parties: open.flyers.parties, guests: open.flyers.guests },
       happyHour: happyHourToday(open),
       seating: open.seating,
     },

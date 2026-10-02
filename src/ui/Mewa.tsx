@@ -5,6 +5,7 @@ import { TIP_IDS, TIPS } from '../data/mewa';
 import { goalOf, goalProgress, goalText } from '../sim/goals';
 import { money } from './format';
 import { MewaIcon } from './MewaIcon';
+import { NoteClose } from './MomentCard';
 import { play } from './sound';
 import { useGame } from './store';
 
@@ -40,6 +41,7 @@ export function MewaTip({ screen }: { screen: 'plan' | 'open' | 'dayOver' }) {
           <button type="button" className="link-button" onClick={skipTips}>
             Skip all tips
           </button>
+          <NoteClose onClose={() => dismissTip(tip)} />
         </div>
       </div>
     </aside>

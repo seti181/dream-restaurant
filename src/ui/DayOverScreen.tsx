@@ -14,6 +14,7 @@ import type { Review, SatisfactionFactors } from '../sim/types';
 import { dishName, money, signedMoney, stars } from './format';
 import { Confetti, StarRow } from './Juice';
 import { MewaTip } from './Mewa';
+import { MewaIcon } from './MewaIcon';
 import { FoodIcon } from './PixelIcon';
 import { PanoramaScreen } from './Panorama';
 import { isFairDay } from '../sim/neptune';
@@ -202,9 +203,17 @@ export function DayOverScreen() {
               🍹 Happy hour from {formatTime(summary.happyHour.from)} to {formatTime(summary.happyHour.until)}.
             </p>
           )}
+          {summary.flyers.handedOut > 0 && (
+            <p className="said small">
+              📜 You handed out {summary.flyers.handedOut} {summary.flyers.handedOut === 1 ? 'flyer' : 'flyers'}
+              {summary.flyers.parties > 0
+                ? `, and ${summary.flyers.guests} ${summary.flyers.guests === 1 ? 'guest' : 'guests'} came in because of them.`
+                : '. Nobody came in this time, but now they know where you are.'}
+            </p>
+          )}
           {(summary.gulls.shooed > 0 || summary.gulls.stolen > 0) && (
             <p className="said small">
-              🐦 Gulls on the terrace: {summary.gulls.shooed} shooed away
+              <MewaIcon size={24} label="A gull" /> Gulls on the terrace: {summary.gulls.shooed} shooed away
               {summary.gulls.stolen > 0 && `, ${summary.gulls.stolen} ${summary.gulls.stolen === 1 ? 'plate' : 'plates'} stolen`}.
             </p>
           )}

@@ -21,6 +21,7 @@ import {
   movePath,
   tableMiddle,
   passerByPath,
+  toSteps,
   roomLayout,
   scenePieces,
   seatsAt,
@@ -36,8 +37,12 @@ import { useGame } from './store';
 import { drawCloud, drawRainTile, drawSky, drawStreet } from './pixel/street';
 import { useFittingScale } from './useFittingScale';
 
-/** World units a guest walks per second at 1× speed. */
-const WALK_SPEED = 90;
+/** World units a waiter walks per second at 1× speed... */
+const WAITER_WALK_SPEED = 90;
+/** ...and guests and people walking past, who take their time (90 slowed by 20%, then by 10% more). */
+const GUEST_WALK_SPEED = 65;
+/** Seconds for a waiter's two steps; slower walkers take slower steps. */
+const WAITER_STEP_SECONDS = 0.5;
 /** Seconds between people of the same party setting off. */
 const STAGGER = 0.25;
 /** Seconds a waiter stands at the table putting the plates down. */
@@ -100,6 +105,10 @@ interface Walk {
   waiter?: number;
   carry?: Carry;
   then?: Walk;
+  /** Someone walking past who took a flyer and is heading for the door. */
+  flyer?: boolean;
+  /** Said over their head as they walk. */
+  bubble?: string;
 }
 
 /** One guest on the move. The browser animates each stretch of the walk; React only steps in between. */
@@ -109,18 +118,24 @@ function Walker({
   scale,
   speed,
   onDone,
+  onTap,
 }: {
   walk: Walk;
   layout: RoomLayout;
   scale: number;
   speed: number;
   onDone: (walk: Walk) => void;
+  /** For someone walking past: tapping them hands them a flyer (true: they come in; false: they don't; null: none left). */
+  onTap?: (walk: Walk, at: Point) => boolean | null;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const animation = useRef<Animation | null>(null);
   const speedNow = useRef(speed);
   speedNow.current = speed;
   const [leg, setLeg] = useState(0);
+  // What they say when handed a flyer; once handed one, they can't be handed another.
+  const [said, setSaid] = useState<string | null>(walk.bubble ?? null);
+  const pace = walk.waiter !== undefined ? WAITER_WALK_SPEED : GUEST_WALK_SPEED;
   const from = walk.path[leg];
   const to = walk.path[leg + 1];
   // Walking towards us shows the face; walking away shows the back.
@@ -136,7 +151,7 @@ function Walker({
       const { sx, sy } = project(layout.origin, p.x, p.y, p.z ?? 0);
       return `translate(${(sx + strip.dx) * scale}px, ${(sy + strip.dy) * scale}px)`;
     };
-    const seconds = Math.hypot(to.x - from.x, to.y - from.y) / WALK_SPEED;
+    const seconds = Math.hypot(to.x - from.x, to.y - from.y) / pace;
     const anim = ref.current!.animate(
       [
         { transform: corner(from), zIndex: zOf(depthAt(from)) },
@@ -148,7 +163,7 @@ function Walker({
     anim.onfinish = () => setLeg((l) => l + 1);
     animation.current = anim;
     return () => anim.cancel();
-  }, [leg, scale, layout, walk, from, to, strip, onDone]);
+  }, [leg, scale, layout, walk, from, to, strip, onDone, pace]);
 
   // Game speed changes (and pauses) apply to a walk already under way.
   useEffect(() => {
@@ -156,10 +171,27 @@ function Walker({
   }, [speed]);
 
   if (!to) return null;
+  const tappable = onTap !== undefined && said === null;
+  /** Where they are right now, part of the way along this stretch of the walk. */
+  const here = (): Point => {
+    const progress = animation.current?.effect?.getComputedTiming().progress;
+    const p = typeof progress === 'number' ? progress : 0;
+    return { x: from.x + (to.x - from.x) * p, y: from.y + (to.y - from.y) * p, z: (from.z ?? 0) + ((to.z ?? 0) - (from.z ?? 0)) * p };
+  };
   return (
     <div
       ref={ref}
-      className="pixel-walker"
+      className={tappable ? 'pixel-walker tappable' : 'pixel-walker'}
+      role={tappable ? 'button' : undefined}
+      aria-label={tappable ? 'Hand them a flyer' : undefined}
+      onClick={
+        tappable
+          ? () => {
+              const comes = onTap(walk, here());
+              if (comes === false) setSaid('👋');
+            }
+          : undefined
+      }
       data-walker={walk.waiter !== undefined ? 'waiter' : walk.id.startsWith('passer') ? 'passer' : 'guest'}
       style={{
         width: (strip.pixels.width / 2) * scale,
@@ -167,11 +199,12 @@ function Walker({
         backgroundImage: `url(${urlOf(strip.pixels)})`,
         backgroundSize: `${strip.pixels.width * scale}px ${strip.pixels.height * scale}px`,
         ['--walk-shift' as string]: `${-strip.pixels.width * scale}px`,
-        animationDuration: `${0.5 / Math.max(speed, 0.01)}s`,
+        animationDuration: `${(WAITER_STEP_SECONDS * WAITER_WALK_SPEED) / pace / Math.max(speed, 0.01)}s`,
         animationPlayState: speed === 0 ? 'paused' : 'running',
       }}
     >
       {walk.angry && <span className="pixel-bubble walker-bubble">😠</span>}
+      {said && <span className="pixel-bubble walker-bubble">{said}</span>}
     </div>
   );
 }
@@ -321,6 +354,8 @@ export function PixelRestaurantView({
   onGullTap,
   freeTables = [],
   onFreeTableTap,
+  onPasserTap,
+  onFlyerArrives,
 }: {
   floor: FloorView;
   weather: Weather;
@@ -333,6 +368,10 @@ export function PixelRestaurantView({
   /** Choosing a new table for the selected guests: the free tables to offer, and which are their favourites. */
   freeTables?: { table: number; favourite: boolean }[];
   onFreeTableTap?: (table: number) => void;
+  /** Handing a flyer to someone walking past (only while the day runs and there are flyers left). */
+  onPasserTap?: (group: GroupId) => boolean | null;
+  /** Someone who took a flyer has reached the foot of the steps. */
+  onFlyerArrives?: (group: GroupId) => void;
 }) {
   const speed = useGame((s) => s.speed);
   const maxTables = Math.floor(LOCATIONS[floor.location].maxSeats / balance.service.seatsPerTable);
@@ -350,7 +389,7 @@ export function PixelRestaurantView({
   );
   const background = useMemo(() => imageUrl(drawRoom(layout, look)), [layout, look]);
   // How far out of sight people passing by start and finish, in art pixels.
-  const passers = usePassersBy(layout, minute, layout.width + 120);
+  const passers = usePassersBy(layout, minute, layout.width + 120, onPasserTap, onFlyerArrives);
   const leavers = useQueueLeavers(layout, floor);
   useEffect(() => () => URL.revokeObjectURL(background), [background]);
 
@@ -439,7 +478,15 @@ export function PixelRestaurantView({
             );
           })}
         {passers.walks.map((walk) => (
-          <Walker key={walk.id} walk={walk} layout={layout} scale={scale} speed={speed} onDone={passers.done} />
+          <Walker
+            key={walk.id}
+            walk={walk}
+            layout={layout}
+            scale={scale}
+            speed={speed}
+            onDone={passers.done}
+            onTap={onPasserTap && !walk.flyer ? passers.tap : undefined}
+          />
         ))}
         {leavers.walks.map((walk) => (
           <Walker key={walk.id} walk={walk} layout={layout} scale={scale} speed={speed} onDone={leavers.done} />
@@ -564,14 +611,20 @@ const STROLLERS: { until: number; groups: GroupId[] }[] = [
   { until: 24 * 60, groups: ['students', 'students', 'foodies', 'tourists', 'locals'] },
 ];
 
-/** At most this many people passing by at once, so the street feels alive but the tablet stays smooth. */
-const MOST_PASSERS = 8;
+/** At most this many people passing by at once, so the street feels alive but never crowded. */
+const MOST_PASSERS = 4;
 
 /**
- * People strolling past along the street, in their group colours. Purely for show: one may set off
- * every few in-game minutes while the day runs, and they never come in.
+ * People strolling past along the street, in their group colours: one may set off every few in-game
+ * minutes while the day runs. Handed a flyer, someone may turn and head for the door instead.
  */
-function usePassersBy(layout: RoomLayout, minute: number, reach: number) {
+function usePassersBy(
+  layout: RoomLayout,
+  minute: number,
+  reach: number,
+  onTap?: (group: GroupId) => boolean | null,
+  onArrive?: (group: GroupId) => void,
+) {
   const [walks, setWalks] = useState<Walk[]>([]);
   const count = useRef(0);
   useEffect(() => {
@@ -580,8 +633,8 @@ function usePassersBy(layout: RoomLayout, minute: number, reach: number) {
       const n = count.current++;
       // A little hash instead of Math.random, so it never touches the game's dice.
       const roll = (n * 2654435761 + minute * 40503) >>> 0;
-      // With five-minute steps coming every ¾ of a second at 1×, two in three bring someone along.
-      if (roll % 3 === 0) return now;
+      // With five-minute steps coming every second or so at 1×, one in three brings someone along.
+      if (roll % 3 !== 0) return now;
       const groups = (STROLLERS.find((s) => minute < s.until) ?? STROLLERS[STROLLERS.length - 1]).groups;
       const kind = groups[(roll >>> 4) % groups.length];
       return [
@@ -597,8 +650,26 @@ function usePassersBy(layout: RoomLayout, minute: number, reach: number) {
       ];
     });
   }, [minute, layout, reach]);
-  const done = useCallback((walk: Walk) => setWalks((now) => now.filter((w) => w.id !== walk.id)), []);
-  return { walks, done };
+  // The latest callbacks, so tap and done can stay the same functions from one moment to the next.
+  const callbacks = useRef({ onTap, onArrive });
+  callbacks.current = { onTap, onArrive };
+  const tap = useCallback(
+    (walk: Walk, at: Point) => {
+      const comes = callbacks.current.onTap?.(walk.kind as GroupId) ?? null;
+      // Coming in: they turn, smiling, and walk to the foot of the steps.
+      if (comes) {
+        const toDoor: Walk = { ...walk, id: `${walk.id}:flyer`, path: toSteps(layout, at), delay: 0, flyer: true, bubble: '😊' };
+        setWalks((now) => now.map((w) => (w.id === walk.id ? toDoor : w)));
+      }
+      return comes;
+    },
+    [layout],
+  );
+  const done = useCallback((walk: Walk) => {
+    if (walk.flyer) callbacks.current.onArrive?.(walk.kind as GroupId);
+    setWalks((now) => now.filter((w) => w.id !== walk.id));
+  }, []);
+  return { walks, done, tap };
 }
 
 // ---------- Weather in the sky ----------

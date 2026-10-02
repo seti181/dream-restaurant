@@ -237,6 +237,48 @@ function GullNote() {
   );
 }
 
+/** How long a note about someone not turning up today stays on screen, in real seconds. */
+const ABSENCE_NOTE_SECONDS = 15;
+
+/** Who didn't turn up today (Adrian's excuses, someone in bed): for a little while, or until closed. */
+function AbsenceNotes() {
+  const absent = useGame((s) => s.live?.absent ?? []);
+  const [closed, setClosed] = useState<string[]>([]);
+  const [expired, setExpired] = useState(false);
+  useEffect(() => {
+    const timer = window.setTimeout(() => setExpired(true), ABSENCE_NOTE_SECONDS * 1000);
+    return () => window.clearTimeout(timer);
+  }, []);
+  if (expired) return null;
+  return (
+    <>
+      {absent
+        .filter((excuse) => !closed.includes(excuse))
+        .map((excuse) => (
+          <p key={excuse} className="gull-warning bad">
+            <span>{excuse}</span>
+            <NoteClose onClose={() => setClosed((now) => [...now, excuse])} />
+          </p>
+        ))}
+    </>
+  );
+}
+
+/** "Paused": until the clock runs again, or until closed (it comes back with the next pause). */
+function PausedNote({ speed }: { speed: number }) {
+  const [closed, setClosed] = useState(false);
+  useEffect(() => {
+    if (speed !== 0) setClosed(false);
+  }, [speed]);
+  if (speed !== 0 || closed) return null;
+  return (
+    <p className="paused">
+      <span>Paused. Tap 1× to carry on.</span>
+      <NoteClose onClose={() => setClosed(true)} />
+    </p>
+  );
+}
+
 /** How long the gull warning stays up, in real seconds; the gull itself stays until it's shooed or gone. */
 const GULL_WARNING_SECONDS = 5;
 
@@ -259,6 +301,8 @@ function GullWarning() {
 export function DayScreen() {
   const live = useGame((s) => s.live);
   const shooGull = useGame((s) => s.shooGull);
+  const handFlyer = useGame((s) => s.handFlyer);
+  const flyerArrives = useGame((s) => s.flyerArrives);
   const [selected, setSelected] = useState<{ table: number; since: number } | null>(null);
   const [choosing, setChoosing] = useState(false);
   const [stat, setStat] = useState<StatId | null>(null);
@@ -332,11 +376,6 @@ export function DayScreen() {
             ))}
           </div>
         </div>
-        {live.absent.map((excuse) => (
-          <p key={excuse} className="note small">
-            📵 {excuse}
-          </p>
-        ))}
         <div className="day-progress" aria-hidden="true">
           <div style={{ width: `${progress * 100}%` }} />
         </div>
@@ -351,6 +390,8 @@ export function DayScreen() {
               if (guests) setSelected({ table, since: guests.since });
             }}
             onGullTap={shooGull}
+            onPasserTap={live.flyersLeft > 0 && !live.closing ? handFlyer : undefined}
+            onFlyerArrives={flyerArrives}
             freeTables={choosing && stillThere ? free : []}
             onFreeTableTap={(to) => {
               if (!selected) return;
@@ -371,8 +412,8 @@ export function DayScreen() {
                 Tap a free table. <span className="small muted">⭐ marks their favourite spots.</span>
               </p>
               <div className="help-buttons">
-                <button type="button" className="secondary" onClick={close}>
-                  Cancel
+                <button type="button" className="secondary" onClick={close} aria-label="Close">
+                  ✕
                 </button>
               </div>
             </div>
@@ -383,6 +424,7 @@ export function DayScreen() {
           {/* Short notes at the top of the scene, stacked so they never sit on top of each other. */}
           {!live.moment && (
             <div className="scene-notes">
+              <AbsenceNotes />
               {live.floor.gull && <GullWarning />}
               {!live.floor.gull && <GullNote />}
               {seatNote && (
@@ -392,7 +434,7 @@ export function DayScreen() {
                 </p>
               )}
               <MomentResultNote />
-              {speed === 0 && <p className="paused">Paused. Tap 1× to carry on.</p>}
+              <PausedNote speed={speed} />
             </div>
           )}
           <MomentCard />
@@ -405,6 +447,11 @@ export function DayScreen() {
             </li>
           ))}
           <li className="muted">💬 ordering · ⏳ 😤 waiting · tap a table to look after it · 😋 🙂 😐 😞 how the food went · 😠 walked out</li>
+          {live.flyersLeft > 0 && !live.closing && (
+            <li className="muted">
+              Flyers left: {live.flyersLeft} · tap someone walking past to hand them one
+            </li>
+          )}
         </ul>
       </div>
     </PanoramaScreen>

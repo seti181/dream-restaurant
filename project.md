@@ -139,8 +139,7 @@ The menu is built from **dish templates**. Each template has a category, the equ
 
 1. Pick a template.
 2. Choose its variant and up to 3 extras. Each has an ingredient cost and taste tags such as `polish`, `hearty`, `premium`, `creative`, `seafood`, `veggie`, `spicy`, `sweet`, `quick`, `cheap`, `homemade`.
-3. Name the dish (optional, for fun).
-4. Set its price.
+3. Set its price.
 
 **Dish quality** (0–100) is built from:
 
@@ -639,7 +638,8 @@ Each item is tested in the browser and on the tablet before the next one starts.
 - [x] Seasonal ingredients and a "Dziś polecamy" specials board
 - [x] The riverside background during the day too, as on the planning screens
 - [x] Replying to reviews
-- [ ] Attracting passers-by
+- [x] Attracting passers-by: flyers for people walking past
+- [ ] Attracting passers-by: a waiter offering samples at the door
 - [ ] Bigger premises: cellar room, bar counter, kids' corner
 - [ ] Sticker album ("Gdańsk passport")
 - [ ] Mewa's finds
@@ -788,3 +788,8 @@ Each item is tested in the browser and on the tablet before the next one starts.
 - 2026-10-02: Playtest request: "Dziś polecamy" no longer shows on the day screen while the restaurant is open; it's chosen and shown on the Menu tab (and listed on the Today tab).
 - 2026-10-02: Playtest fix: the gull warning ("A gull is eyeing a plate on the terrace! Tap it!") is text only, without the bird (as are the notes after a gull is shooed or steals a plate, which keep their green or red edge), and sits higher: the short notes over the restaurant now start across the scene's top edge, over the progress bar, and are a little slimmer, so they hide the sky rather than the room. Checked at 1364×603 and 853×533.
 - 2026-10-02: Playtest fix: waiters waiting by the kitchen were hidden behind the first row's chairs. They now wait further back, in a row along the back of the room next to the kitchen (10 apart instead of 12), behind every table; a test checks that no chair hides any of them, in every room size. The communal table moves to the back corner by the window (in front of the tiled stove, if there is one) to leave them room, and waiters going to serve step into the gap in front of it before walking along to their aisle, so they never walk through it.
+- 2026-10-02: Attracting passers-by, first part: flyers (sim/flyers.ts). While the restaurant is open, the player can tap someone walking past to hand them a flyer, six a day (balance.flyers). Everyone who takes one has heard of the place (+0.5 awareness with their group); some come in: a 30% chance, plus up to 30% more with their group's reputation. Someone coming in turns with a 😊, walks round the corner of the building to the foot of the steps (never through it, nor through the benches and trees: tested), and there their party, of their group's usual size, comes in like any guest (or joins the queue if every table is taken); someone not coming in waves (👋) and walks on. The legend under the restaurant says how many flyers are left; the day report counts them and the guests they brought in. Flyers use their own random generator, so they never change who else comes in; the simulator's players don't hand any out, so its results are unchanged. Mewa explains it on day 3; the help book has an entry. The item is split in two: a waiter offering samples at the door comes next. A better menu board, the third idea for the item, is already there as the board outside with today's special (Dziś polecamy).
+- 2026-10-02: Playtest request: every pop-up can be closed with an ✕. Who didn't turn up today (Adrian's excuses, someone worn out in bed) is now a short note over the restaurant, text only, that closes itself after 15 seconds (instead of a line above the progress bar all day). "Paused" has an ✕ (it comes back with the next pause); the "Choose a table" panel's Cancel became an ✕; Mewa's tips have an ✕ next to "Got it"; and choice cards have an ✕ in the corner, which gives the second answer, the one a player who doesn't get involved would choose. The numbers' lists, the table panel, the other notes and the map's "Have a look" already had one. In the day report, the gulls line shows the white-and-grey pixel herring gull (Mewa's picture) instead of the 🐦 emoji.
+- 2026-10-02: Playtest request: guests and people walking past move 20% slower (72 world units a second at 1× instead of 90, with their steps slowed to match; waiters keep 90), and guests stay 15% longer at the table: the meal, from the food arriving to leaving, takes 69 minutes instead of 60 (balance.service.eatingMinutes). Longer meals mean fewer guests per table each day. Simulator, 10 seasons, before → after: do nothing 30,659 → 23,240 zł (still loses money); cheap and fast bust 10/10 both (now in week 3); quality focus 8,836 zł (1 bust) → 6,970 zł (6 busts in 10, week 5: it was already close to the edge); balanced 43,548 → 34,498 zł (1 bust), still profitable from week 2, Neptune 39.6 → 39.4. Tried and dropped: guests who linger ordering 15% more drinks and desserts (balanced 37,092 zł, quality focus still 6 busts; the extra orders also keep the kitchen busier).
+- 2026-10-02: Playtest requests: the dish creator no longer has its fourth step, naming the dish (dishes named before keep their names); and half as many people walk past on the street: one in three five-minute steps brings someone along instead of two in three, and at most 4 are out at once instead of 8.
+- 2026-10-02: Playtest request: guests and people walking past slow down by another 10%: 65 world units a second at 1× (from 72; waiters keep 90). The 15% longer meals stay.

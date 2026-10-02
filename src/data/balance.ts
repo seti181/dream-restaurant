@@ -211,6 +211,17 @@ export const balance = {
     outOfSeasonCost: 2,
   },
 
+  /** Flyers for people walking past while the restaurant is open (sim/flyers.ts). */
+  flyers: {
+    /** Flyers in hand each day. */
+    perDay: 6,
+    /** The chance someone comes in with one: this much, plus this much more for each point of their group's reputation (out of 100). */
+    chance: 0.3,
+    reputationChance: 0.3,
+    /** Awareness with their group from every flyer taken, whether they come in or not. */
+    awareness: 0.5,
+  },
+
   /** "Dziś polecamy": one dish on the board outside as today's special. */
   specials: {
     /** How much more often guests order the special than they otherwise would... */
@@ -400,7 +411,8 @@ export const balance = {
     orderMinutes: 5,
     /** Occupied tables one waiter can look after before service slows down. */
     tablesPerWaiter: 4,
-    eatingMinutes: 60,
+    /** Minutes guests stay at the table once their food has come: the meal itself. */
+    eatingMinutes: 69,
     /** Order-taking this slow feels like no service at all. */
     slowOrderMinutes: 10,
     /** Service score gained for each waiter skill point above average (lost below). */

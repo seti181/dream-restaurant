@@ -15,6 +15,10 @@ export function MomentCard() {
   return (
     <div className="moment-backdrop">
       <div className="moment-card" role="dialog" aria-modal="true" aria-labelledby="moment-title">
+        {/* Closing the card is the same as the second answer: what a player who doesn't get involved would say. */}
+        <button type="button" className="note-close moment-close" aria-label={`Close: ${moment.choices[1]}`} onClick={() => answer(1)}>
+          ✕
+        </button>
         <h2 id="moment-title">{moment.title}</h2>
         <p>{moment.text}</p>
         <div className="moment-choices">

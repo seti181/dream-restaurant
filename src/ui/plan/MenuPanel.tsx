@@ -243,7 +243,6 @@ function DishCreator() {
   const [template, setTemplate] = useState<TemplateId | null>(null);
   const [variant, setVariant] = useState('');
   const [extras, setExtras] = useState<ExtraId[]>([]);
-  const [name, setName] = useState('');
   const inSeason = inSeasonOn(game.day);
 
   const chooseTemplate = (id: TemplateId) => {
@@ -260,10 +259,9 @@ function DishCreator() {
 
   const add = () => {
     if (!template) return;
-    addDish(template, variant, extras, name);
+    addDish(template, variant, extras);
     setTemplate(null);
     setExtras([]);
-    setName('');
   };
 
   return (
@@ -343,21 +341,9 @@ function DishCreator() {
             ))}
           </div>
 
-          <h3>
-            4 · Name <span className="muted small">· optional</span>
-          </h3>
-          <input
-            className="text-input"
-            type="text"
-            value={name}
-            maxLength={balance.menu.maxNameLength}
-            placeholder="e.g. Babcia’s Sunday special"
-            onChange={(event) => setName(event.target.value)}
-          />
-
           <div className="creator-summary">
             <div>
-              <strong>{name.trim() || recipeText(draft)}</strong>
+              <strong>{recipeText(draft)}</strong>
               <Tags dish={draft} />
               <span className="small muted">
                 Ingredients {money(ingredientCostOf(draft, playerOf(game).supplier, inSeason))} a portion · usually sells for{' '}

@@ -872,14 +872,36 @@ export function seatsAt(layout: RoomLayout, insideTables: number, table: number)
  * entrance to the gap in front of the tables, along it, and then down the aisle beside their
  * table. Terrace guests come straight in from the street.
  */
+/** The foot of the steps up to the front door, on the street. */
+export function stepsFoot(layout: RoomLayout): Point {
+  return { x: (layout.door.x0 + layout.door.x1) / 2, y: layout.streetY, z: -PLINTH };
+}
+
+/**
+ * From somewhere on the street to the foot of the steps (someone who took a flyer). From a side
+ * street they keep to the way people walk: along it to the corner, down to the front, and along to
+ * the steps, round the building and clear of the benches and trees.
+ */
+export function toSteps(layout: RoomLayout, at: Point): Point[] {
+  const foot = stepsFoot(layout);
+  const front = layout.streetY + 6;
+  if (at.y >= front) return [at, foot];
+  // The side streets people walk down, as in passerByPath: just left of the building, or just right of it.
+  const corner = at.x < 0 ? Math.max(at.x, -12) : Math.min(at.x, layout.edgeX + 12);
+  const z = -PLINTH;
+  const path = [at, { x: corner, y: at.y, z }, { x: corner, y: front, z }, foot];
+  // Someone already at the corner doesn't need to walk to it.
+  return path.filter((p, i) => i === 0 || p.x !== path[i - 1].x || p.y !== path[i - 1].y);
+}
+
 export function walkPath(layout: RoomLayout, insideTables: number, table: number, seat: Point): Point[] {
   const found = slotOf(layout, insideTables, table);
   if (!found) return [];
-  const door = (layout.door.x0 + layout.door.x1) / 2;
+  const foot = stepsFoot(layout);
+  const door = foot.x;
   // Along the street from one side or the other, up the steps, and in.
   const fromLeft = Math.round(seat.x + seat.y) % 2 === 0;
   const along = { x: door + (fromLeft ? -30 : 30), y: layout.streetY, z: -PLINTH };
-  const foot = { x: door, y: layout.streetY, z: -PLINTH };
   const top = { x: door, y: layout.edgeY - 5, z: 0 };
   const aisle = found.slot.x - 5;
   const end = { x: seat.x, y: seat.y };

@@ -8,6 +8,7 @@ import type { DecorId } from '../data/decor';
 import type { EquipmentId, ExtraId, TemplateId } from '../data/dishes';
 import type { LocationId } from '../data/locations';
 import type { CampaignId } from '../data/marketing';
+import type { GroupId } from '../data/groups';
 import { MOMENTS } from '../data/moments';
 import type { TipId } from '../data/mewa';
 import { importSaveCode, loadGame, saveGame } from '../save/save';
@@ -19,25 +20,27 @@ import {
   answerTheMoment,
   apologiesLeft,
   closeDay,
-  dayBreakdown,
-  drinkCost,
-  happyHourToday,
-  helpGuests,
-  moveGuests,
-  shooTheGull,
-  startHappyHour,
-  updateToday,
-  momentDue,
-  newGame,
-  openRestaurant,
-  playTick,
-  tallyFor,
   type DayBreakdown,
+  dayBreakdown,
   type DaySummary,
   type DayTally,
   type Difficulty,
+  drinkCost,
+  flyerArrives,
   type GameState,
+  handFlyer,
+  happyHourToday,
+  helpGuests,
+  momentDue,
+  moveGuests,
+  newGame,
   type OpenDay,
+  openRestaurant,
+  playTick,
+  shooTheGull,
+  startHappyHour,
+  tallyFor,
+  updateToday,
 } from '../sim/game';
 import type { MomentResult } from '../sim/moments';
 import type { Supplier } from '../sim/types';
@@ -83,6 +86,8 @@ export interface LiveDay extends DayTally {
   lastGull: { minute: number; text: string; shooed: boolean } | null;
   /** Today's happy hour, once started. */
   happyHour: { from: number; until: number } | null;
+  /** Flyers left in hand for people walking past. */
+  flyersLeft: number;
 }
 
 interface GameStore {
@@ -116,6 +121,10 @@ interface GameStore {
   drinkCostAt: (table: number) => number | null;
   /** Shoos the gull off the terrace. */
   shooGull: () => void;
+  /** Hands a flyer to someone from this group walking past: true if they'll come in, false if not, null if none are left. */
+  handFlyer: (group: GroupId) => boolean | null;
+  /** Someone who took a flyer has reached the door: their party comes in. */
+  flyerArrives: (group: GroupId) => void;
   /** The day so far, broken down by group and by dish. */
   breakdown: () => DayBreakdown | null;
   /** Starts today's happy hour now. */
@@ -181,6 +190,7 @@ function liveFrom(openDay: OpenDay): LiveDay {
     apologiesLeft: apologiesLeft(openDay),
     lastGull: openDay.gulls.last,
     happyHour: happyHourToday(openDay),
+    flyersLeft: openDay.flyers.left,
   };
 }
 
@@ -291,6 +301,23 @@ export const useGame = create<GameStore>((set, get) => ({
   breakdown: () => {
     const { openDay } = get();
     return openDay ? dayBreakdown(openDay.progress.outcomes, 'player') : null;
+  },
+
+  handFlyer: (group) => {
+    const { openDay } = get();
+    if (!openDay) return null;
+    const comes = handFlyer(openDay, group);
+    if (comes === null) return null;
+    play(comes ? 'ding' : 'coin');
+    set({ live: liveFrom(openDay) });
+    return comes;
+  },
+
+  flyerArrives: (group) => {
+    const { openDay } = get();
+    if (!openDay) return;
+    flyerArrives(openDay, group);
+    set({ live: liveFrom(openDay) });
   },
 
   shooGull: () => {
