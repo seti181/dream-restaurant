@@ -39,8 +39,8 @@ const TABS: { tab: PlanTab; label: ReactNode }[] = [
   { tab: 'settings', label: '⚙️ Settings' },
 ];
 
-/** Tabs that only make sense before opening: the empty restaurant, and starting over. */
-const BEFORE_OPENING_ONLY: PlanTab[] = ['restaurant', 'settings'];
+/** Tabs that only make sense before opening: the empty restaurant. */
+const BEFORE_OPENING_ONLY: PlanTab[] = ['restaurant'];
 
 export function PlanScreen() {
   const planTab = useGame((s) => s.planTab);

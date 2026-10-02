@@ -2114,3 +2114,9 @@ button.stat.open {
   pointer-events: auto;
 }
 
+
+/* Difficulty cards that can't change right now (during the day). */
+.choice-card:disabled {
+  opacity: 0.55;
+  cursor: default;
+}

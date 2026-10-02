@@ -54,7 +54,9 @@ function LocationCard({ id }: { id: LocationId }) {
   const place = LOCATIONS[id];
   const rivalsHere = game.restaurants.slice(1).filter((r) => r.location === id);
   const topGroups = [...GROUP_IDS].sort((a, b) => place.groupMix[b] - place.groupMix[a]).slice(0, 3);
-  const reason = relocateUnavailableReason(game, id);
+  // Moving happens before opening; during the day the button says so instead of doing nothing.
+  const duringDay = useGame((s) => s.phase === 'open' && s.managing);
+  const reason = duringDay ? 'You can move before opening, in the morning' : relocateUnavailableReason(game, id);
   const moved = afterMove(game, id);
   const tablesLost = player.tables - moved.tables;
   const decorLost = player.decor.length - moved.decor.length;

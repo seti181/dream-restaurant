@@ -75,8 +75,17 @@ export function LoadSaveCode({ confirm = true }: { confirm?: boolean }) {
   );
 }
 
+/** During the day, with the tabs open over the restaurant. */
+const useDuringDay = () => useGame((s) => s.phase === 'open' && s.managing);
+
+/** Said in place of the things that can only change before opening. */
+function BeforeOpeningNote({ what }: { what: string }) {
+  return <p className="note small">⏸ {what} before opening, in the morning. The restaurant is open now.</p>;
+}
+
 function Backup() {
   const game = useGame((s) => s.game);
+  const duringDay = useDuringDay();
   const [code, setCode] = useState('');
   const [copied, setCopied] = useState(false);
   const [message, setMessage] = useState('');
@@ -96,6 +105,7 @@ function Backup() {
       <p className="small muted">
         A save code is your whole game as one long line of text. Keep it somewhere safe, for example in a message to
         yourself, and paste it back here to carry on.
+        {duringDay && ' Made now, it holds your game as it was this morning.'}
       </p>
       <div className="buy left">
         <button
@@ -121,7 +131,7 @@ function Backup() {
       {message && <p className="small">{message}</p>}
 
       <h3 className="spaced">Load a save code</h3>
-      <LoadSaveCode />
+      {duringDay ? <BeforeOpeningNote what="A save code can be loaded" /> : <LoadSaveCode />}
     </section>
   );
 }
@@ -158,12 +168,14 @@ export function SettingsPanel() {
   const setDifficulty = useGame((s) => s.setDifficulty);
   const startNewGame = useGame((s) => s.startNewGame);
   const [newDifficulty, setNewDifficulty] = useState<Difficulty>(game.difficulty);
+  const duringDay = useDuringDay();
 
   return (
     <div className="two-panels even">
       <section className="panel-column">
         <h2>Difficulty</h2>
-        <p className="small muted">You can change this any time. Rivals change their manner straight away.</p>
+        <p className="small muted">You can change this any morning. Rivals change their manner straight away.</p>
+        {duringDay && <BeforeOpeningNote what="The difficulty can be changed" />}
         <div className="choice-cards">
           {DIFFICULTIES.map(({ difficulty, name, description }) => (
             <button
@@ -171,6 +183,7 @@ export function SettingsPanel() {
               type="button"
               className="choice-card"
               aria-pressed={game.difficulty === difficulty}
+              disabled={duringDay}
               onClick={() => setDifficulty(difficulty)}
             >
               <strong>{name}</strong>
@@ -181,25 +194,31 @@ export function SettingsPanel() {
 
         <h2 className="spaced">Start a new game</h2>
         <p className="small muted">Starts again from {dateOf(0).dayOfMonth} {MONTH_NAMES[dateOf(0).month - 1]}. Your current game will be gone, so make a save code first.</p>
-        <div className="chips">
-          {DIFFICULTIES.map(({ difficulty, name }) => (
-            <button
-              key={difficulty}
-              type="button"
-              className="chip"
-              aria-pressed={newDifficulty === difficulty}
-              onClick={() => setNewDifficulty(difficulty)}
-            >
-              {name}
-            </button>
-          ))}
-        </div>
-        <p />
-        <ConfirmButton
-          label="Start a new game"
-          confirmLabel="Everything starts again. Tap again"
-          onConfirm={() => startNewGame(newDifficulty)}
-        />
+        {duringDay ? (
+          <BeforeOpeningNote what="A new game can be started" />
+        ) : (
+          <>
+            <div className="chips">
+              {DIFFICULTIES.map(({ difficulty, name }) => (
+                <button
+                  key={difficulty}
+                  type="button"
+                  className="chip"
+                  aria-pressed={newDifficulty === difficulty}
+                  onClick={() => setNewDifficulty(difficulty)}
+                >
+                  {name}
+                </button>
+              ))}
+            </div>
+            <p />
+            <ConfirmButton
+              label="Start a new game"
+              confirmLabel="Everything starts again. Tap again"
+              onConfirm={() => startNewGame(newDifficulty)}
+            />
+          </>
+        )}
 
         <SoundSettings />
       </section>
