@@ -90,16 +90,19 @@ export function planMoments(
 /** Cards that can come at random (not tied to a time of day, and not only a follow-up). */
 const RANDOM_CARDS = MOMENT_IDS.filter((id) => !MOMENTS[id].at && !MOMENTS[id].followUpOnly);
 
-/** How likely a random card is today: by its rarity, and not at all while a rare one rests. */
+/**
+ * How likely a random card is today, by its rarity. Not at all while it rests after coming up
+ * (the usual rest, or the card's own longer one), and never again once a one-off has come up.
+ */
 export function weightToday(today: MomentsToday, id: MomentId): number {
   const moment = MOMENTS[id];
   const last = today.lastSeen[id];
-  if (moment.cooldownDays && last !== undefined && today.day - last < moment.cooldownDays) return 0;
+  if (last !== undefined) {
+    if (moment.once) return 0;
+    if (today.day - last < (moment.cooldownDays ?? balance.moments.restDays)) return 0;
+  }
   return balance.moments.rarityWeights[moment.rarity];
 }
-
-/** Days since a card last came up (before today); a card never seen has rested forever. */
-const daysSince = (today: MomentsToday, id: MomentId) => today.day - (today.lastSeen[id] ?? -Infinity);
 
 /** Picks one of the cards, by how likely each is today. */
 function pickByWeight(today: MomentsToday, options: MomentId[]): MomentId {
@@ -195,6 +198,7 @@ export function checkMoments(today: MomentsToday, context: MomentContext): boole
     show(today, followUp, minute, context);
     return true;
   }
+  // Cards resting after coming up don't count: if nothing else fits, no card comes now.
   const fitting = RANDOM_CARDS.filter((id) => !today.seen.includes(id) && weightToday(today, id) > 0 && canHappen(id, context));
   if (fitting.length === 0) {
     // Nothing fits right now: try again a little later, if there's still time today.
@@ -203,12 +207,7 @@ export function checkMoments(today: MomentsToday, context: MomentContext): boole
     return false;
   }
   today.slots.shift();
-  // Cards that have rested long enough come first. If every card that fits is still resting,
-  // the one seen longest ago comes back early.
-  const rested = fitting.filter((id) => daysSince(today, id) >= balance.moments.restDays);
-  const longest = Math.max(...fitting.map((id) => daysSince(today, id)));
-  const possible = rested.length > 0 ? rested : fitting.filter((id) => daysSince(today, id) === longest);
-  show(today, pickByWeight(today, possible), minute, context);
+  show(today, pickByWeight(today, fitting), minute, context);
   return true;
 }
 

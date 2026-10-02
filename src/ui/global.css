@@ -1819,7 +1819,7 @@ h2.spaced {
   width: max-content;
   max-width: calc(100% - 32px);
   margin: 0;
-  padding: 10px 18px;
+  padding: 6px 16px;
   border-radius: 12px;
   background: #fff4e6;
   border-left: 5px solid var(--brick);
@@ -2120,10 +2120,13 @@ button.stat.open {
   height: 100%;
 }
 
-/* The short notes at the top of the scene, one under the other. */
+/*
+ * The short notes at the top of the scene, one under the other. The first one sits across the
+ * scene's top edge, over the progress bar, so it hides as little of the restaurant as it can.
+ */
 .scene-notes {
   position: absolute;
-  top: 12px;
+  top: -22px;
   left: 50%;
   z-index: 60000;
   display: flex;
@@ -2250,8 +2253,4 @@ button.stat.open {
   color: var(--brick);
   font-size: 0.85rem;
   font-weight: 700;
-}
-
-.special-today {
-  margin: 2px 0 0;
 }

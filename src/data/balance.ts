@@ -200,7 +200,7 @@ export const balance = {
      * Only if every card that fits right now is resting does one come back early: the one
      * seen longest ago.
      */
-    restDays: 8,
+    restDays: 14,
   },
 
   /** Fresh produce in season (the seasons are in dishes.ts, on each extra). */

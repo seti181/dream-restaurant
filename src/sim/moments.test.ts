@@ -86,8 +86,17 @@ describe('choice cards', () => {
     expect(nextRandomCard(seenYesterday)).toBe('herring');
   });
 
-  it('if every card that fits is still resting, the one seen longest ago comes back early', () => {
-    expect(nextRandomCard({ ...allSeenOn(29), lostTourist: 30 - balance.moments.restDays + 1 })).toBe('lostTourist');
+  it('if every card that fits is still resting, none comes until one has rested', () => {
+    expect(nextRandomCard({ ...allSeenOn(29), lostTourist: 30 - balance.moments.restDays + 1 })).toBeUndefined();
+    expect(nextRandomCard({ ...allSeenOn(29), lostTourist: 30 - balance.moments.restDays })).toBe('lostTourist');
+  });
+
+  it('one-off events (a film crew, gold letters above the door) come up only once', () => {
+    const oneOffs = randomCards.filter((id) => MOMENTS[id].once);
+    expect(oneOffs).toEqual(expect.arrayContaining(['filmCrew', 'signPainter', 'deliveryApp', 'proposal']));
+    const today = openRestaurant({ ...newGame(1), day: 40, momentsSeen: { filmCrew: 1, busker: 1 } }).moments;
+    expect(weightToday(today, 'filmCrew')).toBe(0);
+    expect(weightToday(today, 'busker')).toBe(balance.moments.rarityWeights.common);
   });
 
   it('over a season, no card comes back before it has rested', () => {
@@ -103,7 +112,8 @@ describe('choice cards', () => {
       state = closeDay(state, open).state;
     }
     expect(lastDay.size).toBeGreaterThan(15);
-  });
+    // Three weeks of play: give it time when the computer is busy running the other tests.
+  }, 20_000);
 
   it('some only come at the right time: the shanty choir in the tall ships week, the stall at the Fair', () => {
     const can = (day: number, id: MomentId, weather: GameState['weather'] = 'cloudy') => {

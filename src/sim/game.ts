@@ -708,6 +708,8 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
     ...state.upcoming.filter((u) => u.untilDay >= nextDay),
     ...open.moments.results.flatMap((r) => {
       if (!r.followUp) return [];
+      // A card that comes back only once doesn't come back a second time.
+      if (r.followUp.onlyOnce && r.followUp.card && state.momentsSeen[r.followUp.card] !== undefined) return [];
       const fromDay = state.day + r.followUp.inDays;
       const { groups, card, news } = r.followUp;
       return [{ fromDay, untilDay: fromDay + (r.followUp.days ?? 1) - 1, groups, card, news }];

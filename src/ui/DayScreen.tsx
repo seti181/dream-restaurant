@@ -15,7 +15,6 @@ import { canTend, DUSK_MINUTE, PixelRestaurantView } from './PixelRestaurantView
 import { isFavourite } from '../sim/seating';
 import { playerOf } from '../sim/game';
 import { isFairDay } from '../sim/neptune';
-import { specialOf } from '../sim/menu';
 import { FAVOURITE_SPOTS, GROUP_IDS, GROUPS, SPOT_NAMES } from '../data/groups';
 import { GULLS } from '../data/gulls';
 import { useGame } from './store';
@@ -253,7 +252,7 @@ function GullWarning() {
   if (!shown) return null;
   return (
     <p className="gull-warning">
-      <span>🐦 {GULLS.warning}</span>
+      <span>{GULLS.warning}</span>
       <NoteClose onClose={() => setShown(false)} />
     </p>
   );
@@ -272,7 +271,6 @@ export function DayScreen() {
   const day = useGame((s) => s.game.day);
   const speed = useGame((s) => s.speed);
   const tick = useGame((s) => s.tick);
-  const special = useGame((s) => specialOf(playerOf(s.game)));
 
   // Advance the day on a timer; faster speeds tick more often. Paused means no timer.
   useEffect(() => {
@@ -320,14 +318,7 @@ export function DayScreen() {
       <div className="card day-card">
         <MewaTip screen="open" />
         <div className="day-header">
-          <div className="day-status">
-            <p className="eyebrow">{live.closing ? 'Closed · last orders' : 'Open for business'}</p>
-            {special && (
-              <p className="small special-today">
-                ⭐ Dziś polecamy: <strong>{dishName(special)}</strong>
-              </p>
-            )}
-          </div>
+          <p className="eyebrow day-status">{live.closing ? 'Closed · last orders' : 'Open for business'}</p>
           <HappyHourButton />
           <ManageButton />
           <div className="stats">

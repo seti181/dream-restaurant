@@ -144,8 +144,11 @@ describe('Mariacka', () => {
 
 describe('the Portuguese corner', () => {
   /** Plays the day Ana comes, answering her card. */
-  function anasDay(answer: 0 | 1) {
-    const state = { ...newGame(60), day: PORTUGUESE_CORNER.day };
+  function anasDay(answer: 0 | 1, cameBefore = false) {
+    const day = PORTUGUESE_CORNER.day + (cameBefore ? 3 : 0);
+    const momentsSeen = cameBefore ? { [PORTUGUESE_CORNER.card]: PORTUGUESE_CORNER.day } : {};
+    const upcoming = [{ fromDay: day, untilDay: day, card: PORTUGUESE_CORNER.card }];
+    const state = { ...newGame(60), day, momentsSeen, upcoming };
     const open = openRestaurant(state);
     expect(open.moments.queued).toEqual([PORTUGUESE_CORNER.card]);
     // Ana's card comes first that day; any other card later on gets a "no".
@@ -181,9 +184,12 @@ describe('the Portuguese corner', () => {
     expect(decorUnavailableReason(rich, 'azulejoTiles')).toBeNull();
   });
 
-  it('saying no brings her back three days later', () => {
+  it('saying no brings her back three days later, but only once', () => {
     const { state, next } = anasDay(1);
     expect(next.unlocks).toEqual([]);
     expect(next.upcoming).toContainEqual(expect.objectContaining({ fromDay: state.day + 3, card: PORTUGUESE_CORNER.card }));
+    // A second "no", and she goes home to Coimbra.
+    const again = anasDay(1, true).next;
+    expect(again.upcoming.some((u) => u.card === PORTUGUESE_CORNER.card)).toBe(false);
   });
 });

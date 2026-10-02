@@ -145,6 +145,8 @@ export interface MomentEffect {
     groups?: Partial<Record<GroupId, number>>;
     news?: { title: string; text: string };
     card?: MomentId;
+    /** For a card coming back: it does so only once. Turned down a second time, it doesn't come again. */
+    onlyOnce?: boolean;
   };
 }
 
@@ -163,8 +165,10 @@ export interface Moment {
   rarity: Rarity;
   /** Only ever comes as the follow-up of another card, never at random. */
   followUpOnly?: boolean;
-  /** For a rare moment: the fewest days before it can come again. */
+  /** Rests this many days after coming up, instead of the usual (balance.moments.restDays). */
   cooldownDays?: number;
+  /** A one-off event (a film crew, gold letters above the door): it comes up at most once a game. */
+  once?: boolean;
   /** The first answer is the "yes"; the second is what a player who doesn't help would choose. */
   choices: [MomentChoice, MomentChoice];
 }
@@ -434,6 +438,7 @@ export const MOMENTS: Record<MomentId, Moment> = {
       'if they could try a dessert on the house. “Só um pouquinho?”',
     needs: ['dessertOnMenu'],
     rarity: 'uncommon',
+    once: true,
     choices: [
       {
         label: 'Com certeza!',
@@ -462,6 +467,7 @@ export const MOMENTS: Record<MomentId, Moment> = {
     text: 'A very nervous young man asks if the kitchen could hide an engagement ring in his girlfriend’s dessert.',
     needs: ['dessertOnMenu'],
     rarity: 'rare',
+    once: true,
     choices: [
       {
         label: 'Let’s do it!',
@@ -544,6 +550,7 @@ export const MOMENTS: Record<MomentId, Moment> = {
     text: 'A footballer from Lechia Gdańsk and a friend ask for a quiet corner table. “No fuss, please.”',
     needs: ['freeTable'],
     rarity: 'rare',
+    once: true,
     choices: [
       {
         label: 'Right this way',
@@ -585,6 +592,7 @@ export const MOMENTS: Record<MomentId, Moment> = {
     text: 'An elderly lady puts down her spoon: “Your soup is good, but not like my mother’s. Shall I show your chef the secret?”',
     needs: ['soupOnMenu'],
     rarity: 'uncommon',
+    once: true,
     choices: [
       {
         label: 'Yes please, show us!',
@@ -632,6 +640,7 @@ export const MOMENTS: Record<MomentId, Moment> = {
     text: 'The trams have stopped all over Gdańsk! Four office workers are stuck in the Old Town and need somewhere to sit.',
     needs: ['doorOpen'],
     rarity: 'uncommon',
+    once: true,
     choices: [
       {
         label: 'Squeeze them in',
@@ -671,6 +680,7 @@ export const MOMENTS: Record<MomentId, Moment> = {
     text: 'A choir of sailors off the tall ships on the Motława offers to sing for their supper.',
     needs: ['guestsIn', 'tallShipsWeek'],
     rarity: 'common',
+    once: true,
     choices: [
       {
         label: 'Sing for us!',
@@ -766,6 +776,7 @@ export const MOMENTS: Record<MomentId, Moment> = {
     text: 'A stallholder from St. Dominic’s Fair offers to sell your pierogi at his stand on Długi Targ, for a share of the takings.',
     needs: ['duringFair'],
     rarity: 'uncommon',
+    once: true,
     choices: [
       {
         label: 'Let’s do it',
@@ -833,8 +844,8 @@ export const MOMENTS: Record<MomentId, Moment> = {
       {
         label: 'Maybe another day',
         effect: {
-          followUp: { inDays: 3, card: 'portugueseStudent' },
-          result: 'She smiles and says “até logo”. Mewa thinks she’ll be back.',
+          followUp: { inDays: 3, card: 'portugueseStudent', onlyOnce: true },
+          result: 'She smiles and says “até logo”, see you soon, and heads back towards the Green Gate.',
         },
       },
     ],
@@ -861,6 +872,7 @@ export const MOMENTS: Record<MomentId, Moment> = {
     text: 'A film crew shooting a costume drama on Długa want your restaurant as a 1920s café, for one scene. It takes an hour.',
     needs: ['freeTable'],
     rarity: 'rare',
+    once: true,
     choices: [
       {
         label: 'Lights, camera, pierogi!',
@@ -898,6 +910,7 @@ export const MOMENTS: Record<MomentId, Moment> = {
     text: 'Lechia Gdańsk play Arka Gdynia tonight! Six fans in green and white ask if you’ll put the match on.',
     needs: ['doorOpen', 'evening'],
     rarity: 'uncommon',
+    once: true,
     choices: [
       {
         label: 'Biało-zieloni!',
@@ -933,6 +946,7 @@ export const MOMENTS: Record<MomentId, Moment> = {
     text: 'A lady from Kartuzy sells hand-embroidered Kashubian napkins: blue and yellow flowers on white linen.',
     needs: [],
     rarity: 'uncommon',
+    once: true,
     choices: [
       {
         label: 'We’ll take a set',
@@ -967,6 +981,7 @@ export const MOMENTS: Record<MomentId, Moment> = {
     text: 'A TikToker wants to film “the best pierogi in Gdańsk” at your place, as long as the pierogi are free.',
     needs: [],
     rarity: 'common',
+    once: true,
     choices: [
       {
         label: 'Action!',
@@ -990,6 +1005,7 @@ export const MOMENTS: Record<MomentId, Moment> = {
     text: 'Four students want to settle, once and for all, who can eat the most pierogi. They’d like a table and a referee.',
     needs: ['doorOpen'],
     rarity: 'uncommon',
+    once: true,
     choices: [
       {
         label: 'Let the contest begin!',
@@ -1008,6 +1024,7 @@ export const MOMENTS: Record<MomentId, Moment> = {
     text: 'Someone from a delivery app offers to put your restaurant on it. More orders from home, but they take a cut.',
     needs: [],
     rarity: 'uncommon',
+    once: true,
     choices: [
       {
         label: 'Sign us up',
@@ -1094,6 +1111,7 @@ export const MOMENTS: Record<MomentId, Moment> = {
     text: 'A sign painter offers to paint your restaurant’s name above the door in gold letters, the old Gdańsk way.',
     needs: [],
     rarity: 'rare',
+    once: true,
     choices: [
       {
         label: 'Gold letters, please',
