@@ -23,6 +23,8 @@ const STEPS = 8;
 const TABLE = 16;
 /** The kitchen corner reaches this far from the back wall. */
 const KITCHEN_DEPTH = 44;
+/** The communal table stands along the back wall from here (26 long, y 16 to 28). */
+export const COMMUNAL_TABLE_X = 6;
 const SEAT_Z = 9;
 
 const C = {
@@ -636,7 +638,8 @@ export function drawRoom(layout: RoomLayout, look: RoomLook): Pixels {
     });
   }
   if (look.decor.includes('communalTable')) {
-    const x0 = layout.door.x1 + 6;
+    // In the back corner by the window, so the back of the room by the kitchen stays free for the waiters.
+    const x0 = COMMUNAL_TABLE_X;
     things.push({
       depth: x0 + 30,
       draw: (l) => {
@@ -891,18 +894,26 @@ export function depthAt(point: Point): number {
   return point.x + point.y;
 }
 
-/** Where waiter number `index` waits, by the kitchen. */
+/**
+ * Where waiter number `index` waits: in a row along the back of the room, next to the kitchen,
+ * behind the first tables, so their chairs never hide anyone.
+ */
 export function waiterSpot(layout: RoomLayout, index: number): Point {
-  return { x: layout.kitchenX - 10 - index * 12, y: 46 };
+  return { x: layout.kitchenX - 8 - index * 10, y: 24 };
 }
 
-/** A waiter's way from the kitchen to the side of a table: along the gap in front of the tables, then down the aisle. */
+/**
+ * A waiter's way from their spot by the kitchen to the side of a table: a step forward into the gap
+ * between the back of the room and the first tables, along it, then down the aisle.
+ */
 export function servePath(layout: RoomLayout, insideTables: number, table: number, waiter: number): Point[] {
   const found = slotOf(layout, insideTables, table);
   if (!found) return [];
   const start = waiterSpot(layout, waiter);
+  // In front of anything along the back wall (the communal table), behind the first row's chairs.
+  const lane = layout.inside[0].y - 20;
   const aisle = found.slot.x - 5;
-  return [start, { x: aisle, y: start.y }, { x: aisle, y: found.slot.y + TABLE / 2 }];
+  return [start, { x: start.x, y: lane }, { x: aisle, y: lane }, { x: aisle, y: found.slot.y + TABLE / 2 }];
 }
 
 // ---------- The building: low walls, the przedproże balustrade, the queue at the door ----------

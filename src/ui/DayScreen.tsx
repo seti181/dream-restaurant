@@ -231,9 +231,7 @@ function GullNote() {
   if (!last || shownOut === last) return null;
   return (
     <p className={`gull-warning ${last.shooed ? 'good' : 'bad'}`}>
-      <span>
-        {last.shooed ? '🎉' : '🐦'} {last.text}
-      </span>
+      <span>{last.text}</span>
       <NoteClose onClose={() => setShownOut(last)} />
     </p>
   );

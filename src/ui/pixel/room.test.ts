@@ -2,12 +2,12 @@ import { describe, expect, it } from 'vitest';
 import { balance } from '../../data/balance';
 import { LOCATION_IDS, LOCATIONS } from '../../data/locations';
 import { REGULAR_IDS } from '../../data/regulars';
-import { floorView, startDay, stepDay } from '../../sim/day';
+import { floorView, startDay, stepDay, type FloorView } from '../../sim/day';
 import * as actions from '../../sim/actions';
 import { answerTheMoment, newGame, openRestaurant, playTick, type GameState } from '../../sim/game';
 import { specialCandidate } from '../../sim/staff';
 import { drawCloud, drawSky, drawStreet } from './street';
-import { PLINTH, drawRoom, guestKind, leaveQueuePath, movePath, queueSpot, passerByPath, streetFurniture, STREET_THING_REACH, roomLayout, scenePieces, seatsAt, servePath, waiterSpot, walkPath, type RoomLook } from './room';
+import { COMMUNAL_TABLE_X, PLINTH, drawRoom, guestKind, leaveQueuePath, movePath, queueSpot, passerByPath, streetFurniture, STREET_THING_REACH, roomLayout, scenePieces, seatsAt, servePath, waiterSpot, walkPath, type RoomLook, type ScenePiece } from './room';
 import { HEADROOM, PERSON, personPixels, portraitPixels, PORTRAIT_ROWS, SEATED_ROWS, type PersonKind } from './sprites';
 
 const look = (insideTables: number): RoomLook => ({ decor: [], equipment: ['stove'], weather: 'sunny', dusk: false, insideTables });
@@ -162,6 +162,62 @@ describe('walking in and out', () => {
     const path = walkPath(layout, 6, 6, seat);
     expect(path[0].y).toBeGreaterThan(layout.roomY + layout.terraceDepth);
     expect(path.at(-1)).toEqual({ x: seat.x, y: seat.y });
+  });
+
+  /** Pixels of `front` drawn over `behind`, where both are opaque. */
+  function hiddenBy(behind: ScenePiece, front: ScenePiece): number {
+    let n = 0;
+    const a = behind.image.pixels;
+    const b = front.image.pixels;
+    for (let y = 0; y < a.height; y++) {
+      for (let x = 0; x < a.width; x++) {
+        const bx = behind.px + x - front.px;
+        const by = behind.py + y - front.py;
+        if (a.get(x, y) && bx >= 0 && by >= 0 && bx < b.width && by < b.height && b.get(bx, by)) n++;
+      }
+    }
+    return n;
+  }
+
+  it('keeps the waiters by the kitchen in full view: no chair hides them, communal table or not', () => {
+    for (const tables of [6, 9, 12]) {
+      for (const decor of [[], ['communalTable']] as RoomLook['decor'][]) {
+        const layout = roomLayout(tables, 2);
+        const floor: FloorView = {
+          location: 'ogarna',
+          tables: Array(tables).fill(null),
+          insideTables: tables,
+          terraceTables: 0,
+          chefsBusy: [false],
+          waiters: [null, null, null, null],
+          chefLooks: [1],
+          waiterLooks: [2, 3, 4, 5],
+          decor,
+          equipment: ['stove'],
+          ordersWaiting: 0,
+          walkouts: [],
+          atTheDoor: [],
+          leftTheDoor: [],
+        };
+        const pieces = scenePieces(layout, floor, { ...look(tables), decor });
+        const chairs = pieces.filter((p) => p.key.startsWith('chair'));
+        pieces
+          .filter((p) => p.key.startsWith('waiter'))
+          .forEach((waiter) => {
+            const hidden = chairs.filter((c) => c.depth > waiter.depth).reduce((sum, c) => sum + hiddenBy(waiter, c), 0);
+            expect(hidden, `${waiter.key} in a room for ${tables}`).toBe(0);
+          });
+        // Nobody waits inside the communal table, or walks through it to serve.
+        for (let i = 0; i < 4; i++) {
+          const spot = waiterSpot(layout, i);
+          expect(spot.x - 5 > COMMUNAL_TABLE_X + 26 || spot.y - 3 > 28).toBe(true);
+          for (let table = 0; table < tables; table++) {
+            const path = servePath(layout, tables, table, i);
+            for (const point of path.slice(1)) expect(point.y > 28 || point.x - 5 > COMMUNAL_TABLE_X + 26).toBe(true);
+          }
+        }
+      }
+    }
   });
 
   it('sends a waiter from their spot by the kitchen to the side of the table', () => {
