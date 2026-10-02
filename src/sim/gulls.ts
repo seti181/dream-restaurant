@@ -60,7 +60,7 @@ export function stepGulls(today: GullsToday, progress: DayInProgress): void {
       today.stolen++;
       changeReputation(progress, group, -balance.gulls.stolenReputation);
       const review = pick(today.rng, GULLS.reviews);
-      today.reviews.push({ stars: review.stars, text: review.text, reviewer: pick(today.rng, GULLS.reviewers), critic: false });
+      today.reviews.push({ stars: review.stars, text: review.text, reviewer: pick(today.rng, GULLS.reviewers), critic: false, group });
       today.last = { minute, text: pick(today.rng, GULLS.stolen), shooed: false };
     }
     return;

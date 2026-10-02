@@ -934,6 +934,31 @@ h2.spaced {
   letter-spacing: 2px;
 }
 
+/* Answering an unhappy review. */
+.reply-button {
+  margin-top: 6px;
+}
+
+.reply-options {
+  display: grid;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.reply-options button {
+  font-size: 0.95rem;
+}
+
+.reply-done {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px dashed var(--sand);
+}
+
+.review .reply-done p {
+  font-style: normal;
+}
+
 /* ---------- Map ---------- */
 
 .map-panel {

@@ -39,6 +39,11 @@ function fill(line: string, dish: MenuDish | undefined, street: string): string 
 
 const capitalise = (text: string) => text[0].toUpperCase() + text.slice(1);
 
+/** True if the day report lets the player answer this review: an unhappy guest we know the group of. */
+export function canReply(review: Review): boolean {
+  return review.group !== undefined && review.stars < balance.reviews.replyBelowStars;
+}
+
 export interface ReviewInput {
   group: GroupId;
   order: MenuDish[];
@@ -73,14 +78,14 @@ export function writeReview(rng: RngState, input: ReviewInput): Review {
   if (input.regular) return regularsReview(rng, input);
   const reviewer = input.critic ? CRITIC_NAME : pick(rng, REVIEWER[input.group]);
   if (!input.factors) {
-    return { stars: 1, text: pick(rng, WALKOUT_LINES), reviewer, critic: input.critic };
+    return { stars: 1, text: pick(rng, WALKOUT_LINES), reviewer, critic: input.critic, group: input.group };
   }
   const stars = Math.max(1, Math.min(5, 1 + Math.floor(input.satisfaction / 20)));
 
   // Sometimes the guest talks about a pairing on their plate: a hint for the dish creator.
   const pairings = input.order.flatMap(pairingsOf);
   if (pairings.length > 0 && chance(rng, balance.reviews.pairingMentionChance)) {
-    return { stars, text: pick(rng, pairings).comment, reviewer, critic: input.critic };
+    return { stars, text: pick(rng, pairings).comment, reviewer, critic: input.critic, group: input.group };
   }
 
   // Guests mention one of the two things they liked most, and one of the two they liked least.
@@ -97,5 +102,5 @@ export function writeReview(rng: RngState, input: ReviewInput): Review {
   else if (praise) text = `${praise}!`;
   else if (complaint) text = `${capitalise(complaint)}.`;
   else text = pick(rng, SO_SO_LINES);
-  return { stars, text, reviewer, critic: input.critic };
+  return { stars, text, reviewer, critic: input.critic, group: input.group };
 }

@@ -96,6 +96,8 @@ export const balance = {
     pairingMentionChance: 0.5,
     /** A food critic's review moves reputation this many times as far as an ordinary visit, with every group. */
     criticWeight: 10,
+    /** Reviews with fewer stars than this can be answered in the day report (what each answer does is in data/reviews.ts). */
+    replyBelowStars: 3,
   },
 
   choice: {

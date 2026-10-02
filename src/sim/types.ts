@@ -104,6 +104,8 @@ export interface Review {
   /** "a student", "a local family"... */
   reviewer: string;
   critic: boolean;
+  /** The guest's group, so a reply to the review reaches them. */
+  group?: GroupId;
 }
 
 /** A party that booked ahead, e.g. a tour bus or a wedding. */

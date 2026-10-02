@@ -5,7 +5,7 @@ import type { GroupId } from './groups';
 
 // ---------- Tutorial tips (the first three days) ----------
 
-export type TipId = 'welcome' | 'speed' | 'report' | 'prices' | 'hiring' | 'helpTables' | 'happyHour' | 'farewell' | 'daysOff' | 'training' | 'special';
+export type TipId = 'welcome' | 'speed' | 'report' | 'prices' | 'hiring' | 'helpTables' | 'happyHour' | 'farewell' | 'daysOff' | 'training' | 'special' | 'replies';
 
 export interface Tip {
   /** When the tip appears: on this day, on this screen. */
@@ -14,7 +14,7 @@ export interface Tip {
   text: string;
 }
 
-export const TIP_IDS: readonly TipId[] = ['welcome', 'speed', 'report', 'prices', 'hiring', 'helpTables', 'happyHour', 'farewell', 'daysOff', 'training', 'special'];
+export const TIP_IDS: readonly TipId[] = ['welcome', 'speed', 'report', 'prices', 'hiring', 'helpTables', 'happyHour', 'farewell', 'daysOff', 'training', 'special', 'replies'];
 
 export const TIPS: Record<TipId, Tip> = {
   welcome: {
@@ -59,6 +59,13 @@ export const TIPS: Record<TipId, Tip> = {
     text:
       'Your team works every day, and it shows. Tired people cook and serve a little slower. ' +
       'Give someone a day off in the Staff tab on a quiet day, when someone else can cover.',
+  },
+  replies: {
+    day: 3,
+    screen: 'dayOver',
+    text:
+      'Not every review is kind. Tap “Reply…” under an unhappy one: a kind answer can win a guest back. ' +
+      'Arguing with them, less so.',
   },
   special: {
     day: 6,
@@ -198,6 +205,10 @@ export const HELP: { title: string; text: string }[] = [
   {
     title: 'Fresh produce and today’s special',
     text: 'Some extras are fresh produce with a season: strawberries early in July, new potatoes until August, blueberries and chanterelles all summer, plums from mid-August. In season they make a dish taste better; out of season they’re imported, dearer and not as good. One dish a day can be today’s special, “Dziś polecamy”, on the board outside: more guests order it, it tempts people walking by, and fresh produce on it tempts them more.',
+  },
+  {
+    title: 'Replying to reviews',
+    text: 'Unhappy reviews (one or two stars) can be answered in the day report. Thanking them kindly wins their group back a little; inviting them back for a free dessert costs a little and wins back more; standing your ground makes things worse. One reply per review.',
   },
   {
     title: 'Training and fair wages',

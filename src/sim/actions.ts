@@ -9,12 +9,14 @@ import { GROUP_IDS } from '../data/groups';
 import { LOCATIONS, type LocationId } from '../data/locations';
 import { CAMPAIGNS, type CampaignId } from '../data/marketing';
 import type { TipId } from '../data/mewa';
+import { REPLIES, type ReplyId } from '../data/reviews';
+import { canReply } from './reviews';
 import { playerOf, type Difficulty, type GameState } from './game';
 import { dateOf, daysInMonth, nextDayOn } from './calendar';
 import { ambianceWith } from './interior';
 import { recipeKey } from './menu';
 import { awayOn, fairWageOf, offOn, onCourseOn, staffOf, underpaid } from './staff';
-import type { Employee, Restaurant, Supplier } from './types';
+import type { Employee, Restaurant, Review, Supplier } from './types';
 
 function withPlayer(state: GameState, changes: Partial<Restaurant>): GameState {
   const [player, ...rivals] = state.restaurants;
@@ -185,6 +187,28 @@ export function giveRaise(state: GameState, employeeId: number): GameState {
   if (!person || !underpaid(person)) return state;
   const morale = Math.min(100, person.morale + balance.staff.morale.raise);
   return withTeam(state, state.team.map((p) => (p.id === employeeId ? { ...p, wage: fairWageOf(p), morale } : p)));
+}
+
+// ---------- Replying to reviews ----------
+
+/**
+ * Answers an unhappy review: a kind reply wins the guest's group back a little, an invitation
+ * (dessert on the house) a little more; standing your ground does the opposite.
+ * Returns the game and what came of it.
+ */
+export function replyToReview(state: GameState, review: Review, reply: ReplyId): { state: GameState; result: string } {
+  if (!canReply(review)) return { state, result: '' };
+  const answer = REPLIES[reply];
+  const group = review.group!;
+  const player = playerOf(state);
+  const reputation = { ...player.reputation, [group]: Math.max(0, Math.min(100, player.reputation[group] + answer.reputation)) };
+  // Which of the answers comes back depends on the review, so it is the same every time.
+  const result = answer.results[(review.text.length + review.stars) % answer.results.length];
+  const who = review.reviewer[0].toUpperCase() + review.reviewer.slice(1);
+  return {
+    state: { ...withPlayer(state, { reputation }), cash: state.cash + (answer.cash ?? 0) },
+    result: result.replace('{who}', who),
+  };
 }
 
 // ---------- Kitchen ----------

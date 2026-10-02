@@ -11,6 +11,7 @@ import type { CampaignId } from '../data/marketing';
 import { MOMENTS } from '../data/moments';
 import type { TipId } from '../data/mewa';
 import { importSaveCode, loadGame, saveGame } from '../save/save';
+import type { ReplyId } from '../data/reviews';
 import * as actions from '../sim/actions';
 import { minuteOfDay } from '../sim/clock';
 import { floorView, type FloorView, type Help } from '../sim/day';
@@ -91,6 +92,8 @@ interface GameStore {
   openDay: OpenDay | null;
   live: LiveDay | null;
   summary: DaySummary | null;
+  /** Answers given to reviews in tonight's report, by the review's place in the list. */
+  replies: Record<number, { reply: ReplyId; result: string }>;
   planTab: PlanTab;
   /** Whether the last autosave worked; null before the first one. */
   saved: boolean | null;
@@ -121,6 +124,8 @@ interface GameStore {
   moveGuests: (from: number, to: number) => boolean | null;
   setSpeed: (speed: Speed) => void;
   planNextDay: () => void;
+  /** Answers a review in tonight's report (once each). */
+  replyToReview: (index: number, reply: ReplyId) => void;
   setPlanTab: (tab: PlanTab) => void;
 
   addDish: (template: TemplateId, variant: string, extras?: ExtraId[], name?: string) => void;
@@ -192,6 +197,7 @@ export const useGame = create<GameStore>((set, get) => ({
   openDay: null,
   live: null,
   summary: null,
+  replies: {},
   planTab: 'today',
   saved: null,
   managing: false,
@@ -241,7 +247,7 @@ export const useGame = create<GameStore>((set, get) => ({
       stopAmbience();
       if (state.gameOver) play('sad');
       else if (summary.goalCompleted) play('goal');
-      set({ game: state, summary, phase: 'dayOver', openDay: null, live: null, managing: false, saved: saveGame(state) });
+      set({ game: state, summary, replies: {}, phase: 'dayOver', openDay: null, live: null, managing: false, saved: saveGame(state) });
     } else {
       const next = liveFrom(openDay);
       if (next.floor.gull && !live?.floor.gull) play('seagull');
@@ -300,6 +306,21 @@ export const useGame = create<GameStore>((set, get) => ({
   },
 
   setSpeed: (speed) => set({ speed }),
+
+  replyToReview: (index, reply) => {
+    const { phase, summary, replies, game } = get();
+    const review = summary?.reviews[index];
+    if (phase !== 'dayOver' || !review || replies[index]) return;
+    const answered = actions.replyToReview(game, review, reply);
+    if (answered.state === game) return;
+    if (answered.state.cash < game.cash) play('coin');
+    // The day is already saved: save again with what the reply changed.
+    set({
+      game: answered.state,
+      replies: { ...replies, [index]: { reply, result: answered.result } },
+      saved: saveGame(answered.state),
+    });
+  },
 
   planNextDay: () => {
     // After the Fair's last report comes the Golden Neptune ceremony, unless the money ran out.

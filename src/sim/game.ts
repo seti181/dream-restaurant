@@ -29,6 +29,7 @@ import { planGulls, shooGull, stepGulls, type GullsToday } from './gulls';
 import { answerMoment, checkMoments, planMoments, type MomentResult, type MomentsToday } from './moments';
 import { pairingsOf, seasonNews } from './menu';
 import { isFairDay, isNeptuneDay, neptuneResult, type NeptuneResult, type SeasonTally } from './neptune';
+import { canReply } from './reviews';
 import { regularsDay, regularsNews, type RegularStories, type RegularVisitReport } from './regulars';
 import { settleWishes, teamMoment, teamNews } from './teamStories';
 import { planRivalWeek, rivalAwarenessToday } from './rivalAi';
@@ -752,11 +753,12 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
 
   const outcomes = open.progress.outcomes;
   const groups = groupDays(outcomes, playerBefore, playerAfter);
+  // The critic's first, then unhappy guests who could be answered, then everyone else.
   const reviews = [
     ...outcomes.filter((o) => o.restaurant === playerBefore.id && o.review !== null).map((o) => o.review!),
     ...open.moments.results.flatMap((m) => (m.review ? [m.review] : [])),
     ...open.gulls.reviews,
-  ].sort((a, b) => Number(b.critic) - Number(a.critic));
+  ].sort((a, b) => Number(b.critic) - Number(a.critic) || Number(canReply(b)) - Number(canReply(a)));
   const lunchSetsSold = outcomes
     .filter((o) => o.restaurant === playerBefore.id && o.kind === 'served')
     .reduce((sum, o) => sum + o.order.filter((d) => d.fromLunchSet).length / 2, 0);

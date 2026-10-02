@@ -1,14 +1,16 @@
 // The daily report: who came, what they thought, where the money went,
 // and how the rest of the Old Town did.
 
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { GROUP_IDS, GROUPS } from '../data/groups';
 import { REGULARS } from '../data/regulars';
+import { REPLIES, REPLY_IDS } from '../data/reviews';
+import { canReply } from '../sim/reviews';
 import { dateOf, formatDate } from '../sim/calendar';
 import { formatTime } from '../sim/clock';
 import { playerOf, type DaySummary } from '../sim/game';
 import { recipeKey } from '../sim/menu';
-import type { SatisfactionFactors } from '../sim/types';
+import type { Review, SatisfactionFactors } from '../sim/types';
 import { dishName, money, signedMoney, stars } from './format';
 import { Confetti, StarRow } from './Juice';
 import { MewaTip } from './Mewa';
@@ -89,6 +91,39 @@ function Change({ before, after }: { before: number; after: number }) {
     <span className={change > 0 ? 'up' : 'down'}>
       {change > 0 ? '▲' : '▼'} {Math.abs(change).toFixed(1)}
     </span>
+  );
+}
+
+/** Under an unhappy review: answer it, kindly or otherwise, once. */
+function ReplyBox({ review, index }: { review: Review; index: number }) {
+  const done = useGame((s) => s.replies[index]);
+  const replyToReview = useGame((s) => s.replyToReview);
+  const [choosing, setChoosing] = useState(false);
+  if (!canReply(review)) return null;
+  if (done) {
+    return (
+      <div className="reply-done">
+        <p className="small">💬 You: {REPLIES[done.reply].reply}</p>
+        <p className="small">{done.result}</p>
+      </div>
+    );
+  }
+  if (!choosing) {
+    return (
+      <button type="button" className="secondary reply-button" onClick={() => setChoosing(true)}>
+        💬 Reply…
+      </button>
+    );
+  }
+  return (
+    <div className="reply-options">
+      {REPLY_IDS.map((id) => (
+        <button key={id} type="button" className="secondary" onClick={() => replyToReview(index, id)}>
+          {REPLIES[id].label}
+          {REPLIES[id].cash !== undefined && ` (${money(-REPLIES[id].cash!)})`}
+        </button>
+      ))}
+    </div>
   );
 }
 
@@ -191,6 +226,7 @@ export function DayOverScreen() {
                     {review.critic ? '🖋️ ' : '— '}
                     {review.reviewer}
                   </footer>
+                  <ReplyBox review={review} index={i} />
                 </blockquote>
               ))}
             </div>

@@ -113,3 +113,47 @@ export const REVIEWER: Record<GroupId, string[]> = {
 };
 
 export const CRITIC_NAME = 'the Baltic Gourmet column';
+
+// ---------- Replying to reviews ----------
+
+export type ReplyId = 'thanks' | 'invite' | 'defend';
+
+export const REPLY_IDS: ReplyId[] = ['thanks', 'invite', 'defend'];
+
+/**
+ * Answers to an unhappy review, in the day report. Reputation (and money) changes with the
+ * guest's group; `{who}` in a result is the reviewer.
+ */
+export const REPLIES: Record<ReplyId, { label: string; reply: string; reputation: number; cash?: number; results: string[] }> = {
+  thanks: {
+    label: 'Thank them kindly',
+    reply: '“Thank you for telling us. We’re sorry, and we’ll do better.”',
+    reputation: 0.5,
+    results: [
+      '{who} wrote back: “That’s kind of you. We’ll give you another try.”',
+      '{who} gave your reply a little heart.',
+      '{who} says it was nice to be listened to.',
+    ],
+  },
+  invite: {
+    label: 'Invite them back, dessert on us',
+    reply: '“We’re so sorry. Please come back soon: dessert is on us.”',
+    reputation: 1.5,
+    cash: -40,
+    results: [
+      '{who} came back for the szarlotka, and added a star.',
+      '{who} came back with friends. “The dessert was worth the wait,” they wrote.',
+      '{who} came back, had the free dessert, and stayed for coffee.',
+    ],
+  },
+  defend: {
+    label: 'Stand your ground',
+    reply: '“Our food is perfect, actually.”',
+    reputation: -1,
+    results: [
+      '{who} replied with three exclamation marks. Half of Gdańsk read the thread.',
+      'Your reply got more likes than the review. Not in a good way.',
+      'Mewa read your reply and quietly flew off.',
+    ],
+  },
+};
