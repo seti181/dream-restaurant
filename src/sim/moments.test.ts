@@ -297,7 +297,7 @@ describe('what the answers do', () => {
   });
 
   it('cheering up the room makes the waiting guests happier', () => {
-    const open = openRestaurant(newGame(11));
+    const open = openRestaurant(newGame(15));
     playUntil(open, 13 * 60);
     show(open, 'tourGroup');
     answerTheMoment(open, 0);

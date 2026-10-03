@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { balance } from '../data/balance';
 import type { MenuDish } from '../data/dishes';
+import { GROUPS } from '../data/groups';
 import { chooseRestaurant, distanceMetres, dishAppeal, menuMatch, priceLevel, utility } from './choice';
 import { createRng } from './rng';
 import { createPlayerRestaurant } from './setup';
@@ -55,6 +56,16 @@ describe('utility', () => {
     expect(utility(restaurantAt('ogarna', cheaperMenu), localsOnOgarna, 10)!).toBeGreaterThan(near);
 
     expect(utility(restaurantAt('ogarna'), localsOnOgarna, 40)!).toBeLessThan(near);
+  });
+
+  it('keeps an unknown restaurant quiet: only a few people walk in without having heard of it', () => {
+    const withAwareness = (points: number) => {
+      const restaurant = restaurantAt('ogarna');
+      return utility({ ...restaurant, awareness: { ...restaurant.awareness, locals: points } }, localsOnOgarna, 10)!;
+    };
+    // Unheard of, a restaurant is chosen walkInShare times as often as if everyone knew it (all else equal).
+    const gap = withAwareness(100) - withAwareness(0) - GROUPS.locals.choiceWeights.awareness;
+    expect(Math.exp(-gap)).toBeCloseTo(balance.choice.walkInShare);
   });
 });
 

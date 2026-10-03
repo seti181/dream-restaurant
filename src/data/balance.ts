@@ -111,6 +111,12 @@ export const balance = {
     matchesForFullAppeal: 2,
     /** How much less tempting a restaurant looks when people can see every table is taken. */
     fullPenalty: 6,
+    /**
+     * Share of people who'd go into a restaurant they've never heard of, just from walking past.
+     * The rest only come once they've heard of it, so an unknown place stays quiet until word gets
+     * round or it advertises. 1 = awareness only nudges the choice.
+     */
+    walkInShare: 0.3,
   },
 
   weather: {

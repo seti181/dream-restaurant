@@ -50,6 +50,11 @@ interface SeasonResult {
   /** Neptune Score for the player and each rival, and what it's made of. */
   neptune: Record<string, number>;
   neptuneParts: Record<string, { rating: number; share: number }>;
+  /** Share of the opening hours with every table taken: in the first week, and over the season. */
+  fullFirstWeek: number;
+  fullSeason: number;
+  /** When every table was first taken on the first day (minutes after midnight), or null if never. */
+  firstFullOnDay1: number | null;
 }
 
 /** A new game where the player's menu and team are the strategy's. */
@@ -85,7 +90,12 @@ function playSeason(strategy: Strategy, seed: number): SeasonResult {
     fairShare: 0,
     neptune: {},
     neptuneParts: {},
+    fullFirstWeek: 0,
+    fullSeason: 0,
+    firstFullOnDay1: null,
   };
+  const fullTicks = { firstWeek: 0, season: 0 };
+  const openTicks = { firstWeek: 0, season: 0 };
   const ratings = new Map<string, { total: number; count: number }>();
   const fairGuests = new Map<string, number>();
   let allFairGuests = 0;
@@ -125,6 +135,16 @@ function playSeason(strategy: Strategy, seed: number): SeasonResult {
         });
       }
       playTick(open);
+      const tables = floorView(open.progress, 0).tables;
+      const full = tables.length > 0 && tables.every((guests) => guests !== null);
+      const firstWeek = day < 7;
+      openTicks.season++;
+      if (firstWeek) openTicks.firstWeek++;
+      if (full) {
+        fullTicks.season++;
+        if (firstWeek) fullTicks.firstWeek++;
+        if (day === 0 && result.firstFullOnDay1 === null) result.firstFullOnDay1 = minuteOfDay(open.progress.tick);
+      }
     }
     for (const o of open.progress.outcomes) {
       if (o.restaurant === null) continue;
@@ -154,6 +174,8 @@ function playSeason(strategy: Strategy, seed: number): SeasonResult {
     result.lowestCash = Math.min(result.lowestCash, state.cash);
     if (state.gameOver && result.bustWeek === null) result.bustWeek = Math.floor(day / 7) + 1;
   }
+  result.fullFirstWeek = fullTicks.firstWeek / Math.max(1, openTicks.firstWeek);
+  result.fullSeason = fullTicks.season / Math.max(1, openTicks.season);
   result.tables = state.restaurants[0].tables;
   result.staff = state.team.length;
   result.weeklyCash.push(state.cash);
@@ -224,6 +246,23 @@ console.log(
         mean(seasons.map((s) => s.neptune.player)).toFixed(1),
         `${RIVALS[bestRival.id as RivalId].name} ${bestRival.score.toFixed(1)}`,
         `${wins}/${seasons.length}`,
+      ];
+    }),
+  ),
+);
+
+console.log('\nHow often every table is taken (share of opening hours)\n');
+const clockTime = (minute: number) => `${Math.floor(minute / 60)}:${String(Math.round(minute % 60)).padStart(2, '0')}`;
+console.log(
+  table(
+    ['Strategy', 'Full in week 1', 'Full all season', 'First full on day 1'],
+    results.map(({ strategy, seasons }) => {
+      const firsts = seasons.map((s) => s.firstFullOnDay1).filter((m): m is number => m !== null);
+      return [
+        strategy.name,
+        `${(mean(seasons.map((s) => s.fullFirstWeek)) * 100).toFixed(0)}%`,
+        `${(mean(seasons.map((s) => s.fullSeason)) * 100).toFixed(0)}%`,
+        firsts.length === 0 ? 'never' : `${clockTime(mean(firsts))} (${firsts.length}/${seasons.length})`,
       ];
     }),
   ),

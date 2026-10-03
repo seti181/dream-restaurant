@@ -78,7 +78,12 @@ export function utility(
     ? balance.lunchSet.appealBonus * group.lunchSetAppeal
     : 0;
 
+  // People who haven't heard of a restaurant mostly don't think of it; a few walk in anyway.
+  const { walkInShare } = balance.choice;
+  const heardOf = walkInShare + (1 - walkInShare) * (restaurant.awareness[party.group] / 100);
+
   return (
+    Math.log(heardOf) +
     w.taste * menuMatch(restaurant.menu, party.group) +
     w.price * priceTerm +
     w.reputation * (restaurant.reputation[party.group] / 100) +
