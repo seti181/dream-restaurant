@@ -8,7 +8,7 @@ import { teamWages } from '../../sim/game';
 import { fairWageOf, moodOf, offOn, underpaid, type Mood } from '../../sim/staff';
 import type { Employee } from '../../sim/types';
 import { imageUrl } from '../pixel/raster';
-import { portraitPixels, PORTRAIT_ROWS } from '../pixel/sprites';
+import { PERSON_WIDTH, portraitPixels, PORTRAIT_ROWS } from '../pixel/sprites';
 import { money } from '../format';
 import { dayOffDay, useGame } from '../store';
 
@@ -56,7 +56,8 @@ function Portrait({ person, onTeam }: { person: Employee; onTeam: boolean }) {
     url = imageUrl(portraitPixels(kind, person.id, mood));
     portraits.set(key, url);
   }
-  return <img className="portrait" src={url} alt="" width={48} height={(48 / 16) * PORTRAIT_ROWS} />;
+  // Three times as big as the pixels, so each one stays crisp.
+  return <img className="portrait" src={url} alt="" width={PERSON_WIDTH * 3} height={PORTRAIT_ROWS * 3} />;
 }
 
 function PersonCard({ person, action, onTeam = false }: { person: Employee; action: ReactNode; onTeam?: boolean }) {

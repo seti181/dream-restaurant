@@ -65,6 +65,42 @@ export function box(img: Pixels, o: Origin, b: Box, f: Faces): void {
   }
 }
 
+/** The three faces of a box that can be seen. */
+export type FaceName = 'top' | 'left' | 'right';
+
+/**
+ * Draws a box like `box`, but asks `paint` for every pixel's colour, with where it is on its face:
+ * on the top (x, y) from the back corner; on the left side (x, z) and the right side (y, z) from
+ * the bottom corner. For wood grain, doors and patterns.
+ */
+export function texturedBox(img: Pixels, o: Origin, b: Box, paint: (face: FaceName, u: number, v: number) => Rgb): void {
+  const left = Math.floor(o.ox + b.x0 - b.y1) - 1;
+  const right = Math.ceil(o.ox + b.x1 - b.y0) + 1;
+  const top = Math.floor(o.oy + (b.x0 + b.y0) / 2 - b.z1) - 1;
+  const bottom = Math.ceil(o.oy + (b.x1 + b.y1) / 2 - b.z0) + 1;
+  for (let py = top; py <= bottom; py++) {
+    for (let px = left; px <= right; px++) {
+      const sx = px + 0.5 - o.ox;
+      const sy = py + 0.5 - o.oy;
+      const tx = (sx + 2 * (sy + b.z1)) / 2;
+      const ty = (2 * (sy + b.z1) - sx) / 2;
+      if (tx >= b.x0 && tx < b.x1 && ty >= b.y0 && ty < b.y1) {
+        img.set(px, py, paint('top', tx - b.x0, ty - b.y0));
+        continue;
+      }
+      const lx = sx + b.y1;
+      const lz = (lx + b.y1) / 2 - sy;
+      if (lx >= b.x0 && lx < b.x1 && lz >= b.z0 && lz < b.z1) {
+        img.set(px, py, paint('left', lx - b.x0, lz - b.z0));
+        continue;
+      }
+      const ry = b.x1 - sx;
+      const rz = (b.x1 + ry) / 2 - sy;
+      if (ry >= b.y0 && ry < b.y1 && rz >= b.z0 && rz < b.z1) img.set(px, py, paint('right', ry - b.y0, rz - b.z0));
+    }
+  }
+}
+
 /** Same colour on every side: for small things like plates. */
 export const solid = (c: Rgb): Faces => ({ top: c, left: c, right: c });
 

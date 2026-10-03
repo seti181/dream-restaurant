@@ -8,7 +8,7 @@ import { answerTheMoment, newGame, openRestaurant, playTick, type GameState } fr
 import { specialCandidate } from '../../sim/staff';
 import { drawCloud, drawSky, drawStreet } from './street';
 import { COMMUNAL_TABLE_X, PLINTH, drawRoom, guestKind, toSteps, leaveQueuePath, movePath, queueSpot, passerByPath, streetFurniture, STREET_THING_REACH, roomLayout, scenePieces, seatsAt, servePath, waiterSpot, walkPath, type RoomLook, type ScenePiece } from './room';
-import { HEADROOM, PERSON, personPixels, portraitPixels, PORTRAIT_ROWS, SEATED_ROWS, type PersonKind } from './sprites';
+import { HEADROOM, lookOf, PERSON_HEIGHT, PERSON_WIDTH, personPixels, portraitPixels, PORTRAIT_ROWS, SEATED_ROWS, type PersonKind } from './sprites';
 
 const look = (insideTables: number): RoomLook => ({ decor: [], equipment: ['stove'], weather: 'sunny', dusk: false, insideTables });
 
@@ -61,7 +61,7 @@ describe('the pixel-art room layout', () => {
     answerTheMoment(open, 0);
     const table = floorView(open.progress, 0).tables.find((t) => t?.visitor === 'walesa')!;
     expect([0, 1, 2, 3].map((seat) => guestKind(table, seat))).toEqual(['walesa', 'guard', 'guard', 'guard']);
-    for (const kind of ['walesa', 'guard', 'footballer'] as const) expect(personPixels(kind, 'front', 'sit').width).toBe(PERSON[0].length);
+    for (const kind of ['walesa', 'guard', 'footballer'] as const) expect(personPixels(kind, 'front', 'sit').width).toBe(PERSON_WIDTH);
   });
 
   it('puts azulejo tiles on the walls when they are bought', () => {
@@ -336,16 +336,23 @@ describe('characters', () => {
     for (const facing of ['front', 'back'] as const) {
       for (const pose of ['stand', 'walk1', 'walk2'] as const) {
         const image = personPixels(kind, facing, pose, 1);
-        expect(image.width).toBe(16);
-        expect(image.height).toBe(PERSON.length + HEADROOM);
+        expect(image.width).toBe(PERSON_WIDTH);
+        expect(image.height).toBe(PERSON_HEIGHT + HEADROOM);
       }
       expect(personPixels(kind, facing, 'sit').height).toBe(SEATED_ROWS + HEADROOM);
     }
   });
 
+  it('gives guests seven hairstyles, and office workers their glasses', () => {
+    const groups = ['tourists', 'students', 'locals', 'office', 'foodies'] as const;
+    const styles = new Set(groups.flatMap((group) => [0, 1, 2, 3].map((variant) => lookOf(group, variant).hair)));
+    expect([...styles].sort()).toEqual(['bald', 'bob', 'bun', 'cap', 'long', 'short', 'spiky']);
+    expect([0, 1, 2, 3].every((variant) => lookOf('office', variant).glasses)).toBe(true);
+  });
+
   it('draws a portrait of anyone on the team: head and shoulders, with a face for their mood', () => {
     const fine = portraitPixels('waiter', 2, 'fine');
-    expect(fine.width).toBe(PERSON[0].length);
+    expect(fine.width).toBe(PERSON_WIDTH);
     expect(fine.height).toBe(PORTRAIT_ROWS);
     const same = (a: typeof fine, b: typeof fine) => {
       for (let y = 0; y < a.height; y++) for (let x = 0; x < a.width; x++) if (String(a.get(x, y)) !== String(b.get(x, y))) return false;

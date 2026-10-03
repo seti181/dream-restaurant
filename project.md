@@ -719,12 +719,12 @@ Each item is tested in the browser and on the tablet before the next one starts.
 - [x] Attracting passers-by: flyers for people walking past
 - [x] Graphics A: the restaurant fills the screen during the day, with small framed panels in the corners (section 9.3)
 - [x] Graphics A: money and hearts float up from the tables
-- [ ] Graphics C: a richer room: floor, walls, window and kitchen
-- [ ] Graphics C: richer furniture and decor
-- [ ] Graphics C: bigger, more detailed people
+- [x] Graphics C: a richer room: floor, walls, window and kitchen
+- [x] Graphics C: richer furniture and decor
+- [x] Graphics C: bigger, more detailed people
 - [ ] Graphics B: pixel-framed menus and pop-ups
 - [ ] Attracting passers-by: a waiter offering samples at the door
-- [ ] Bigger premises: cellar room, bar counter, kids' corner
+- [ ] Bigger premises: cellar room, bar counter, toilet
 - [ ] Sticker album ("Gdańsk passport")
 - [ ] Mewa's finds
 
@@ -889,3 +889,27 @@ Each item is tested in the browser and on the tablet before the next one starts.
 
   Notes stack under the clock (a gull, who didn't come in, Mewa's tips, a card's result, "Paused"), narrower on small screens. The table helper opens above the round buttons. The restaurant is drawn about 1.6 times bigger (544 → 880 pixels wide at 1364×603). The street now fills the screen, so the riverside background no longer shows during the day. Mewa's tips about the speed and happy hour buttons now say where they are.
 - 2026-10-02: Graphics A, second part: the money each table pays floats up from it the moment its food arrives (that's when the party pays). It's gold with a dark outline, lasts 1.8 seconds at any speed, and replaces the little coin. A heart comes with it when the guests are happy with their food (🙂 or 😋, a score of 60 or more). The heart is set at 60, not at 😋's 80: measured over three seasons for each simulated player, no guest reaches 80 with today's numbers (almost all land between 40 and 60, 😐), so 😋 never shows. Worth a look when balancing.
+- 2026-10-03: Graphics C, first part: a richer room, drawn by the game's own pixel code as before.
+  - **Floor:** honey boards in three tones with grain and the odd knot, and shade where it meets the walls. Soft shadows lie under the tables and the kitchen island, and sunlight falls through the window on bright days.
+  - **Walls:** painted plaster with soft flecks, a darker band below a dado rail, a skirting board and a cornice.
+  - **Window:** curtains on a rod with red tie-backs, and a proper sill. Outside are stepped and pointed Gdańsk gables whose windows light up in the evening. The sun and moon moved out of the window: through the slanting wall they looked squashed, and the sky over the street already shows them.
+  - **On the walls:** a clock above the door (a quarter past one by day, eight in the evening), a chalkboard of today's dishes, and a print of the Żuraw in the bigger rooms. Brass wall lamps with green shades glow warm in the evening; the rope-and-lantern lamps take their place when bought.
+  - **Kitchen:** Delft-blue tiles, copper pans on an iron rail, and a flame flickering under each busy chef's pot.
+
+  Drawing the room costs about the same as before (48 instead of 45 ms on a PC), and it's only redrawn when the room changes or dusk falls. `npx tsx scripts/pixel/room-preview.ts <folder>` draws the game's room, with guests and staff, into pictures for working on the art.
+- 2026-10-03: Graphics C, second part: richer furniture and decor.
+  - **Tables:** wooden tables have boards with grain, a lighter rim, an apron and a pedestal on a cross foot. The embroidered Kashubian cloths hang down the sides, with a red hem and a band of embroidery in blue, red, yellow and green. Terrace tables are white bistro tables on an iron stand.
+  - **On every table:** a little vase with a red tulip, or a candle in the evening that warms the table top.
+  - **Chairs:** slatted backs under a top rail; rattan chairs with woven seats on the terrace.
+  - **Kitchen:** cupboard doors with steel handles under the counter (and under the dessert display), drawers in the island, and a fridge with a freezer door, handles and two magnets. The communal table got the same boards and grain.
+  - **Decor:** carved panelling with light and shade on each panel, ships in bottles with corks and a blue sea, a gold compass rose on the sea chart, three clay pots of different heights with cream bands, a plant wall in three greens with a few flowers, and gold frames with a dark edge.
+- 2026-10-03: Graphics C, third part: bigger, more detailed people, drawn by the game's code instead of fixed pixel grids.
+  - **Size:** people are 18×30 pixels instead of 16×20, not counting hats: a round head, a body down to the waist, legs and two-tone shoes. Sitting, they show down to the waist. The tables stay the same size; the head is about two fifths of a table's width, as in the concept picture.
+  - **Faces:** eyes with a shine and rosy cheeks, with a small mouth just under the eyes; about half the guests smile. The face is lit from the front, with a soft shadow under the fringe and a little shade down one edge. The portraits in the Staff tab are the same faces: a big smile when happy, heavy eyelids when tired, and a drop of sweat when worn out.
+  - **Playtest, same day:** a first version at 20×36 looked cramped next to the tables, and the people looked creepy and unshaven (wide faces with far-apart eyes and brows, and the jaw drawn in the darker skin shade). It was redrawn smaller, without the brows or the jaw shadow and with the eyes closer together.
+  - **Hair:** seven styles: short, bob, long, bun, spiky, bald and a baseball cap, with a shine and a few darker strands. Each group has four looks, so the people at one table never look alike.
+  - **What they wear:** tourists wear T-shirts, a straw hat and a camera on a strap. Students have hoodies with drawstrings and a pocket, and a navy backpack. Locals wear jumpers with a band of Kashubian crosses. Office workers have a shirt with a collar and tie, a belt and grey-framed glasses. Foodies wear a cream scarf with a fringe.
+  - **The team:** waiters are in black, with a white shirt, a bow tie and a long white apron tied at the back. Chefs wear a double-breasted jacket and a pleated toque.
+  - **Poses:** guests sitting towards us rest their arms on the table. Waiters carry the tray at shoulder height, with pierogi and a glass of kompot.
+  - The special guests and named regulars keep their looks at the new size.
+  - Mewa moved to the other end of the windowsill, where the first table's guests no longer hide the gull. The money floating up from a table starts a little higher, above the taller guests' bubbles.

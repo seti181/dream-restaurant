@@ -7,7 +7,7 @@ import type { EquipmentId } from '../../data/dishes';
 import type { LocationId } from '../../data/locations';
 import type { Weather } from '../../data/weather';
 import type { FloorView, TableGuests } from '../../sim/day';
-import { box, placeOn, project, solid, type Faces, type Origin } from './iso';
+import { box, placeOn, project, solid, texturedBox, type Faces, type Origin } from './iso';
 import { hex, mix, Pixels, type Rgb } from './raster';
 import * as S from './sprites';
 import { tableColumns } from '../../sim/seating';
@@ -75,8 +75,6 @@ const C = {
   houses: ['#b5452f', '#e9a23b', '#5d8aa8', '#7a9e6b', '#e4c9a0'].map(hex),
   sky: { sunny: hex('#bfe0f0'), cloudy: hex('#d3dde3'), rain: hex('#a4b4c0'), heatwave: hex('#ffe3a8') } as Record<Weather, Rgb>,
   dusk: hex('#3d4a74'),
-  sun: hex('#f4c531'),
-  moon: hex('#f6efd0'),
   lit: hex('#ffd76a'),
   rainStreak: hex('#e6eef3'),
   cloud: hex('#ffffff'),
@@ -120,12 +118,46 @@ const C = {
   glass: hex('#e6f3f7'),
   cake: hex('#f1d7a0'),
   flowers: [hex('#e9a23b'), hex('#d9412b'), hex('#f4c531'), hex('#ffffff')],
+  trimLight: hex('#b07a4d'),
+  wallLowerLeft: hex('#e6cda2'),
+  wallLowerRight: hex('#eedab4'),
+  plasterLight: hex('#fbf1de'),
+  plankC: hex('#d49a5f'),
+  shadow: hex('#5a3a2a'),
+  sunlight: hex('#fff6dc'),
+  clockFace: hex('#fbf6ea'),
+  chalkLine: hex('#e3e8e2'),
+  copper: hex('#c46a3a'),
+  copperLight: hex('#eb9a62'),
+  copperDark: hex('#8c4220'),
+  delft: hex('#3d5f9e'),
+  dayWindow: hex('#8fa9bb'),
+  darkWindow: hex('#4f5d6e'),
+  sconce: hex('#3c6b4f'),
+  sconceLight: hex('#5a8f6b'),
+  sconceDark: hex('#2b5039'),
+  zurawWood: hex('#5e3b26'),
+  water: hex('#5d8aa8'),
+  lamplight: hex('#ffc861'),
+  tableSeam: hex('#9c6440'),
+  apron: hex('#6b4029'),
+  chairTop: hex('#b97a48'),
+  rattan: hex('#d5a468'),
+  rattanLight: hex('#ebc690'),
+  rattanDark: hex('#a7743f'),
+  clothShade: hex('#efe4cf'),
+  candle: hex('#f6efd9'),
+  tulip: hex('#d9412b'),
+  stem: hex('#4f8a3c'),
+  kashubian: [hex('#2f6f8f'), hex('#d9412b'), hex('#e9a23b'), hex('#3e7a3a')],
+  magnetRed: hex('#d9412b'),
+  magnetYellow: hex('#f4c531'),
+  leafDark: hex('#2e5e2e'),
+  bloom: [hex('#f2a0b5'), hex('#f4c531'), hex('#ffffff')],
 };
 
 const wood: Faces = { top: C.tableTop, left: C.tableLeft, right: C.tableRight, edge: C.tableEdge };
-const chairWood: Faces = { top: C.chair, left: C.chairDark, right: C.chairDark };
 const steel: Faces = { top: C.steelTop, left: C.steelLeft, right: C.steelRight };
-const cabinet: Faces = { top: C.cabinet, left: C.cabinet, right: C.cabinetDark };
 
 // ---------- Layout ----------
 
@@ -228,7 +260,20 @@ function seats(slot: Slot): Seat[] {
 
 // ---------- Drawing helpers ----------
 
-function chair(img: Pixels, o: Origin, seat: Seat, faces: Faces): void {
+/** A chair's colours: wood inside, rattan with a woven seat on the terrace. */
+interface ChairLook {
+  light: Rgb;
+  mid: Rgb;
+  dark: Rgb;
+  seat: Rgb;
+  woven: boolean;
+}
+
+const WOOD_CHAIR: ChairLook = { light: C.chairTop, mid: C.chair, dark: C.chairDark, seat: C.chairTop, woven: false };
+const RATTAN_CHAIR: ChairLook = { light: C.rattanLight, mid: C.rattan, dark: C.rattanDark, seat: C.rattanLight, woven: true };
+
+function chair(img: Pixels, o: Origin, seat: Seat, look: ChairLook): void {
+  const frame: Faces = { top: look.mid, left: look.mid, right: look.dark };
   const [sx0, sx1, sy0, sy1] = seat.chair.seat;
   for (const [lx, ly] of [
     [sx0, sy0],
@@ -236,11 +281,41 @@ function chair(img: Pixels, o: Origin, seat: Seat, faces: Faces): void {
     [sx0, sy1 - 1],
     [sx1 - 1, sy1 - 1],
   ]) {
-    box(img, o, { x0: lx, x1: lx + 1, y0: ly, y1: ly + 1, z0: 0, z1: 7 }, faces);
+    box(img, o, { x0: lx, x1: lx + 1, y0: ly, y1: ly + 1, z0: 0, z1: 7 }, frame);
   }
-  box(img, o, { x0: sx0, x1: sx1, y0: sy0, y1: sy1, z0: 7, z1: SEAT_Z }, faces);
+  texturedBox(img, o, { x0: sx0, x1: sx1, y0: sy0, y1: sy1, z0: 7, z1: SEAT_Z }, (face, u, v) => {
+    if (face !== 'top') return face === 'left' ? look.mid : look.dark;
+    if (look.woven) return (Math.floor(u) + Math.floor(v)) % 2 === 0 ? look.seat : look.mid;
+    return look.seat;
+  });
+  // The back: upright slats under a top rail.
   const [bx0, bx1, by0, by1] = seat.chair.back;
-  box(img, o, { x0: bx0, x1: bx1, y0: by0, y1: by1, z0: SEAT_Z, z1: 18 }, faces);
+  texturedBox(img, o, { x0: bx0, x1: bx1, y0: by0, y1: by1, z0: SEAT_Z, z1: 18 }, (face, u, v) => {
+    if (face === 'top') return look.light;
+    const side = face === 'left' ? look.mid : look.dark;
+    if (v >= 18 - SEAT_Z - 2.4) return side;
+    return Math.floor(u / 1.5) % 2 === 0 ? side : mix(side, C.outline, 0.35);
+  });
+}
+
+/** Cupboard doors along the front of a counter, `width` apart, each with a little steel handle. */
+function cupboard(face: 'top' | 'left' | 'right', u: number, v: number, width: number): Rgb {
+  if (face !== 'left') return face === 'top' ? C.cabinet : C.cabinetDark;
+  if (v < 1) return C.cabinetDark;
+  const at = u % width;
+  if (at < 0.6) return C.cabinetDark;
+  if (at >= width - 1.8 && at < width - 1 && v >= 9 && v < 11) return C.steelTop;
+  return C.cabinet;
+}
+
+/** Two rows of drawers along the front of the kitchen island, each with a handle in the middle. */
+function drawers(face: 'top' | 'left' | 'right', u: number, v: number): Rgb {
+  if (face !== 'left') return face === 'top' ? C.cabinet : C.cabinetDark;
+  if (v < 1 || (v >= 6.5 && v < 7.1)) return C.cabinetDark;
+  const at = u % 8;
+  if (at < 0.6) return C.cabinetDark;
+  if (Math.abs(at - 4.3) < 1 && (Math.abs(v - 4) < 0.5 || Math.abs(v - 10) < 0.5)) return C.steelTop;
+  return C.cabinet;
 }
 
 function plate(img: Pixels, o: Origin, x: number, y: number, z: number, food: Rgb): void {
@@ -329,7 +404,7 @@ export interface ScenePiece {
   /** For bubbles and coins: the guests this piece shows, and their table. */
   guests?: TableGuests;
   table?: number;
-  kind?: 'guest' | 'chef' | 'steam' | 'queue' | 'pigeon' | 'busker' | 'boat';
+  kind?: 'guest' | 'chef' | 'steam' | 'flame' | 'queue' | 'pigeon' | 'busker' | 'boat';
   busy?: boolean;
 }
 
@@ -339,6 +414,73 @@ function piece(o: Origin, key: string, image: SpriteImage, x: number, y: number,
 }
 
 const FOOD: Rgb[] = [hex('#e9a23b'), hex('#b5452f'), hex('#7a9e6b'), hex('#c97a4a')];
+
+/**
+ * A table, drawn around its back corner: a wooden one (boards with grain on a pedestal), one
+ * with an embroidered Kashubian cloth, or a white bistro table on an iron stand on the terrace.
+ * Plates when the food has come, and a little vase with a tulip, or a candle in the evening.
+ */
+function drawTable(img: Pixels, lo: Origin, style: 'wood' | 'cloth' | 'bistro', plates: number, setting: 'vase' | 'candle'): void {
+  // Candlelight warms the top around the middle.
+  const lit = (u: number, v: number, colour: Rgb) => {
+    if (setting !== 'candle') return colour;
+    const d = Math.hypot(u - TABLE / 2, v - TABLE / 2);
+    return d < 6 ? mix(colour, C.lit, 0.3 * (1 - d / 6)) : colour;
+  };
+  if (style === 'bistro') {
+    const iron: Faces = { top: C.ironLight, left: C.ironLight, right: C.iron };
+    box(img, lo, { x0: 4, x1: 12, y0: 7, y1: 9, z0: 0, z1: 0.8 }, iron);
+    box(img, lo, { x0: 7, x1: 9, y0: 4, y1: 12, z0: 0, z1: 0.8 }, iron);
+    box(img, lo, { x0: 7.2, x1: 8.8, y0: 7.2, y1: 8.8, z0: 0.8, z1: 13.5 }, iron);
+    texturedBox(img, lo, { x0: 0, x1: TABLE, y0: 0, y1: TABLE, z0: 13.5, z1: 15 }, (face, u, v) => {
+      if (face !== 'top') return C.bistroShade;
+      if (u >= TABLE - 1 || v >= TABLE - 1) return C.bistroShade;
+      return lit(u, v, C.bistro);
+    });
+  } else {
+    box(img, lo, { x0: 3, x1: 13, y0: 7, y1: 9, z0: 0, z1: 1 }, wood);
+    box(img, lo, { x0: 7, x1: 9, y0: 3, y1: 13, z0: 0, z1: 1 }, wood);
+    box(img, lo, { x0: 6.5, x1: 9.5, y0: 6.5, y1: 9.5, z0: 1, z1: 12 }, wood);
+    if (style === 'wood') {
+      box(img, lo, { x0: 1, x1: TABLE - 1, y0: 1, y1: TABLE - 1, z0: 10.5, z1: 12 }, solid(C.apron));
+      texturedBox(img, lo, { x0: 0, x1: TABLE, y0: 0, y1: TABLE, z0: 12, z1: 15 }, (face, u, v) => {
+        if (face !== 'top') return face === 'left' ? C.tableLeft : C.tableRight;
+        if (u >= TABLE - 1 || v >= TABLE - 1) return C.tableEdge;
+        if (v % 4 < 0.5) return C.tableSeam;
+        return grain(Math.floor(u / 3), Math.floor(v * 2), 41) < 0.12 ? mix(C.tableTop, C.tableSeam, 0.45) : lit(u, v, C.tableTop);
+      });
+    } else {
+      // The cloth hangs down the sides, with a red hem and a band of embroidery.
+      const reach = TABLE + 1.2;
+      texturedBox(img, lo, { x0: -0.6, x1: TABLE + 0.6, y0: -0.6, y1: TABLE + 0.6, z0: 10, z1: 15 }, (face, u, v) => {
+        if (face === 'top') {
+          const edge = Math.min(u, v, reach - u, reach - v);
+          if (edge > 1.4 && edge < 2.4) return Math.floor(u + v) % 3 === 0 ? C.kashubian[Math.floor((u + v) / 3) % C.kashubian.length] : C.cloth;
+          return lit(u, v, C.cloth);
+        }
+        if (v < 0.8) return C.clothEdge;
+        if (v >= 1.8 && v < 2.6 && Math.floor(u) % 2 === 0) return C.kashubian[Math.floor(u / 2) % C.kashubian.length];
+        return face === 'left' ? C.cloth : C.clothShade;
+      });
+    }
+  }
+  const spots: [number, number][] = [
+    [8, 3.5],
+    [8, 12.5],
+    [3.5, 8],
+    [12.5, 8],
+  ];
+  spots.slice(0, plates).forEach(([px, py], i) => plate(img, lo, px, py, 15, FOOD[i % FOOD.length]));
+  const mid = TABLE / 2;
+  if (setting === 'candle') {
+    box(img, lo, { x0: mid - 0.7, x1: mid + 0.7, y0: mid - 0.7, y1: mid + 0.7, z0: 15, z1: 17.5 }, solid(C.candle));
+    box(img, lo, { x0: mid - 0.4, x1: mid + 0.4, y0: mid - 0.4, y1: mid + 0.4, z0: 17.5, z1: 18.6 }, solid(C.lit));
+  } else {
+    box(img, lo, { x0: mid - 0.8, x1: mid + 0.8, y0: mid - 0.8, y1: mid + 0.8, z0: 15, z1: 17 }, { top: C.plate, left: C.plate, right: C.clothShade });
+    box(img, lo, { x0: mid - 0.3, x1: mid + 0.3, y0: mid - 0.3, y1: mid + 0.3, z0: 17, z1: 18 }, solid(C.stem));
+    box(img, lo, { x0: mid - 0.7, x1: mid + 0.7, y0: mid - 0.7, y1: mid + 0.7, z0: 18, z1: 19.2 }, solid(C.tulip));
+  }
+}
 
 // ---------- The room as one background picture ----------
 
@@ -351,23 +493,76 @@ export interface RoomLook {
   insideTables: number;
 }
 
+/** A steady 0–1 number for a spot (and a salt), so textures come out the same every time they're drawn. */
+function grain(a: number, b: number, salt = 0): number {
+  let h = Math.imul(Math.floor(a), 374761393) ^ Math.imul(Math.floor(b), 668265263) ^ Math.imul(salt + 1, -1640531535);
+  h = Math.imul(h ^ (h >>> 13), 1274126177);
+  return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
+}
+
+/** The skirting board along the floor and the cornice under the ceiling; null in between. */
+function trimAt(z: number): Rgb | null {
+  if (z < 1) return C.trimDark;
+  if (z < 3) return C.trim;
+  if (z < 3.6) return C.trimLight;
+  if (z >= WALL_HEIGHT - 1) return C.trimDark;
+  if (z >= WALL_HEIGHT - 4) return z < WALL_HEIGHT - 3.4 ? C.trimLight : C.trim;
+  return null;
+}
+
+/**
+ * Painted plaster: a soft speckle, a darker band below a dado rail, and a little shade low down,
+ * in the corner and under the cornice.
+ */
+function plaster(u: number, z: number, upper: Rgb, lower: Rgb): Rgb {
+  if (z >= 15.4 && z < 17) return z >= 16.4 ? C.trimLight : C.trim;
+  const base = z < 15.4 ? lower : upper;
+  let shade = 0;
+  if (z < 9) shade += ((9 - z) / 9) * 0.35;
+  if (z > WALL_HEIGHT - 9) shade += Math.min(1, (z - (WALL_HEIGHT - 9)) / 5) * 0.25;
+  if (u < 8) shade += ((8 - u) / 8) * 0.35;
+  const fleck = grain(u / 2, z, 5);
+  if (fleck < 0.06) shade += 0.3;
+  const c = shade > 0 ? mix(base, C.wallShade, Math.min(0.7, shade)) : base;
+  return fleck > 0.97 ? mix(c, C.plasterLight, 0.45) : c;
+}
+
+/**
+ * Brass wall lamps with green shades on the left wall, in the gaps between the window and the
+ * pictures; the rope-and-lantern lamps take their place when they're bought.
+ */
+function sconceSpots(layout: RoomLayout, look: RoomLook): number[] {
+  if (look.decor.includes('lanterns')) return [];
+  return [66, 92, 118].filter((u) => u < layout.roomY - 8);
+}
+
+/** Lamplight on a wall or the floor around the wall lamps, in the evening. */
+function sconceLight(layout: RoomLayout, look: RoomLook, colour: Rgb, u: number, z: number, reach: number, strength: number): Rgb {
+  if (!look.dusk) return colour;
+  for (const s of sconceSpots(layout, look)) {
+    const d = Math.hypot(u - s, (z - 35) * 1.3);
+    if (d < reach) colour = mix(colour, C.lamplight, strength * (1 - d / reach));
+  }
+  return colour;
+}
+
 /** The left wall (x = 0): a window onto the Old Town, and decor. Coordinates along the wall are (u = y, z). */
 function leftWall(layout: RoomLayout, look: RoomLook, u: number, z: number): Rgb {
   const has = (id: DecorId) => look.decor.includes(id);
-  if (z < 3) return C.trimDark;
-  if (z >= WALL_HEIGHT - 4) return C.trim;
-  // The window.
-  const win = { u0: 26, u1: 62, z0: 16, z1: 42 };
-  if (u >= win.u0 && u < win.u1 && z >= win.z0 && z < win.z1) return windowView(look, u - win.u0, z - win.z0, win.u1 - win.u0, win.z1 - win.z0);
-  if (u >= win.u0 - 2 && u < win.u1 + 2 && z >= 14 && z < 16) return C.trim;
+  const trim = trimAt(z);
+  if (trim) return trim;
+  const win = windowAt(look, u, z);
+  if (win) return win;
   // Ships in bottles on a shelf.
   if (has('shipsInBottles') && u >= 6 && u < 22 && z >= 30 && z < 38) {
-    if (z < 31) return C.trim;
+    if (z < 31) return z >= 30.6 ? C.trimLight : C.trim;
     const k = (u - 6) % 5;
     if (k < 1) return wallBase(look, u, z);
+    // A cork in each bottle's neck, a little ship on a blue sea inside.
     if (z > 36) return k > 1.5 && k < 3 ? C.trimDark : wallBase(look, u, z);
-    if (z < 32.5) return C.trimDark;
-    return k > 1.5 && k < 3 && z < 35 ? C.sail : C.bottle;
+    if (z < 32) return C.water;
+    if (z < 33) return k > 1.2 && k < 3.6 ? C.trimDark : C.bottle;
+    return k > 1.8 && k < 3 && z < 35.5 ? C.sail : C.bottle;
   }
   // The painted sea chart, then the clay pots, further along the wall.
   const spots = [
@@ -379,26 +574,37 @@ function leftWall(layout: RoomLayout, look: RoomLook, u: number, z: number): Rgb
     const { u0, u1 } = spots[i];
     if (u < u0 || u >= u1) continue;
     if (pictures[i] === 'seaChart' && z >= 20 && z < 36) {
-      if (u < u0 + 1.5 || u >= u1 - 1.5 || z < 21.5 || z >= 34.5) return C.gold;
+      if (u < u0 + 1.5 || u >= u1 - 1.5 || z < 21.5 || z >= 34.5) return u < u0 + 0.6 || z >= 35.4 ? C.trimDark : C.gold;
       const coast = 27 + Math.sin((u - u0) / 2.5) * 3;
       if (Math.abs(z - coast) < 0.7) return C.trimDark;
+      // A compass rose out at sea, in gold.
+      const cu = u - (u0 + 5);
+      const cz = z - 31;
+      if ((Math.abs(cu) < 0.5 && Math.abs(cz) < 2.2) || (Math.abs(cz) < 0.5 && Math.abs(cu) < 2.2)) return z < coast ? C.chartLand : C.gold;
       return z < coast ? C.chartLand : C.chartSea;
     }
-    if (pictures[i] === 'clayPots' && z >= 24 && z < 34) {
-      if (z < 25) return C.trim;
+    if (pictures[i] === 'clayPots' && z >= 24 && z < 36) {
+      if (z < 25) return z >= 24.6 ? C.trimLight : C.trim;
+      // Three pots of different heights, each with a cream band.
+      const pot = Math.floor((u - u0) / 6);
       const k = (u - u0) % 6;
-      const width = 2.2 - Math.abs(z - 29) * 0.25;
-      if (Math.abs(k - 3) < width) return z > 31 ? C.potDark : C.potClay;
+      const height = [7, 10, 8][pot % 3];
+      const widest = 25 + height * 0.45;
+      const width = 2.4 - Math.abs(z - widest) * (3 / height);
+      if (z < 25 + height && Math.abs(k - 3) < Math.max(0.8, width)) {
+        if (Math.abs(z - (widest + 1)) < 0.5) return C.candle;
+        return k > 3.6 ? C.potDark : C.potClay;
+      }
     }
   }
-  return wallBase(look, u, z, C.wallLeft);
+  return sconceLight(layout, look, wallBase(look, u, z, C.wallLeft), u, z, 12, 0.4);
 }
 
 /** The right wall (y = 0): the door, the kitchen backsplash, and decor. Coordinates along it are (u = x, z). */
 function rightWall(layout: RoomLayout, look: RoomLook, u: number, z: number): Rgb {
   const has = (id: DecorId) => look.decor.includes(id);
-  if (z < 3) return C.trimDark;
-  if (z >= WALL_HEIGHT - 4) return C.trim;
+  const trim = trimAt(z);
+  if (trim) return trim;
   // An arched wooden door.
   const { x0, x1 } = layout.door;
   const du = u - (x0 + x1) / 2;
@@ -408,16 +614,19 @@ function rightWall(layout: RoomLayout, look: RoomLook, u: number, z: number): Rg
     if (Math.abs(du - 4.5) < 1 && Math.abs(z - 14) < 1) return C.gold;
     return Math.floor(u) % 4 === 0 ? C.trimDark : C.trim;
   }
-  // White tiles behind the kitchen counter, with the ticket rail above.
+  // A clock above the door.
+  const clock = clockAt(look, du, z - 41.5);
+  if (clock) return clock;
+  // The kitchen's wall: Delft tiles behind the counter, the ticket rail, copper pans.
   if (u >= layout.kitchenX) {
-    if (z >= 33 && z < 34) return C.steelRight;
-    if (z >= 14 && z < 30) return (u % 4 < 0.6 || z % 4 < 0.6) ? C.kitchenGrout : C.kitchenTile;
+    const kitchen = kitchenWall(layout, u, z);
+    if (kitchen) return kitchen;
   }
   // Two merchant portraits.
   if (has('portraits') && z >= 22 && z < 36) {
     for (const f0 of [4, 13]) {
       if (u < f0 || u >= f0 + 7) continue;
-      if (u < f0 + 1 || u >= f0 + 6 || z < 23 || z >= 35) return C.gold;
+      if (u < f0 + 1 || u >= f0 + 6 || z < 23 || z >= 35) return z >= 35.4 || u < f0 + 0.5 ? C.trimDark : C.gold;
       const du2 = u - (f0 + 3.5);
       if (z > 29 && du2 * du2 + (z - 31) * (z - 31) < 3.5) return C.face;
       if (z < 28 && Math.abs(du2) < 2.5 - (28 - z) * 0.1) return C.coat;
@@ -427,7 +636,17 @@ function rightWall(layout: RoomLayout, look: RoomLook, u: number, z: number): Rg
   // A living plant wall.
   if (has('plantWall') && u >= x1 + 4 && u < x1 + 16 && z >= 12 && z < 44) {
     if (u < x1 + 5 || u >= x1 + 15 || z < 13 || z >= 43) return C.trimDark;
-    return (Math.floor(u * 1.3) + Math.floor(z * 0.8)) % 3 === 0 ? C.leafLight : C.leaf;
+    // Leaves in three greens, with a few flowers among them.
+    const n = grain(u, z, 47);
+    if (n < 0.05) return C.bloom[Math.floor(n * 60) % C.bloom.length];
+    return n < 0.35 ? C.leafLight : n < 0.75 ? C.leaf : C.leafDark;
+  }
+  // Today's dishes chalked on a board, and in a bigger room a print of the Żuraw.
+  const board = chalkboardAt(u, z);
+  if (board) return board;
+  if (layout.kitchenX - 6 >= ZURAW.u1) {
+    const print = zurawAt(look, u, z);
+    if (print) return print;
   }
   return wallBase(look, u, z, C.wallRight);
 }
@@ -445,37 +664,155 @@ function wallBase(look: RoomLook, u: number, z: number, colour = C.wallLeft): Rg
     return C.azulejoWhite;
   }
   if (look.decor.includes('panelling') && z < 16) {
-    if (z >= 14) return C.trim;
-    const k = u % 12;
-    return k > 2 && k < 10 && z > 5 && z < 12 ? C.panelInset : C.panel;
+    if (z >= 14) return z >= 15.4 ? C.trimLight : C.trim;
+    // Carved panels: light along the top and left of each, shade along the bottom and right.
+    const k = ((u % 12) + 12) % 12;
+    if (k <= 2 || k >= 10 || z <= 5 || z >= 12) return C.panel;
+    if (z >= 11.3 || k < 2.7) return C.trim;
+    if (z < 5.7 || k > 9.3) return C.trimDark;
+    return C.panelInset;
   }
-  return z < 6 ? C.wallShade : colour;
+  return plaster(u, z, colour, colour === C.wallLeft ? C.wallLowerLeft : C.wallLowerRight);
 }
 
-/** What you see through the window: gabled houses under today's sky. (u, z) run from the window's corner. */
+/** The clock above the door: a quarter past one by day, eight o'clock in the evening. (du, dz) from its middle. */
+function clockAt(look: RoomLook, du: number, dz: number): Rgb | null {
+  const d = Math.hypot(du, dz);
+  if (d >= 3.8) return null;
+  if (d >= 3) return C.trimDark;
+  const [hours, minutes] = look.dusk ? [8, 0] : [1, 15];
+  const hand = (turn: number, length: number) => {
+    const eu = Math.sin(turn * 2 * Math.PI) * length;
+    const ez = Math.cos(turn * 2 * Math.PI) * length;
+    const t = Math.max(0, Math.min(1, (du * eu + dz * ez) / (length * length)));
+    return Math.hypot(du - eu * t, dz - ez * t) < 0.55;
+  };
+  if (hand(minutes / 60, 2.4) || hand((hours % 12) / 12 + minutes / 720, 1.6)) return C.outline;
+  return C.clockFace;
+}
+
+/** The kitchen's wall: Delft tiles with a blue border, the ticket rail, and copper pans on a rail. */
+function kitchenWall(layout: RoomLayout, u: number, z: number): Rgb | null {
+  if (z >= 33 && z < 34) return C.steelRight;
+  if (z >= 14 && z < 30) {
+    if (z >= 28) return z >= 28.6 && z < 29.4 && Math.floor(u) % 2 === 0 ? C.kitchenTile : C.delft;
+    const tu = ((u % 4) + 4) % 4;
+    const tz = (z - 14) % 4;
+    if (tu < 0.6 || tz < 0.6) return C.kitchenGrout;
+    // A little blue flower on every other tile.
+    if ((Math.floor(u / 4) + Math.floor((z - 14) / 4)) % 2 === 0 && Math.abs(tu - 2.3) + Math.abs(tz - 2.3) < 1.1) return C.delft;
+    return C.kitchenTile;
+  }
+  // The iron rail the copper pans hang from (the pans themselves are little pictures, see drawRoom).
+  if (z >= PAN_RAIL && z < PAN_RAIL + 0.8 && u >= layout.kitchenX + 3 && u < layout.roomX - 15) return C.iron;
+  return null;
+}
+
+/** How high the pan rail runs along the kitchen wall. */
+const PAN_RAIL = 44.8;
+
+/** Where the copper pans hang along the rail: over the counter, clear of the fridge at the far end. */
+function panSpots(layout: RoomLayout): number[] {
+  const spots: number[] = [];
+  for (let u = layout.kitchenX + 7; u + 4 <= layout.roomX - 15; u += 8) spots.push(u);
+  return spots;
+}
+
+/** The chalkboard on the right wall, between the door and the kitchen. */
+const CHALKBOARD = { u0: 61, u1: 74, z0: 19, z1: 36 };
+
+function chalkboardAt(u: number, z: number): Rgb | null {
+  const { u0, u1, z0, z1 } = CHALKBOARD;
+  if (u < u0 || u >= u1 || z < z0 || z >= z1) return null;
+  if (u < u0 + 1.2 || u >= u1 - 1.2 || z < z0 + 1.2 || z >= z1 - 1.2) return z < z0 + 0.6 ? C.trimDark : C.trim;
+  // A heading, then three dishes with their prices, in chalk.
+  const lines = [z1 - 4.2, z1 - 7.6, z1 - 10.2, z1 - 12.8];
+  for (let i = 0; i < lines.length; i++) {
+    if (Math.abs(z - lines[i]) >= (i === 0 ? 0.7 : 0.5)) continue;
+    const ends = i === 0 ? [u0 + 3, u1 - 3] : [u0 + 2.5, u0 + 6 + grain(i, 7, 17) * 2.5];
+    const price = i > 0 && u >= u1 - 4.2 && u < u1 - 2.5;
+    if ((u >= ends[0] && u < ends[1]) || price) return grain(Math.floor(u * 1.4), i, 19) > 0.22 ? C.chalkLine : C.chalk;
+  }
+  return grain(u, z, 23) < 0.05 ? mix(C.chalk, C.chalkLine, 0.18) : C.chalk;
+}
+
+/** A print of the Żuraw, the old crane gate on the Motława, for the right wall of a bigger room. */
+const ZURAW = { u0: 82, u1: 98, z0: 22, z1: 36 };
+
+function zurawAt(look: RoomLook, u: number, z: number): Rgb | null {
+  const { u0, u1, z0, z1 } = ZURAW;
+  if (u < u0 || u >= u1 || z < z0 || z >= z1) return null;
+  if (u < u0 + 1.2 || u >= u1 - 1.2 || z < z0 + 1.2 || z >= z1 - 1.2) return C.gold;
+  const iu = u - u0 - 1.2;
+  const iz = z - z0 - 1.2;
+  if (iz < 2.4) return grain(u, z, 29) < 0.15 ? C.sail : C.water;
+  const tower = (iu >= 1.5 && iu < 4.5) || (iu >= 9 && iu < 12);
+  if (tower && iz < 7.5) return Math.floor(iz) % 2 === 0 && Math.floor(iu) % 2 === 0 ? C.brickDark : C.brick;
+  const roof = 11.2 - Math.abs(iu - 6.75) * 0.9;
+  if (iu >= 3.5 && iu < 10 && iz >= 5.5 && iz < roof) return iz >= roof - 0.8 ? C.trimDark : C.zurawWood;
+  return mix(C.sky[look.weather], C.plasterLight, 0.35);
+}
+
+/** The window on the left wall, in wall coordinates (u along the wall, z up). */
+const WINDOW = { u0: 26, u1: 62, z0: 16, z1: 42 };
+
+/** The window: a curtain rod, curtains with tie-backs, the frame and glass with the view, and the sill. Null outside it. */
+function windowAt(look: RoomLook, u: number, z: number): Rgb | null {
+  const { u0, u1, z0, z1 } = WINDOW;
+  if (z >= z1 + 1 && z < z1 + 2.2 && u >= u0 - 4 && u < u1 + 4) return u < u0 - 2.6 || u >= u1 + 2.6 ? C.gold : C.trimDark;
+  if (z >= z0 && z < z1 + 1) {
+    const height = z1 + 1 - z0;
+    const tie = height * 0.42;
+    const h = z - z0;
+    // Each curtain reaches this far over the glass: wide at the top, gathered at the tie-back.
+    const reach = h >= tie ? 3.5 + ((h - tie) / (height - tie)) * 3.5 : 3.5 + ((tie - h) / tie) * 2;
+    const fold = (d: number) => {
+      if (Math.abs(h - tie) < 0.7) return C.brick;
+      if (d > reach + 2.2) return C.curtainShade;
+      return Math.floor(d) % 3 === 0 ? C.curtainShade : C.curtain;
+    };
+    if (u >= u0 - 3 && u < u0 + reach) return fold(u - (u0 - 3));
+    if (u >= u1 - reach && u < u1 + 3) return fold(u1 + 3 - u);
+  }
+  if (u >= u0 - 2 && u < u1 + 2 && z >= 14 && z < 16) return z >= 15.4 ? C.trimLight : z < 14.6 ? C.trimDark : C.trim;
+  if (u >= u0 && u < u1 && z >= z0 && z < z1) return windowView(look, u - u0, z - z0, u1 - u0, z1 - z0);
+  return null;
+}
+
+/** What you see through the window: Gdańsk gables under today's sky. (u, z) run from the window's corner. */
 function windowView(look: RoomLook, u: number, z: number, w: number, h: number): Rgb {
   if (z < 1.5 || z >= h - 1.5 || u < 1.5 || u >= w - 1.5) return C.trimDark;
-  if (u < 6 || u >= w - 6) return Math.floor(u) % 3 === 0 ? C.curtainShade : C.curtain;
-  if (Math.abs(u - w / 2) < 0.8) return C.trimDark;
-  const house = Math.floor((u - 6) / 6);
-  const centre = 6 + house * 6 + 3;
-  const roof = 12 + (house % 2) * 3 - Math.abs(u - centre) * 1.2;
-  if (z < roof) {
-    const pane = Math.abs(u - centre) < 1 && z > 4 && z < 7;
-    if (pane) return look.dusk ? C.lit : C.curtain;
-    return C.houses[(house + 5) % C.houses.length];
-  }
+  if (z < 2.1 || z >= h - 2.1 || u < 2.1 || u >= w - 2.1) return C.trim;
+  if (Math.abs(u - w / 2) < 0.8 || Math.abs(z - h * 0.56) < 0.6) return C.trimDark;
+  const house = gableAt(look, u, z);
+  if (house) return house;
   const sky = look.dusk ? C.dusk : C.sky[look.weather];
   if (look.weather === 'rain' && !look.dusk && Math.floor(u * 2 + z) % 6 === 0) return C.rainStreak;
   if (look.weather === 'cloudy' && !look.dusk) {
     const blob = (cu: number, cz: number, r: number) => (u - cu) ** 2 / (r * r * 4) + (z - cz) ** 2 / (r * r) < 1;
     if (blob(w * 0.3, h - 6, 2) || blob(w * 0.66, h - 4, 1.6)) return C.cloud;
   }
-  if (look.weather !== 'rain' && look.weather !== 'cloudy') {
-    const r = look.weather === 'heatwave' ? 3.2 : 2.4;
-    if ((u - w * 0.72) ** 2 / 4 + (z - (h - 6)) ** 2 < r * r) return look.dusk ? C.moon : C.sun;
-  } else if (look.dusk && (u - w * 0.72) ** 2 / 4 + (z - (h - 6)) ** 2 < 4) return C.moon;
+  // (The sun and the moon are in the sky over the street; through the slanting window they'd look squashed.)
   return z > h - 10 ? sky : mix(sky, C.cloud, 0.25);
+}
+
+/** The houses across the street: stepped and pointed gables, two windows a floor, lit in the evening. */
+function gableAt(look: RoomLook, u: number, z: number): Rgb | null {
+  const i = Math.floor((u + 1) / 7);
+  const du = u + 1 - i * 7;
+  const cu = Math.abs(du - 3.5);
+  const eaves = 10 + (i % 3) * 1.5;
+  const top = i % 2 === 0 ? eaves + 6 - Math.floor(cu / 1.4) * 1.6 : eaves + 6 - cu * 1.6;
+  if (z >= top) return null;
+  let colour = C.houses[(i + 2) % C.houses.length];
+  if (du < 0.6) colour = mix(colour, C.outline, 0.35);
+  const column = Math.abs(du - 2) < 0.75 || Math.abs(du - 5) < 0.75;
+  const row = (z >= 3 && z < 5) || (z >= 7 && z < 9) || (z >= eaves + 1 && z < eaves + 3 && cu < 1);
+  if (column && row && du >= 0.6) {
+    if (!look.dusk) return C.dayWindow;
+    return grain(i * 3 + Math.round(du), Math.floor(z / 2), 21) < 0.6 ? C.lit : C.darkWindow;
+  }
+  return look.dusk ? mix(colour, C.dusk, 0.45) : colour;
 }
 
 /** Granite blocks of the plinth: `u` along the side, `z` below the floor (negative). */
@@ -493,25 +830,38 @@ function floorColour(layout: RoomLayout, x: number, y: number): Rgb {
     const row = Math.floor(v / 9);
     const shift = row % 2 === 0 ? 0 : 6;
     if (v % 9 < 0.6 || (x + shift) % 12 < 0.6) return C.slabGap;
-    return (Math.floor((x + shift) / 12) + row) % 2 === 0 ? C.slabA : C.slabB;
+    const slab = (Math.floor((x + shift) / 12) + row) % 2 === 0 ? C.slabA : C.slabB;
+    return grain(x, y, 37) < 0.07 ? mix(slab, C.slabGap, 0.35) : slab;
   }
   // Under the low side wall.
   if (x >= layout.roomX) return C.stoneB;
   // The kitchen corner: a checkered floor, like reference 2.
   if (x >= layout.kitchenX && y < KITCHEN_DEPTH) {
-    return (Math.floor(x / 8) + Math.floor(y / 8)) % 2 === 0 ? C.checkLight : C.checkDark;
+    const light = (Math.floor(x / 8) + Math.floor(y / 8)) % 2 === 0;
+    if (x % 8 < 0.5 || y % 8 < 0.5) return mix(C.checkLight, C.checkDark, 0.35);
+    return light ? C.checkLight : C.checkDark;
   }
   // Cream tiles inside the front door, like reference 3.
   if (x >= layout.door.x0 + 2 && x < layout.door.x1 - 2 && y > layout.roomY - 16) {
     if (x % 6 < 0.6 || y % 6 < 0.6) return C.tileB;
     return (Math.floor(x / 6) + Math.floor(y / 6)) % 2 === 0 ? C.tileA : C.tileB;
   }
-  // Honey-wood planks.
-  const plank = Math.floor(y / 6);
-  if (y % 6 < 0.6) return C.seam;
-  if ((x + plank * 23) % 40 < 0.8) return C.seam;
-  return plank % 2 === 0 ? C.plankA : C.plankB;
+  // Honey-wood boards in three tones, their ends staggered row by row, with grain and the odd knot.
+  const row = Math.floor(y / 6);
+  const across = y - row * 6;
+  if (across < 0.6) return C.seam;
+  const along = x + ((row * 23) % 40);
+  const board = Math.floor(along / 40);
+  const at = along - board * 40;
+  if (at < 0.8) return C.seam;
+  const tone = PLANKS[Math.floor(grain(row, board, 11) * PLANKS.length)];
+  if (grain(row * 12 + Math.floor(across * 2), Math.floor(at / 5), 13) < 0.16) return mix(tone, C.seam, 0.3);
+  const knot = grain(row, board, 15);
+  if (knot < 0.3 && Math.abs(at - (6 + knot * 90)) < 1 && Math.abs(across - 3) < 0.8) return mix(tone, C.seam, 0.6);
+  return tone;
 }
+
+const PLANKS = [C.plankA, C.plankB, C.plankC];
 
 /** Where lamps hang: over the tables, or one chandelier in the middle. */
 export function lampSpots(layout: RoomLayout, look: RoomLook): { x: number; y: number; z: number; kind: 'pendant' | 'chandelier' | 'lantern' }[] {
@@ -533,6 +883,17 @@ export function drawRoom(layout: RoomLayout, look: RoomLook): Pixels {
   const { width, height, origin: o, roomX, roomY } = layout;
   const img = new Pixels(width, height);
   const glows = lampSpots(layout, look).filter((l) => l.kind !== 'lantern');
+  const sunny = !look.dusk && (look.weather === 'sunny' || look.weather === 'heatwave');
+  const sconces = look.dusk ? sconceSpots(layout, look) : [];
+  // Soft shadows on the floor under the tables and the kitchen island.
+  const k = layout.kitchenX;
+  const shadows = [...layout.inside.slice(0, look.insideTables), ...layout.terrace].map((t) => ({
+    x0: t.x - 1,
+    x1: t.x + TABLE + 1,
+    y0: t.y - 1,
+    y1: t.y + TABLE + 1,
+  }));
+  shadows.push({ x0: k + 15, x1: roomX - 3, y0: 25, y1: 37 });
 
   for (let py = 0; py < height; py++) {
     for (let px = 0; px < width; px++) {
@@ -542,12 +903,35 @@ export function drawRoom(layout: RoomLayout, look: RoomLook): Pixels {
       const fy = (2 * sy - sx) / 2;
       if (fx >= 0 && fx < layout.edgeX && fy >= 0 && fy < layout.edgeY) {
         let colour = floorColour(layout, fx, fy);
+        // How much shade (by the walls, under tables) and lamplight falls here, mixed in once at the end.
+        let shade = 0;
+        let lamp = 0;
+        if (fy < roomY && fx < roomX) {
+          const wall = Math.min(fx, fy);
+          if (wall < 4) shade += 0.25 * (1 - wall / 4);
+          // Sunlight falling through the window on a bright day.
+          const along = fy - fx * 0.6;
+          if (sunny && fx < 30 && along >= WINDOW.u0 + 1 && along < WINDOW.u1 - 1) colour = mix(colour, C.sunlight, 0.22 * (1 - fx / 30));
+          // The wall lamps' light, in the evening.
+          for (const u of sconces) {
+            const d = Math.hypot(fx * 1.2, fy - u);
+            if (d < 12) lamp += 0.25 * (1 - d / 12);
+          }
+        }
         // Warm pools of light under the lamps, in two soft bands.
-        if (fy < roomY) {
-          const near = Math.min(...glows.map((g) => Math.hypot(fx - g.x, fy - g.y)), Infinity);
+        if (fy < roomY && glows.length > 0) {
+          let near = Infinity;
+          for (const g of glows) near = Math.min(near, Math.hypot(fx - g.x, fy - g.y));
           if (near < 10) colour = mix(colour, C.glow, 0.22);
           else if (near < 17) colour = mix(colour, C.glow, 0.1);
         }
+        for (const t of shadows) {
+          if (fx < t.x0 || fx >= t.x1 || fy < t.y0 || fy >= t.y1) continue;
+          const edge = fx < t.x0 + 1 || fx >= t.x1 - 1 || fy < t.y0 + 1 || fy >= t.y1 - 1;
+          shade += edge ? 0.1 : 0.2;
+        }
+        if (shade > 0) colour = mix(colour, C.shadow, Math.min(0.45, shade));
+        if (lamp > 0) colour = mix(colour, C.lamplight, Math.min(0.4, lamp));
         img.set(px, py, colour);
         continue;
       }
@@ -583,13 +967,32 @@ export function drawRoom(layout: RoomLayout, look: RoomLook): Pixels {
 
   // Things against the back walls, drawn back to front onto the room.
   const things: { depth: number; draw: (l: Pixels) => void }[] = [];
-  const k = layout.kitchenX;
+  // Brass wall lamps with green glass shades, lit in the evening (all on one layer: they never overlap).
+  const sconce = S.sprite(S.SCONCE, look.dusk ? S.SCONCE_LIT : S.SCONCE_COLOURS);
+  things.push({ depth: 60, draw: (l) => sconceSpots(layout, look).forEach((u) => placeOn(l, o, sconce, 1, u, 31)) });
+  // Copper pans hanging from the rail over the kitchen counter.
+  things.push({
+    depth: layout.kitchenX + 5,
+    draw: (l) =>
+      panSpots(layout).forEach((u, i) => {
+        const pan = S.sprite(S.PANS[i % S.PANS.length], S.PAN_COLOURS);
+        placeOn(l, o, pan, u, 0.5, PAN_RAIL - pan.height);
+      }),
+  });
   things.push({
     depth: k + 10,
     draw: (l) => {
-      box(l, o, { x0: k + 2, x1: roomX - 14, y0: 1, y1: 10, z0: 0, z1: 14 }, cabinet);
+      texturedBox(l, o, { x0: k + 2, x1: roomX - 14, y0: 1, y1: 10, z0: 0, z1: 14 }, (face, u, v) => cupboard(face, u, v, 7));
       box(l, o, { x0: k + 2, x1: roomX - 14, y0: 1, y1: 10, z0: 14, z1: 16 }, steel);
-      box(l, o, { x0: roomX - 13, x1: roomX - 1, y0: 1, y1: 12, z0: 0, z1: 32 }, { top: C.fridge, left: C.fridge, right: C.fridgeShade });
+      texturedBox(l, o, { x0: roomX - 13, x1: roomX - 1, y0: 1, y1: 12, z0: 0, z1: 32 }, (face, u, v) => {
+        if (face !== 'left') return face === 'top' ? C.fridge : C.fridgeShade;
+        // The fridge's front: a freezer door above, handles, and two magnets.
+        if (v >= 21 && v < 21.7) return C.fridgeShade;
+        if (u >= 1.2 && u < 2 && ((v >= 10 && v < 19) || (v >= 23.5 && v < 29.5))) return C.steelRight;
+        if (Math.hypot(u - 8, v - 26) < 0.9) return C.magnetRed;
+        if (Math.hypot(u - 6.5, v - 15) < 0.9) return C.magnetYellow;
+        return C.fridge;
+      });
       // Machines on the back counter.
       const slots = (['fryer', 'grill', 'espresso'] as EquipmentId[]).filter((id) => look.equipment.includes(id));
       slots.forEach((id, i) => {
@@ -611,7 +1014,7 @@ export function drawRoom(layout: RoomLayout, look: RoomLook): Pixels {
     things.push({
       depth: k - 8,
       draw: (l) => {
-        box(l, o, { x0: k - 16, x1: k - 2, y0: 1, y1: 10, z0: 0, z1: 10 }, cabinet);
+        texturedBox(l, o, { x0: k - 16, x1: k - 2, y0: 1, y1: 10, z0: 0, z1: 10 }, (face, u, v) => cupboard(face, u, v, 7));
         box(l, o, { x0: k - 16, x1: k - 2, y0: 1, y1: 10, z0: 10, z1: 20 }, { top: C.glass, left: C.glass, right: mix(C.glass, C.steelLeft, 0.4) });
         for (const cx of [k - 13, k - 8]) box(l, o, { x0: cx, x1: cx + 4, y0: 4, y1: 8, z0: 11, z1: 14 }, solid(C.cake));
       },
@@ -643,16 +1046,21 @@ export function drawRoom(layout: RoomLayout, look: RoomLook): Pixels {
     things.push({
       depth: x0 + 30,
       draw: (l) => {
-        box(l, o, { x0, x1: x0 + 26, y0: 20, y1: 28, z0: 11, z1: 14 }, wood);
         box(l, o, { x0: x0 + 2, x1: x0 + 4, y0: 22, y1: 26, z0: 0, z1: 11 }, wood);
         box(l, o, { x0: x0 + 22, x1: x0 + 24, y0: 22, y1: 26, z0: 0, z1: 11 }, wood);
-        box(l, o, { x0, x1: x0 + 26, y0: 16, y1: 18, z0: 0, z1: 7 }, chairWood);
+        texturedBox(l, o, { x0, x1: x0 + 26, y0: 20, y1: 28, z0: 11, z1: 14 }, (face, u, v) => {
+          if (face !== 'top') return face === 'left' ? C.tableLeft : C.tableRight;
+          if (u >= 25 || v >= 7) return C.tableEdge;
+          if (v % 4 < 0.5) return C.tableSeam;
+          return grain(Math.floor(u / 3), Math.floor(v * 2), 43) < 0.12 ? mix(C.tableTop, C.tableSeam, 0.45) : C.tableTop;
+        });
+        box(l, o, { x0, x1: x0 + 26, y0: 16, y1: 18, z0: 0, z1: 7 }, { top: C.chairTop, left: C.chair, right: C.chairDark });
       },
     });
   }
   // A plant by the door, and Mewa on the windowsill: always there.
   things.push({ depth: layout.door.x0 - 4, draw: (l) => placeOn(l, o, S.sprite(S.PLANT, S.PLANT_COLOURS), layout.door.x0 - 6, 4, 0) });
-  things.push({ depth: 46, draw: (l) => placeOn(l, o, S.sprite(S.MEWA, S.MEWA_COLOURS), 3, 46, 16) });
+  things.push({ depth: 56, draw: (l) => placeOn(l, o, S.sprite(S.MEWA, S.MEWA_COLOURS), 3, 56, 16) });
 
   for (const thing of things.sort((a, b) => a.depth - b.depth)) {
     const layer = new Pixels(width, height);
@@ -686,28 +1094,13 @@ export function scenePieces(
     const style = outdoor ? 'bistro' : clothed ? 'cloth' : 'wood';
     // Chairs (one sprite per chair, each with its own depth).
     around.forEach((seat, i) => {
-      const faces = outdoor ? { top: C.bistro, left: C.bistroShade, right: C.bistroShade } : chairWood;
-      const image = drawn(`chair:${style}:${i}`, (img, lo) => chair(img, lo, shiftSeat(seat, slot), faces));
+      const image = drawn(`chair:${outdoor ? 'rattan' : 'wood'}:${i}`, (img, lo) => chair(img, lo, shiftSeat(seat, slot), outdoor ? RATTAN_CHAIR : WOOD_CHAIR));
       pieces.push(piece(o, `chair${slot.x},${slot.y},${i}`, image, slot.x, slot.y, 0, seatDepth(seat) + (seat.facing === 'back' ? 1.5 : -1)));
     });
-    // The table itself, with plates when the food has come.
+    // The table itself, with plates when the food has come, and a vase (a candle in the evening).
     const plates = eating ? seated : 0;
-    const table = drawn(`table:${style}:${plates}`, (img, lo) => {
-      const top: Faces = outdoor
-        ? { top: C.bistro, left: C.bistroShade, right: C.bistroShade }
-        : clothed
-          ? { top: C.cloth, left: C.clothEdge, right: C.clothEdge, edge: C.clothEdge }
-          : wood;
-      box(img, lo, { x0: 6, x1: 10, y0: 6, y1: 10, z0: 0, z1: 12 }, outdoor ? { top: C.steelRight, left: C.steelRight, right: C.steelRight } : wood);
-      box(img, lo, { x0: 0, x1: TABLE, y0: 0, y1: TABLE, z0: 12, z1: 15 }, top);
-      const spots: [number, number][] = [
-        [8, 3.5],
-        [8, 12.5],
-        [3.5, 8],
-        [12.5, 8],
-      ];
-      spots.slice(0, plates).forEach(([px, py], i) => plate(img, lo, px, py, 15, FOOD[i % FOOD.length]));
-    });
+    const setting = look.dusk ? 'candle' : 'vase';
+    const table = drawn(`table:${style}:${plates}:${setting}`, (img, lo) => drawTable(img, lo, style, plates, setting));
     pieces.push(piece(o, `table${slot.x},${slot.y}`, table, slot.x, slot.y, 0, slot.x + slot.y + TABLE));
     // The guests, each on their chair.
     if (guests && seated > 0) {
@@ -732,7 +1125,7 @@ export function scenePieces(
   const chefs = floor.chefsBusy.length;
   const island = drawn(`island:${layout.roomX}:${chefs}`, (img, lo) => {
     const x1 = layout.roomX - 4 - (k + 16);
-    box(img, lo, { x0: 1, x1: x1 - 1, y0: 1, y1: 9, z0: 0, z1: 13 }, cabinet);
+    texturedBox(img, lo, { x0: 1, x1: x1 - 1, y0: 1, y1: 9, z0: 0, z1: 13 }, (face, u, v) => drawers(face, u, v));
     box(img, lo, { x0: 0, x1, y0: 0, y1: 10, z0: 13, z1: 15 }, steel);
     box(img, lo, { x0: 3, x1: x1 - 3, y0: 2, y1: 8, z0: 15, z1: 15.5 }, solid(C.stove));
     chefSpots(layout, chefs).forEach((cx) => box(img, lo, { x0: cx - (k + 16) - 2, x1: cx - (k + 16) + 3, y0: 3, y1: 7, z0: 15.5, z1: 20 }, steel));
@@ -744,6 +1137,9 @@ export function scenePieces(
     if (busy) {
       const steam = plainSprite('steam', S.STEAM, S.STEAM_COLOURS);
       pieces.push({ ...piece(o, `steam${i}`, steam, cx + 1, 31, 26, 999), kind: 'steam' });
+      // A flame flickering under the pot, just in front of the island's top.
+      const flame = plainSprite('flame', S.FLAME, S.FLAME_COLOURS);
+      pieces.push({ ...piece(o, `flame${i}`, flame, cx + 1, 33.5, 15.5, k + 16 + 36 + 7), kind: 'flame' });
     }
   });
   pieces.push(piece(o, 'island', island, k + 16, 26, 0, k + 16 + 36 + 6));

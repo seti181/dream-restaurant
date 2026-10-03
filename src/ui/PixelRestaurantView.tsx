@@ -341,9 +341,10 @@ export function canTend(guests: TableGuests | null): boolean {
   return guests !== null && guests.stage !== 'eating' && guests.visitor === null;
 }
 
-/** Little animations for some pieces of the scene: steam over pots, pigeons, the busker, boats. */
+/** Little animations for some pieces of the scene: steam and flames at the pots, pigeons, the busker, boats. */
 const PIECE_CLASSES: Record<string, string> = {
   steam: 'pixel steam',
+  flame: 'pixel flicker',
   pigeon: 'pixel pecking',
   busker: 'pixel busking',
   boat: 'pixel bobbing',
@@ -556,7 +557,7 @@ export function PixelRestaurantView({
 /** Real seconds that the money floats up from a table, the same at any speed. */
 const FLOAT_SECONDS = 1.8;
 /** Where it starts, in world units above the table: just over the guests' bubbles. */
-const FLOAT_HEIGHT = 46;
+const FLOAT_HEIGHT = 48;
 
 interface Float {
   id: string;
