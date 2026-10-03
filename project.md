@@ -1,6 +1,6 @@
 # Old Town Kitchen (working title)
 
-A cozy restaurant management game set in Gdańsk's Old Town, made as a gift for **[HER NAME]**.
+A cozy restaurant management game set in Gdańsk's Old Town, made as a gift for **Joana**.
 Inspired by 90s management games like Pizza Syndicate, but gentler: no crime, no sabotage.
 The player is up against friendly rivals, fighting only for the city's hungry guests.
 
@@ -21,7 +21,7 @@ You start in a tiny place on a quiet street. You then:
 - decorate the dining room
 - win over tourists, students, locals, office workers and foodies
 
-The season runs from spring until the great St. Dominic's Fair in August. At the end of the Fair, the city awards the **Golden Neptune** to the Old Town's favourite restaurant.
+The season runs through the summer holidays until the great St. Dominic's Fair in August. At the end of the Fair, the city awards the **Golden Neptune** to the Old Town's favourite restaurant.
 
 ## 2. Design pillars
 
@@ -36,12 +36,12 @@ The season runs from spring until the great St. Dominic's Fair in August. At the
 - Web game built with **TypeScript + React + Vite**, installed as a **PWA**: an icon on the home screen that opens full screen and works offline.
 - Hosted free on **GitHub Pages**. Updates reach the tablet automatically.
 - **Layout:** landscape only.
-  - Responsive from about 850×530 CSS pixels upwards: Samsung tablets lay the page out smaller than their screen's pixels (a 1920×1200 screen is about 960×600 to the browser).
+  - Responsive from about 850×530 CSS pixels upwards: Samsung tablets lay the page out smaller than their screen's pixels (the Galaxy Tab A lays it out at 1364×603).
   - Touch targets at least 48 px.
   - Nothing depends on hover.
   - Pinch-zoom and pull-to-refresh disabled.
 - **Performance:** must run smoothly on a budget tablet.
-  - DOM/CSS UI. Art is pixel-art sprites (small PNG sprite sheets) shown as DOM images, scaled up by whole numbers so the pixels stay crisp. Light SVG only where it helps; no heavy canvas effects.
+  - DOM/CSS UI. Art is pixel art drawn by the game's own code into images (no image files are downloaded), shown as DOM images and scaled up crisply (section 9.1). Light SVG only where it helps; no heavy canvas effects.
   - Aim for under 5 MB total download, with all art under about 2 MB.
 - **Saves:** automatic save to browser storage at the end of every in-game day.
   - Save data carries a version number so old saves can be migrated.
@@ -113,6 +113,7 @@ Five customer groups, each with its own tastes.
 
 - Each group has its own reputation value (0–100) for every restaurant.
 - Guests arrive in parties of 1–5, depending on the group.
+- People mostly go where they've heard of: only about 30% of the people who'd choose a restaurant they've never heard of walk in anyway (`balance.choice.walkInShare`). Marketing, flyers, regulars and reviews make a place known (section 6.7).
 
 ### 6.3 Menu and dishes
 
@@ -182,13 +183,14 @@ Equipment unlocks templates and adds capacity.
 - **Chefs** have a cuisine specialty: Polish, Italian, Grill, or Pastry.
 - **Hiring:** a candidate pool of 3–4 people, refreshed weekly. Each has a name and a short, funny bio.
 - **Starting wages:** chef about 650 zł/day, waiter about 450 zł/day. Each covers the whole 11-hour day, seven days a week.
-- **Morale:** planned for after the MVP (fair wages and days off keep people happy).
+- **Morale, days off and training** (built in M7): every day's work tires people a little, a day off puts them right, fair wages keep them happy, and a one-day course makes someone a level better.
 
 ### 6.6 Interior and terrace
 
 - **Seats:** start with 16; buy tables in steps of 4 seats, limited by room size.
-- **Decor styles:** Hanseatic, Maritime, Rustic Polish, Modern.
+- **Decor styles:** Hanseatic, Maritime, Rustic Polish, Modern, and a Portuguese corner (azulejo tiles) unlocked by a choice card.
   - Each decor item adds ambiance points.
+  - The room starts cozy, as in the concept picture: plain dark panelling, checked tablecloths, a rug and a fig tree. Bought decor upgrades it (carved oak panelling, Kashubian embroidered cloths).
   - A matching style gives a bonus with certain groups (e.g. Maritime with tourists, Modern with office workers).
 - **Summer terrace (ogródek):**
   - a seasonal permit, available April to September (so it can be open from the first day of the game)
@@ -253,6 +255,8 @@ Equipment unlocks templates and adds capacity.
 | July | Tall ships festival (inspired by Baltic Sail) | Waterfront boom |
 | Late July – mid-August | St. Dominic's Fair (Jarmark św. Dominika) | Huge crowds; the finale and Golden Neptune |
 
+Since the season became six weeks from 8 July (section 6.14), Easter, Majówka, Juwenalia and Corpus Christi fall outside it; the summer holidays, the tall ships festival and the Fair are in it.
+
 **Weather:** sunny, cloudy, rain or heatwave, generated with a seasonal bias.
 
 - Rain cuts foot traffic and shuts the terrace.
@@ -316,9 +320,9 @@ After the playtests of M5b: the game should feel calmer, more varied and more li
 
 **1. A slower day.** One day takes 130 seconds at 1× (it was 50; first 100, then 30 more after playtesting), so there is time to look after tables, shoo gulls and move guests. 2× and 4× stay.
 
-**2. A shorter season: about 40 days, ending with St. Dominic's Fair (Jarmark Dominikański).** Proposed: six full weeks, Monday 8 July to Sunday 18 August (42 days), which keeps the weekly rhythm (rent, Mewa's goal, the rivals' moves and new job candidates every Monday). The season covers the summer holidays, the tall ships festival (11–14 July), the Fair (27 July – 18 August) and the Fair cook-off (10 August). Easter, Majówka, Juwenalia and Corpus Christi fall outside it; the Amber evening on Mariacka (a personal touch) moves into the season. Everything tied to week numbers is rescaled (Tomek and Adrian, the secret recipe, Mewa's goals, rival reactions), and the economy is rebalanced with the simulator so the targets in section 13 still hold. With the slower day, a season is about 70 minutes of service plus planning: two or three evenings.
+**2. A shorter season: about 40 days, ending with St. Dominic's Fair (Jarmark Dominikański).** As built: six full weeks, Monday 8 July to Sunday 18 August (42 days), which keeps the weekly rhythm (rent, Mewa's goal, the rivals' moves and new job candidates every Monday). The season covers the summer holidays, the tall ships festival (11–14 July), the Fair (27 July – 18 August) and the Fair cook-off (10 August). Easter, Majówka, Juwenalia and Corpus Christi fall outside it; the Amber evening on Mariacka (a personal touch) moves into the season. Everything tied to week numbers is rescaled (Tomek and Adrian, the secret recipe, Mewa's goals, rival reactions), and the economy is rebalanced with the simulator so the targets in section 13 still hold. With the slower day, a season is about 70 minutes of service plus planning: two or three evenings.
 
-**3. The tabs during the day.** Map, Menu, Kitchen, Interior, Staff, Marketing and the reports can be opened while the restaurant is open; the clock pauses while a tab is open. Proposed rules (option B): prices, the menu, marketing and the happy hour change straight away; purchases (tables, decor, equipment) are delivered and new staff start the next morning.
+**3. The tabs during the day.** Map, Menu, Kitchen, Interior, Staff, Marketing and the reports can be opened while the restaurant is open; the clock pauses while a tab is open. Rules (option B, as built): prices, the menu, marketing and the happy hour change straight away; purchases (tables, decor, equipment) are delivered and new staff start the next morning.
 
 **4. Choice cards: more of them, and more random.**
 - **Rarity:** common, uncommon, rare and very rare cards (like Lech Wałęsa).
@@ -346,7 +350,7 @@ After the playtests of M5b: the game should feel calmer, more varied and more li
 - **Seasonal ingredients and specials:** what's fresh in July and August (strawberries, blueberries, chanterelles, new potatoes, plums) and a "Dziś polecamy" board for today's special.
 - **Replying to reviews:** a kind reply can win back an unhappy guest.
 - **Attracting passers-by** (C3 in 9.1.1): a waiter offering samples at the door, flyers, a better menu board.
-- **Bigger premises:** a cellar room (piwnica), a bar counter, a kids' corner.
+- **Bigger premises:** a cellar room (piwnica), a bar counter, a toilet.
 - **A sticker album ("Gdańsk passport"):** achievements as collectible pixel stickers.
 - **Mewa's finds:** Mewa brings things she found in town (a piece of amber, a lost key, a recipe card) that unlock decor or small events.
 
@@ -363,6 +367,7 @@ The simulation is pure TypeScript with no UI code. It is deterministic given a s
 2. **Choice.** Each party scores every restaurant within walking range:
    - `utility = w_taste·menuMatch + w_price·priceFit + w_rep·reputation + w_aware·awareness + w_dist·proximity + w_amb·ambiance + w_wait·expectedWait + noise`
    - The weights come from the party's group.
+   - Being unknown counts as well: the utility also gets `ln(walkInShare + (1 − walkInShare)·awareness)`, so a restaurant nobody has heard of is chosen by only `walkInShare` (30%) of the people who'd otherwise pick it.
    - A "no restaurant" option is always included.
    - The party picks with a softmax (logit) choice.
 3. **Service.**
@@ -432,7 +437,7 @@ Notes on the references:
 
 **Look and feel:**
 
-- **View:** isometric rooms on a 2:1 tile grid (e.g. 32×16-pixel floor tiles); characters about 16×24 to 24×32 pixels.
+- **View:** isometric rooms on a 2:1 tile grid. Since 2026-10-03 the restaurant is drawn at 1.25 pixels to a world unit (a table top is 20 pixels across), and people are 24×37 pixels plus room for hats (section 9.3).
 - **Palette:** a small shared palette, warm first. Honey and walnut wood, cream walls, lamp yellow and plant green from reference 3. Gdańsk accents of brick red, amber and sea blue. Steel greys and the checkered floor in the kitchen.
 - **Lines and light:** dark-brown or plum outlines (not pure black), 2–3 shades per colour, soft shadows under people and furniture, warm light pools under lamps.
 - **Gdańsk stays a character:** windows look out onto gabled Old Town houses; the four decor styles (Hanseatic, Maritime, Rustic Polish, Modern) each get their own pixel-art furniture; Mewa becomes a pixel-art herring gull (grey and white, yellow beak with the red spot).
@@ -452,25 +457,25 @@ Notes on the references:
 **Technical approach:**
 
 - The pixel art is **drawn by the game itself**, in code (`src/ui/pixel/`), when it's needed: the room as one background picture, and each piece of furniture and each person as a small sprite. Nothing is downloaded, so it works offline and adds almost nothing to the app's size, and decor, equipment, weather and dusk combine freely.
-- The pictures are shown as DOM images placed on the isometric grid and stacked back to front. Scaling is by whole device pixels with `image-rendering: pixelated` (crisp); only when that would waste a lot of space (the biggest rooms) an in-between scale is used. Animations use CSS.
+- The pictures are shown as DOM images placed on the isometric grid and stacked back to front. Scaling is by whole device pixels with `image-rendering: pixelated` (crisp); when that would waste a lot of space, an in-between scale is used, which is usual for the day screen since the room grew to the concept's scale. Animations use CSS, with transforms where possible (cheap on the tablet).
 - The simulation does not change. The restaurant view keeps reading the same `floorView()` snapshot; only how it is drawn changes.
 - If DOM sprites turn out to be too slow on the tablet, a single plain 2D canvas for the restaurant view is the fallback. That would need a change to the CLAUDE.md rules, so it is asked about first.
 
-**Sources and licences** (to decide before drawing starts, see section 15):
+**Sources and licences** (decided on 2026-10-01: option 3, drawn for this game in code; see the decision log):
 
 1. **Ready-made packs** (e.g. on itch.io): fastest and best looking. The licence must allow use in a non-commercial personal gift. It must also allow the image files to sit in a **public** GitHub repository: GitHub Pages on a free account needs a public repo, and many paid packs forbid sharing the raw files.
 2. **CC0 packs** (e.g. Kenney.nl, OpenGameArt CC0): free and safe to use, but mixing several packs risks a patchy style.
 3. **Pixel art drawn for this game:** by hand, or written as palette-indexed pixel grids in code. Consistent and licence-free, but more work, and simpler than a professional pack.
 4. **AI-generated sprites:** good for trying ideas. Clean pixel grids and consistent animation frames are hard to get, and the service's terms must allow the use.
 
-**Order of work for the pixel art** (one step at a time, each tested in the browser and on the tablet):
+**Order of work for the pixel art** (one step at a time, each tested in the browser and on the tablet; all done in M5):
 
 1. Pick sources and palette, then build **one sample scene** (a small dining room with two tables, one guest, one waiter, one chef) and approve the look.
 2. The restaurant view: rooms, furniture, decor, equipment, terrace.
 3. Characters: guests, staff and special characters, with animations and bubbles.
 4. The Old Town map, food icons and UI icons.
 
-### 9.1.1 The street around the restaurant: proposals (waiting for a choice)
+### 9.1.1 The street around the restaurant (chosen 2026-10-01: A1–A3, B1–B3, C1–C2 and D; built in M5c)
 
 Since 2026-10-01 the restaurant view sits in an Old Town street: cobbles, pavements, rows of gabled houses and the Town Hall spire. Playtest feedback: the sky behind the houses should show the day's forecast, and the restaurant looks as if it stands on the pavement. Proposals below; the chosen ones become roadmap items and decision-log entries.
 
@@ -576,6 +581,8 @@ Playtest wish (2026-10-02): more detailed pixel art and a better layout, measure
 
 Chosen on 2026-10-02: all three, in this order (see M7 in the roadmap).
 
+Built: A on 2026-10-02. C on 2026-10-03, first at the old scale and then, after a playtest, as in the concept picture in four steps: its scale, a cozy starting room, the kitchen's pass and people's poses (see the decision log). B is next.
+
 ## 10. Personal touches (fill in)
 
 - Her name: Joana / the restaurant's default name: **[Joana´s Kitchen ]**
@@ -611,11 +618,11 @@ Chosen on 2026-10-02: all three, in this order (see M7 in the roadmap).
 **After MVP (nice to have):**
 
 - second restaurant
-- staff morale and days off
+- staff morale and days off (built in M7)
 - ingredient stock and deliveries
 - festival stall mini-game at the Fair
-- more dishes and seasonal menus
-- achievements
+- more dishes and seasonal menus (seasonal ingredients and a daily special built in M7)
+- achievements (the sticker album, planned in M7)
 - a Christmas market season
 
 **Out of scope:**
@@ -750,12 +757,14 @@ Each item is tested in the browser and on the tablet before the next one starts.
 **Fixed issue (playtest, 2026-10-01): too many lost guests.** After a few days the "No free table" counter climbs into the hundreds (for example 179 turned away against 138 served on a June day), which feels unnatural. The simulator shows the same: the balanced strategy turns away about eight people for every one it serves over a season.
 
 - **Why:** when choosing a restaurant, people don't notice that it is full. The expected wait they compare only counts order-taking and cooking, not waiting for a table to free up. So a busy, well-liked restaurant keeps attracting far more people than it can seat, and every one of them is counted as turned away. (Turned-away guests don't cost reputation, so it is mostly a numbers and realism problem, but it makes the counter meaningless.)
-- **Proposed fix:**
+- **Fix (built in M5c):**
   1. **People see it's full.** A restaurant with no free table looks less tempting: its expected wait includes the time until the next table frees up, so most people pick somewhere else (or nowhere) before walking over.
   2. **A short queue at the door.** Up to 2–3 parties can wait at the door for a few minutes (within their patience) and are seated when a table frees up; the rest go elsewhere. Visible as people standing by the door, which also fits "Seat guests yourself" (M5b) later.
   3. **Count only who came to the door.** "No free table" then counts parties who actually came and found it full, so it stays a useful hint to buy tables. Target: on the busiest days, turned away stays well below the number served.
   4. Walk-outs (waited too long for food) get the same check in the next simulator run, in case they also pile up on long days.
 - Re-run `npm run simulate` before and after, and report the change.
+
+**Quiet until known (playtest, 2026-10-03).** Tables filled up too soon and too often even without advertising, so a restaurant nobody has heard of now gets few walk-ins (`balance.choice.walkInShare`, section 7). `npm run simulate` also reports how much of the opening hours every table is taken. A new restaurant that does nothing now serves about 20 guests on its first day (6–44) and runs out of money in week 5; advertising is what fills the tables.
 
 ## 14. Installing on the tablet (summary)
 
@@ -947,3 +956,4 @@ Each item is tested in the browser and on the tablet before the next one starts.
   - **At the table:** guests read the menu card while they order (seen from the front). While they wait for the food their hands rest on the table. Once it comes, they eat: the fork waits in the hand, and now and then comes up to the mouth (from behind, the elbow comes up). Each guest has their own rhythm, about one forkful every 2.6 seconds.
   - **In the kitchen:** a busy chef stirs the pot with a wooden spoon, back and forth; a chef with nothing to cook stands ready.
   - The eating and stirring pictures hold both poses side by side, and the screen shows one at a time by sliding the picture with a CSS transform, which is cheap for the tablet. They keep going while the game is paused, like the steam and the flames.
+- 2026-10-03: Mewa's first goal is 250 guests instead of 300 (`data/mewa.ts`). A new restaurant is quieter now: a player who does nothing serves about 235 guests in week one (178–279 over 12 games), so 300 was out of reach without advertising; 250 is reached in 5 of those 12 games with no effort at all, and easily with some. Also kept: the bigger premises are a cellar room, a bar counter and a toilet (not a kids' corner). Simulator, 3 seasons, before → after: do nothing −4,810 → −4,643 zł (one season now earns the 500 zł reward; still out of money in week 5); quality focus −6,355 → −6,022 zł (out of money in week 4 instead of week 3); cheap and fast and balanced unchanged (balanced 43,824 zł, profitable from week 2).
