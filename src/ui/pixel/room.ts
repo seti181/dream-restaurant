@@ -445,20 +445,32 @@ export function personImage(kind: S.PersonKind, facing: Facing, pose: S.Pose, va
   return result;
 }
 
-/** Two walking steps side by side, for a CSS walk cycle. */
-export function walkStrip(kind: S.PersonKind, facing: Facing, variant: number, carry?: S.Carry): SpriteImage {
-  const key = `walk:${kind}:${facing}:${variant % 6}:${carry ?? ''}`;
+/** A person in several poses side by side, for a CSS animation that shows one at a time. */
+function personStrip(kind: S.PersonKind, facing: Facing, poses: S.Pose[], variant: number, carry?: S.Carry): SpriteImage {
+  const key = `strip:${kind}:${facing}:${poses.join()}:${variant % 6}:${carry ?? ''}`;
   const cached = spriteCache.get(key);
   if (cached) return cached;
-  const a = S.personPixels(kind, facing, 'walk1', variant, carry);
-  const b = S.personPixels(kind, facing, 'walk2', variant, carry);
-  const pixels = new Pixels(a.width * 2, a.height);
-  pixels.draw(a, 0, 0);
-  pixels.draw(b, a.width, 0);
-  const result = { pixels, dx: -Math.round(a.width / 2), dy: -a.height };
+  const frames = poses.map((pose) => S.personPixels(kind, facing, pose, variant, carry));
+  const { width, height } = frames[0];
+  const pixels = new Pixels(width * frames.length, height);
+  frames.forEach((frame, i) => pixels.draw(frame, i * width, 0));
+  const result = { pixels, dx: -Math.round(width / 2), dy: -height };
   spriteCache.set(key, result);
   return result;
 }
+
+/** The walk, in four frames: a step, both feet down, a step with the other foot, both feet down. */
+const WALK_POSES: S.Pose[] = ['walk1', 'stand', 'walk2', 'stand'];
+export const WALK_FRAMES = WALK_POSES.length;
+
+/** The steps of a walk side by side, for a CSS walk cycle. */
+export function walkStrip(kind: S.PersonKind, facing: Facing, variant: number, carry?: S.Carry): SpriteImage {
+  return personStrip(kind, facing, WALK_POSES, variant, carry);
+}
+
+/** How long a guest takes over a forkful, and a chef over a stir, in seconds. */
+const BITE_SECONDS = 2.6;
+const STIR_SECONDS = 0.9;
 
 /** Who sits in a seat at a table: the critic, the regulars and some special guests have their own looks. */
 export function guestKind(guests: TableGuests, seat = 0): S.PersonKind {
@@ -489,6 +501,11 @@ export interface ScenePiece {
   table?: number;
   kind?: 'guest' | 'chef' | 'steam' | 'flame' | 'queue' | 'pigeon' | 'busker' | 'boat';
   busy?: boolean;
+  /**
+   * For a picture holding several poses side by side: how many, which rhythm shows them (a
+   * forkful now and then, or stirring back and forth), and how long and how far into it this one is.
+   */
+  frames?: { count: number; rhythm: 'bite' | 'stir'; seconds: number; offset: number };
 }
 
 function piece(o: Origin, key: string, image: SpriteImage, x: number, y: number, z: number, depth: number): ScenePiece {
@@ -1303,8 +1320,18 @@ export function scenePieces(
     // The guests, each on their chair.
     if (guests && seated > 0) {
       around.slice(0, seated).forEach((seat, i) => {
-        const image = personImage(guestKind(guests, i), seat.facing, 'sit', tableIndex * 4 + i);
-        const p = piece(o, `guest${slot.x},${slot.y},${i}`, image, seat.x, seat.y, SEAT_Z, seatDepth(seat));
+        // Reading the menu while they order, then waiting, then eating: a forkful now and then, each at their own pace.
+        const kind = guestKind(guests, i);
+        const variant = tableIndex * 4 + i;
+        let p: ScenePiece;
+        if (guests.stage === 'eating') {
+          const poses: S.Pose[] = seat.facing === 'front' ? ['eat', 'bite'] : ['sit', 'bite'];
+          p = piece(o, `guest${slot.x},${slot.y},${i}`, personStrip(kind, seat.facing, poses, variant), seat.x, seat.y, SEAT_Z, seatDepth(seat));
+          p.frames = { count: 2, rhythm: 'bite', seconds: BITE_SECONDS, offset: ((tableIndex * 0.37 + i * 0.29) % 1) * BITE_SECONDS };
+        } else {
+          const pose = guests.stage === 'ordering' && seat.facing === 'front' ? 'menu' : 'sit';
+          p = piece(o, `guest${slot.x},${slot.y},${i}`, personImage(kind, seat.facing, pose, variant), seat.x, seat.y, SEAT_Z, seatDepth(seat));
+        }
         // Only the first sitter carries the table's bubble.
         pieces.push(i === 0 ? { ...p, guests, kind: 'guest', table: tableIndex } : p);
       });
@@ -1332,8 +1359,12 @@ export function scenePieces(
     const cx = chefSpots(layout, chefs)[i];
     const pan = i % 2 === 1;
     pieces.push(piece(o, `cookware${i}`, drawn(`cookware:${pan}`, (img, lo) => drawCookware(img, lo, pan)), cx, 28.5, 15, passDepth + 0.5));
-    const chef = personImage('chef', 'front', 'stand', floor.chefLooks[i] ?? i);
-    pieces.push({ ...piece(o, `chef${i}`, chef, cx, 18, 0, k + 20 + i * 0.01), kind: 'chef', busy });
+    // A busy chef stirs the pot; one with nothing to cook stands ready.
+    const face = floor.chefLooks[i] ?? i;
+    const chef = busy ? personStrip('chef', 'front', ['stir1', 'stir2'], face) : personImage('chef', 'front', 'stand', face);
+    const chefPiece: ScenePiece = { ...piece(o, `chef${i}`, chef, cx, 18, 0, k + 20 + i * 0.01), kind: 'chef', busy };
+    if (busy) chefPiece.frames = { count: 2, rhythm: 'stir', seconds: STIR_SECONDS, offset: i * 0.3 };
+    pieces.push(chefPiece);
     if (busy) {
       const steam = plainSprite('steam', S.STEAM, S.STEAM_COLOURS);
       pieces.push({ ...piece(o, `steam${i}`, steam, cx, 28.5, pan ? 18 : 21, 999), kind: 'steam' });

@@ -1261,6 +1261,42 @@ h2.spaced {
   animation: steam 1.6s ease-in-out infinite;
 }
 
+/*
+ * Guests eating and chefs stirring: the picture holds two poses side by side, the box shows one,
+ * and the picture jumps along inside it. A forkful comes now and then; stirring goes back and forth.
+ * Moving it with a transform keeps it cheap for the tablet.
+ */
+.pixel-frames {
+  position: absolute;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.pixel-frames > .pixel {
+  left: 0;
+  top: 0;
+  animation-iteration-count: infinite;
+  animation-timing-function: step-end;
+}
+
+.pixel.bite {
+  animation-name: bite;
+}
+
+.pixel.stir {
+  animation-name: stir;
+}
+
+@keyframes bite {
+  0%, 72% { transform: none; }
+  73%, 100% { transform: translateX(var(--frame)); }
+}
+
+@keyframes stir {
+  0%, 49% { transform: none; }
+  50%, 100% { transform: translateX(var(--frame)); }
+}
+
 @keyframes steam {
   50% { transform: translateY(-3px); opacity: 0.4; }
 }
@@ -1353,7 +1389,7 @@ h2.spaced {
   100% { transform: translate(-50%, -300%); opacity: 0; }
 }
 
-/* A guest walking: the browser moves them; this steps through the two walking frames. */
+/* A guest walking: the browser moves them; this steps through the four walking frames. */
 .pixel-walker {
   position: absolute;
   left: 0;
@@ -1362,7 +1398,7 @@ h2.spaced {
   image-rendering: pixelated;
   pointer-events: none;
   animation-name: walk-steps;
-  animation-timing-function: steps(2);
+  animation-timing-function: steps(4);
   animation-iteration-count: infinite;
 }
 

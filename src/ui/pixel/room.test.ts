@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { balance } from '../../data/balance';
 import { LOCATION_IDS, LOCATIONS } from '../../data/locations';
 import { REGULAR_IDS } from '../../data/regulars';
-import { floorView, startDay, stepDay, type FloorView } from '../../sim/day';
+import { floorView, startDay, stepDay, type FloorView, type TableGuests } from '../../sim/day';
 import * as actions from '../../sim/actions';
 import { answerTheMoment, newGame, openRestaurant, playTick, type GameState } from '../../sim/game';
 import { specialCandidate } from '../../sim/staff';
@@ -348,15 +348,67 @@ describe('characters', () => {
     ...['tourists', 'students', 'locals', 'office', 'foodies', 'critic', 'regular', 'waiter', 'tomek', 'adrian', 'chef'] as const,
     ...REGULAR_IDS,
   ];
-  it.each(kinds)('%s can be drawn from the front and back, standing, walking and sitting', (kind) => {
+  it.each(kinds)('%s can be drawn from the front and back, standing, walking, sitting and eating', (kind) => {
     for (const facing of ['front', 'back'] as const) {
-      for (const pose of ['stand', 'walk1', 'walk2'] as const) {
+      for (const pose of ['stand', 'walk1', 'walk2', 'stir1', 'stir2'] as const) {
         const image = personPixels(kind, facing, pose, 1);
         expect(image.width).toBe(PERSON_WIDTH);
         expect(image.height).toBe(PERSON_HEIGHT + HEADROOM);
       }
-      expect(personPixels(kind, facing, 'sit').height).toBe(SEATED_ROWS + HEADROOM);
+      for (const pose of ['sit', 'eat', 'bite', 'menu'] as const) expect(personPixels(kind, facing, pose).height).toBe(SEATED_ROWS + HEADROOM);
     }
+  });
+
+  it('shows guests reading the menu, then eating a forkful now and then, and busy chefs stirring', () => {
+    const layout = roomLayout(6, 0);
+    const at = (stage: TableGuests['stage']): TableGuests => ({
+      group: 'locals',
+      seated: 4,
+      stage,
+      impatience: 0,
+      satisfaction: stage === 'eating' ? 70 : null,
+      eatingFor: 0,
+      bill: 0,
+      critic: false,
+      regular: false,
+      regularId: null,
+      visitor: null,
+      drink: false,
+      apology: false,
+      moved: false,
+      tablesUsed: 1,
+      since: 660,
+    });
+    const floor: FloorView = {
+      location: 'ogarna',
+      tables: [at('ordering'), at('waiting'), at('eating')],
+      insideTables: 3,
+      terraceTables: 0,
+      chefsBusy: [true, false],
+      waiters: [null],
+      chefLooks: [0, 1],
+      waiterLooks: [2],
+      decor: [],
+      equipment: ['stove'],
+      ordersWaiting: 1,
+      walkouts: [],
+      atTheDoor: [],
+      leftTheDoor: [],
+    };
+    const pieces = scenePieces(layout, floor, look(3));
+    const guest = (table: number, seat: number) => {
+      const slot = layout.inside[table];
+      return pieces.find((p) => p.key === `guest${slot.x},${slot.y},${seat}`)!;
+    };
+    // Eating: two poses side by side, a forkful now and then.
+    expect(guest(2, 0).frames).toMatchObject({ count: 2, rhythm: 'bite' });
+    expect(guest(2, 0).image.pixels.width).toBe(2 * PERSON_WIDTH);
+    // Ordering, facing us: the menu in their hands, unlike while they wait for the food.
+    expect(guest(0, 0).frames).toBeUndefined();
+    expect(guest(0, 0).image.pixels.data.join()).not.toBe(guest(1, 0).image.pixels.data.join());
+    // The busy chef stirs; the idle one stands ready.
+    expect(pieces.find((p) => p.key === 'chef0')!.frames).toMatchObject({ count: 2, rhythm: 'stir' });
+    expect(pieces.find((p) => p.key === 'chef1')!.frames).toBeUndefined();
   });
 
   it('gives guests seven hairstyles, and office workers their glasses', () => {

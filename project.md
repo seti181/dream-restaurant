@@ -725,7 +725,7 @@ Each item is tested in the browser and on the tablet before the next one starts.
 - [x] Graphics C as in the concept: the concept's scale, with the room drawn 1.25 times bigger, tables further apart, taller walls and people at about 24×38 (`art/concepts/v3/c-richer-art-day.png`)
 - [x] Graphics C as in the concept: a cozy starting room (plain dark panelling, checked tablecloths with plates and glasses, a rug, a fig tree and a jar shelf); bought decor upgrades them
 - [x] Graphics C as in the concept: the kitchen as a long wooden counter (the pass) with plates and a heat lamp
-- [ ] Graphics C as in the concept: people's details and poses at the new size
+- [x] Graphics C as in the concept: people's details and poses at the new size
 - [ ] Graphics B: pixel-framed menus and pop-ups
 - [ ] Attracting passers-by: a waiter offering samples at the door
 - [ ] Bigger premises: cellar room, bar counter, toilet
@@ -942,3 +942,8 @@ Each item is tested in the browser and on the tablet before the next one starts.
   - **The pick-up end:** the end of the pass nearest the waiters, with no chef in front of it. A plate waits there for every chef who's busy cooking (up to three), under a heat lamp hanging on two chains. The lamp's red strip warms the wood below, more so in the evening.
   - **Room for the chefs:** the kitchen is 64 units wide instead of 52 (the room grew in the first step), so two chefs stand clear of each other and three still fit. The fryer, grill and espresso machine stay on the back counter, under the copper pans.
   - `npx tsx scripts/pixel/room-preview.ts <folder>` now also draws the kitchen up close, with a third chef in the bigger room.
+- 2026-10-03: Graphics C as in the concept, fourth step: people's poses.
+  - **Walking:** four frames instead of two: a step, both feet down, a step with the other foot, both feet down. People walk at the same pace as before, more smoothly.
+  - **At the table:** guests read the menu card while they order (seen from the front). While they wait for the food their hands rest on the table. Once it comes, they eat: the fork waits in the hand, and now and then comes up to the mouth (from behind, the elbow comes up). Each guest has their own rhythm, about one forkful every 2.6 seconds.
+  - **In the kitchen:** a busy chef stirs the pot with a wooden spoon, back and forth; a chef with nothing to cook stands ready.
+  - The eating and stirring pictures hold both poses side by side, and the screen shows one at a time by sliding the picture with a CSS transform, which is cheap for the tablet. They keep going while the game is paused, like the steam and the flames.

@@ -29,9 +29,11 @@ import {
   servePath,
   walkPath,
   walkStrip,
+  WALK_FRAMES,
   type Point,
   type RoomLayout,
   type RoomLook,
+  type ScenePiece,
 } from './pixel/room';
 import type { Carry, PersonKind } from './pixel/sprites';
 import { useGame } from './store';
@@ -198,7 +200,7 @@ function Walker({
       }
       data-walker={walk.waiter !== undefined ? 'waiter' : walk.id.startsWith('passer') ? 'passer' : 'guest'}
       style={{
-        width: (strip.pixels.width / 2) * scale,
+        width: (strip.pixels.width / WALK_FRAMES) * scale,
         height: strip.pixels.height * scale,
         backgroundImage: `url(${urlOf(strip.pixels)})`,
         backgroundSize: `${strip.pixels.width * scale}px ${strip.pixels.height * scale}px`,
@@ -341,6 +343,9 @@ export function canTend(guests: TableGuests | null): boolean {
   return guests !== null && guests.stage !== 'eating' && guests.visitor === null;
 }
 
+/** How wide a piece of the scene is on screen: one pose, for a picture holding several. */
+const pieceWidth = (p: ScenePiece) => p.image.pixels.width / (p.frames?.count ?? 1);
+
 /** Little animations for some pieces of the scene: steam and flames at the pots, pigeons, the busker, boats. */
 const PIECE_CLASSES: Record<string, string> = {
   steam: 'pixel steam',
@@ -434,15 +439,42 @@ export function PixelRestaurantView({
           style={{ left: -at(marginX), top: -at(marginY), width: at(streetWidth), zIndex: 0 }}
         />
         <img src={background} className="pixel" alt="" style={{ left: 0, top: 0, width: at(layout.width), zIndex: 0 }} />
-        {pieces.map((p) => (
-          <img
-            key={p.key}
-            src={urlOf(p.image.pixels)}
-            className={PIECE_CLASSES[p.kind ?? ''] ?? 'pixel'}
-            alt=""
-            style={{ left: at(p.px), top: at(p.py), width: at(p.image.pixels.width), zIndex: zOf(p.depth) }}
-          />
-        ))}
+        {pieces.map((p) =>
+          p.frames ? (
+            // Several poses side by side: the box shows one at a time, and the picture slides along inside it.
+            <div
+              key={p.key}
+              className="pixel-frames"
+              style={{
+                left: at(p.px),
+                top: at(p.py),
+                width: at(p.image.pixels.width / p.frames.count),
+                height: at(p.image.pixels.height),
+                zIndex: zOf(p.depth),
+              }}
+            >
+              <img
+                src={urlOf(p.image.pixels)}
+                className={`pixel ${p.frames.rhythm}`}
+                alt=""
+                style={{
+                  width: at(p.image.pixels.width),
+                  ['--frame' as string]: `${-at(p.image.pixels.width / p.frames.count)}px`,
+                  animationDuration: `${p.frames.seconds}s`,
+                  animationDelay: `${-p.frames.offset}s`,
+                }}
+              />
+            </div>
+          ) : (
+            <img
+              key={p.key}
+              src={urlOf(p.image.pixels)}
+              className={PIECE_CLASSES[p.kind ?? ''] ?? 'pixel'}
+              alt=""
+              style={{ left: at(p.px), top: at(p.py), width: at(p.image.pixels.width), zIndex: zOf(p.depth) }}
+            />
+          ),
+        )}
         {walks.map((walk) => (
           <Walker key={walk.id} walk={walk} layout={layout} scale={scale} speed={speed} onDone={done} />
         ))}
@@ -503,7 +535,7 @@ export function PixelRestaurantView({
             <span
               key={`${p.key}:waiting`}
               className="pixel-bubble"
-              style={{ left: at(p.px + p.image.pixels.width / 2), top: at(p.py + 4) }}
+              style={{ left: at(p.px + pieceWidth(p) / 2), top: at(p.py + 4) }}
             >
               ⏳
             </span>
@@ -511,7 +543,7 @@ export function PixelRestaurantView({
         {/* Bubbles above the seated guests, on top of everything. */}
         {pieces.map((p) => {
           if (p.kind !== 'guest' || !p.guests) return null;
-          const x = at(p.px + p.image.pixels.width / 2);
+          const x = at(p.px + pieceWidth(p) / 2);
           const y = at(p.py + 4);
           const bubble = bubbleFor(p.guests);
           const urgent = onTableTap !== undefined && p.table !== undefined && canHelp(p.guests);

@@ -517,7 +517,14 @@ export function lookOf(kind: PersonKind, variant = 0): Look {
   }
 }
 
-export type Pose = 'stand' | 'sit' | 'walk1' | 'walk2';
+/**
+ * How someone stands or sits: standing, the two steps of a walk, a chef stirring (two ways), or at
+ * a table: resting, eating (the fork in hand, or at the mouth) or reading the menu.
+ */
+export type Pose = 'stand' | 'walk1' | 'walk2' | 'stir1' | 'stir2' | 'sit' | 'eat' | 'bite' | 'menu';
+
+/** Poses at a table, where the table hides everything below the waist. */
+export const seated = (pose: Pose): boolean => pose === 'sit' || pose === 'eat' || pose === 'bite' || pose === 'menu';
 
 /** What a waiter carries: a tray with a plate of food, or the empty tray on the way back. */
 export type Carry = 'full' | 'empty';
@@ -530,6 +537,9 @@ const OUTLINE = hex('#3b2433');
 const GOLD = hex('#d9a92b');
 const TRAY = { light: hex('#d6dde2'), dark: hex('#8a979e'), plate: hex('#fdf8ee'), food: hex('#e9b65a'), foodShade: hex('#c98f3a'), greens: hex('#6aa84f'), glass: hex('#cfe6f0'), kompot: hex('#b5452f') };
 const SWEAT = hex('#7fb2d3');
+const STEEL = { light: hex('#e3e8eb'), mid: hex('#c9d1d6') };
+const SPOON = hex('#8a5a36');
+const MENU = { card: hex('#f7f0e0'), edge: hex('#c8b89a'), title: hex('#b5452f'), text: hex('#9a8a78') };
 
 // Where things are on a person, in pixels from the left and rows from the top of the head.
 /** The middle of the body, between two columns. */
@@ -645,7 +655,7 @@ function drawPerson(image: Pixels, look: Look, facing: 'front' | 'back', pose: P
   }
 
   // Legs and shoes; when walking, one foot is lifted. A waiter's long apron hangs over them.
-  const sitting = pose === 'sit';
+  const sitting = seated(pose);
   if (!sitting) {
     const pants = colour('p');
     const pantsShade = colour('P');
@@ -677,24 +687,31 @@ function drawPerson(image: Pixels, look: Look, facing: 'front' | 'back', pose: P
     }
   }
 
-  // Arms by the sides, swinging when walking; short sleeves show the forearms.
+  // Arms by the sides, swinging when walking; short sleeves show the forearms. A stirring arm, an
+  // arm raised to eat and the arm under a tray are drawn with the hands, over everything else.
   const swing = pose === 'walk1' ? 1 : pose === 'walk2' ? -1 : 0;
   const sleeve = wear === 'tee' ? 19 : 23;
   const armsOnTable = sitting && front;
+  const stirring = pose === 'stir1' || pose === 'stir2';
+  const leftFree = !stirring;
+  const rightFree = !carry && pose !== 'bite';
   for (let y = 17; y <= 25; y++) {
     if (armsOnTable && y > 21) break;
     const bare = y > sleeve;
     const hand = y >= 24;
-    at(4, y + swing, bare || hand ? skin : shirt);
-    at(5, y + swing, bare || hand ? skin : shirtShade);
-    if (carry) continue;
-    at(18, y - swing, bare || hand ? skinShade : mix(shirtShade, OUTLINE, 0.15));
-    at(19, y - swing, bare || hand ? skinShade : shirtShade);
+    if (leftFree) {
+      at(4, y + swing, bare || hand ? skin : shirt);
+      at(5, y + swing, bare || hand ? skin : shirtShade);
+    }
+    if (rightFree) {
+      at(18, y - swing, bare || hand ? skinShade : mix(shirtShade, OUTLINE, 0.15));
+      at(19, y - swing, bare || hand ? skinShade : shirtShade);
+    }
   }
   if ((wear === 'jumper' || wear === 'chef') && !armsOnTable) {
     // Cuffs.
-    for (const x of [4, 5]) at(x, 23 + swing, shirtShade);
-    if (!carry) for (const x of [18, 19]) at(x, 23 - swing, mix(shirtShade, OUTLINE, 0.25));
+    if (leftFree) for (const x of [4, 5]) at(x, 23 + swing, shirtShade);
+    if (rightFree) for (const x of [18, 19]) at(x, 23 - swing, mix(shirtShade, OUTLINE, 0.25));
   }
 
   // The head: round (Adrian's is longer and narrower). Lit from the front, with just a little
@@ -793,20 +810,76 @@ function drawPerson(image: Pixels, look: Look, facing: 'front' | 'back', pose: P
   }
 }
 
-/** Drawn over any accessories: forearms resting on the table, and a tray held up on one hand. */
+/**
+ * Drawn over any accessories: forearms resting on the table, a fork, a menu, a fork raised to the
+ * mouth, a chef's arm stirring the pot, and a tray held up on one hand.
+ */
 function drawHands(image: Pixels, look: Look, facing: 'front' | 'back', pose: Pose, carry: Carry | undefined): void {
   const colour = (key: string) => hex(look.palette[key]);
   const at = (x: number, y: number, c: Rgb) => image.set(x, y + HEADROOM, c);
   const skin = colour('s');
   const skinShade = colour('S');
+  const shirt = colour('c');
   const shirtShade = colour('C');
-  // Seated, facing us: forearms resting on the table, the hands together.
-  if (pose === 'sit' && facing === 'front') {
-    const forearm = look.wear === 'tee' ? skin : shirtShade;
+  const tee = look.wear === 'tee';
+  const forearm = tee ? skin : shirtShade;
+  const front = facing === 'front';
+  if (seated(pose) && front) {
+    // The left forearm rests on the table.
     for (let x = 4; x <= 8; x++) at(x, 22, forearm);
-    for (let x = 15; x <= 19; x++) at(x, 22, forearm);
     for (const x of [9, 10]) at(x, 22, skin);
-    for (const x of [13, 14]) at(x, 22, skinShade);
+    if (pose === 'bite') {
+      // The right hand brings the fork up to the mouth: the upper arm down to the elbow, then the forearm across.
+      for (let y = 17; y <= 20; y++) {
+        const bare = tee && y > 19;
+        at(18, y, bare ? skinShade : mix(shirtShade, OUTLINE, 0.15));
+        at(19, y, bare ? skinShade : shirtShade);
+      }
+      for (const [x, y] of [[16, 20], [17, 20], [16, 19], [17, 19], [15, 18], [16, 18], [15, 17], [16, 17], [14, 16], [15, 16]]) at(x, y, forearm);
+      for (const [x, y] of [[14, 15], [15, 15], [13, 14], [14, 14]]) at(x, y, skin);
+      at(12, 13, STEEL.light);
+    } else {
+      // The right forearm rests on the table too.
+      for (let x = 15; x <= 19; x++) at(x, 22, forearm);
+      for (const x of [13, 14]) at(x, 22, skinShade);
+      // A fork held up in the right hand, ready.
+      if (pose === 'eat') for (const y of [19, 20, 21]) at(14, y, y === 19 ? STEEL.light : STEEL.mid);
+      if (pose === 'menu') {
+        // The menu card, held up in both hands: a red heading and a few lines of dishes.
+        for (let y = 17; y <= 22; y++) {
+          for (let x = 9; x <= 15; x++) {
+            const edge = x === 9 || x === 15 || y === 17 || y === 22;
+            const line = !edge && ((y === 18 && x >= 10 && x <= 14) || ((y === 20 || y === 21) && x % 2 === 0));
+            at(x, y, edge ? MENU.edge : line ? (y === 18 ? MENU.title : MENU.text) : MENU.card);
+          }
+        }
+        for (const y of [21, 22]) {
+          at(8, y, skin);
+          at(16, y, skinShade);
+        }
+      }
+    }
+  }
+  if (pose === 'bite' && !front) {
+    // Seen from behind, the right elbow comes up.
+    for (let y = 15; y <= 18; y++) {
+      at(18, y, mix(shirtShade, OUTLINE, 0.15));
+      at(19, y, shirtShade);
+    }
+    at(20, 16, shirtShade);
+    at(20, 17, shirtShade);
+  }
+  if (pose === 'stir1' || pose === 'stir2') {
+    // The left arm reaches down to the pot in front, a wooden spoon in the hand, back and forth.
+    const low = pose === 'stir1';
+    const arm: [number, number][] = low
+      ? [[4, 17], [5, 17], [3, 18], [4, 18], [2, 19], [3, 19], [2, 20], [3, 20]]
+      : [[4, 17], [5, 17], [3, 18], [4, 18], [3, 19], [4, 19]];
+    arm.forEach(([x, y], i) => at(x, y, i % 2 === 0 ? shirt : shirtShade));
+    const hand: [number, number][] = low ? [[1, 21], [2, 21]] : [[2, 20], [3, 20]];
+    for (const [x, y] of hand) at(x, y, skin);
+    const spoon: [number, number][] = low ? [[1, 22], [0, 23]] : [[2, 21], [1, 22], [0, 23]];
+    for (const [x, y] of spoon) at(x, y, SPOON);
   }
   // A tray on one hand: a plate of pierogi and a glass of kompot, or nothing on the way back.
   if (carry) {
@@ -953,7 +1026,7 @@ export function personPixels(
   }
   drawHands(image, look, facing, pose, carry);
   image.outline(OUTLINE);
-  return pose === 'sit' ? image.crop(0, 0, image.width, HEADROOM + SEATED_ROWS) : image;
+  return seated(pose) ? image.crop(0, 0, image.width, HEADROOM + SEATED_ROWS) : image;
 }
 
 // ---------- Portraits for the Staff tab ----------
