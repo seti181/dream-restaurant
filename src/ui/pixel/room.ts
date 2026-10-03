@@ -12,7 +12,12 @@ import { hex, mix, Pixels, type Rgb } from './raster';
 import * as S from './sprites';
 import { tableColumns } from '../../sim/seating';
 
-export const WALL_HEIGHT = 52;
+/**
+ * Pixels to a world unit: the room is drawn at the concept's scale (project.md section 9.3,
+ * `c-richer-art-day.png`), so people, furniture and walls all have room for detail.
+ */
+export const ROOM_SCALE = 1.25;
+export const WALL_HEIGHT = 60;
 /** The floor stands this high above the street, on a stone plinth (like a cut-away dollhouse). */
 export const PLINTH = 6;
 /** The cut-away front and side walls: this thick and this high. */
@@ -21,6 +26,8 @@ export const LOW_WALL = { thick: 4, high: 10 };
 const STEPS = 8;
 /** A table top is 16 × 16 world units. */
 const TABLE = 16;
+/** Tables stand this far apart: a table, a chair on each side and an aisle to walk down. */
+const GRID = 44;
 /** The kitchen corner reaches this far from the back wall. */
 const KITCHEN_DEPTH = 44;
 /** The communal table stands along the back wall from here (26 long, y 16 to 28). */
@@ -195,19 +202,19 @@ export interface RoomLayout {
 export function roomLayout(maxTables: number, terraceTables: number): RoomLayout {
   const cols = tableColumns(maxTables);
   const rows = Math.max(1, Math.ceil(maxTables / cols));
-  const roomX = cols === 3 ? 128 : 160;
-  const roomY = 54 + rows * 36;
+  const roomX = 8 + cols * GRID + (cols === 3 ? 12 : 8);
+  const roomY = 54 + rows * GRID;
   const inside: Slot[] = [];
-  for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) inside.push({ x: 8 + c * 36, y: 56 + r * 36 });
+  for (let r = 0; r < rows; r++) for (let c = 0; c < cols; c++) inside.push({ x: 8 + c * GRID, y: 56 + r * GRID });
 
   // The terrace is a przedproże: a stone platform in front of the house, with a balustrade.
   const terraceRows = terraceTables > 3 ? 2 : terraceTables > 0 ? 1 : 0;
-  const terraceDepth = terraceRows * 36 + (terraceRows > 0 ? 12 : 0);
+  const terraceDepth = terraceRows * GRID + (terraceRows > 0 ? 12 : 0);
   const perRow = Math.ceil(terraceTables / Math.max(1, terraceRows));
   const frontY = roomY + LOW_WALL.thick;
   const terrace: Slot[] = Array.from({ length: terraceTables }, (_, i) => ({
-    x: 8 + (i % perRow) * 36,
-    y: frontY + 16 + Math.floor(i / perRow) * 36,
+    x: 8 + (i % perRow) * GRID,
+    y: frontY + 16 + Math.floor(i / perRow) * GRID,
   }));
 
   const edgeX = roomX + LOW_WALL.thick;
@@ -215,7 +222,8 @@ export function roomLayout(maxTables: number, terraceTables: number): RoomLayout
   const streetY = edgeY + STEPS + 6;
   // The picture ends just past the steps; people on the street walk over the street picture around it.
   const totalY = edgeY + STEPS + 2;
-  const origin = { ox: totalY + 8, oy: WALL_HEIGHT + 10 };
+  const k = ROOM_SCALE;
+  const origin = { ox: (totalY + 8) * k, oy: (WALL_HEIGHT + 10) * k, k };
   return {
     roomX,
     roomY,
@@ -223,8 +231,8 @@ export function roomLayout(maxTables: number, terraceTables: number): RoomLayout
     edgeX,
     edgeY,
     streetY,
-    width: edgeX + totalY + 16,
-    height: origin.oy + (edgeX + totalY) / 2 + PLINTH + 8,
+    width: Math.ceil((edgeX + totalY + 16) * k),
+    height: Math.ceil(origin.oy + ((edgeX + totalY) / 2 + PLINTH + 8) * k),
     origin,
     inside,
     terrace,
@@ -338,10 +346,11 @@ const spriteCache = new Map<string, SpriteImage>();
  * Draws something around a world point (0, 0, 0) on a scratch picture, outlines it,
  * and crops it tight. Cached by key, so each kind of thing is only drawn once.
  */
-function drawn(key: string, draw: (img: Pixels, o: Origin) => void, size = 96): SpriteImage {
+function drawn(key: string, draw: (img: Pixels, o: Origin) => void, units = 96): SpriteImage {
   const cached = spriteCache.get(key);
   if (cached) return cached;
-  const o = { ox: size / 2, oy: size * 0.7 };
+  const size = Math.ceil(units * ROOM_SCALE);
+  const o = { ox: size / 2, oy: size * 0.7, k: ROOM_SCALE };
   const img = new Pixels(size, size);
   draw(img, o);
   img.outline(C.outline);
@@ -897,8 +906,8 @@ export function drawRoom(layout: RoomLayout, look: RoomLook): Pixels {
 
   for (let py = 0; py < height; py++) {
     for (let px = 0; px < width; px++) {
-      const sx = px + 0.5 - o.ox;
-      const sy = py + 0.5 - o.oy;
+      const sx = (px + 0.5 - o.ox) / ROOM_SCALE;
+      const sy = (py + 0.5 - o.oy) / ROOM_SCALE;
       const fx = (sx + 2 * sy) / 2;
       const fy = (2 * sy - sx) / 2;
       if (fx >= 0 && fx < layout.edgeX && fy >= 0 && fy < layout.edgeY) {

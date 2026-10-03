@@ -722,6 +722,10 @@ Each item is tested in the browser and on the tablet before the next one starts.
 - [x] Graphics C: a richer room: floor, walls, window and kitchen
 - [x] Graphics C: richer furniture and decor
 - [x] Graphics C: bigger, more detailed people
+- [x] Graphics C as in the concept: the concept's scale, with the room drawn 1.25 times bigger, tables further apart, taller walls and people at about 24×38 (`art/concepts/v3/c-richer-art-day.png`)
+- [ ] Graphics C as in the concept: a cozy starting room (plain dark panelling, checked tablecloths with plates and glasses, a rug, a fig tree and a jar shelf); bought decor upgrades them
+- [ ] Graphics C as in the concept: the kitchen as a long wooden counter (the pass) with plates and a heat lamp
+- [ ] Graphics C as in the concept: people's details and poses at the new size
 - [ ] Graphics B: pixel-framed menus and pop-ups
 - [ ] Attracting passers-by: a waiter offering samples at the door
 - [ ] Bigger premises: cellar room, bar counter, toilet
@@ -918,3 +922,10 @@ Each item is tested in the browser and on the tablet before the next one starts.
   - **balanced** (advertises, buys tables): 42,627 → 43,824 zł, profitable from week 2 (was week 3). Its tables are still full most of the time (85% → 82%), as advertising is what fills them.
   - **cheap and fast** still goes bust in week 3 (3/3, as before). **quality focus** now goes bust in all three seasons in week 3 (before: two of three, in week 5).
   - Golden Neptune for the balanced player 38.8 → 38.4; Bar Błyskawica still best at 44.5.
+- 2026-10-03: Playtest: `art/concepts/v3/c-richer-art-day.png` is what the graphics should look like. Chosen: the full concept rather than only its details. The room, furniture and people are drawn about 1.25 times bigger in pixels, with tables further apart and taller walls, so on the tablet things stay about today's size but get the concept's detail and room to breathe. The street stays around the restaurant. Also chosen: cozy from the start. The starting room gets plain dark panelling, simple checked cloths, a rug and a plant, as in the concept, and bought decor upgrades them (carved oak panelling, Kashubian embroidered cloths), so purchases still show. Done in steps (roadmap, M7), each checked before the next.
+- 2026-10-03: Graphics C as in the concept, first step: the concept's scale.
+  - **Scale:** the restaurant and its street are drawn 1.25 pixels to a world unit instead of 1 (`ROOM_SCALE` in `room.ts`; the isometric helpers take the scale from the picture's origin). Walls, floor, furniture and the street all grow together, and a table top is now 20 pixels across, as in the concept.
+  - **Room to breathe:** tables stand 44 units apart instead of 36, so there's an aisle between them, and the walls are 60 units high instead of 52 (75 pixels, close to the concept's 80).
+  - **People:** 24×37 pixels (plus room for hats) instead of 18×30, with the same friendly faces: eyes with a shine, rosy cheeks, a small mouth, no brows and no shadow along the jaw. The Staff tab's portraits are the same faces.
+  - On the tablet's 1364×603 the room shows at about 1.8 screen pixels to an art pixel instead of 2.55, so things look about the same size as before but with more detail and space. Drawing the room and the street takes about twice as long as before (on a PC, Ogarna's room 36 → 68 ms and street 31 → 54 ms), but they're only redrawn when the room changes or at dusk.
+  - The small hand-drawn sprites (wall lamps, the pot plant, Mewa, the pans) keep their size, as in the concept picture; plants and decor come in the next step.

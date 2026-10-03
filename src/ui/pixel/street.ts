@@ -8,7 +8,7 @@ import type { LocationId } from '../../data/locations';
 import { STREET_STYLES, type Landmark, type StreetStyle } from './streetStyle';
 import type { Weather } from '../../data/weather';
 import { hex, mix, Pixels, type Rgb } from './raster';
-import { LOW_WALL, PLINTH, type RoomLayout, type RoomLook } from './room';
+import { LOW_WALL, PLINTH, ROOM_SCALE, type RoomLayout, type RoomLook } from './room';
 import { AWNING_COLOURS, drawTownhouse, FACADE_COLOURS, frontWidth, GRANARY_COLOURS, type TownhouseFront } from './townhouse';
 
 const C = {
@@ -440,12 +440,13 @@ export function drawStreet(
   const roomY = layout.roomY + LOW_WALL.thick;
   const ox = layout.origin.ox + marginX;
   // Everything outside stands on the street, a plinth lower than the restaurant's floor.
-  const oy = layout.origin.oy + marginY + PLINTH;
+  const oy = layout.origin.oy + marginY + PLINTH * ROOM_SCALE;
   // Three rows of houses: behind the back wall, above the left wall, and next door on the left.
-  const behind = rowOfHouses(1997, width + 40, 56, 74, look.dusk, style);
+  const reach = width / ROOM_SCALE + 40;
+  const behind = rowOfHouses(1997, reach, 56, 74, look.dusk, style);
   // The street's landmark, further back on the right, peeking over the roofs.
   const from = roomX + (style.landmark === 'stMarys' ? 16 : 30);
-  const room = oy + (from + 11) / 2 - 4;
+  const room = oy / ROOM_SCALE + (from + 11) / 2 - 4;
   const landmark = style.landmark && {
     draw: LANDMARKS[style.landmark],
     from,
@@ -453,12 +454,12 @@ export function drawStreet(
     height: Math.max(84, Math.round(room - 40)) + (style.landmark === 'stMarys' ? 8 : 0),
   };
   const above = rowOfHouses(1410, roomY + 1, 56, 72, look.dusk, style);
-  const nextDoor = rowOfHouses(1308, width + 40, 28, 42, look.dusk, style);
+  const nextDoor = rowOfHouses(1308, reach, 28, 42, look.dusk, style);
 
   for (let py = 0; py < height; py++) {
     for (let px = 0; px < width; px++) {
-      const sx = px + 0.5 - ox;
-      const sy = py + 0.5 - oy;
+      const sx = (px + 0.5 - ox) / ROOM_SCALE;
+      const sy = (py + 0.5 - oy) / ROOM_SCALE;
       let sample: Sample | null;
       let haze = 0;
       let z: number;

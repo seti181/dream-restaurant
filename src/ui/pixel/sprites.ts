@@ -28,12 +28,12 @@ export function sprite(rows: readonly string[], palette: Palette): Pixels {
 // ---------- People ----------
 
 /** A person's picture: this wide, and this tall below the HEADROOM rows kept free for hats. */
-export const PERSON_WIDTH = 18;
-export const PERSON_HEIGHT = 30;
+export const PERSON_WIDTH = 24;
+export const PERSON_HEIGHT = 37;
 /** Room above the head for hats, buns and spiky hair. */
-export const HEADROOM = 6;
+export const HEADROOM = 7;
 /** Rows of a person that show above a table when they sit: the head and the body down to the waist. */
-export const SEATED_ROWS = 23;
+export const SEATED_ROWS = 27;
 
 const BASE = { o: '#3b2433', s: '#f3c9a5', S: '#d9a27f', e: '#3b2433', k: '#f2a08a', m: '#a8564a', b: '#4a3426' };
 
@@ -195,104 +195,105 @@ export interface Overlay {
 }
 
 const SUN_HAT: Overlay = {
-  x: 0,
+  x: 1,
   y: -3,
   rows: [
-    '.....oooooooo.....',
-    '....oyyyyyyyyo....',
-    '...oyyyyyyyyyyo...',
-    '...oyyyyyyyyyyo...',
-    '...orrrrrrrrrro...',
-    'ooyyyyyyyyyyyyyyoo',
-    '.oooooooooooooooo.',
+    '......oooooooooo......',
+    '.....oyyyyyyyyyyo.....',
+    '....oyyyyyyyyyyyyo....',
+    '....oyyyyyyyyyyyyo....',
+    '....orrrrrrrrrrrro....',
+    'ooyyyyyyyyyyyyyyyyyyoo',
+    '.oooooooooooooooooooo.',
   ],
 };
 /** A camera on a strap round the neck. */
-const CAMERA: Overlay = { x: 7, y: 15, facing: 'front', rows: ['K...K', 'K...K', 'ooooo', 'oKLzo', 'ooooo'] };
-const BACKPACK_STRAPS: Overlay = { x: 5, y: 15, facing: 'front', rows: Array(6).fill('B......B') };
+const CAMERA: Overlay = { x: 10, y: 18, facing: 'front', rows: ['K...K', 'K...K', 'ooooo', 'oKLzo', 'ooooo'] };
+const BACKPACK_STRAPS: Overlay = { x: 7, y: 17, facing: 'front', rows: Array(7).fill('B........B') };
 const BACKPACK: Overlay = {
-  x: 4,
-  y: 15,
+  x: 6,
+  y: 17,
   facing: 'back',
-  rows: ['oooooooooo', 'oBBBBBBBBo', 'oBBBBBBBBo', 'oGGGGGGGGo', 'oBBBBBBBBo', 'oBGGGGGGBo', 'oBGGGGGGBo', 'oooooooooo'],
+  rows: ['oooooooooooo', 'oBBBBBBBBBBo', 'oBBBBBBBBBBo', 'oGGGGGGGGGGo', 'oBBBBBBBBBBo', 'oBBGGGGGGBBo', 'oBBGGGGGGBBo', 'oBBBBBBBBBBo', 'oooooooooooo'],
 };
 /** A band of white crosses with yellow middles across a local's jumper. */
-const KASHUBIAN_PATTERN: Overlay = { x: 4, y: 17, rows: ['.z..z..z..', 'zyzzyzzyz.', '.z..z..z..'] };
+const KASHUBIAN_PATTERN: Overlay = { x: 6, y: 19, rows: ['.z..z..z..z.', 'zyzzyzzyzzyz', '.z..z..z..z.'] };
 /** A foodie's cream scarf, with one end hanging down and a fringe; from behind, just the wrap. */
 const SCARF: Overlay = {
-  x: 4,
-  y: 15,
+  x: 6,
+  y: 17,
   facing: 'front',
-  rows: ['ffffffffff', 'AAffffffAA', '......ffA.', '......ffA.', '......ffA.', '......f.f.'],
+  rows: ['ffffffffffff', 'AAffffffffAA', '........ffA.', '........ffA.', '........ffA.', '........f.f.'],
 };
-const SCARF_BACK: Overlay = { x: 4, y: 15, facing: 'back', rows: ['ffffffffAA', 'AAAAAAAAAA'] };
+const SCARF_BACK: Overlay = { x: 6, y: 17, facing: 'back', rows: ['ffffffffffAA', 'AAAAAAAAAAAA'] };
 /** A black beret, worn at a tilt. */
-const BERET: Overlay = { x: 1, y: -2, rows: ['.....oooooooo...', '...ooKKKKKKKKoo.', '..oKKKKKKKKKKKKo', '..oooooooooooooo'] };
+const BERET: Overlay = { x: 3, y: -2, rows: ['......oooooooo....', '....ooKKKKKKKKoo..', '...oKKKKKKKKKKKKo.', '...oooooooooooooo.'] };
 const FLAT_CAP: Overlay = {
-  x: 1,
+  x: 3,
   y: -1,
-  rows: ['...oooooooooo...', '..oQQQQQQQQQQo..', '.oQQQQQQQQQQQQo.', 'oDDDDDDDDDDDDDDo', 'oooooooooooooooo'],
+  rows: ['....oooooooooo....', '...oQQQQQQQQQQo...', '..oQQQQQQQQQQQQo..', '.oDDDDDDDDDDDDDDo.', 'oooooooooooooooooo'],
 };
-const KOMPOT_STAIN: Overlay = { x: 10, y: 22, facing: 'front', rows: ['r.', '.r'] };
+const KOMPOT_STAIN: Overlay = { x: 14, y: 27, facing: 'front', rows: ['r.', '.r'] };
 /** A tall pleated toque. */
 const CHEF_HAT: Overlay = {
-  x: 0,
-  y: -6,
+  x: 2,
+  y: -7,
   rows: [
-    '.....oooooooo.....',
-    '...oowwwwwwwwoo...',
-    '..owwwwwwwwwwwWo..',
-    '..owwwwwwwwwwwWo..',
-    '...owwWwwWwwWWo...',
-    '...owWwwWwwWwWo...',
-    '...oWWWWWWWWWWo...',
-    '...oooooooooooo...',
+    '......oooooooo......',
+    '....oowwwwwwwwoo....',
+    '...owwwwwwwwwwwWo...',
+    '..owwwwwwwwwwwwwWo..',
+    '..owwwwwwwwwwwwwWo..',
+    '...owwWwwWwwWwwWo...',
+    '...owWwwWwwWwwWWo...',
+    '...oWWWWWWWWWWWWo...',
+    '...oooooooooooooo...',
   ],
 };
 /** A big white walrus moustache, drooping at the ends. */
-const MOUSTACHE: Overlay = { x: 4, y: 10, facing: 'front', rows: ['.oWWWWWWo.', 'oWWWWWWWWo', 'oWWo..oWWo', '.oo....oo.'] };
+const MOUSTACHE: Overlay = { x: 7, y: 11, facing: 'front', rows: ['.oWWWWWWo.', 'oWWWWWWWWo', 'oWWo..oWWo', '.oo....oo.'] };
 /** A little red-and-white Solidarność badge on the lapel. */
-const BADGE: Overlay = { x: 5, y: 17, facing: 'front', rows: ['r', 'z'] };
+const BADGE: Overlay = { x: 8, y: 19, facing: 'front', rows: ['r', 'z'] };
 /** Security's earpiece wire. */
-const EARPIECE: Overlay = { x: 15, y: 8, facing: 'front', rows: ['L', 'L', 'L', 'L', 'L'] };
+const EARPIECE: Overlay = { x: 19, y: 10, facing: 'front', rows: ['L', 'L', 'L', 'L', 'L'] };
 /** An accordion held across the chest: white and black keys on the left, red bellows with white folds. */
 const ACCORDION: Overlay = {
-  x: 2,
-  y: 16,
+  x: 5,
+  y: 18,
   facing: 'front',
   rows: ['oooooooooooooo', 'owwoRzRzRzRzRo', 'owKoRzRzRzRzRo', 'owwoRzRzRzRzRo', 'owKoRzRzRzRzRo', 'oooooooooooooo'],
 };
 /** A headscarf, for the amber seller. */
 const HEADSCARF: Overlay = {
-  x: 0,
+  x: 2,
   y: -1,
   rows: [
-    '...oooooooooooo...',
-    '..oXXXXXXXXXXXXo..',
-    '.oXXXXXXXXXXXXXXo.',
-    '.oXXXXXXXXXXXXXXo.',
-    '.oXXXXXXXXXXXXXXo.',
-    ...Array(6).fill('.oXXo........oXXo.'),
-    '..oXo........oXo..',
+    '....oooooooooooo....',
+    '...oXXXXXXXXXXXXo...',
+    '..oXXXXXXXXXXXXXXo..',
+    '..oXXXXXXXXXXXXXXo..',
+    '..oXXXXXXXXXXXXXXo..',
+    ...Array(7).fill('..oXXo........oXXo..'),
+    '...oXo........oXo...',
   ],
 };
 /** Lechia Gdańsk's green and white stripes. */
-const STRIPES: Overlay = { x: 5, y: 15, facing: 'front', rows: Array(8).fill('.z.z.z.z') };
+const STRIPES: Overlay = { x: 7, y: 17, facing: 'front', rows: Array(9).fill('.z.z.z.z.z') };
 
 // The named regulars (data/regulars.ts).
 /** Filip's office lanyard. */
-const LANYARD: Overlay = { x: 7, y: 15, facing: 'front', rows: ['L..L', 'L..L', '.LL.', '.ww.', '.ww.'] };
+const LANYARD: Overlay = { x: 10, y: 17, facing: 'front', rows: ['L..L', 'L..L', '.LL.', '.ww.', '.ww.'] };
 /** Mr Fletcher's khaki bucket hat. */
 const BUCKET_HAT: Overlay = {
-  x: 0,
+  x: 2,
   y: -2,
-  rows: ['...oooooooooooo...', '..offffffffffffo..', '.offffffffffffffo.', 'offffffffffffffffo', '.oooooooooooooooo.'],
+  rows: ['....oooooooooooo....', '...offffffffffffo...', '..offffffffffffffo..', 'offffffffffffffffffo', '.oooooooooooooooooo.'],
 };
 /** Pan Henryk's white moustache, drooping a little at the ends. */
-const DROOPING_MOUSTACHE: Overlay = { x: 6, y: 10, facing: 'front', rows: ['.wwww.', 'w....w'] };
+const DROOPING_MOUSTACHE: Overlay = { x: 9, y: 11, facing: 'front', rows: ['.wwww.', 'w....w'] };
 /** Weronika's sketchbook under her arm, and paint on her trousers. */
-const SKETCHBOOK: Overlay = { x: 13, y: 17, facing: 'front', rows: ['oooo', 'owwo', 'owKo', 'oooo'] };
-const PAINT_SPOTS: Overlay = { x: 5, y: 24, facing: 'front', rows: ['.R...L', '..R...'] };
+const SKETCHBOOK: Overlay = { x: 18, y: 20, facing: 'front', rows: ['oooo', 'owwo', 'owKo', 'oooo'] };
+const PAINT_SPOTS: Overlay = { x: 7, y: 29, facing: 'front', rows: ['.R....L', '...R...'] };
 
 /** Everyone who can appear in the restaurant. */
 export type PersonKind =
@@ -532,22 +533,22 @@ const SWEAT = hex('#7fb2d3');
 
 // Where things are on a person, in pixels from the left and rows from the top of the head.
 /** The middle of the body, between two columns. */
-const MIDDLE = 9;
+const MIDDLE = 12;
 /** The head is an oval around (MIDDLE, HEAD_MIDDLE). */
-const HEAD_MIDDLE = 6.8;
+const HEAD_MIDDLE = 8.4;
 /** The eyes take three rows from here, at these columns (two pixels wide each). */
-const EYE_ROW = 7;
-const EYES = [5, 11];
-const MOUTH_ROW = 11;
+const EYE_ROW = 8;
+const EYES = [8, 14];
+const MOUTH_ROW = 12;
 /** The body: the top from the shoulders to the waist, then trousers, then shoes. */
-const SHOULDERS = 14;
-const WAIST = 23;
-const SHOES = 27;
+const SHOULDERS = 16;
+const WAIST = 27;
+const SHOES = 34;
 
 /**
  * Draws a person in code: a round head with shining eyes and rosy cheeks, hair in their style,
  * and clothes with light from the upper left and the details of what they wear. Legs step for
- * walking. Small, like reference 1: the head is about two fifths of a table's width.
+ * walking. Proportions as in the concept picture: the head is about two fifths of a table's width.
  */
 function drawPerson(image: Pixels, look: Look, facing: 'front' | 'back', pose: Pose, carry: Carry | undefined, mood: FaceMood): void {
   const colour = (key: string) => hex(look.palette[key]);
@@ -566,79 +567,80 @@ function drawPerson(image: Pixels, look: Look, facing: 'front' | 'back', pose: P
   // The top, from the shoulders to the waist, with a fold or two.
   for (let y = SHOULDERS; y < WAIST; y++) {
     const inset = y === SHOULDERS ? 1 : 0;
-    for (let x = 4 + inset; x <= 13 - inset; x++) {
-      const fold = wear !== 'waiter' && wear !== 'suit' && ((y === 19 && x === 6) || (y === 20 && x === 7) || (y === 17 && x === 10));
-      at(x, y, x >= 12 || fold ? shirtShade : x <= 5 ? shirtLight : shirt);
+    for (let x = 6 + inset; x <= 17 - inset; x++) {
+      const fold = wear !== 'waiter' && wear !== 'suit' && ((y === 21 && x === 8) || (y === 22 && x === 9) || (y === 19 && x === 14));
+      at(x, y, x >= 16 || fold ? shirtShade : x <= 7 ? shirtLight : shirt);
     }
   }
   if (front) {
     switch (wear) {
       case 'tee':
         // A round neck.
-        for (let x = 7; x <= 10; x++) at(x, 15, shirtShade);
+        for (let x = 10; x <= 13; x++) at(x, 17, shirtShade);
         break;
       case 'hoodie':
         // Drawstrings and a front pocket.
-        for (const x of [7, 10]) for (let y = 15; y <= 17; y++) at(x, y, accent);
-        for (let x = 5; x <= 12; x++) at(x, 19, shirtShade);
-        for (let y = 20; y <= 21; y++) {
-          at(5, y, shirtShade);
-          at(12, y, shirtShade);
+        for (const x of [10, 13]) for (let y = 17; y <= 19; y++) at(x, y, accent);
+        for (let x = 7; x <= 16; x++) at(x, 22, shirtShade);
+        for (let y = 23; y <= 25; y++) {
+          at(7, y, shirtShade);
+          at(16, y, shirtShade);
         }
         break;
       case 'jumper':
         // A ribbed hem.
-        for (let x = 4; x <= 13; x++) at(x, WAIST - 1, x % 2 === 0 ? shirtShade : mix(shirtShade, OUTLINE, 0.25));
+        for (let x = 6; x <= 17; x++) at(x, WAIST - 1, x % 2 === 0 ? shirtShade : mix(shirtShade, OUTLINE, 0.25));
         break;
       case 'shirt': {
         // Collar points, a tie (unless it's the shirt's own colour) and a breast pocket.
         const collar = mix(shirt, WHITE, 0.55);
-        for (const x of [6, 7, 10, 11]) at(x, 15, collar);
+        for (const x of [8, 9, 14, 15]) at(x, 17, collar);
         if (look.palette.d !== look.palette.c) {
-          for (let y = 15; y <= 20; y++) {
-            at(8, y, y === 15 ? mix(accent, OUTLINE, 0.25) : accent);
-            at(9, y, mix(accent, OUTLINE, 0.25));
+          for (let y = 17; y <= 23; y++) {
+            at(11, y, y === 17 ? mix(accent, OUTLINE, 0.25) : accent);
+            at(12, y, mix(accent, OUTLINE, 0.25));
           }
         }
-        at(11, 17, shirtShade);
+        at(14, 19, shirtShade);
+        at(15, 19, shirtShade);
         break;
       }
       case 'top':
         // A V-neck.
-        for (let x = 7; x <= 10; x++) at(x, 15, skin);
-        at(8, 16, skin);
-        at(9, 16, skinShade);
+        for (let x = 10; x <= 13; x++) at(x, 17, skin);
+        at(11, 18, skin);
+        at(12, 18, skinShade);
         break;
       case 'suit':
       case 'waiter':
         // A white shirt in the V of the jacket: a tie for a suit, a bow tie for a waiter.
-        for (let x = 6; x <= 11; x++) at(x, 15, white);
-        for (let x = 7; x <= 10; x++) at(x, 16, x === 10 ? whiteShade : white);
-        at(8, 17, white);
-        at(9, 17, whiteShade);
+        for (let x = 9; x <= 14; x++) at(x, 17, white);
+        for (let x = 10; x <= 13; x++) at(x, 18, x === 13 ? whiteShade : white);
+        at(11, 19, white);
+        at(12, 19, whiteShade);
         if (wear === 'suit') {
-          for (let y = 15; y <= 19; y++) {
-            at(8, y, accent);
-            at(9, y, mix(accent, OUTLINE, 0.3));
+          for (let y = 17; y <= 22; y++) {
+            at(11, y, accent);
+            at(12, y, mix(accent, OUTLINE, 0.3));
           }
         } else {
-          for (const x of [7, 8, 9, 10]) at(x, 15, x === 8 || x === 9 ? mix(shirt, OUTLINE, 0.4) : shirt);
+          for (const x of [10, 11, 12, 13]) at(x, 17, x === 11 || x === 12 ? mix(shirt, OUTLINE, 0.4) : shirt);
         }
         break;
       case 'chef':
         // A stand-up collar and a double row of buttons.
-        for (let x = 5; x <= 12; x++) at(x, 15, shirtShade);
-        for (const y of [17, 19, 21]) {
-          at(6, y, accent);
-          at(11, y, accent);
+        for (let x = 8; x <= 15; x++) at(x, 17, shirtShade);
+        for (const y of [19, 21, 23]) {
+          at(9, y, accent);
+          at(14, y, accent);
         }
         break;
     }
   } else if (wear === 'hoodie') {
     // The hood, lying on the back.
-    for (let y = 14; y <= 17; y++) {
-      const narrow = Math.max(0, y - 16);
-      for (let x = 5 + narrow; x <= 12 - narrow; x++) at(x, y, y === 14 || x === 5 + narrow || x === 12 - narrow ? shirtShade : mix(shirtShade, OUTLINE, 0.25));
+    for (let y = 16; y <= 19; y++) {
+      const narrow = Math.max(0, y - 18);
+      for (let x = 8 + narrow; x <= 15 - narrow; x++) at(x, y, y === 16 || x === 8 + narrow || x === 15 - narrow ? shirtShade : mix(shirtShade, OUTLINE, 0.25));
     }
   }
 
@@ -649,67 +651,67 @@ function drawPerson(image: Pixels, look: Look, facing: 'front' | 'back', pose: P
     const pantsShade = colour('P');
     const shoes = colour('b');
     const belt = wear === 'shirt' || wear === 'suit';
-    for (let x = 4; x <= 13; x++) at(x, WAIST, belt || x >= 12 ? pantsShade : pants);
+    for (let x = 6; x <= 17; x++) at(x, WAIST, belt || x >= 16 ? pantsShade : pants);
     if (belt) {
-      at(8, WAIST, GOLD);
-      at(9, WAIST, GOLD);
+      at(11, WAIST, GOLD);
+      at(12, WAIST, GOLD);
     }
     const lift = { left: pose === 'walk1' ? 1 : 0, right: pose === 'walk2' ? 1 : 0 };
     for (const [x0, up, out] of [
-      [5, lift.left, -1],
-      [10, lift.right, 1],
+      [7, lift.left, -1],
+      [13, lift.right, 1],
     ]) {
-      for (let y = WAIST + 1; y < SHOES - up; y++) for (let x = x0; x <= x0 + 2; x++) at(x, y, x === x0 + 2 ? pantsShade : pants);
-      for (let x = x0; x <= x0 + 2; x++) at(x, SHOES - up, x === x0 + 1 ? mix(shoes, WHITE, 0.3) : shoes);
-      for (let x = Math.min(x0, x0 + out); x <= Math.max(x0 + 2, x0 + 2 + out); x++) at(x, SHOES + 1 - up, shoes);
+      for (let y = WAIST + 1; y < SHOES - up; y++) for (let x = x0; x <= x0 + 3; x++) at(x, y, x === x0 + 3 ? pantsShade : pants);
+      for (let x = x0; x <= x0 + 3; x++) at(x, SHOES - up, x === x0 + 1 ? mix(shoes, WHITE, 0.3) : shoes);
+      for (let x = Math.min(x0, x0 + out); x <= Math.max(x0 + 3, x0 + 3 + out); x++) at(x, SHOES + 1 - up, shoes);
     }
   }
   if (wear === 'waiter') {
-    const bottom = sitting ? WAIST - 1 : SHOES - 1;
+    const bottom = sitting ? WAIST - 1 : SHOES - 2;
     if (front) {
-      for (let y = 20; y <= bottom; y++) for (let x = 5; x <= 12; x++) at(x, y, y === 20 || x >= 11 || (x === 7 && y > 22) ? whiteShade : white);
+      for (let y = 23; y <= bottom; y++) for (let x = 7; x <= 16; x++) at(x, y, y === 23 || x >= 15 || (x === 10 && y > 26) ? whiteShade : white);
     } else {
       // The apron strings, tied in a bow at the back.
-      for (let x = 4; x <= 13; x++) at(x, 20, whiteShade);
-      for (const [x, y] of [[7, 19], [10, 19], [7, 21], [10, 21], [8, 20], [9, 20], [8, 22], [9, 22]]) at(x, y, white);
+      for (let x = 6; x <= 17; x++) at(x, 23, whiteShade);
+      for (const [x, y] of [[10, 22], [13, 22], [10, 24], [13, 24], [11, 23], [12, 23], [11, 25], [12, 25]]) at(x, y, white);
     }
   }
 
   // Arms by the sides, swinging when walking; short sleeves show the forearms.
   const swing = pose === 'walk1' ? 1 : pose === 'walk2' ? -1 : 0;
-  const sleeve = wear === 'tee' ? 16 : 19;
+  const sleeve = wear === 'tee' ? 19 : 23;
   const armsOnTable = sitting && front;
-  for (let y = 15; y <= 21; y++) {
-    if (armsOnTable && y > 18) break;
+  for (let y = 17; y <= 25; y++) {
+    if (armsOnTable && y > 21) break;
     const bare = y > sleeve;
-    const hand = y >= 20;
-    at(2, y + swing, bare || hand ? skin : shirt);
-    at(3, y + swing, bare || hand ? skin : shirtShade);
+    const hand = y >= 24;
+    at(4, y + swing, bare || hand ? skin : shirt);
+    at(5, y + swing, bare || hand ? skin : shirtShade);
     if (carry) continue;
-    at(14, y - swing, bare || hand ? skinShade : mix(shirtShade, OUTLINE, 0.15));
-    at(15, y - swing, bare || hand ? skinShade : shirtShade);
+    at(18, y - swing, bare || hand ? skinShade : mix(shirtShade, OUTLINE, 0.15));
+    at(19, y - swing, bare || hand ? skinShade : shirtShade);
   }
   if ((wear === 'jumper' || wear === 'chef') && !armsOnTable) {
     // Cuffs.
-    for (const x of [2, 3]) at(x, 19 + swing, shirtShade);
-    if (!carry) for (const x of [14, 15]) at(x, 19 - swing, mix(shirtShade, OUTLINE, 0.25));
+    for (const x of [4, 5]) at(x, 23 + swing, shirtShade);
+    if (!carry) for (const x of [18, 19]) at(x, 23 - swing, mix(shirtShade, OUTLINE, 0.25));
   }
 
   // The head: round (Adrian's is longer and narrower). Lit from the front, with just a little
   // shade down the far edge: no shadow along the jaw.
-  const wide = look.face === 'adrian' ? 6.4 : 7;
-  const tall = look.face === 'adrian' ? 7.4 : 6.9;
-  const middle = look.face === 'adrian' ? 7.2 : HEAD_MIDDLE;
+  const wide = look.face === 'adrian' ? 7.4 : 8.2;
+  const tall = look.face === 'adrian' ? 8.6 : 8;
+  const middle = look.face === 'adrian' ? 8.8 : HEAD_MIDDLE;
   const inHead = (x: number, y: number) => ((x + 0.5 - MIDDLE) / wide) ** 2 + ((y + 0.5 - middle) / tall) ** 2 <= 1;
   const edgeShade = mix(skin, skinShade, 0.5);
   for (let y = 0; y <= SHOULDERS; y++) {
-    for (let x = 0; x < PERSON_WIDTH; x++) if (inHead(x, y)) at(x, y, x >= 14 ? edgeShade : skin);
+    for (let x = 0; x < PERSON_WIDTH; x++) if (inHead(x, y)) at(x, y, x >= 18 ? edgeShade : skin);
   }
   // A dark line under the chin, where the head meets the shoulders.
-  for (let x = 4; x <= 13; x++) {
+  for (let x = 6; x <= 17; x++) {
     let bottom = -1;
     for (let y = 0; y <= SHOULDERS; y++) if (inHead(x, y)) bottom = y;
-    if (bottom >= 12) at(x, bottom + 1, OUTLINE);
+    if (bottom >= 13) at(x, bottom + 1, OUTLINE);
   }
 
   drawHair(at, look, facing, inHead, colour, edgeShade);
@@ -743,27 +745,27 @@ function drawPerson(image: Pixels, look: Look, facing: 'front' | 'back', pose: P
       }
     }
     const blush = colour('k');
-    for (const x of [3, 4, 13, 14]) at(x, MOUTH_ROW - 1, blush);
+    for (const x of [5, 6, 17, 18]) at(x, MOUTH_ROW - 1, blush);
     const mouth = colour('m');
     const tired = mood === 'tired' || mood === 'wornOut';
     if (look.face === 'adrian') {
       // A wide grin with two rabbit teeth.
-      for (const x of [7, 8, 9, 10]) at(x, MOUTH_ROW, mouth);
-      at(8, MOUTH_ROW + 1, WHITE);
-      at(9, MOUTH_ROW + 1, WHITE);
+      for (const x of [10, 11, 12, 13]) at(x, MOUTH_ROW, mouth);
+      at(11, MOUTH_ROW + 1, WHITE);
+      at(12, MOUTH_ROW + 1, WHITE);
     } else if (look.face === 'beaming' || mood === 'happy') {
       // A big open smile.
-      for (const x of [7, 8, 9, 10]) at(x, MOUTH_ROW, mouth);
-      at(8, MOUTH_ROW + 1, mouth);
-      at(9, MOUTH_ROW + 1, mouth);
+      for (const x of [10, 11, 12, 13]) at(x, MOUTH_ROW, mouth);
+      at(11, MOUTH_ROW + 1, mouth);
+      at(12, MOUTH_ROW + 1, mouth);
     } else if (look.smile && !tired) {
-      at(7, MOUTH_ROW, mouth);
       at(10, MOUTH_ROW, mouth);
-      at(8, MOUTH_ROW + 1, mouth);
-      at(9, MOUTH_ROW + 1, mouth);
+      at(13, MOUTH_ROW, mouth);
+      at(11, MOUTH_ROW + 1, mouth);
+      at(12, MOUTH_ROW + 1, mouth);
     } else {
-      at(8, MOUTH_ROW, mouth);
-      at(9, MOUTH_ROW, mouth);
+      at(11, MOUTH_ROW, mouth);
+      at(12, MOUTH_ROW, mouth);
     }
     if (look.glasses) {
       const frame = hex(look.glasses.colour);
@@ -776,17 +778,17 @@ function drawPerson(image: Pixels, look: Look, facing: 'front' | 'back', pose: P
           }
         }
       }
-      for (const x of [8, 9]) at(x, EYE_ROW, frame);
-      at(3, EYE_ROW, frame);
-      at(14, EYE_ROW, frame);
+      for (const x of [11, 12]) at(x, EYE_ROW, frame);
+      at(6, EYE_ROW, frame);
+      at(17, EYE_ROW, frame);
     }
     if (mood === 'wornOut' && look.face !== 'beaming') {
       // A drop of sweat.
-      at(16, 1, SWEAT);
-      at(15, 2, SWEAT);
-      at(16, 2, SWEAT);
-      at(15, 3, SWEAT);
-      at(16, 3, mix(SWEAT, WHITE, 0.5));
+      at(20, 2, SWEAT);
+      at(19, 3, SWEAT);
+      at(20, 3, SWEAT);
+      at(19, 4, SWEAT);
+      at(20, 4, mix(SWEAT, WHITE, 0.5));
     }
   }
 }
@@ -801,30 +803,30 @@ function drawHands(image: Pixels, look: Look, facing: 'front' | 'back', pose: Po
   // Seated, facing us: forearms resting on the table, the hands together.
   if (pose === 'sit' && facing === 'front') {
     const forearm = look.wear === 'tee' ? skin : shirtShade;
-    for (let x = 2; x <= 5; x++) at(x, 19, forearm);
-    for (let x = 12; x <= 15; x++) at(x, 19, forearm);
-    for (const x of [6, 7]) at(x, 19, skin);
-    for (const x of [10, 11]) at(x, 19, skinShade);
+    for (let x = 4; x <= 8; x++) at(x, 22, forearm);
+    for (let x = 15; x <= 19; x++) at(x, 22, forearm);
+    for (const x of [9, 10]) at(x, 22, skin);
+    for (const x of [13, 14]) at(x, 22, skinShade);
   }
   // A tray on one hand: a plate of pierogi and a glass of kompot, or nothing on the way back.
   if (carry) {
-    for (let y = 16; y <= 18; y++) {
-      at(14, y, mix(shirtShade, OUTLINE, 0.15));
-      at(15, y, shirtShade);
+    for (let y = 18; y <= 21; y++) {
+      at(18, y, mix(shirtShade, OUTLINE, 0.15));
+      at(19, y, shirtShade);
     }
-    at(14, 15, skinShade);
-    at(15, 15, skinShade);
-    for (let x = 9; x <= 16; x++) {
-      at(x, 13, TRAY.light);
-      at(x, 14, TRAY.dark);
+    at(18, 17, skinShade);
+    at(19, 17, skinShade);
+    for (let x = 13; x <= 21; x++) {
+      at(x, 15, TRAY.light);
+      at(x, 16, TRAY.dark);
     }
     if (carry === 'full') {
-      for (let x = 10; x <= 14; x++) at(x, 12, TRAY.plate);
-      at(11, 11, TRAY.food);
-      at(12, 11, TRAY.food);
-      at(13, 11, TRAY.foodShade);
-      at(14, 11, TRAY.greens);
-      for (let y = 9; y <= 12; y++) at(16, y, y <= 9 ? TRAY.glass : TRAY.kompot);
+      for (let x = 14; x <= 18; x++) at(x, 14, TRAY.plate);
+      at(15, 13, TRAY.food);
+      at(16, 13, TRAY.food);
+      at(17, 13, TRAY.foodShade);
+      at(18, 13, TRAY.greens);
+      for (let y = 11; y <= 14; y++) at(21, y, y <= 11 ? TRAY.glass : TRAY.kompot);
     }
   }
 }
@@ -852,60 +854,60 @@ function drawHair(
     if (style === 'bald') {
       // Just a little left over the ears, or round the back.
       if (!inHead(x, y)) return false;
-      return front ? side(x) >= 5.5 && y >= 5 && y <= 8 : y >= 6 && y <= 9;
+      return front ? side(x) >= 6.5 && y >= 6 && y <= 10 : y >= 7 && y <= 11;
     }
     if (!front) {
-      if (inHead(x, y)) return y <= (style === 'long' ? 13 : style === 'bob' ? 11 : 9);
-      if (style === 'long') return y >= 7 && y <= 19 && side(x) <= 5.5 - Math.max(0, y - 17);
-      return style === 'bob' && y >= 6 && y <= 11 && side(x) <= 7.5;
+      if (inHead(x, y)) return y <= (style === 'long' ? 15 : style === 'bob' ? 13 : 11);
+      if (style === 'long') return y >= 8 && y <= 23 && side(x) <= 6.5 - Math.max(0, y - 21);
+      return style === 'bob' && y >= 7 && y <= 13 && side(x) <= 9.5;
     }
-    if (y <= 4) return inHead(x, y);
+    if (y <= 5) return inHead(x, y);
     // A fringe with a few gaps, spikier for spiky hair.
-    if (y === 5) return inHead(x, y) && !(style === 'spiky' ? [4, 7, 10, 13] : [6, 11]).includes(x);
-    const reach = { short: 7, spiky: 6, cap: 7, bun: 8, bob: 11, long: 18 }[style];
-    return side(x) >= 5.5 && y <= reach && (inHead(x, y) || (loose && side(x) <= 7.5));
+    if (y === 6) return inHead(x, y) && !(style === 'spiky' ? [6, 10, 13, 17] : [8, 15]).includes(x);
+    const reach = { short: 9, spiky: 8, cap: 9, bun: 10, bob: 13, long: 22 }[style];
+    return side(x) >= 6.5 && y <= reach && (inHead(x, y) || (loose && side(x) <= 9.5));
   };
-  for (let y = 0; y <= 19; y++) {
+  for (let y = 0; y <= 23; y++) {
     for (let x = 0; x < PERSON_WIDTH; x++) {
       if (!hairAt(x, y)) {
         // A soft shadow on the forehead, just under the fringe.
-        if (front && style !== 'bald' && y <= EYE_ROW - 1 && hairAt(x, y - 1) && inHead(x, y)) at(x, y, x >= 14 ? edgeShade : mix(skin, colour('S'), 0.45));
+        if (front && style !== 'bald' && y <= EYE_ROW - 1 && hairAt(x, y - 1) && inHead(x, y)) at(x, y, x >= 18 ? edgeShade : mix(skin, colour('S'), 0.45));
         continue;
       }
-      const shine = (y === 1 && x >= 5 && x <= 7) || (y === 2 && x === 4);
+      const shine = (y === 2 && x >= 7 && x <= 9) || (y === 3 && x === 6);
       // Darker strands: clumps over the fringe from the front, falling locks from behind.
       const strand =
-        style !== 'bald' && (front ? (y === 3 || y === 4) && (x === 6 || x === 11) : y >= 3 && ((x === 6 && y % 3 !== 0) || (x === 11 && y % 3 !== 1)));
-      at(x, y, shine && style !== 'bald' ? hairLight : x >= 13 || strand ? hairShade : hair);
+        style !== 'bald' && (front ? (y === 4 || y === 5) && (x === 8 || x === 15) : y >= 4 && ((x === 8 && y % 3 !== 0) || (x === 15 && y % 3 !== 1)));
+      at(x, y, shine && style !== 'bald' ? hairLight : x >= 17 || strand ? hairShade : hair);
     }
   }
   const top = (x: number) => {
-    for (let y = 0; y < 14; y++) if (inHead(x, y)) return y;
-    return 14;
+    for (let y = 0; y < 16; y++) if (inHead(x, y)) return y;
+    return 16;
   };
   if (style === 'bun') {
-    for (let y = -3; y <= 0; y++) {
-      for (let x = 6; x <= 11; x++) {
-        if (((x + 0.5 - MIDDLE) / 2.8) ** 2 + ((y + 0.5 - -1.2) / 2.3) ** 2 > 1) continue;
-        at(x, y, x === 7 && y === -2 ? hairLight : x >= 10 ? hairShade : hair);
+    for (let y = -4; y <= 0; y++) {
+      for (let x = 8; x <= 15; x++) {
+        if (((x + 0.5 - MIDDLE) / 3.2) ** 2 + ((y + 0.5 - -1.5) / 2.6) ** 2 > 1) continue;
+        at(x, y, x === 10 && y === -3 ? hairLight : x >= 14 ? hairShade : hair);
       }
     }
   }
   if (style === 'spiky') {
     // Five tufts standing up, tallest in the middle.
     for (const [px, h] of [
-      [3, 2],
-      [6, 3],
-      [9, 3],
-      [12, 3],
-      [15, 2],
+      [5, 2],
+      [8, 3],
+      [12, 4],
+      [15, 3],
+      [18, 2],
     ]) {
       const base = top(px);
       // Only where there's a head to grow from (Adrian's is narrower).
-      if (base > 6) continue;
+      if (base > 7) continue;
       for (let k = 0; k < h; k++) {
         const half = k < h - 1 ? 1 : 0;
-        for (let dx = -half; dx <= half; dx++) at(px + dx, base - 1 - k, px + dx >= 13 ? hairShade : hair);
+        for (let dx = -half; dx <= half; dx++) at(px + dx, base - 1 - k, px + dx >= 17 ? hairShade : hair);
       }
     }
   }
@@ -913,20 +915,20 @@ function drawHair(
     // A baseball cap: the crown and band, with the peak at the front.
     const cap = hex(look.palette.n);
     const capShade = hex(look.palette.N);
-    for (let y = -1; y <= 4; y++) {
+    for (let y = -1; y <= 5; y++) {
       for (let x = 0; x < PERSON_WIDTH; x++) {
-        if (!inHead(x, y + 1) && !(y === 4 && inHead(x, y))) continue;
-        at(x, y, y === 4 || x >= 12 ? capShade : x === 5 && y === 1 ? mix(cap, WHITE, 0.3) : cap);
+        if (!inHead(x, y + 1) && !(y === 5 && inHead(x, y))) continue;
+        at(x, y, y === 5 || x >= 16 ? capShade : x === 8 && y === 1 ? mix(cap, WHITE, 0.3) : cap);
       }
     }
-    at(9, -2, capShade);
-    if (front) for (let x = 2; x <= 15; x++) at(x, 5, mix(capShade, OUTLINE, 0.3));
+    at(12, -2, capShade);
+    if (front) for (let x = 4; x <= 19; x++) at(x, 6, mix(capShade, OUTLINE, 0.3));
   }
   if (style === 'bald') {
     // The light catching the top of the head.
-    at(6, 1, mix(skin, WHITE, 0.6));
-    at(7, 1, mix(skin, WHITE, 0.6));
-    at(5, 2, mix(skin, WHITE, 0.4));
+    at(8, 2, mix(skin, WHITE, 0.6));
+    at(9, 2, mix(skin, WHITE, 0.6));
+    at(7, 3, mix(skin, WHITE, 0.4));
   }
 }
 
@@ -957,7 +959,7 @@ export function personPixels(
 // ---------- Portraits for the Staff tab ----------
 
 /** Rows of a portrait: the head and shoulders. */
-export const PORTRAIT_ROWS = HEADROOM + 18;
+export const PORTRAIT_ROWS = HEADROOM + 21;
 
 /**
  * Someone's head and shoulders, facing us, with a face for their mood. Tomek is always happy;

@@ -1,16 +1,31 @@
 // Isometric drawing: world x runs down-right, y down-left, z up. One world unit is
-// one pixel sideways and half a pixel down, which gives the classic 2:1 pixel-art tiles.
+// one pixel sideways and half a pixel down (times the origin's scale), which gives the
+// classic 2:1 pixel-art tiles.
 
 import { Pixels, type Rgb } from './raster';
 
-/** Where world (0, 0, 0) lands in the picture. */
+/** Where world (0, 0, 0) lands in the picture, and how many pixels a world unit takes (1 if not given). */
 export interface Origin {
   ox: number;
   oy: number;
+  k?: number;
 }
 
 export function project(o: Origin, x: number, y: number, z: number): { sx: number; sy: number } {
-  return { sx: o.ox + x - y, sy: o.oy + (x + y) / 2 - z };
+  const k = o.k ?? 1;
+  return { sx: o.ox + k * (x - y), sy: o.oy + k * ((x + y) / 2 - z) };
+}
+
+/** The pixels a box can cover, and a pixel's middle in unscaled screen units from the origin. */
+function boxArea(o: Origin, b: Box) {
+  const k = o.k ?? 1;
+  return {
+    left: Math.floor(o.ox + k * (b.x0 - b.y1)) - 1,
+    right: Math.ceil(o.ox + k * (b.x1 - b.y0)) + 1,
+    top: Math.floor(o.oy + k * ((b.x0 + b.y0) / 2 - b.z1)) - 1,
+    bottom: Math.ceil(o.oy + k * ((b.x1 + b.y1) / 2 - b.z0)) + 1,
+    screen: (px: number, py: number) => ({ sx: (px + 0.5 - o.ox) / k, sy: (py + 0.5 - o.oy) / k }),
+  };
 }
 
 export interface Box {
@@ -34,14 +49,10 @@ export interface Faces {
 
 /** Draws a solid box: its top, its front-left side and its front-right side. */
 export function box(img: Pixels, o: Origin, b: Box, f: Faces): void {
-  const left = Math.floor(o.ox + b.x0 - b.y1) - 1;
-  const right = Math.ceil(o.ox + b.x1 - b.y0) + 1;
-  const top = Math.floor(o.oy + (b.x0 + b.y0) / 2 - b.z1) - 1;
-  const bottom = Math.ceil(o.oy + (b.x1 + b.y1) / 2 - b.z0) + 1;
+  const { left, right, top, bottom, screen } = boxArea(o, b);
   for (let py = top; py <= bottom; py++) {
     for (let px = left; px <= right; px++) {
-      const sx = px + 0.5 - o.ox;
-      const sy = py + 0.5 - o.oy;
+      const { sx, sy } = screen(px, py);
       // Top face: z = z1.
       const tx = (sx + 2 * (sy + b.z1)) / 2;
       const ty = (2 * (sy + b.z1) - sx) / 2;
@@ -74,14 +85,10 @@ export type FaceName = 'top' | 'left' | 'right';
  * the bottom corner. For wood grain, doors and patterns.
  */
 export function texturedBox(img: Pixels, o: Origin, b: Box, paint: (face: FaceName, u: number, v: number) => Rgb): void {
-  const left = Math.floor(o.ox + b.x0 - b.y1) - 1;
-  const right = Math.ceil(o.ox + b.x1 - b.y0) + 1;
-  const top = Math.floor(o.oy + (b.x0 + b.y0) / 2 - b.z1) - 1;
-  const bottom = Math.ceil(o.oy + (b.x1 + b.y1) / 2 - b.z0) + 1;
+  const { left, right, top, bottom, screen } = boxArea(o, b);
   for (let py = top; py <= bottom; py++) {
     for (let px = left; px <= right; px++) {
-      const sx = px + 0.5 - o.ox;
-      const sy = py + 0.5 - o.oy;
+      const { sx, sy } = screen(px, py);
       const tx = (sx + 2 * (sy + b.z1)) / 2;
       const ty = (2 * (sy + b.z1) - sx) / 2;
       if (tx >= b.x0 && tx < b.x1 && ty >= b.y0 && ty < b.y1) {
