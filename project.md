@@ -354,7 +354,36 @@ After the playtests of M5b: the game should feel calmer, more varied and more li
 - **A sticker album ("Gdańsk passport"):** achievements as collectible pixel stickers.
 - **Mewa's finds:** Mewa brings things she found in town (a piece of amber, a lost key, a recipe card) that unlock decor or small events.
 
-Not now (considered and left out): events the player hosts (workshops, tastings, receptions), an autumn and Christmas-market season, a cook-off against the rivals, postcards.
+Not now (considered and left out): events the player hosts (workshops, tastings, receptions), an autumn and Christmas-market season, a cook-off against the rivals, postcards. (Lighter versions of hosted events and cook-offs came back in section 6.15.)
+
+### 6.15 A more dynamic season (M7b)
+
+Playtest (2026-10-03): after a few days the game feels repetitive, because one day plays much like the next. Ideas below are taken from tycoon games that keep each day fresh; all of them were chosen. The details of each are settled when it is built, one at a time.
+
+**A. Every day a little different**
+
+1. **Tomorrow's forecast** (Kairosoft games, Two Point Hospital). The day report ends with what tomorrow brings: "A cruise ship docks at Westerplatte: lots of tourists", "Rain all day: locals stay home", "Exams are over: students celebrate". Planning the menu, the special and the team for it starts to matter. It can be wrong now and then, like any forecast.
+2. **Bookings and big orders** (Restaurant Empire, Pizza Syndicate). A few requests a week, to accept or decline in the planning screens: "A wedding party of 12 on Saturday at 19:00, they'd love a dessert", "An office on Granary Island orders 30 lunches for Thursday". They pay well, but tie up tables or a chef at that time; turning up short disappoints them.
+3. **Daily mini-goals** (Stardew Valley's request board). Next to Mewa's weekly goal, one small goal for the day: "Sell 8 soups before 14:00", "Nobody walks out today", "Make a foodie happy". A small reward when done.
+4. **Theme nights** (Kairosoft, Two Point Hospital). Once a week the player picks an evening: Pierogi Night, a Kashubian evening, live accordion, a seafood night. Each brings a different crowd and has a small cost. (A light version of "events the player hosts", left out in section 6.14.)
+
+**B. Progress you can feel**
+
+5. **Dishes level up** (Cafeteria Nipponica). The more a dish is cooked, the better the kitchen gets at it: up to three stars, each a little more quality, and at three stars a new variant or taste tag.
+6. **Trends** (Game Dev Tycoon, Cafeteria Nipponica). Every week Gdańsk is crazy about something ("Everyone wants seafood this week", "Sweet tooth week"): one group's tastes shift for a week, shown on the Today tab, so the menu is worth adjusting.
+7. **Restaurant rank-ups** (Kairosoft). Milestones of guests served and stars raise the restaurant's rank (for example Bar, Bistro, Restaurant, Old Town Favourite), with a little celebration from Mewa. Each rank unlocks something: decor, a menu slot, new kinds of choice cards.
+8. **A weekly Old Town ranking** (Kairosoft's rankings). Every Monday a newspaper top five of the player and the rivals, by rating and guests, so the race for the Golden Neptune is visible all season.
+
+**C. Rivals who do things**
+
+9. **Rival moves to answer** (Pizza Syndicate, Restaurant Empire). Now and then a rival acts against you, gently: Nonna Rosa offers your best chef a job, Bar Błyskawica starts a price war on your street, Karczma copies your special. A card lets the player answer (a raise, a counter-offer, ignoring it).
+10. **Cook-off challenges** (Good Pizza, Great Pizza). Sometimes a rival challenges you to a dish duel judged by guests: pick the dish, and its quality and price decide it. Winning brings reputation and awareness. (Different from "a cook-off against the rivals" left out in 6.14: it's a short challenge, not a whole event.)
+
+**D. More to do during service**
+
+11. **Rush hour** (Diner Dash). At the lunch and dinner peaks the player can tap a chef or a waiter to hurry them (with a short rest afterwards), and quick service builds a streak with a small bonus.
+12. **Guests with wishes** (Good Pizza, Great Pizza). Now and then a guest shows a wish bubble ("Something without meat?", "Extra dill!"). If the menu has it, they're delighted; if not, it's a hint for tomorrow's menu.
+13. **The morning market** (Kairosoft). Ingredient prices change a little each day, with a deal or two ("Cheap herring today!") worth building the special around. Builds on the seasonal produce.
 
 ## 7. Simulation model (implementation notes)
 
@@ -581,7 +610,7 @@ Playtest wish (2026-10-02): more detailed pixel art and a better layout, measure
 
 Chosen on 2026-10-02: all three, in this order (see M7 in the roadmap).
 
-Built: A on 2026-10-02. C on 2026-10-03, first at the old scale and then, after a playtest, as in the concept picture in four steps: its scale, a cozy starting room, the kitchen's pass and people's poses (see the decision log). B is next.
+Built: A on 2026-10-02. C on 2026-10-03, first at the old scale and then, after a playtest, as in the concept picture in four steps: its scale, a cozy starting room, the kitchen's pass and people's poses (see the decision log). B follows in M7c, after the more dynamic season (M7b).
 
 ## 10. Personal touches (fill in)
 
@@ -733,6 +762,29 @@ Each item is tested in the browser and on the tablet before the next one starts.
 - [x] Graphics C as in the concept: a cozy starting room (plain dark panelling, checked tablecloths with plates and glasses, a rug, a fig tree and a jar shelf); bought decor upgrades them
 - [x] Graphics C as in the concept: the kitchen as a long wooden counter (the pass) with plates and a heat lamp
 - [x] Graphics C as in the concept: people's details and poses at the new size
+
+**M7b – A more dynamic season (section 6.15)**
+
+Comes next, before M7c. Each item is tested in the browser and on the tablet before the next one starts. In order of how much each is expected to help:
+
+- [ ] Tomorrow's forecast at the end of the day report
+- [ ] Bookings and big orders to accept or decline
+- [ ] Dishes level up with use, up to three stars
+- [ ] Restaurant rank-ups with unlocks
+- [ ] A weekly Old Town ranking against the rivals
+- [ ] Rush hour: hurry a chef or waiter, and a quick-service streak
+- [ ] Daily mini-goals next to Mewa's weekly goal
+- [ ] Weekly trends in what Gdańsk wants
+- [ ] Theme nights the player picks
+- [ ] Rival moves to answer
+- [ ] Cook-off challenges against a rival
+- [ ] Guests with wishes
+- [ ] The morning market: daily prices and deals
+
+**M7c – The rest of M7's polish (sections 6.14 and 9.3)**
+
+Moved out of M7 on 2026-10-03, so the more dynamic season (M7b) comes first.
+
 - [ ] Graphics B: pixel-framed menus and pop-ups
 - [ ] Attracting passers-by: a waiter offering samples at the door
 - [ ] Bigger premises: cellar room, bar counter, toilet
@@ -957,3 +1009,4 @@ Each item is tested in the browser and on the tablet before the next one starts.
   - **In the kitchen:** a busy chef stirs the pot with a wooden spoon, back and forth; a chef with nothing to cook stands ready.
   - The eating and stirring pictures hold both poses side by side, and the screen shows one at a time by sliding the picture with a CSS transform, which is cheap for the tablet. They keep going while the game is paused, like the steam and the flames.
 - 2026-10-03: Mewa's first goal is 250 guests instead of 300 (`data/mewa.ts`). A new restaurant is quieter now: a player who does nothing serves about 235 guests in week one (178–279 over 12 games), so 300 was out of reach without advertising; 250 is reached in 5 of those 12 games with no effort at all, and easily with some. Also kept: the bigger premises are a cellar room, a bar counter and a toilet (not a kids' corner). Simulator, 3 seasons, before → after: do nothing −4,810 → −4,643 zł (one season now earns the 500 zł reward; still out of money in week 5); quality focus −6,355 → −6,022 zł (out of money in week 4 instead of week 3); cheap and fast and balanced unchanged (balanced 43,824 zł, profitable from week 2).
+- 2026-10-03: Playtest: after a few days the game feels repetitive. Thirteen ideas from tycoon games were chosen, all of them (section 6.15, milestone M7b): tomorrow's forecast, bookings and big orders, daily mini-goals, theme nights, dishes that level up, weekly trends, restaurant rank-ups, a weekly Old Town ranking, rival moves to answer, cook-off challenges, rush hour, guests with wishes and the morning market. Theme nights and cook-off challenges are lighter versions of ideas left out in section 6.14. M7b comes first; M7's unfinished items (Graphics B, samples at the door, bigger premises, the sticker album, Mewa's finds) move to a new milestone, M7c, after it.

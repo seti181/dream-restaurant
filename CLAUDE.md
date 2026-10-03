@@ -7,7 +7,7 @@
 - It is a personal gift, for one player on an Android tablet (Samsung Galaxy Tab A series).
 - It is installed as a PWA from GitHub Pages.
 - The full design is in `project.md`. Read the relevant section before starting any feature.
-- The next task is the first unchecked item of M7 in `project.md` section 12. M5's "Balancing" item stays open as an ongoing task alongside it, and M6 is the gift day itself.
+- The next task is the first unchecked item of M7b in `project.md` section 12, then M7c. M5's "Balancing" item stays open as an ongoing task alongside them, and M6 is the gift day itself.
 
 ## About the developer
 
