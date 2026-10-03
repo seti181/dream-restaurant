@@ -724,7 +724,7 @@ Each item is tested in the browser and on the tablet before the next one starts.
 - [x] Graphics C: bigger, more detailed people
 - [x] Graphics C as in the concept: the concept's scale, with the room drawn 1.25 times bigger, tables further apart, taller walls and people at about 24×38 (`art/concepts/v3/c-richer-art-day.png`)
 - [x] Graphics C as in the concept: a cozy starting room (plain dark panelling, checked tablecloths with plates and glasses, a rug, a fig tree and a jar shelf); bought decor upgrades them
-- [ ] Graphics C as in the concept: the kitchen as a long wooden counter (the pass) with plates and a heat lamp
+- [x] Graphics C as in the concept: the kitchen as a long wooden counter (the pass) with plates and a heat lamp
 - [ ] Graphics C as in the concept: people's details and poses at the new size
 - [ ] Graphics B: pixel-framed menus and pop-ups
 - [ ] Attracting passers-by: a waiter offering samples at the door
@@ -936,3 +936,9 @@ Each item is tested in the browser and on the tablet before the next one starts.
   - **Fig tree:** a big fig in a clay pot in the front corner on the kitchen side, which nobody walks through.
   - **Jar shelf:** a shelf of jars high on the window wall, above the wall lamps: pickles, honey, cherries, sauerkraut and plums, with gold lids.
   - **Chairs:** dark walnut, as in the concept, so they stand out against the honey floor (the communal table's bench too). The terrace keeps its rattan chairs.
+- 2026-10-03: Graphics C as in the concept, third step: the kitchen.
+  - **The pass:** the steel island became the pass, a long wooden counter between the kitchen and the dining room, with a panelled front and a wooden top. A steel strip runs along the cooks' side, and there's a pot of basil at the far end.
+  - **Cooking:** each chef stands behind the pass with a pot of żurek or a pan of pierogi on a burner right in front of them, with the flame and the steam. (Pots on the back counter, as in the concept picture, would hide behind the next chef in this view.)
+  - **The pick-up end:** the end of the pass nearest the waiters, with no chef in front of it. A plate waits there for every chef who's busy cooking (up to three), under a heat lamp hanging on two chains. The lamp's red strip warms the wood below, more so in the evening.
+  - **Room for the chefs:** the kitchen is 64 units wide instead of 52 (the room grew in the first step), so two chefs stand clear of each other and three still fit. The fryer, grill and espresso machine stay on the back counter, under the copper pans.
+  - `npx tsx scripts/pixel/room-preview.ts <folder>` now also draws the kitchen up close, with a third chef in the bigger room.

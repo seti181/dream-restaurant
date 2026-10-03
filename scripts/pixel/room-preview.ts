@@ -10,7 +10,8 @@ import type { GroupId } from '../../src/data/groups';
 import { LOCATIONS, type LocationId } from '../../src/data/locations';
 import type { FloorView, TableGuests } from '../../src/sim/day';
 import { hex, Pixels, pngBytes } from '../../src/ui/pixel/raster';
-import { drawRoom, roomLayout, scenePieces, type RoomLook } from '../../src/ui/pixel/room';
+import { project } from '../../src/ui/pixel/iso';
+import { drawRoom, roomLayout, scenePieces, WALL_HEIGHT, type RoomLook } from '../../src/ui/pixel/room';
 import { personPixels, portraitPixels, type PersonKind } from '../../src/ui/pixel/sprites';
 
 const out = process.argv[2];
@@ -54,9 +55,10 @@ function scene(location: LocationId, dusk: boolean, decor: DecorId[], name: stri
     tables,
     insideTables,
     terraceTables,
-    chefsBusy: [true, false],
+    // The bigger room has a third chef, to see the kitchen busy.
+    chefsBusy: location === 'dluga' ? [true, true, false] : [true, false],
     waiters: [null, null],
-    chefLooks: [0, 1],
+    chefLooks: [0, 1, 2],
     waiterLooks: [0, 1],
     decor,
     equipment: ['fryer', 'espresso'],
@@ -78,6 +80,13 @@ function scene(location: LocationId, dusk: boolean, decor: DecorId[], name: stri
   // The window on the left wall, closer still.
   const { ox, oy } = layout.origin;
   write(picture, Math.round(ox - 70), Math.round(oy - 36), 52, 58, 12, `room-${name}-window.png`);
+  // The kitchen corner, up close.
+  const frontLeft = project(layout.origin, layout.kitchenX - 6, 50, 0);
+  const right = project(layout.origin, layout.roomX + 2, 0, 0);
+  const top = project(layout.origin, layout.kitchenX, 0, WALL_HEIGHT + 4).sy;
+  const x0 = Math.max(0, Math.round(frontLeft.sx));
+  const y0 = Math.max(0, Math.round(top));
+  write(picture, x0, y0, Math.min(picture.width - x0, Math.round(right.sx) - x0), Math.min(picture.height - y0, Math.round(frontLeft.sy) - y0 + 8), 6, `room-${name}-kitchen.png`);
 }
 
 function write(picture: Pixels, x0: number, y0: number, width: number, height: number, k: number, file: string): void {

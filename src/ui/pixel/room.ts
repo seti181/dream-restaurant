@@ -28,8 +28,9 @@ const STEPS = 8;
 const TABLE = 16;
 /** Tables stand this far apart: a table, a chair on each side and an aisle to walk down. */
 const GRID = 44;
-/** The kitchen corner reaches this far from the back wall. */
+/** The kitchen corner reaches this far from the back wall, and is this wide along it. */
 const KITCHEN_DEPTH = 44;
+const KITCHEN_WIDTH = 64;
 /** The communal table stands along the back wall from here (26 long, y 16 to 28). */
 export const COMMUNAL_TABLE_X = 6;
 const SEAT_Z = 9;
@@ -173,6 +174,13 @@ const C = {
   rugBlue: hex('#2f5f86'),
   rugBlueLight: hex('#4a7fa8'),
   kompot: hex('#c4475e'),
+  passWood: hex('#b9845a'),
+  passWoodDark: hex('#8a5a3a'),
+  heat: hex('#e8452a'),
+  heatGlow: hex('#ffb07a'),
+  pierogi: hex('#f0d9a0'),
+  pierogiShade: hex('#d9b878'),
+  soup: hex('#d0603a'),
 };
 
 const wood: Faces = { top: C.tableTop, left: C.tableLeft, right: C.tableRight, edge: C.tableEdge };
@@ -248,7 +256,7 @@ export function roomLayout(maxTables: number, terraceTables: number): RoomLayout
     origin,
     inside,
     terrace,
-    kitchenX: roomX - 52,
+    kitchenX: roomX - KITCHEN_WIDTH,
     door: { x0: 24, x1: 42 },
   };
 }
@@ -328,14 +336,68 @@ function cupboard(face: 'top' | 'left' | 'right', u: number, v: number, width: n
   return C.cabinet;
 }
 
-/** Two rows of drawers along the front of the kitchen island, each with a handle in the middle. */
-function drawers(face: 'top' | 'left' | 'right', u: number, v: number): Rgb {
-  if (face !== 'left') return face === 'top' ? C.cabinet : C.cabinetDark;
-  if (v < 1 || (v >= 6.5 && v < 7.1)) return C.cabinetDark;
-  const at = u % 8;
-  if (at < 0.6) return C.cabinetDark;
-  if (Math.abs(at - 4.3) < 1 && (Math.abs(v - 4) < 0.5 || Math.abs(v - 10) < 0.5)) return C.steelTop;
-  return C.cabinet;
+/** The pass runs from here (from the kitchen's edge) to the side wall, this long. */
+const PASS_FROM = 16;
+const PASS_LENGTH = KITCHEN_WIDTH - PASS_FROM - 4;
+/** The pick-up end, nearest the waiters, where the plates wait: the chefs cook beyond it. */
+const PICK_UP = 13;
+/** Where the heat lamp hangs over the pick-up end (from the pass's back corner), and how high. */
+const HEAT_LAMP = { x0: 1, x1: 13, y0: 3, y1: 8, z: 25 };
+
+/**
+ * The pass, as in the concept picture: a long wooden counter between the kitchen and the dining
+ * room, with a panelled front and a wooden top. Along the back runs a steel strip where the chefs
+ * cook; at the pick-up end, nearest the waiters, the plates that are ready wait under the heat
+ * lamp. A pot of basil at the far end.
+ */
+function drawPass(img: Pixels, lo: Origin, plates: number, dusk: boolean): void {
+  const L = PASS_LENGTH;
+  texturedBox(img, lo, { x0: 0, x1: L, y0: 0.5, y1: 9.5, z0: 0, z1: 13.5 }, (face, u, v) => {
+    if (face !== 'left') return C.cabinetDark;
+    // Panels with a lit edge, a moulding under the top, and a dark plinth.
+    if (v < 1.2) return C.cabinetDark;
+    if (v >= 11 && v < 11.6) return C.wainscotLight;
+    const at = u % 8;
+    if (at < 0.7) return C.cabinetDark;
+    if (at < 1.4) return C.wainscotLight;
+    return C.cabinet;
+  });
+  // Under the heat lamp the top is warmer, more so in the evening.
+  const warm = (u: number, colour: Rgb) => (u >= HEAT_LAMP.x0 + 1 && u < HEAT_LAMP.x1 - 1 ? mix(colour, C.heatGlow, dusk ? 0.32 : 0.16) : colour);
+  texturedBox(img, lo, { x0: -0.5, x1: L + 0.5, y0: 0, y1: 10, z0: 13.5, z1: 15 }, (face, u, v) => {
+    if (face !== 'top') return face === 'left' ? C.passWoodDark : mix(C.passWoodDark, C.outline, 0.2);
+    if (v < 4.6) return warm(u, v < 0.7 || (v >= 4 && u >= PICK_UP) ? C.steelLeft : C.steelTop);
+    if (v >= 9.3) return warm(u, mix(C.passWood, C.plate, 0.25));
+    if (Math.floor(u) % 10 === 0) return warm(u, C.passWoodDark);
+    return warm(u, grain(Math.floor(u / 2), Math.floor(v), 59) < 0.1 ? mix(C.passWood, C.passWoodDark, 0.4) : C.passWood);
+  });
+  [3, 7.2, 11.4].slice(0, plates).forEach((x, i) => plate(img, lo, x, 5.5, 15, FOOD[i % FOOD.length]));
+  placeOn(img, lo, S.sprite(BASIL, BASIL_COLOURS), PASS_LENGTH - 2.5, 7.5, 15);
+}
+
+const BASIL = ['.lLl.', 'lLlLl', '.lll.', '.ppp.', '.PPP.'];
+const BASIL_COLOURS: S.Palette = { l: '#3e7a3a', L: '#7fb069', p: '#c97a4a', P: '#9c5a33' };
+
+/** The heat lamp over the pass: a steel hood with a glowing strip underneath. */
+function drawHeatLamp(img: Pixels, lo: Origin): void {
+  const { x0, x1, y0, y1 } = HEAT_LAMP;
+  box(img, lo, { x0: 0, x1: x1 - x0, y0: 0, y1: y1 - y0, z0: 0.5, z1: 3 }, { top: C.steelLeft, left: C.steelRight, right: mix(C.steelRight, C.outline, 0.3) });
+  box(img, lo, { x0: 0.6, x1: x1 - x0 - 0.6, y0: 0.6, y1: y1 - y0 - 0.6, z0: 0, z1: 0.5 }, solid(C.heat));
+}
+
+/** On the cooks' side of the pass, in front of each chef: a burner, and a pot of żurek or a pan of pierogi. */
+function drawCookware(img: Pixels, lo: Origin, pan: boolean): void {
+  box(img, lo, { x0: -2.6, x1: 2.6, y0: -2.2, y1: 2.2, z0: 0, z1: 0.3 }, solid(C.stove));
+  if (pan) {
+    const iron: Faces = { top: C.stove, left: mix(C.stove, C.outline, 0.3), right: mix(C.stove, C.outline, 0.45) };
+    box(img, lo, { x0: -2.2, x1: 2.2, y0: -2, y1: 2, z0: 0.3, z1: 1.5 }, iron);
+    box(img, lo, { x0: 2.2, x1: 5.2, y0: -0.4, y1: 0.4, z0: 0.9, z1: 1.4 }, iron);
+    box(img, lo, { x0: -1.6, x1: 1.6, y0: -1.4, y1: 1.4, z0: 1.5, z1: 2 }, { top: C.pierogi, left: C.pierogiShade, right: C.pierogiShade });
+  } else {
+    box(img, lo, { x0: -1.9, x1: 1.9, y0: -1.9, y1: 1.9, z0: 0.3, z1: 4.6 }, steel);
+    box(img, lo, { x0: -1.5, x1: 1.5, y0: -1.5, y1: 1.5, z0: 4.6, z1: 4.8 }, solid(C.soup));
+    for (const x of [-2.5, 1.9]) box(img, lo, { x0: x, x1: x + 0.6, y0: -0.4, y1: 0.4, z0: 3.2, z1: 3.8 }, steel);
+  }
 }
 
 function plate(img: Pixels, o: Origin, x: number, y: number, z: number, food: Rgb): void {
@@ -1002,7 +1064,7 @@ export function drawRoom(layout: RoomLayout, look: RoomLook): Pixels {
   const glows = lampSpots(layout, look).filter((l) => l.kind !== 'lantern');
   const sunny = !look.dusk && (look.weather === 'sunny' || look.weather === 'heatwave');
   const sconces = look.dusk ? sconceSpots(layout, look) : [];
-  // Soft shadows on the floor under the tables and the kitchen island.
+  // Soft shadows on the floor under the tables and the pass.
   const k = layout.kitchenX;
   const shadows = [...layout.inside.slice(0, look.insideTables), ...layout.terrace].map((t) => ({
     x0: t.x - 1,
@@ -1260,29 +1322,34 @@ export function scenePieces(
 
   pieces.push(...buildingPieces(layout, floor), ...streetPieces(layout, look, floor.location));
 
-  // The kitchen: chefs behind the island, a pot each, the pizza oven at the side.
+  // The kitchen: the chefs behind the pass, each with a pot or a pan on the cooks' side in front of
+  // them; at the pick-up end, a plate for every dish on the go waits under the heat lamp.
   const k = layout.kitchenX;
   const chefs = floor.chefsBusy.length;
-  const island = drawn(`island:${layout.roomX}:${chefs}`, (img, lo) => {
-    const x1 = layout.roomX - 4 - (k + 16);
-    texturedBox(img, lo, { x0: 1, x1: x1 - 1, y0: 1, y1: 9, z0: 0, z1: 13 }, (face, u, v) => drawers(face, u, v));
-    box(img, lo, { x0: 0, x1, y0: 0, y1: 10, z0: 13, z1: 15 }, steel);
-    box(img, lo, { x0: 3, x1: x1 - 3, y0: 2, y1: 8, z0: 15, z1: 15.5 }, solid(C.stove));
-    chefSpots(layout, chefs).forEach((cx) => box(img, lo, { x0: cx - (k + 16) - 2, x1: cx - (k + 16) + 3, y0: 3, y1: 7, z0: 15.5, z1: 20 }, steel));
-  });
+  const passX = k + PASS_FROM;
+  const passDepth = passX + 36 + 6;
   floor.chefsBusy.forEach((busy, i) => {
     const cx = chefSpots(layout, chefs)[i];
+    const pan = i % 2 === 1;
+    pieces.push(piece(o, `cookware${i}`, drawn(`cookware:${pan}`, (img, lo) => drawCookware(img, lo, pan)), cx, 28.5, 15, passDepth + 0.5));
     const chef = personImage('chef', 'front', 'stand', floor.chefLooks[i] ?? i);
     pieces.push({ ...piece(o, `chef${i}`, chef, cx, 18, 0, k + 20 + i * 0.01), kind: 'chef', busy });
     if (busy) {
       const steam = plainSprite('steam', S.STEAM, S.STEAM_COLOURS);
-      pieces.push({ ...piece(o, `steam${i}`, steam, cx + 1, 31, 26, 999), kind: 'steam' });
-      // A flame flickering under the pot, just in front of the island's top.
+      pieces.push({ ...piece(o, `steam${i}`, steam, cx, 28.5, pan ? 18 : 21, 999), kind: 'steam' });
+      // A flame flickering under the pot, at the front of the burner.
       const flame = plainSprite('flame', S.FLAME, S.FLAME_COLOURS);
-      pieces.push({ ...piece(o, `flame${i}`, flame, cx + 1, 33.5, 15.5, k + 16 + 36 + 7), kind: 'flame' });
+      pieces.push({ ...piece(o, `flame${i}`, flame, cx, 30.6, 15, passDepth + 0.6), kind: 'flame' });
     }
   });
-  pieces.push(piece(o, 'island', island, k + 16, 26, 0, k + 16 + 36 + 6));
+  const plates = Math.min(3, floor.chefsBusy.filter(Boolean).length);
+  const pass = drawn(`pass:${plates}:${look.dusk}`, (img, lo) => drawPass(img, lo, plates, look.dusk));
+  pieces.push(piece(o, 'pass', pass, passX, 26, 0, passDepth));
+  // The heat lamp hangs over the pick-up end on two chains from the ceiling.
+  const lampAt = { x: passX + HEAT_LAMP.x0, y: 26 + HEAT_LAMP.y0 };
+  const lamp = piece(o, 'heatLamp', drawn('heatLamp', drawHeatLamp), lampAt.x, lampAt.y, HEAT_LAMP.z, passDepth + 1);
+  const ceiling = Math.round(project(o, lampAt.x, lampAt.y, WALL_HEIGHT + 6).sy);
+  pieces.push(lamp, ...chains(lamp, ceiling));
   if (look.equipment.includes('pizzaOven')) {
     const oven = drawn('pizzaOven', (img, lo) => {
       box(img, lo, { x0: 0, x1: 12, y0: 0, y1: 12, z0: 0, z1: 8 }, { top: C.brick, left: C.brick, right: C.brickDark });
@@ -1331,11 +1398,11 @@ function seatDepth(seat: Seat): number {
   return seat.x + seat.y;
 }
 
-/** Where each chef stands along the island. */
+/** Where each chef stands, at the stove behind the pass. */
 function chefSpots(layout: RoomLayout, chefs: number): number[] {
-  const from = layout.kitchenX + 18;
-  const to = layout.roomX - 8;
-  return Array.from({ length: chefs }, (_, i) => Math.round((from + ((to - from) * (i + 1)) / (chefs + 1)) / 2) * 2);
+  const from = layout.kitchenX + PASS_FROM + PICK_UP + 1;
+  const to = layout.roomX - 6;
+  return Array.from({ length: chefs }, (_, i) => Math.round((from + ((to - from) * (i + 0.5)) / chefs) / 2) * 2);
 }
 
 /** A thin cord from the ceiling down to a hanging lamp. */
@@ -1356,6 +1423,23 @@ function cord(lamp: ScenePiece, ceiling: number): ScenePiece {
     py: ceiling,
     depth: lamp.depth,
   };
+}
+
+/** Two thin chains from the ceiling down to either end of a hanging lamp. */
+function chains(lamp: ScenePiece, ceiling: number): ScenePiece[] {
+  const { width } = lamp.image.pixels;
+  return [3, width - 4].map((dx, i) => {
+    const height = Math.max(1, lamp.py + 2 - ceiling);
+    const key = `chain:${height}`;
+    let image = spriteCache.get(key);
+    if (!image) {
+      const pixels = new Pixels(1, height);
+      for (let y = 0; y < height; y += 2) pixels.set(0, y, C.steelRight);
+      image = { pixels, dx: 0, dy: 0 };
+      spriteCache.set(key, image);
+    }
+    return { key: `${lamp.key}:chain${i}`, image, px: lamp.px + dx, py: ceiling, depth: lamp.depth };
+  });
 }
 
 // ---------- Walking in and out ----------
