@@ -11,6 +11,7 @@ import {
   type EventEffects,
   type RandomEventId,
 } from '../data/events';
+import { HAPPENING_IDS, HAPPENINGS, type HappeningId } from '../data/happenings';
 import { REGULAR } from '../data/personal';
 import { inSeasonOn } from './menu';
 import { regularsBookings } from './regulars';
@@ -71,6 +72,26 @@ export function rollRandomEvent(rng: RngState): RandomEventId | null {
   return weightedPick(rng, RANDOM_EVENT_IDS, (id) => RANDOM_EVENTS[id].weight);
 }
 
+/** Maybe something small is going on in town on this day (a cruise ship, a match): returns it, or null. */
+export function rollHappening(rng: RngState, day: number, weather: Weather): HappeningId | null {
+  if (!chance(rng, balance.forecast.happeningChance)) return null;
+  const weekday = weekdayOf(day);
+  const possible = HAPPENING_IDS.filter((id) => {
+    const { weekdays, weather: kinds } = HAPPENINGS[id];
+    return (!weekdays || weekdays.includes(weekday)) && (!kinds || kinds.includes(weather));
+  });
+  return possible.length > 0 ? weightedPick(rng, possible, (id) => HAPPENINGS[id].weight) : null;
+}
+
+/**
+ * The happening that is really on, given the day's real weather: one that needs a certain
+ * weather (a beach day) is called off when the forecast was wrong.
+ */
+export function happeningIn(happening: HappeningId | null, weather: Weather): HappeningId | null {
+  const kinds = happening && HAPPENINGS[happening].weather;
+  return kinds && !kinds.includes(weather) ? null : happening;
+}
+
 function applyEffects(conditions: DayConditions, effects: EventEffects): void {
   conditions.traffic *= effects.traffic ?? 1;
   for (const [group, factor] of Object.entries(effects.groups ?? {})) {
@@ -95,6 +116,8 @@ export function conditionsFor(state: GameState): DayConditions {
     inSeason: inSeasonOn(state.day),
   };
   for (const id of calendarEventsOn(state.day)) applyEffects(conditions, CALENDAR_EVENTS[id].effects);
+  const happening = happeningIn(state.happening, state.weather);
+  if (happening) applyEffects(conditions, { groups: HAPPENINGS[happening].groups });
 
   const player = state.restaurants[0];
   const seats = player.tables * balance.service.seatsPerTable;

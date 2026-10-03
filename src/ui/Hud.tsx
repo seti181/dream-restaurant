@@ -63,10 +63,12 @@ export function useHudFacts() {
   const phase = useGame((s) => s.phase);
   const live = useGame((s) => s.live);
   const summary = useGame((s) => s.summary);
+  // Once the doors are open, the real weather (the forecast can be wrong).
+  const openWeather = useGame((s) => s.openDay?.weather);
 
   // While the day's results are showing, keep showing that day's date.
   const day = phase === 'dayOver' && summary ? summary.day : game.day;
-  const weatherId = phase === 'dayOver' && summary ? summary.weather : game.weather;
+  const weatherId = phase === 'dayOver' && summary ? summary.weather : (openWeather ?? game.weather);
   return {
     date: formatDate(dateOf(day)),
     week: seasonWeek(day),

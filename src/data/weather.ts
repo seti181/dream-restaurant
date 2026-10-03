@@ -15,3 +15,19 @@ export const WEATHER: Record<Weather, { name: string; icon: string; forecast: st
     forecast: 'A heatwave! Ice cream and lemonade fly out; nobody wants hot soup.',
   },
 };
+
+/** When the forecast is wrong, what the weather turns into instead (one is picked at random). */
+export const FORECAST_MISSES: Record<Weather, readonly Weather[]> = {
+  sunny: ['cloudy'],
+  cloudy: ['sunny', 'rain'],
+  rain: ['cloudy'],
+  heatwave: ['sunny'],
+};
+
+/** How the weather is described when it turned out differently from the forecast. */
+export const WEATHER_AFTER_ALL: Record<Weather, string> = {
+  sunny: 'the sun came out after all',
+  cloudy: 'it stayed grey after all',
+  rain: 'it rained after all',
+  heatwave: 'it turned into a scorcher',
+};

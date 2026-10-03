@@ -52,7 +52,7 @@ export function PlanScreen() {
   const tabs = duringDay ? TABS.filter(({ tab }) => !BEFORE_OPENING_ONLY.includes(tab)) : TABS;
   const shown = duringDay && BEFORE_OPENING_ONLY.includes(planTab) ? 'menu' : planTab;
   const day = useGame((s) => s.game.day);
-  const weather = useGame((s) => s.game.weather);
+  const weather = useGame((s) => s.openDay?.weather ?? s.game.weather);
   const [waitNoteClosed, setWaitNoteClosed] = useState(false);
 
   return (

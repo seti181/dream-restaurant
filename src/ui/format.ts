@@ -1,6 +1,7 @@
 // Formatting helpers for player-facing text.
 
 import { EXTRAS, type MenuDish } from '../data/dishes';
+import { WEATHER, WEATHER_AFTER_ALL, type Weather } from '../data/weather';
 import { extrasOf, templateOf, variantOf } from '../sim/menu';
 
 /** "40,000 zł" */
@@ -34,4 +35,9 @@ export function dishName(dish: MenuDish): string {
 /** "2.4 ★" */
 export function stars(rating: number): string {
   return `${rating.toFixed(1)} ★`;
+}
+
+/** "The forecast said sunny, but it rained after all!" */
+export function forecastMiss(said: Weather, actual: Weather): string {
+  return `The forecast said ${WEATHER[said].name.toLowerCase()}, but ${WEATHER_AFTER_ALL[actual]}!`;
 }

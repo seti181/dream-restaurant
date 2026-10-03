@@ -7,6 +7,7 @@ import { CALENDAR_EVENTS, RANDOM_EVENTS, type RandomEventId } from '../data/even
 import type { MomentId } from '../data/moments';
 import { GROUP_IDS, type GroupId } from '../data/groups';
 import { CAMPAIGNS, type CampaignId } from '../data/marketing';
+import type { HappeningId } from '../data/happenings';
 import { FIRST_GOAL, type TipId } from '../data/mewa';
 import { LOCATIONS } from '../data/locations';
 import { PORTUGUESE_CORNER, SECRET_RECIPE, SPECIAL_STAFF, type SpecialStaffId } from '../data/personal';
@@ -20,11 +21,13 @@ import {
   calendarEventsOn,
   calendarEventsStarting,
   conditionsFor,
+  rollHappening,
   rollRandomEvent,
   rollWeather,
 } from './events';
 import { weeklyBillsDue } from './finance';
 import { goalOf, goalText, nextGoal, startGoal, trackGoal, type GoalState } from './goals';
+import { forecastFor, weatherAtOpening, type Forecast } from './forecast';
 import { flyerGuestsArrive, handOutFlyer, planFlyers, type FlyersToday } from './flyers';
 import { planGulls, shooGull, stepGulls, type GullsToday } from './gulls';
 import { answerMoment, checkMoments, planMoments, type MomentResult, type MomentsToday } from './moments';
@@ -72,8 +75,10 @@ export interface GameState {
   terracePermitUntilDay: number | null;
   /** Marketing campaigns running, each until the end of its last day. */
   campaigns: { id: CampaignId; untilDay: number }[];
-  /** Today's weather. */
+  /** Today's weather, as forecast (it can still turn as the doors open: see OpenDay.weather). */
   weather: Weather;
+  /** Something small going on in town today (a cruise ship, a match), if anything. */
+  happening: HappeningId | null;
   /** Surprise events, from their first to their last day. */
   events: { id: RandomEventId; fromDay: number; untilDay: number }[];
   /** This morning's news. */
@@ -117,6 +122,10 @@ export interface Upcoming {
 /** A day that is currently being played. */
 export interface OpenDay {
   progress: DayInProgress;
+  /** Today's real weather: usually as forecast, now and then not. */
+  weather: Weather;
+  /** What the forecast said, when it was wrong. */
+  forecastSaid: Weather | null;
   /** The day's own copy of the random generator; handed back to the game at closing. */
   rng: RngState;
   /** Team members who didn't turn up today, and why. */
@@ -175,7 +184,12 @@ export interface DaySummary extends DayTally {
   lunchSetsSold: number;
   /** What guests said about pairings they tasted: hints for the dish creator. */
   pairingComments: { comment: string; happy: boolean }[];
+  /** Today's real weather. */
   weather: Weather;
+  /** What the forecast said, when it was wrong. */
+  forecastSaid: Weather | null;
+  /** What tomorrow brings, for the end of the report. */
+  tomorrow: Forecast;
   /** Events that were on today. */
   events: string[];
   /** Reviews written today, the critic's first. */
@@ -221,6 +235,7 @@ export function newGame(seed: number, difficulty: Difficulty = 'normal'): GameSt
     terracePermitUntilDay: null,
     campaigns: [],
     weather: rollWeather(rng, 0),
+    happening: null,
     events: [],
     news: [],
     week: { served: {}, turnedAway: {} },
@@ -330,7 +345,10 @@ export function restingFloor(state: GameState): FloorView {
 
 export function openRestaurant(state: GameState): OpenDay {
   const [player, ...rivals] = state.restaurants;
-  const terraceTables = terraceOpenOn(state, state.day)
+  // The forecast is usually right, but not always.
+  const weather = weatherAtOpening(state);
+  const actual = { ...state, weather };
+  const terraceTables = terraceOpenOn(actual, state.day)
     ? Math.floor(LOCATIONS[player.location].terraceSeats / balance.service.seatsPerTable)
     : 0;
   // Someone who sometimes doesn't turn up decides this morning.
@@ -358,7 +376,9 @@ export function openRestaurant(state: GameState): OpenDay {
   };
   const rivalsToday = rivals.map((rival) => ({ ...rival, awareness: rivalAwarenessToday(rival) }));
   return {
-    progress: startDay(state.day, [today, ...rivalsToday], conditionsFor(state)),
+    progress: startDay(state.day, [today, ...rivalsToday], conditionsFor(actual)),
+    weather,
+    forecastSaid: weather !== state.weather ? state.weather : null,
     rng,
     absent,
     team: state.team,
@@ -819,32 +839,38 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
     season = { ratings: {}, fairGuests: {} };
   }
 
+  // Tomorrow's weather, and maybe something small going on in town.
+  const weather = rollWeather(rng, nextDay);
+  const happening = rollHappening(rng, nextDay, weather);
+  const next: GameState = {
+    ...state,
+    day: nextDay,
+    cash,
+    rng,
+    candidates,
+    nextEmployeeId,
+    campaigns: state.campaigns.filter((c) => c.untilDay > state.day),
+    weather,
+    happening,
+    events,
+    news,
+    week: nextWeek,
+    goal,
+    season,
+    trophies,
+    secretRecipe,
+    momentsSeen: { ...state.momentsSeen, ...Object.fromEntries(open.moments.seen.map((id) => [id, state.day])) },
+    regulars: regularsToday.stories,
+    team,
+    unlocks: [...state.unlocks, ...unlocked],
+    upcoming,
+    // Running out of money ends the game.
+    gameOver: state.gameOver || cash <= 0,
+    restaurants,
+  };
+
   return {
-    state: {
-      ...state,
-      day: nextDay,
-      cash,
-      rng,
-      candidates,
-      nextEmployeeId,
-      campaigns: state.campaigns.filter((c) => c.untilDay > state.day),
-      weather: rollWeather(rng, nextDay),
-      events,
-      news,
-      week: nextWeek,
-      goal,
-      season,
-      trophies,
-      secretRecipe,
-      momentsSeen: { ...state.momentsSeen, ...Object.fromEntries(open.moments.seen.map((id) => [id, state.day])) },
-      regulars: regularsToday.stories,
-      team,
-      unlocks: [...state.unlocks, ...unlocked],
-      upcoming,
-      // Running out of money ends the game.
-      gameOver: state.gameOver || cash <= 0,
-      restaurants,
-    },
+    state: next,
     summary: {
       ...tally,
       day: state.day,
@@ -864,7 +890,9 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
         name: rival.name,
         guestsServed: tallyFor(outcomes, rival.id).guestsServed,
       })),
-      weather: state.weather,
+      weather: open.weather,
+      forecastSaid: open.forecastSaid,
+      tomorrow: forecastFor(next, state, open.progress.conditions),
       events: eventsToday(state),
       reviews,
       goalCompleted,

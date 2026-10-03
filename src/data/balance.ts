@@ -89,6 +89,17 @@ export const balance = {
     randomChancePerDay: 0.2,
   },
 
+  forecast: {
+    /** Chance each evening that something small in town (data/happenings.ts) changes who's out tomorrow. */
+    happeningChance: 0.5,
+    /** Chance the weather forecast is wrong: the weather turns as the doors open (see FORECAST_MISSES). */
+    wrongChance: 0.12,
+    /** Tomorrow is "busier than today" when this many times as many people are expected on your street… */
+    busierAbove: 1.15,
+    /** …and "quieter than today" below this. */
+    quieterBelow: 0.87,
+  },
+
   reviews: {
     /** Chance that a party writes a review. */
     chance: 0.12,

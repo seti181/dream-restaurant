@@ -5,7 +5,7 @@ import { useEffect, useState, type ReactNode } from 'react';
 import type { TableGuests } from '../sim/day';
 import { balance } from '../data/balance';
 import { formatTime, ticksPerDay } from '../sim/clock';
-import { dishName, money } from './format';
+import { dishName, forecastMiss, money } from './format';
 import { Cash, MuteButton, Rating, SpeedControls, useHudFacts, WeatherName } from './Hud';
 import { FoodIcon } from './PixelIcon';
 import type { GroupId } from '../data/groups';
@@ -310,27 +310,36 @@ function GullNote() {
   );
 }
 
-/** How long a note about someone not turning up today stays on screen, in real seconds. */
-const ABSENCE_NOTE_SECONDS = 15;
+/** How long the notes at the start of the day stay on screen, in real seconds. */
+const MORNING_NOTE_SECONDS = 15;
 
-/** Who didn't turn up today (Adrian's excuses, someone in bed): for a little while, or until closed. */
-function AbsenceNotes() {
+/**
+ * Notes as the doors open: the forecast got the weather wrong, or someone didn't turn up
+ * (Adrian's excuses, someone in bed). For a little while, or until closed.
+ */
+function MorningNotes() {
   const absent = useGame((s) => s.live?.absent ?? []);
+  const said = useGame((s) => s.openDay?.forecastSaid ?? null);
+  const weather = useGame((s) => s.openDay?.weather ?? null);
   const [closed, setClosed] = useState<string[]>([]);
   const [expired, setExpired] = useState(false);
   useEffect(() => {
-    const timer = window.setTimeout(() => setExpired(true), ABSENCE_NOTE_SECONDS * 1000);
+    const timer = window.setTimeout(() => setExpired(true), MORNING_NOTE_SECONDS * 1000);
     return () => window.clearTimeout(timer);
   }, []);
   if (expired) return null;
+  const notes = [
+    ...(said && weather ? [{ text: forecastMiss(said, weather), good: weather !== 'rain' }] : []),
+    ...absent.map((excuse) => ({ text: excuse, good: false })),
+  ];
   return (
     <>
-      {absent
-        .filter((excuse) => !closed.includes(excuse))
-        .map((excuse) => (
-          <p key={excuse} className="gull-warning bad">
-            <span>{excuse}</span>
-            <NoteClose onClose={() => setClosed((now) => [...now, excuse])} />
+      {notes
+        .filter((note) => !closed.includes(note.text))
+        .map((note) => (
+          <p key={note.text} className={`gull-warning ${note.good ? 'good' : 'bad'}`}>
+            <span>{note.text}</span>
+            <NoteClose onClose={() => setClosed((now) => [...now, note.text])} />
           </p>
         ))}
     </>
@@ -387,7 +396,7 @@ export function DayScreen() {
   const [note, setNote] = useState<{ text: string; at: number } | null>(null);
   const location = useGame((s) => playerOf(s.game).location);
   const moveGuests = useGame((s) => s.moveGuests);
-  const weather = useGame((s) => s.game.weather);
+  const weather = useGame((s) => s.openDay?.weather ?? s.game.weather);
   const speed = useGame((s) => s.speed);
   const tick = useGame((s) => s.tick);
   const facts = useHudFacts();
@@ -490,7 +499,7 @@ export function DayScreen() {
           {live.floor.gull && <GullWarning />}
           {!live.floor.gull && <GullNote />}
           <MewaTip screen="open" />
-          <AbsenceNotes />
+          <MorningNotes />
           {note && (
             <p key={note.at} className="gull-warning good">
               <span>{note.text}</span>

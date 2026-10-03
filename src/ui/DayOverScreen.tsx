@@ -3,19 +3,23 @@
 
 import { useState, type ReactNode } from 'react';
 import { GROUP_IDS, GROUPS } from '../data/groups';
+import { HAPPENINGS } from '../data/happenings';
+import { LOCATIONS } from '../data/locations';
 import { REGULARS } from '../data/regulars';
 import { REPLIES, REPLY_IDS } from '../data/reviews';
+import { WEATHER } from '../data/weather';
 import { canReply } from '../sim/reviews';
 import { dateOf, formatDate } from '../sim/calendar';
 import { formatTime } from '../sim/clock';
-import { playerOf, type DaySummary } from '../sim/game';
+import { eventsToday, playerOf, type DaySummary } from '../sim/game';
 import { recipeKey } from '../sim/menu';
 import type { Review, SatisfactionFactors } from '../sim/types';
-import { dishName, money, signedMoney, stars } from './format';
+import { dishName, forecastMiss, money, signedMoney, stars } from './format';
 import { Confetti, StarRow } from './Juice';
 import { MewaTip } from './Mewa';
 import { MewaIcon } from './MewaIcon';
-import { FoodIcon } from './PixelIcon';
+import { WEATHER_ICONS } from './pixel/icons';
+import { FoodIcon, PixelIcon } from './PixelIcon';
 import { PanoramaScreen } from './Panorama';
 import { isFairDay } from '../sim/neptune';
 import { useGame } from './store';
@@ -62,6 +66,68 @@ function headline(summary: DaySummary): string {
   if (summary.profit > 0) return 'A good day! 🎉';
   if (summary.guestsServed > 0) return 'A tough day, but tomorrow is another one.';
   return 'A quiet day.';
+}
+
+/** How tomorrow's crowd compares with today's. */
+const CROWD: Record<DaySummary['tomorrow']['crowd'], string> = {
+  busier: 'Busier than today on',
+  same: 'About as busy as today on',
+  quieter: 'Quieter than today on',
+};
+
+/** The same comparison in a few words, for the teaser at the top. */
+const CROWD_SHORT: Record<DaySummary['tomorrow']['crowd'], string> = {
+  busier: 'busier than today',
+  same: 'about as busy as today',
+  quieter: 'quieter than today',
+};
+
+/** One line near the top of the report, so tomorrow isn't missed: the whole forecast is at the bottom. */
+function TomorrowTeaser({ summary }: { summary: DaySummary }) {
+  const game = useGame((s) => s.game);
+  const { tomorrow } = summary;
+  if (game.day !== tomorrow.day) return null;
+  const happening = tomorrow.happening && HAPPENINGS[tomorrow.happening];
+  return (
+    <p className="tomorrow-teaser">
+      <PixelIcon art={WEATHER_ICONS[tomorrow.weather]} name={`weather:${tomorrow.weather}`} />{' '}
+      <strong>Tomorrow:</strong> {WEATHER[tomorrow.weather].name.toLowerCase()} and {CROWD_SHORT[tomorrow.crowd]}
+      {happening && `, and ${happening.short}`}. <span className="muted">More at the bottom.</span>
+    </p>
+  );
+}
+
+/** The end of the report: what tomorrow brings, so the menu, the special and the team can be planned for it. */
+function Tomorrow({ summary }: { summary: DaySummary }) {
+  // After closing, the game has already moved on to tomorrow.
+  const game = useGame((s) => s.game);
+  const { tomorrow } = summary;
+  if (game.day !== tomorrow.day) return null;
+  const happening = tomorrow.happening && HAPPENINGS[tomorrow.happening];
+  const events = eventsToday(game);
+  return (
+    <section className="today-news tomorrow">
+      <h2>Tomorrow: {formatDate(dateOf(tomorrow.day))}</h2>
+      <p>
+        <PixelIcon art={WEATHER_ICONS[tomorrow.weather]} name={`weather:${tomorrow.weather}`} />{' '}
+        <strong>{WEATHER[tomorrow.weather].name}, says the forecast.</strong> {WEATHER[tomorrow.weather].forecast}
+      </p>
+      {happening && (
+        <p>
+          {happening.icon} {happening.text}
+        </p>
+      )}
+      {events.length > 0 && (
+        <p>
+          🎪 <strong>On tomorrow:</strong> {events.join(' · ')}
+        </p>
+      )}
+      <p>
+        👥 {CROWD[tomorrow.crowd]} {LOCATIONS[playerOf(game).location].name}.
+      </p>
+      <p className="small muted">The forecast is right most days, but Gdańsk weather has a mind of its own.</p>
+    </section>
+  );
 }
 
 function Row({
@@ -146,6 +212,7 @@ export function DayOverScreen() {
             {summary.events.length > 0 && ` · ${summary.events.join(' · ')}`}
           </p>
           <h1>{headline(summary)}</h1>
+          {!gameOver && <TomorrowTeaser summary={summary} />}
           {summary.goalCompleted && <Confetti />}
           {summary.goalCompleted && (
             <p className="note goal-complete">
@@ -154,6 +221,12 @@ export function DayOverScreen() {
             </p>
           )}
           <p className="said">💬 {guestsSaid(summary.feedback)}</p>
+          {summary.forecastSaid && (
+            <p className="said small">
+              <PixelIcon art={WEATHER_ICONS[summary.weather]} name={`weather:${summary.weather}`} />{' '}
+              {forecastMiss(summary.forecastSaid, summary.weather)}
+            </p>
+          )}
           {summary.regulars.map((visit) => {
             const regular = REGULARS[visit.id];
             return (
@@ -325,6 +398,7 @@ export function DayOverScreen() {
               </ul>
             </section>
           </div>
+          {!gameOver && <Tomorrow summary={summary} />}
         </div>
         <footer className="plan-footer">
           <span className={saved ? 'save-note' : 'save-note warning'}>

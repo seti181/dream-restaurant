@@ -2564,3 +2564,16 @@ h2.spaced {
     font-size: 0.85rem;
   }
 }
+
+/* Near the top of the daily report: tomorrow in one line. */
+.tomorrow-teaser {
+  margin: 4px 0 12px;
+  padding: 6px 12px;
+  border-radius: 12px;
+  background: #eaf3f7;
+}
+
+/* The end of the daily report: what tomorrow brings. */
+.today-news.tomorrow {
+  margin-top: 24px;
+}

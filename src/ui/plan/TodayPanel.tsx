@@ -1,8 +1,10 @@
 // Planning overview: where you are, what's on, and anything that needs attention.
 
 import { balance } from '../../data/balance';
+import { HAPPENINGS } from '../../data/happenings';
 import { LOCATIONS } from '../../data/locations';
 import { WEATHER } from '../../data/weather';
+import { happeningIn } from '../../sim/events';
 import { weeklyBillsDue } from '../../sim/finance';
 import { eventsToday, playerOf, teamWages, type GameState } from '../../sim/game';
 import { freshOn, inSeasonOn, produceName, specialOf } from '../../sim/menu';
@@ -48,6 +50,9 @@ export function TodayPanel() {
   const game = useGame((s) => s.game);
   const player = playerOf(game);
   const bills = weeklyBillsDue(player, game.day);
+  // Once the doors are open, the real weather (the forecast can be wrong) and what's still on.
+  const weather = useGame((s) => s.openDay?.weather ?? s.game.weather);
+  const happening = happeningIn(game.happening, weather);
 
   return (
     <div>
@@ -59,8 +64,13 @@ export function TodayPanel() {
       <section className="today-news">
         <h2>Today in Gdańsk</h2>
         <p>
-          <PixelIcon art={WEATHER_ICONS[game.weather]} name={`weather:${game.weather}`} /> {WEATHER[game.weather].forecast}
+          <PixelIcon art={WEATHER_ICONS[weather]} name={`weather:${weather}`} /> {WEATHER[weather].forecast}
         </p>
+        {happening && (
+          <p>
+            {HAPPENINGS[happening].icon} {HAPPENINGS[happening].text}
+          </p>
+        )}
         {eventsToday(game).length > 0 && (
           <p>
             🎪 <strong>On today:</strong> {eventsToday(game).join(' · ')}
