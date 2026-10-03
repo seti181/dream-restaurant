@@ -75,6 +75,22 @@ describe('the pixel-art room layout', () => {
     expect(changed).toBeGreaterThan(100);
   });
 
+  it('starts cozy, with a fig tree and checked cloths, and bought cloths and panelling still show', () => {
+    const layout = roomLayout(6, 2);
+    const floor = floorView(openRestaurant(newGame(3)).progress, 0);
+    const pieces = (decor: RoomLook['decor']) => scenePieces(layout, floor, { ...look(floor.insideTables), decor });
+    expect(pieces([]).some((p) => p.key === 'figTree')).toBe(true);
+    const table = (decor: RoomLook['decor']) => pieces(decor).find((p) => p.key.startsWith('table'))!.image.pixels.data.join();
+    expect(table(['tablecloths'])).not.toBe(table([]));
+    const plain = drawRoom(layout, look(4));
+    const carved = drawRoom(layout, { ...look(4), decor: ['panelling'] });
+    let changed = 0;
+    for (let y = 0; y < plain.height; y += 2) for (let x = 0; x < plain.width; x += 2) {
+      if (JSON.stringify(plain.get(x, y)) !== JSON.stringify(carved.get(x, y))) changed++;
+    }
+    expect(changed).toBeGreaterThan(100);
+  });
+
   it('draws the street and the sky big enough to fill the frame together', () => {
     const layout = roomLayout(6, 2);
     const street = drawStreet(layout, look(4), layout.width + 80, layout.height + 40, 40, 20);

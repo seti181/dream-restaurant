@@ -42,8 +42,10 @@ const C = {
   wallShade: hex('#e2c99f'),
   trim: hex('#8a5233'),
   trimDark: hex('#6b3d24'),
-  panel: hex('#6b3d24'),
-  panelInset: hex('#7d4a2b'),
+  oak: hex('#9a6436'),
+  oakField: hex('#a8703f'),
+  oakLight: hex('#cf9a5f'),
+  oakDark: hex('#5e3b24'),
   plankA: hex('#d9a066'),
   plankB: hex('#cf9459'),
   seam: hex('#a8703f'),
@@ -64,8 +66,8 @@ const C = {
   clothEdge: hex('#b5452f'),
   bistro: hex('#efe9df'),
   bistroShade: hex('#cfc6b8'),
-  chair: hex('#a0663a'),
-  chairDark: hex('#7a4a2c'),
+  chair: hex('#6b4128'),
+  chairDark: hex('#4e2f1d'),
   steelTop: hex('#d5dde2'),
   steelLeft: hex('#a9b5bc'),
   steelRight: hex('#8a979e'),
@@ -126,8 +128,6 @@ const C = {
   cake: hex('#f1d7a0'),
   flowers: [hex('#e9a23b'), hex('#d9412b'), hex('#f4c531'), hex('#ffffff')],
   trimLight: hex('#b07a4d'),
-  wallLowerLeft: hex('#e6cda2'),
-  wallLowerRight: hex('#eedab4'),
   plasterLight: hex('#fbf1de'),
   plankC: hex('#d49a5f'),
   shadow: hex('#5a3a2a'),
@@ -147,8 +147,7 @@ const C = {
   water: hex('#5d8aa8'),
   lamplight: hex('#ffc861'),
   tableSeam: hex('#9c6440'),
-  apron: hex('#6b4029'),
-  chairTop: hex('#b97a48'),
+  chairTop: hex('#8a5a36'),
   rattan: hex('#d5a468'),
   rattanLight: hex('#ebc690'),
   rattanDark: hex('#a7743f'),
@@ -161,6 +160,19 @@ const C = {
   magnetYellow: hex('#f4c531'),
   leafDark: hex('#2e5e2e'),
   bloom: [hex('#f2a0b5'), hex('#f4c531'), hex('#ffffff')],
+  wainscot: hex('#7a4e31'),
+  wainscotLight: hex('#8e5d3b'),
+  wainscotDark: hex('#5a3823'),
+  checkRed: hex('#d0675a'),
+  checkRedDark: hex('#ad5246'),
+  checkWhite: hex('#f6f1e7'),
+  checkWhiteDark: hex('#ddd2bf'),
+  rugRed: hex('#a13d2f'),
+  rugRedDark: hex('#7a2c23'),
+  rugCream: hex('#f1dfc0'),
+  rugBlue: hex('#2f5f86'),
+  rugBlueLight: hex('#4a7fa8'),
+  kompot: hex('#c4475e'),
 };
 
 const wood: Faces = { top: C.tableTop, left: C.tableLeft, right: C.tableRight, edge: C.tableEdge };
@@ -424,12 +436,16 @@ function piece(o: Origin, key: string, image: SpriteImage, x: number, y: number,
 
 const FOOD: Rgb[] = [hex('#e9a23b'), hex('#b5452f'), hex('#7a9e6b'), hex('#c97a4a')];
 
+/** How a table is dressed: a checked cloth to start with, an embroidered Kashubian one once bought, or a bistro table outside. */
+type TableStyle = 'checked' | 'kashubian' | 'bistro';
+
 /**
- * A table, drawn around its back corner: a wooden one (boards with grain on a pedestal), one
- * with an embroidered Kashubian cloth, or a white bistro table on an iron stand on the terrace.
- * Plates when the food has come, and a little vase with a tulip, or a candle in the evening.
+ * A table, drawn around its back corner: on a pedestal under a red-and-white checked cloth (as in
+ * the concept picture) or an embroidered Kashubian one, or a white bistro table on an iron stand on
+ * the terrace. Plates and glasses of kompot when the food has come, and a little vase with a tulip,
+ * or a candle in the evening.
  */
-function drawTable(img: Pixels, lo: Origin, style: 'wood' | 'cloth' | 'bistro', plates: number, setting: 'vase' | 'candle'): void {
+function drawTable(img: Pixels, lo: Origin, style: TableStyle, plates: number, setting: 'vase' | 'candle'): void {
   // Candlelight warms the top around the middle.
   const lit = (u: number, v: number, colour: Rgb) => {
     if (setting !== 'candle') return colour;
@@ -450,13 +466,17 @@ function drawTable(img: Pixels, lo: Origin, style: 'wood' | 'cloth' | 'bistro', 
     box(img, lo, { x0: 3, x1: 13, y0: 7, y1: 9, z0: 0, z1: 1 }, wood);
     box(img, lo, { x0: 7, x1: 9, y0: 3, y1: 13, z0: 0, z1: 1 }, wood);
     box(img, lo, { x0: 6.5, x1: 9.5, y0: 6.5, y1: 9.5, z0: 1, z1: 12 }, wood);
-    if (style === 'wood') {
-      box(img, lo, { x0: 1, x1: TABLE - 1, y0: 1, y1: TABLE - 1, z0: 10.5, z1: 12 }, solid(C.apron));
-      texturedBox(img, lo, { x0: 0, x1: TABLE, y0: 0, y1: TABLE, z0: 12, z1: 15 }, (face, u, v) => {
-        if (face !== 'top') return face === 'left' ? C.tableLeft : C.tableRight;
-        if (u >= TABLE - 1 || v >= TABLE - 1) return C.tableEdge;
-        if (v % 4 < 0.5) return C.tableSeam;
-        return grain(Math.floor(u / 3), Math.floor(v * 2), 41) < 0.12 ? mix(C.tableTop, C.tableSeam, 0.45) : lit(u, v, C.tableTop);
+    if (style === 'checked') {
+      // Red and white squares, darker down the sides, with a darker hem.
+      const check = (a: number, b: number, light: boolean) => {
+        const red = (Math.floor(a / 4) + Math.floor(b / 4)) % 2 === 0;
+        return red ? (light ? C.checkRed : C.checkRedDark) : light ? C.checkWhite : C.checkWhiteDark;
+      };
+      texturedBox(img, lo, { x0: -0.6, x1: TABLE + 0.6, y0: -0.6, y1: TABLE + 0.6, z0: 10, z1: 15 }, (face, u, v) => {
+        if (face === 'top') return lit(u, v, check(u, v, true));
+        if (v < 0.7) return C.checkRedDark;
+        const side = check(u, v + 1, false);
+        return face === 'left' ? side : mix(side, C.outline, 0.1);
       });
     } else {
       // The cloth hangs down the sides, with a red hem and a band of embroidery.
@@ -480,6 +500,17 @@ function drawTable(img: Pixels, lo: Origin, style: 'wood' | 'cloth' | 'bistro', 
     [12.5, 8],
   ];
   spots.slice(0, plates).forEach(([px, py], i) => plate(img, lo, px, py, 15, FOOD[i % FOOD.length]));
+  // A glass of kompot by each plate.
+  const glasses: [number, number][] = [
+    [11.5, 2.5],
+    [4.5, 13.5],
+    [2.5, 4.5],
+    [13.5, 11.5],
+  ];
+  for (const [gx, gy] of glasses.slice(0, plates)) {
+    box(img, lo, { x0: gx - 0.6, x1: gx + 0.6, y0: gy - 0.6, y1: gy + 0.6, z0: 15, z1: 16.6 }, solid(C.kompot));
+    box(img, lo, { x0: gx - 0.6, x1: gx + 0.6, y0: gy - 0.6, y1: gy + 0.6, z0: 16.6, z1: 17.4 }, solid(C.glass));
+  }
   const mid = TABLE / 2;
   if (setting === 'candle') {
     box(img, lo, { x0: mid - 0.7, x1: mid + 0.7, y0: mid - 0.7, y1: mid + 0.7, z0: 15, z1: 17.5 }, solid(C.candle));
@@ -519,15 +550,10 @@ function trimAt(z: number): Rgb | null {
   return null;
 }
 
-/**
- * Painted plaster: a soft speckle, a darker band below a dado rail, and a little shade low down,
- * in the corner and under the cornice.
- */
-function plaster(u: number, z: number, upper: Rgb, lower: Rgb): Rgb {
+/** Painted plaster above the dado rail: a soft speckle, and a little shade in the corner and under the cornice. */
+function plaster(u: number, z: number, base: Rgb): Rgb {
   if (z >= 15.4 && z < 17) return z >= 16.4 ? C.trimLight : C.trim;
-  const base = z < 15.4 ? lower : upper;
   let shade = 0;
-  if (z < 9) shade += ((9 - z) / 9) * 0.35;
   if (z > WALL_HEIGHT - 9) shade += Math.min(1, (z - (WALL_HEIGHT - 9)) / 5) * 0.25;
   if (u < 8) shade += ((8 - u) / 8) * 0.35;
   const fleck = grain(u / 2, z, 5);
@@ -672,16 +698,35 @@ function wallBase(look: RoomLook, u: number, z: number, colour = C.wallLeft): Rg
     if (d > 1.8 && d < 2.6) return C.azulejoBlue;
     return C.azulejoWhite;
   }
-  if (look.decor.includes('panelling') && z < 16) {
-    if (z >= 14) return z >= 15.4 ? C.trimLight : C.trim;
-    // Carved panels: light along the top and left of each, shade along the bottom and right.
+  if (look.decor.includes('panelling') && z < CARVED_TOP) {
+    // A moulded rail along the top, lit from above.
+    if (z >= CARVED_TOP - 2.4) return z >= CARVED_TOP - 0.8 ? C.oakLight : z >= CARVED_TOP - 1.6 ? C.oak : C.oakDark;
+    // Raised panels in a golden oak frame: light along the top and left of each, shade along the bottom and right.
     const k = ((u % 12) + 12) % 12;
-    if (k <= 2 || k >= 10 || z <= 5 || z >= 12) return C.panel;
-    if (z >= 11.3 || k < 2.7) return C.trim;
-    if (z < 5.7 || k > 9.3) return C.trimDark;
-    return C.panelInset;
+    if (k < 1.6 || k >= 10.4 || z < 6 || z >= CARVED_TOP - 4.4) return k < 0.6 ? C.oakDark : C.oak;
+    if (z >= CARVED_TOP - 5.2 || k < 2.4) return C.oakDark;
+    if (z < 6.8 || k >= 9.6) return C.oakLight;
+    return grain(u * 1.5, z / 4, 55) < 0.12 ? mix(C.oakField, C.oakDark, 0.3) : C.oakField;
   }
-  return plaster(u, z, colour, colour === C.wallLeft ? C.wallLowerLeft : C.wallLowerRight);
+  if (z < 15.4) return wainscot(u, z, colour === C.wallLeft);
+  return plaster(u, z, colour);
+}
+
+/** Carved oak panelling, once bought, reaches higher than the plain panelling the room starts with. */
+const CARVED_TOP = 24;
+
+/**
+ * The plain dark panelling every room starts with, below the dado rail: narrow upright boards with
+ * a groove between them, as in the concept picture. Carved oak panelling replaces it when bought.
+ */
+function wainscot(u: number, z: number, left: boolean): Rgb {
+  const k = ((u % 5) + 5) % 5;
+  let c = k < 0.7 ? C.wainscotDark : k < 1.4 ? C.wainscotLight : C.wainscot;
+  // A shadow under the rail, the right wall a touch lighter, and the corner darker.
+  if (z >= 14.4) c = C.wainscotDark;
+  if (!left) c = mix(c, C.wainscotLight, 0.2);
+  if (u < 8) c = mix(c, C.wainscotDark, ((8 - u) / 8) * 0.4);
+  return grain(u * 2, z / 3, 51) < 0.05 ? mix(c, C.wainscotDark, 0.5) : c;
 }
 
 /** The clock above the door: a quarter past one by day, eight o'clock in the evening. (du, dz) from its middle. */
@@ -855,6 +900,8 @@ function floorColour(layout: RoomLayout, x: number, y: number): Rgb {
     if (x % 6 < 0.6 || y % 6 < 0.6) return C.tileB;
     return (Math.floor(x / 6) + Math.floor(y / 6)) % 2 === 0 ? C.tileA : C.tileB;
   }
+  const rug = rugAt(layout, x, y);
+  if (rug) return rug;
   // Honey-wood boards in three tones, their ends staggered row by row, with grain and the odd knot.
   const row = Math.floor(y / 6);
   const across = y - row * 6;
@@ -871,6 +918,67 @@ function floorColour(layout: RoomLayout, x: number, y: number): Rgb {
 }
 
 const PLANKS = [C.plankA, C.plankB, C.plankC];
+
+/** Jars on the shelf: pickles, honey, cherries, sauerkraut, plums. */
+const JARS = [hex('#7a9e4b'), hex('#e9a23b'), hex('#b5452f'), hex('#f1e2c4'), hex('#6b3d5a')];
+
+/** Where the fig tree stands: the front corner on the kitchen side, which nobody walks through. */
+function figSpot(layout: RoomLayout): Point {
+  return { x: layout.roomX - 10, y: layout.roomY - 10 };
+}
+
+/** A fig tree: a clay pot, a short trunk and a round crown of leaves in three greens. */
+function drawFigTree(img: Pixels, lo: Origin): void {
+  box(img, lo, { x0: -5, x1: 5, y0: -5, y1: 5, z0: 0, z1: 8 }, { top: C.potDark, left: C.potClay, right: C.potDark });
+  box(img, lo, { x0: -5.6, x1: 5.6, y0: -5.6, y1: 5.6, z0: 8, z1: 9.6 }, { top: C.bark, left: C.potClay, right: C.potDark });
+  const { sx, sy } = project(lo, 0, 0, 9.6);
+  const x0 = Math.round(sx);
+  const y0 = Math.round(sy);
+  for (let k = 0; k < 12; k++) {
+    img.set(x0, y0 - k, C.bark);
+    img.set(x0 + 1, y0 - k, C.barkDark);
+  }
+  // Leaves on a sunflower spiral, so they fill the crown evenly; lighter towards the top left.
+  const leaves = 170;
+  for (let i = 0; i < leaves; i++) {
+    const a = i * 2.39996;
+    const r = Math.sqrt(i / leaves) * 15;
+    const lx = Math.round(x0 + Math.cos(a) * r);
+    const ly = Math.round(y0 - 24 + Math.sin(a) * r * 1.05);
+    const lightSide = Math.cos(a) * r + Math.sin(a) * r < -6;
+    const colour = i % 7 === 0 || lightSide ? C.leafLight : i % 3 === 0 ? C.leafDark : mix(C.leaf, C.leafLight, 0.3);
+    img.set(lx, ly, colour);
+    img.set(lx + 1, ly, colour);
+    img.set(lx, ly + 1, i % 2 === 0 ? C.leafDark : colour);
+  }
+}
+
+/**
+ * The rug under the second table, like a Kashubian one: a red border with cream stitches, a cream
+ * band, and a blue middle with diamonds, with tassels at both ends. Null off the rug.
+ */
+function rugAt(layout: RoomLayout, x: number, y: number): Rgb | null {
+  const slot = layout.inside[1];
+  if (!slot) return null;
+  const x0 = slot.x - 12;
+  const x1 = slot.x + TABLE + 12;
+  const y0 = slot.y - 12;
+  const y1 = slot.y + TABLE + 12;
+  if (y < y0 || y >= y1) return null;
+  if ((x >= x0 - 3 && x < x0) || (x >= x1 && x < x1 + 3)) return y >= y0 + 1 && y < y1 - 1 && Math.floor(y) % 3 === 0 ? C.rugCream : null;
+  if (x < x0 || x >= x1) return null;
+  const edge = Math.min(x - x0, x1 - x, y - y0, y1 - y);
+  if (edge < 1) return C.rugRedDark;
+  if (edge < 4) return (Math.floor(x) + Math.floor(y)) % 6 === 0 ? C.rugCream : C.rugRed;
+  if (edge < 5.5) return C.rugCream;
+  // Diamonds on the blue, centred on the rug.
+  const u = ((((x - (x0 + x1) / 2 + 5) % 10) + 10) % 10) - 5;
+  const v = ((((y - (y0 + y1) / 2 + 5) % 10) + 10) % 10) - 5;
+  const d = Math.abs(u) + Math.abs(v);
+  if (d >= 3.4 && d < 4.4) return C.rugCream;
+  if (d < 1.2) return C.rugRed;
+  return grain(x, y, 53) < 0.2 ? C.rugBlueLight : C.rugBlue;
+}
 
 /** Where lamps hang: over the tables, or one chandelier in the middle. */
 export function lampSpots(layout: RoomLayout, look: RoomLook): { x: number; y: number; z: number; kind: 'pendant' | 'chandelier' | 'lantern' }[] {
@@ -903,6 +1011,8 @@ export function drawRoom(layout: RoomLayout, look: RoomLook): Pixels {
     y1: t.y + TABLE + 1,
   }));
   shadows.push({ x0: k + 15, x1: roomX - 3, y0: 25, y1: 37 });
+  const fig = figSpot(layout);
+  shadows.push({ x0: fig.x - 6, x1: fig.x + 7, y0: fig.y - 6, y1: fig.y + 7 });
 
   for (let py = 0; py < height; py++) {
     for (let px = 0; px < width; px++) {
@@ -1067,6 +1177,23 @@ export function drawRoom(layout: RoomLayout, look: RoomLook): Pixels {
       },
     });
   }
+  // A shelf of jars high on the window wall, above the lamps: pickles, honey, cherries and more.
+  const shelf = { u0: 70, u1: Math.min(112, layout.roomY - 10) };
+  const jars = Math.floor((shelf.u1 - shelf.u0 - 2) / 7);
+  if (jars > 0) {
+    things.push({
+      depth: 3,
+      draw: (l) => {
+        box(l, o, { x0: 0, x1: 6, y0: shelf.u0, y1: shelf.u1, z0: 41, z1: 43 }, { top: C.chairTop, left: C.chair, right: C.chairDark });
+        for (let i = 0; i < jars; i++) {
+          const y = shelf.u0 + 2.5 + i * 7;
+          const jar = JARS[i % JARS.length];
+          box(l, o, { x0: 1, x1: 4, y0: y, y1: y + 3.5, z0: 43, z1: 47.5 }, { top: mix(jar, C.plate, 0.3), left: jar, right: mix(jar, C.outline, 0.25) });
+          box(l, o, { x0: 1.3, x1: 3.7, y0: y + 0.3, y1: y + 3.2, z0: 47.5, z1: 48.7 }, { top: C.gold, left: C.gold, right: mix(C.gold, C.outline, 0.3) });
+        }
+      },
+    });
+  }
   // A plant by the door, and Mewa on the windowsill: always there.
   things.push({ depth: layout.door.x0 - 4, draw: (l) => placeOn(l, o, S.sprite(S.PLANT, S.PLANT_COLOURS), layout.door.x0 - 6, 4, 0) });
   things.push({ depth: 56, draw: (l) => placeOn(l, o, S.sprite(S.MEWA, S.MEWA_COLOURS), 3, 56, 16) });
@@ -1100,7 +1227,7 @@ export function scenePieces(
     const around = seats(slot);
     const seated = guests && !arriving.has(tableIndex) ? guests.seated : 0;
     const eating = guests?.stage === 'eating';
-    const style = outdoor ? 'bistro' : clothed ? 'cloth' : 'wood';
+    const style: TableStyle = outdoor ? 'bistro' : clothed ? 'kashubian' : 'checked';
     // Chairs (one sprite per chair, each with its own depth).
     around.forEach((seat, i) => {
       const image = drawn(`chair:${outdoor ? 'rattan' : 'wood'}:${i}`, (img, lo) => chair(img, lo, shiftSeat(seat, slot), outdoor ? RATTAN_CHAIR : WOOD_CHAIR));
@@ -1126,6 +1253,10 @@ export function scenePieces(
   layout.terrace.forEach((slot, i) =>
     addTable(slot, floor.tables[floor.insideTables + i] ?? null, true, floor.insideTables + i),
   );
+
+  // A big fig tree in a clay pot, in the front corner by the kitchen side, out of everyone's way.
+  const fig = figSpot(layout);
+  pieces.push(piece(o, 'figTree', drawn('figTree', drawFigTree), fig.x, fig.y, 0, fig.x + fig.y));
 
   pieces.push(...buildingPieces(layout, floor), ...streetPieces(layout, look, floor.location));
 

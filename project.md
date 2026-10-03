@@ -723,7 +723,7 @@ Each item is tested in the browser and on the tablet before the next one starts.
 - [x] Graphics C: richer furniture and decor
 - [x] Graphics C: bigger, more detailed people
 - [x] Graphics C as in the concept: the concept's scale, with the room drawn 1.25 times bigger, tables further apart, taller walls and people at about 24×38 (`art/concepts/v3/c-richer-art-day.png`)
-- [ ] Graphics C as in the concept: a cozy starting room (plain dark panelling, checked tablecloths with plates and glasses, a rug, a fig tree and a jar shelf); bought decor upgrades them
+- [x] Graphics C as in the concept: a cozy starting room (plain dark panelling, checked tablecloths with plates and glasses, a rug, a fig tree and a jar shelf); bought decor upgrades them
 - [ ] Graphics C as in the concept: the kitchen as a long wooden counter (the pass) with plates and a heat lamp
 - [ ] Graphics C as in the concept: people's details and poses at the new size
 - [ ] Graphics B: pixel-framed menus and pop-ups
@@ -929,3 +929,10 @@ Each item is tested in the browser and on the tablet before the next one starts.
   - **People:** 24×37 pixels (plus room for hats) instead of 18×30, with the same friendly faces: eyes with a shine, rosy cheeks, a small mouth, no brows and no shadow along the jaw. The Staff tab's portraits are the same faces.
   - On the tablet's 1364×603 the room shows at about 1.8 screen pixels to an art pixel instead of 2.55, so things look about the same size as before but with more detail and space. Drawing the room and the street takes about twice as long as before (on a PC, Ogarna's room 36 → 68 ms and street 31 → 54 ms), but they're only redrawn when the room changes or at dusk.
   - The small hand-drawn sprites (wall lamps, the pot plant, Mewa, the pans) keep their size, as in the concept picture; plants and decor come in the next step.
+- 2026-10-03: Graphics C as in the concept, second step: a cozy starting room.
+  - **Panelling:** below the dado rail, plain dark wood panelling of narrow upright boards. Carved oak panelling, once bought, is now clearly the upgrade: it reaches higher, up to a moulded rail, in golden oak with raised panels that catch the light.
+  - **Tables:** every inside table starts with a red-and-white checked cloth, as in the concept; the Kashubian embroidered cloths replace it when bought. A glass of kompot now stands by each plate.
+  - **Rug:** a Kashubian-style rug under the second table: a red border with cream stitches, a cream band and a blue middle with diamonds, with tassels at both ends.
+  - **Fig tree:** a big fig in a clay pot in the front corner on the kitchen side, which nobody walks through.
+  - **Jar shelf:** a shelf of jars high on the window wall, above the wall lamps: pickles, honey, cherries, sauerkraut and plums, with gold lids.
+  - **Chairs:** dark walnut, as in the concept, so they stand out against the honey floor (the communal table's bench too). The terrace keeps its rattan chairs.
