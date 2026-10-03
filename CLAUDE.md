@@ -8,6 +8,7 @@
 - It is installed as a PWA from GitHub Pages.
 - The full design is in `project.md`. Read the relevant section before starting any feature.
 - The next task is the first unchecked item of M7b in `project.md` section 12, then M7c. M5's "Balancing" item stays open as an ongoing task alongside them, and M6 is the gift day itself.
+- M7b's ideas are described in section 6.15, but only in outline: the details of each are settled when it is built. Look at the code first, propose a small design, and once it is built, record what was settled in the decision log (section 16), as was done for "Tomorrow's forecast".
 
 ## About the developer
 
@@ -36,6 +37,8 @@ npm run test       # run Vitest
 npm run simulate   # headless full-season balance simulation
 SEEDS=1 npm run simulate                        # a quicker run with one seed
 npx tsx scripts/pixel/room-preview.ts <folder>  # draw the restaurant, its kitchen and everyone in it into PNGs
+npx vite preview --port 4179 --strictPort       # serve the build for play-day.mjs (after npm run build)
+node scripts/play-day.mjs <folder> [days]       # play days in headless Edge at 1364x603 and screenshot the screens and day reports
 ```
 
 Add `?perf` to the game's address to show the performance meter (for checking on the tablet).
@@ -77,4 +80,6 @@ Add `?perf` to the game's address to show the performance meter (for checking on
 - For pixel-art changes, also look at the pictures from `scripts/pixel/room-preview.ts` and at the game at 1364×603.
 - Ask before adding a new dependency.
 - Don't add features that aren't in `project.md`. Suggest them instead, and add accepted decisions to the decision log (section 16).
-- When changing balance numbers, run `npm run simulate` and report the before and after results.
+- When changing balance numbers, or adding anything that changes who comes or what they spend, run `npm run simulate` and report the before and after results. For the "before", run it on the last commit in a separate `git worktree` (with a junction to this `node_modules`) rather than stashing the working files.
+- For UI changes, look at the screen at 1364×603 with `scripts/play-day.mjs` (above), and read its screenshots.
+- When a task is finished and checked, commit it and push to `main` when the user asks (pushing deploys to GitHub Pages through `.github/workflows/deploy.yml`). The `gh` CLI isn't installed.
