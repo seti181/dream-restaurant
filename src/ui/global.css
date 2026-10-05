@@ -365,6 +365,11 @@ button {
   margin-top: 4px;
 }
 
+.stars {
+  color: var(--amber);
+  letter-spacing: 1px;
+}
+
 .stepper {
   display: flex;
   align-items: center;

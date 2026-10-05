@@ -264,6 +264,11 @@ export function DayOverScreen() {
               </p>
             );
           })}
+          {summary.starsEarned.map((earned) => (
+            <p key={earned.template} className="said small">
+              <FoodIcon template={earned.template} /> {earned.text}
+            </p>
+          ))}
           {summary.bookings.map((booking) => (
             <p key={booking.name} className="said small">
               {booking.icon} <strong>{booking.name}.</strong> {booking.text}

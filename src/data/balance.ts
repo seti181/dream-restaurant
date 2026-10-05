@@ -100,6 +100,15 @@ export const balance = {
     quieterBelow: 0.87,
   },
 
+  dishLevels: {
+    /** Portions of a kind of dish the kitchen must have served for one, two and three stars. */
+    starsAt: [30, 120, 300],
+    /** Quality points each star adds to that kind of dish. */
+    qualityPerStar: 3,
+    /** At three stars a dish earns the first of these taste tags it doesn't already have. */
+    masteryTags: ['homemade', 'creative'],
+  },
+
   bookings: {
     /** Chance each evening that a new booking request comes in (data/bookings.ts): about three a week. */
     requestChance: 0.43,

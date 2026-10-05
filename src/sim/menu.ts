@@ -35,9 +35,18 @@ function baseTagsOf(dish: MenuDish): Tag[] {
   return [...templateOf(dish).tags, ...variantOf(dish).tags];
 }
 
-/** Every taste tag of the dish: template, variant and extras, without repeats. */
+/** The taste tag a dish earns at three stars: the first of balance.dishLevels.masteryTags it doesn't already have. */
+export function masteryTagOf(dish: MenuDish): Tag | null {
+  const tags = baseTagsOf(dish);
+  return balance.dishLevels.masteryTags.find((tag) => !tags.includes(tag)) ?? null;
+}
+
+/** Every taste tag of the dish: template, variant and extras (and one earned at three stars), without repeats. */
 export function tagsOf(dish: MenuDish): Tag[] {
-  return [...new Set([...baseTagsOf(dish), ...extrasOf(dish).flatMap((extra) => EXTRAS[extra].tags)])];
+  const mastered = (dish.stars ?? 0) >= balance.dishLevels.starsAt.length ? masteryTagOf(dish) : null;
+  return [
+    ...new Set([...baseTagsOf(dish), ...extrasOf(dish).flatMap((extra) => EXTRAS[extra].tags), ...(mastered ? [mastered] : [])]),
+  ];
 }
 
 /** Identifies a recipe: the same dish, variant and extras count as the same menu item. */

@@ -138,7 +138,9 @@ export function orderQuality(
     const template = templateOf(dish);
     const specialty = chef.specialty !== undefined && chef.specialty === template.cuisine ? k.specialtyBonus : 0;
     const fresh = freshOn(dish, inSeason).length > 0 ? balance.seasonal.freshQuality : 0;
-    return template.baseQuality + skillBonus + specialty + supplierBonus + pairingQuality(dish) + fresh;
+    // A kitchen that has cooked a dish many times cooks it better (sim/practice.ts).
+    const practised = (dish.stars ?? 0) * balance.dishLevels.qualityPerStar;
+    return template.baseQuality + skillBonus + specialty + supplierBonus + pairingQuality(dish) + fresh + practised;
   };
   const quality = average(order.map(dishQuality), 0);
   return Math.max(0, Math.min(100, quality));

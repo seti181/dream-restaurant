@@ -15,6 +15,7 @@ import {
 } from '../../data/dishes';
 import { dishUnavailableReason, extraUnavailableReason, priceRange } from '../../sim/actions';
 import { playerOf } from '../../sim/game';
+import { MAX_STARS, portionsToNextStar, starsFor, withStars } from '../../sim/practice';
 import { MONTH_NAMES } from '../../sim/calendar';
 import { extraCost, extrasOf, freshOn, ingredientCostOf, inSeasonOn, produceName, recipeKey, tagsOf, templateOf } from '../../sim/menu';
 import { money, recipeText } from '../format';
@@ -42,6 +43,23 @@ function SeasonNote({ dish, inSeason }: { dish: MenuDish; inSeason: readonly Ext
     <span className="small season-note">
       {fresh.length > 0 && `🌱 Fresh ${fresh.map(produceName).join(' and ')}: tastes better. `}
       {imported.length > 0 && `Imported ${imported.map(produceName).join(' and ')}: out of season, dearer.`}
+    </span>
+  );
+}
+
+/** "★★☆ · 40 more to ★★★": how well the kitchen knows this kind of dish (sim/practice.ts). */
+function DishStars({ portions }: { portions: number }) {
+  const stars = starsFor(portions);
+  const toGo = portionsToNextStar(portions);
+  return (
+    <span className="small dish-stars">
+      <span className="stars" aria-label={`${stars} of ${MAX_STARS} stars`}>
+        {'★'.repeat(stars)}
+        {'☆'.repeat(MAX_STARS - stars)}
+      </span>{' '}
+      <span className="muted">
+        {toGo === null ? 'a house speciality' : `${toGo} more served to ${'★'.repeat(stars + 1)}`}
+      </span>
     </span>
   );
 }
@@ -108,7 +126,8 @@ function CurrentMenu() {
             <div className="dish-info">
               {special && <span className="special-label">⭐ Dziś polecamy</span>}
               <strong>{dish.name ?? templateOf(dish).name}</strong>
-              <Tags dish={dish} />
+              <DishStars portions={game.dishPractice[dish.template] ?? 0} />
+              <Tags dish={withStars([dish], game.dishPractice)[0]} />
               <span className="small muted">{recipeText(dish)}</span>
               <SeasonNote dish={dish} inSeason={inSeason} />
               <span className="small muted">
@@ -293,6 +312,9 @@ function DishCreator() {
                   {locked ? '🔒 ' : <FoodIcon template={id} />}
                   {DISH_TEMPLATES[id].secret && ' ⭐'}
                   {DISH_TEMPLATES[id].unlockable && ' 🇵🇹'} {DISH_TEMPLATES[id].name}
+                  {starsFor(game.dishPractice[id] ?? 0) > 0 && (
+                    <span className="stars"> {'★'.repeat(starsFor(game.dishPractice[id] ?? 0))}</span>
+                  )}
                 </button>
               );
             })}

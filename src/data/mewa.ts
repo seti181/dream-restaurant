@@ -183,7 +183,7 @@ export const HELP: { title: string; text: string }[] = [
   },
   {
     title: 'Dishes and pairings',
-    text: 'Every dish has taste tags that some guests love. Extras add tags and cost, and some extras go together beautifully. Others really don’t. Guests will drop hints.',
+    text: 'Every dish has taste tags that some guests love. Extras add tags and cost, and some extras go together beautifully. Others really don’t. Guests will drop hints. The more of a kind of dish your kitchen serves, the better it cooks it: up to three stars, and at three stars it earns a new taste tag.',
   },
   {
     title: 'Lunch set (Obiad dnia)',

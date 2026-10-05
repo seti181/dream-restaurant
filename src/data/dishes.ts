@@ -93,6 +93,11 @@ export interface MenuDish {
   name?: string;
   /** Marks a dish served as part of a lunch set (price is its share of the set). */
   fromLunchSet?: boolean;
+  /**
+   * How well the kitchen knows this kind of dish, 0–3 stars (sim/practice.ts). Filled in for
+   * the day from the game's dishPractice; never kept on the saved menu.
+   */
+  stars?: number;
 }
 
 export const TEMPLATE_IDS: readonly TemplateId[] = [

@@ -299,3 +299,11 @@ describe('upgrading version 17 saves (from before booking requests)', () => {
     expect(upgraded.events).toEqual([{ id: 'streetWorks', fromDay: 0, untilDay: 2 }]);
   });
 });
+
+describe('upgrading version 18 saves (from before dishes levelled up)', () => {
+  it('starts with no portions counted', () => {
+    const game = newGame(64);
+    const { dishPractice: _d, ...old } = game;
+    expect(migrate({ saveVersion: 18, savedAt: '', game: old })).toEqual(game);
+  });
+});

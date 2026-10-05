@@ -16,6 +16,7 @@ import type { Weather } from '../data/weather';
 import { helpTable, moveParty, startDay, stepDay, type DayInProgress, type FloorView, type Help } from './day';
 import { isFavourite } from './seating';
 import { bookingsDay, rollRequest, type BookingReport, type BookingRequest } from './bookings';
+import { practiceAfterDay, withStars, type DishPractice, type StarEarned } from './practice';
 import { dateOf, isMonday } from './calendar';
 import { minuteOfDay, ticksPerDay } from './clock';
 import {
@@ -105,6 +106,8 @@ export interface GameState {
   upcoming: Upcoming[];
   /** Booking requests waiting for an answer, and the ones accepted, until their day is over. */
   bookings: BookingRequest[];
+  /** Portions of each kind of dish the kitchen has served: practice earns stars (sim/practice.ts). */
+  dishPractice: DishPractice;
   /** True once the money ran out at the end of a day: the restaurant has closed for good. */
   gameOver: boolean;
   /** The player's restaurant first, then the rivals. */
@@ -223,6 +226,8 @@ export interface DaySummary extends DayTally {
   bookings: BookingReport[];
   /** What they brought: tips and big orders' payments, less the big orders' ingredients. */
   bookingsCash: number;
+  /** Kinds of dish that earned a star today. */
+  starsEarned: StarEarned[];
 }
 
 export function newGame(seed: number, difficulty: Difficulty = 'normal'): GameState {
@@ -257,6 +262,7 @@ export function newGame(seed: number, difficulty: Difficulty = 'normal'): GameSt
     upcoming: [{ fromDay: PORTUGUESE_CORNER.day, untilDay: PORTUGUESE_CORNER.day, card: PORTUGUESE_CORNER.card }],
     unlocks: [],
     bookings: [],
+    dishPractice: {},
     gameOver: false,
     restaurants: [
       createPlayerRestaurant(start.name, start.menu, staffOf(team, 'chef'), staffOf(team, 'waiter')),
@@ -377,6 +383,7 @@ export function openRestaurant(state: GameState): OpenDay {
   const working = state.team.filter((person) => !absent.some((a) => a.id === person.id) && !awayOn(person, state.day));
   const today = {
     ...player,
+    menu: withStars(player.menu, state.dishPractice),
     terraceTables,
     awareness: awarenessToday(state),
     chefs: staffOf(working, 'chef'),
@@ -444,7 +451,7 @@ export function momentDue(open: OpenDay): boolean {
 export function updateToday(open: OpenDay, state: GameState): void {
   const player = playerOf(state);
   const today = open.progress.restaurants[0];
-  today.menu = player.menu;
+  today.menu = withStars(player.menu, state.dishPractice);
   today.lunchSet = player.lunchSet;
   today.supplier = player.supplier;
   today.special = player.special;
@@ -876,6 +883,10 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
   );
   if (request) bookings.push(request);
 
+  // Every portion served is practice: enough of a kind of dish earns it a star.
+  const headChef = open.team.find((person) => person.role === 'chef')?.name ?? null;
+  const practised = practiceAfterDay(state.dishPractice, outcomes, playerBefore.id, headChef);
+
   // Tomorrow's weather, and maybe something small going on in town.
   const weather = rollWeather(rng, nextDay);
   const happening = rollHappening(rng, nextDay, weather);
@@ -902,6 +913,7 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
     unlocks: [...state.unlocks, ...unlocked],
     upcoming,
     bookings,
+    dishPractice: practised.practice,
     // Running out of money ends the game.
     gameOver: state.gameOver || cash <= 0,
     restaurants,
@@ -946,6 +958,7 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
       seating: open.seating,
       bookings: bookingsToday.reports,
       bookingsCash,
+      starsEarned: practised.earned,
     },
   };
 }
