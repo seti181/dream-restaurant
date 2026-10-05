@@ -12,6 +12,8 @@ import { freshOn, inSeasonOn, produceName, specialOf } from '../../sim/menu';
 import { dishName, money } from '../format';
 import { GoalCard } from '../Mewa';
 import { BookingsBox } from './BookingsBox';
+import { DAILY_GOALS } from '../../data/dailyGoals';
+import { dailyGoalText } from '../../sim/dailyGoals';
 import { RankingBox } from './RankingBox';
 import { WEATHER_ICONS } from '../pixel/icons';
 import { FoodIcon, PixelIcon } from '../PixelIcon';
@@ -33,6 +35,23 @@ export function planWarnings(game: GameState): string[] {
     );
   }
   return warnings;
+}
+
+/** Mewa's small goal for today, under the week's. */
+function DailyGoalCard() {
+  const goal = useGame((s) => s.game.dailyGoal);
+  if (!goal) return null;
+  const details = DAILY_GOALS[goal.id];
+  return (
+    <section className="goal-card daily-goal">
+      <p>
+        <strong>
+          🎯 Today: {details.icon} {dailyGoalText(goal)}
+        </strong>{' '}
+        <span className="muted">· reward {money(details.reward)}</span>
+      </p>
+    </section>
+  );
 }
 
 /** Today's special on the board outside, or a nudge to choose one. */
@@ -92,6 +111,7 @@ export function TodayPanel() {
       <BookingsBox />
 
       <GoalCard />
+      <DailyGoalCard />
 
       {planWarnings(game).map((warning) => (
         <p key={warning} className="note warning">

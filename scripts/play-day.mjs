@@ -1,4 +1,4 @@
-// Dev-only: plays days of the game in headless Microsoft Edge at the tablet's 1364x603 and saves
+// Dev-only: plays days of the game in headless Microsoft Edge at the tablet's 1364x603 (or SIZE=WxH) and saves
 // screenshots, so a screen can be checked without a person clicking through it.
 //
 //   npm run build && npx vite preview --port 4179 --strictPort     (in one terminal)
@@ -15,6 +15,8 @@ import { execSync, spawn } from 'node:child_process';
 import { mkdirSync, writeFileSync } from 'node:fs';
 
 const [folder, days = '1', url = 'http://localhost:4179/dream-restaurant/'] = process.argv.slice(2);
+// Another screen size to check, e.g. SIZE=850x530 (the smallest the layout must work at).
+const [WIDTH, HEIGHT] = (process.env.SIZE ?? '1364x603').split('x').map(Number);
 if (!folder) {
   console.error('Usage: node scripts/play-day.mjs <folder> [days] [url]');
   process.exit(1);
@@ -30,7 +32,7 @@ const edge = spawn(
     '--headless=new',
     `--remote-debugging-port=${PORT}`,
     `--user-data-dir=${folder}/edge-profile`,
-    '--window-size=1364,603',
+    `--window-size=${WIDTH},${HEIGHT}`,
     '--hide-scrollbars',
     'about:blank',
   ],
@@ -82,7 +84,7 @@ const screenshot = async (name) => {
   writeFileSync(`${folder}/${name}.png`, Buffer.from(shot.result.data, 'base64'));
 };
 
-await send('Emulation.setDeviceMetricsOverride', { width: 1364, height: 603, deviceScaleFactor: 1, mobile: false });
+await send('Emulation.setDeviceMetricsOverride', { width: WIDTH, height: HEIGHT, deviceScaleFactor: 1, mobile: false });
 await send('Page.enable');
 await send('Page.navigate', { url });
 await sleep(3000);

@@ -191,4 +191,6 @@ export interface PartyOutcome {
   regularVisit?: { id: RegularId; wishMet: boolean };
   /** For a party that booked through a request: which one, and whether their wish was on the menu. */
   booking?: { id: number; wishMet: boolean };
+  /** Served parties: when their food arrived (minutes after midnight). */
+  servedAt?: number;
 }

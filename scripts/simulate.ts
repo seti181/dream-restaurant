@@ -25,6 +25,7 @@ import {
 } from '../src/sim/game';
 import { isFairDay, neptuneScore } from '../src/sim/neptune';
 import { RANKS } from '../src/data/ranks';
+import { DAILY_GOAL_IDS } from '../src/data/dailyGoals';
 import { createPlayerRestaurant } from '../src/sim/setup';
 import { staffOf } from '../src/sim/staff';
 import type { Employee, Role, Staff } from '../src/sim/types';
@@ -67,6 +68,8 @@ interface SeasonResult {
   weeklyStars: number[];
   /** The player's place in each Monday's Old Town top five (1 = first). */
   weeklyPlace: number[];
+  /** Mewa's daily goals: how many of each came up, and how many were done. */
+  dailyGoals: Record<string, { came: number; done: number }>;
 }
 
 /** A new game where the player's menu and team are the strategy's. */
@@ -108,6 +111,7 @@ function playSeason(strategy: Strategy, seed: number): SeasonResult {
     rankDays: RANKS.slice(1).map(() => null),
     weeklyStars: [],
     weeklyPlace: [],
+    dailyGoals: {},
   };
   const fullTicks = { firstWeek: 0, season: 0 };
   const openTicks = { firstWeek: 0, season: 0 };
@@ -196,6 +200,11 @@ function playSeason(strategy: Strategy, seed: number): SeasonResult {
     week.walkedOut += summary.guestsWalkedOut;
     week.turnedAway += summary.guestsTurnedAway;
     week.profit += summary.profit;
+    if (state.dailyGoal && summary.dailyGoal) {
+      const tally = (result.dailyGoals[state.dailyGoal.id] ??= { came: 0, done: 0 });
+      tally.came++;
+      if (summary.dailyGoal.done) tally.done++;
+    }
     if (summary.rankUp !== null) {
       for (let r = 1; r <= summary.rankUp; r++) result.rankDays[r - 1] ??= day;
     }
@@ -331,6 +340,21 @@ console.log(
     Array.from({ length: results[0].seasons[0].weeklyPlace.length }, (_, w) => [
       `week ${w + 2}`,
       ...results.map(({ seasons }) => mean(seasons.map((s) => s.weeklyPlace[w] ?? 0)).toFixed(1)),
+    ]),
+  ),
+);
+
+console.log('\nMewa’s daily goals: how often each was done when it came up (all seasons)\n');
+console.log(
+  table(
+    ['Goal', ...results.map(({ strategy }) => strategy.name)],
+    DAILY_GOAL_IDS.map((id) => [
+      id,
+      ...results.map(({ seasons }) => {
+        const came = seasons.reduce((sum, s) => sum + (s.dailyGoals[id]?.came ?? 0), 0);
+        const done = seasons.reduce((sum, s) => sum + (s.dailyGoals[id]?.done ?? 0), 0);
+        return came === 0 ? '–' : `${Math.round((done / came) * 100)}% of ${came}`;
+      }),
     ]),
   ),
 );

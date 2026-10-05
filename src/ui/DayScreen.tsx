@@ -20,9 +20,30 @@ import { isFavourite } from '../sim/seating';
 import { playerOf } from '../sim/game';
 import { FAVOURITE_SPOTS, GROUP_IDS, GROUPS, SPOT_NAMES } from '../data/groups';
 import { GULLS } from '../data/gulls';
-import { useGame } from './store';
+import { play } from './sound';
+import { useGame, type LiveDay } from './store';
 
-type StatId = 'served' | 'takings' | 'walkedOut' | 'turnedAway';
+type StatId = 'served' | 'takings' | 'walkedOut' | 'turnedAway' | 'goal';
+
+type DailyGoalView = NonNullable<LiveDay['dailyGoal']>;
+
+/** Today's goal in the little box at the top: "5/8", a share of the takings, ✓ once done. */
+function goalValue(goal: DailyGoalView): string {
+  if (goal.done) return '✓';
+  if (goal.atClosing) return goal.progress <= goal.target ? '🤞' : '✗';
+  if (goal.target >= 500) return `${Math.min(99, Math.floor((goal.progress / goal.target) * 100))}%`;
+  return `${Math.floor(goal.progress)}/${goal.target}`;
+}
+
+/** How far today's goal has got, in a sentence. */
+export function goalProgressText(goal: Pick<DailyGoalView, 'atClosing' | 'progress' | 'target'>, finished = false): string {
+  if (goal.atClosing) {
+    if (goal.progress > goal.target) return `${goal.progress} ${goal.progress === 1 ? 'guest' : 'guests'} walked out.`;
+    return finished ? 'Nobody walked out.' : 'Nobody has walked out so far.';
+  }
+  if (goal.target >= 500) return `${money(goal.progress)} of ${money(goal.target)}.`;
+  return `${Math.floor(goal.progress)} of ${goal.target}.`;
+}
 
 /** One of the day's numbers. Tapping it opens the list behind it. */
 function Stat({
@@ -74,12 +95,14 @@ function StatPanel({ stat, onClose }: { stat: StatId; onClose: () => void }) {
   // Re-reads on every tick, while the day runs.
   useGame((s) => s.live?.minute);
   const breakdown = useGame((s) => s.breakdown)();
+  const goal = useGame((s) => s.live?.dailyGoal ?? null);
   if (!breakdown) return null;
   const titles: Record<StatId, string> = {
     served: 'Guests served today',
     takings: 'Takings by dish',
     walkedOut: 'Walked out: waited too long for their food',
     turnedAway: 'No free table: went somewhere else',
+    goal: 'Mewa’s goal for today',
   };
   const empty = (counts: Partial<Record<GroupId, number>>) => Object.values(counts).every((n) => !n);
   return (
@@ -118,6 +141,17 @@ function StatPanel({ stat, onClose }: { stat: StatId; onClose: () => void }) {
             </p>
           </>
         ))}
+      {stat === 'goal' && goal && (
+        <>
+          <p>
+            <strong>
+              {goal.icon} {goal.text}
+            </strong>
+          </p>
+          <p>{goal.done ? 'Done! 🎉' : goalProgressText(goal)}</p>
+          <p className="small muted">Mewa drops {money(goal.reward)} at the door when it’s done.</p>
+        </>
+      )}
       {stat === 'turnedAway' &&
         (empty(breakdown.turnedAway) ? (
           <p className="muted">Everyone has found a table so far.</p>
@@ -432,6 +466,14 @@ export function DayScreen() {
   const speed = useGame((s) => s.speed);
   const tick = useGame((s) => s.tick);
   const facts = useHudFacts();
+  // The moment today's goal is reached: a little fanfare and a note from Mewa.
+  const goalDone = useGame((s) => s.live?.dailyGoal?.done ?? false);
+  const goalReward = useGame((s) => s.live?.dailyGoal?.reward ?? 0);
+  useEffect(() => {
+    if (!goalDone) return;
+    play('goal');
+    setNote({ text: `🎯 Today’s goal done! Mewa will drop ${money(goalReward)} at the door tonight.`, at: Date.now() });
+  }, [goalDone, goalReward]);
 
   // Advance the day on a timer; faster speeds tick more often. Paused means no timer.
   useEffect(() => {
@@ -515,6 +557,14 @@ export function DayScreen() {
           ).map(([id, label, value]) => (
             <Stat key={id} label={label} value={value} open={stat === id} onToggle={() => setStat(stat === id ? null : id)} />
           ))}
+          {live.dailyGoal && (
+            <Stat
+              label="🎯 today’s goal"
+              value={goalValue(live.dailyGoal)}
+              open={stat === 'goal'}
+              onToggle={() => setStat(stat === 'goal' ? null : 'goal')}
+            />
+          )}
         </div>
         <div className="frame day-money">
           <span aria-label="Cash">

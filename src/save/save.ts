@@ -8,7 +8,7 @@ import type { GameState } from '../sim/game';
 import { startGoal } from '../sim/goals';
 import { PORTUGUESE_CORNER } from '../data/personal';
 
-export const SAVE_VERSION = 21;
+export const SAVE_VERSION = 22;
 const SAVE_KEY = 'old-town-kitchen/save';
 
 interface SaveFile {
@@ -203,6 +203,11 @@ function upgradeFrom20(game: Record<string, unknown>): Record<string, unknown> {
   return { ranking: null, ...game };
 }
 
+/** Version 21 → 22 (M7b daily goals): Mewa's small goal for the day starts the next morning. */
+function upgradeFrom21(game: Record<string, unknown>): Record<string, unknown> {
+  return { dailyGoal: null, ...game };
+}
+
 /**
  * Brings a save from any older version up to date, one version at a time.
  * Returns null for saves that can't be understood.
@@ -294,6 +299,10 @@ export function migrate(data: unknown): GameState | null {
   if (version === 20) {
     game = upgradeFrom20(game as unknown as Record<string, unknown>) as unknown as GameState;
     version = 21;
+  }
+  if (version === 21) {
+    game = upgradeFrom21(game as unknown as Record<string, unknown>) as unknown as GameState;
+    version = 22;
   }
 
   return looksLikeGame(game) ? game : null;

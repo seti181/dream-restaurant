@@ -318,6 +318,11 @@ export const balance = {
     favouriteMood: 6,
   },
 
+  dailyGoals: {
+    /** A foodie party this happy (0–100) counts for "Make a foodie happy". */
+    happyFoodieFrom: 55,
+  },
+
   rush: {
     /** The lunch and dinner peaks, when the player can hurry the team (minutes after midnight). */
     windows: [

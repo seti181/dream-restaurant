@@ -19,6 +19,8 @@ import { bookingsDay, rollRequest, type BookingReport, type BookingRequest } fro
 import { practiceAfterDay, withStars, type DishPractice, type StarEarned } from './practice';
 import { rankFor, totalGuests } from './ranks';
 import { weeklyRanking, type OldTownRanking } from './ranking';
+import { dailyGoalMet, dailyGoalText, dailyProgress, rollDailyGoal, type DailyGoalState } from './dailyGoals';
+import { DAILY_GOALS } from '../data/dailyGoals';
 import { RANKS } from '../data/ranks';
 import { dateOf, isMonday } from './calendar';
 import { minuteOfDay, ticksPerDay } from './clock';
@@ -117,6 +119,8 @@ export interface GameState {
   rank: number;
   /** Dziennik Bałtycki's latest Old Town top five (every Monday from week 2), or null before the first. */
   ranking: OldTownRanking | null;
+  /** Mewa's small goal for today, or null (an older save, until the next morning). */
+  dailyGoal: DailyGoalState | null;
   /** True once the money ran out at the end of a day: the restaurant has closed for good. */
   gameOver: boolean;
   /** The player's restaurant first, then the rivals. */
@@ -163,6 +167,12 @@ export interface OpenDay {
   rank: number;
   /** Chefs and waiters the player hurried in today's rushes. */
   hurried: { chefs: number; waiters: number };
+  /** Today's goal from Mewa, as it was this morning. */
+  dailyGoal: DailyGoalState | null;
+  /** Whether every table has been taken at once before 14:00 today (for one of the daily goals). */
+  everyTableTaken: boolean;
+  /** When today's goal was reached during the day, or null. */
+  dailyGoalDoneAt: number | null;
 }
 
 /** The player's numbers for a day, so far or in total. */
@@ -245,6 +255,8 @@ export interface DaySummary extends DayTally {
   rankUp: number | null;
   /** Rush hour: chefs and waiters hurried, the longest quick-service streak, and the tips it brought. */
   rush: { chefs: number; waiters: number; bestStreak: number; tips: number };
+  /** Today's goal from Mewa: what it was, how far it got, and whether it was done (and paid). */
+  dailyGoal: { icon: string; text: string; done: boolean; progress: number; target: number; reward: number; atClosing: boolean } | null;
 }
 
 export function newGame(seed: number, difficulty: Difficulty = 'normal'): GameState {
@@ -252,6 +264,7 @@ export function newGame(seed: number, difficulty: Difficulty = 'normal'): GameSt
   const rng = createRng(seed);
   const team = starterTeam();
   const candidates = generateCandidates(rng, team.length + 1, namesOf(team));
+  const player = createPlayerRestaurant(start.name, start.menu, staffOf(team, 'chef'), staffOf(team, 'waiter'));
   return {
     difficulty,
     day: 0,
@@ -284,11 +297,14 @@ export function newGame(seed: number, difficulty: Difficulty = 'normal'): GameSt
     rank: 0,
     ranking: null,
     gameOver: false,
-    restaurants: [
-      createPlayerRestaurant(start.name, start.menu, staffOf(team, 'chef'), staffOf(team, 'waiter')),
-      ...RIVAL_IDS.map(createRivalRestaurant),
-    ],
+    dailyGoal: rollDailyGoal(dailyGoalSeed(rng, 0), null, player),
+    restaurants: [player, ...RIVAL_IDS.map(createRivalRestaurant)],
   };
+}
+
+/** Daily goals get their own dice, so they never change anything else that's rolled. */
+function dailyGoalSeed(rng: RngState, day: number): number {
+  return (rng.s ^ Math.imul(day + 31, 0x7feb352d)) >>> 0;
 }
 
 function namesOf(people: Employee[]): Set<string> {
@@ -439,6 +455,9 @@ export function openRestaurant(state: GameState): OpenDay {
     terraceBuilt: terraceTablesBuilt(state),
     rank: state.rank,
     hurried: { chefs: 0, waiters: 0 },
+    dailyGoal: state.dailyGoal,
+    everyTableTaken: false,
+    dailyGoalDoneAt: null,
     help: { drinks: 0, apologies: 0, cash: 0 },
     seating: { moved: 0, favourites: 0 },
     gulls: planGulls((state.rng.s ^ Math.imul(state.day + 7, 0x85ebca6b)) >>> 0, terraceTables),
@@ -450,6 +469,32 @@ export function openRestaurant(state: GameState): OpenDay {
 export function playTick(open: OpenDay): void {
   stepGulls(open.gulls, open.progress);
   stepDay(open.rng, open.progress);
+  // Today's goal: a full room counts once, and Mewa notices the moment the goal is reached.
+  const floor = open.progress.floors[0];
+  const tables = open.progress.restaurants[0].tables + open.progress.restaurants[0].terraceTables;
+  const lunchtime = minuteOfDay(Math.max(0, open.progress.tick - 1)) < 14 * 60;
+  if (tables > 0 && floor.freeTables <= 0 && lunchtime) open.everyTableTaken = true;
+  const goal = open.dailyGoal;
+  if (goal && open.dailyGoalDoneAt === null && dailyGoalMet(goal, open.progress, open.everyTableTaken)) {
+    open.dailyGoalDoneAt = minuteOfDay(Math.max(0, open.progress.tick - 1));
+  }
+}
+
+/** Today's goal as the day screen shows it: what, how far, and whether it's done. */
+export function dailyGoalToday(open: OpenDay): { icon: string; text: string; short: string; progress: number; target: number; reward: number; done: boolean; atClosing: boolean } | null {
+  const goal = open.dailyGoal;
+  if (!goal) return null;
+  const details = DAILY_GOALS[goal.id];
+  return {
+    icon: details.icon,
+    text: dailyGoalText(goal),
+    short: details.short,
+    progress: dailyProgress(goal, open.progress, open.everyTableTaken),
+    target: goal.target,
+    reward: details.reward,
+    done: open.dailyGoalDoneAt !== null,
+    atClosing: details.atClosing ?? false,
+  };
 }
 
 /** The player taps the gull on the terrace. Returns true if there was one to shoo. */
@@ -898,6 +943,16 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
   for (const g of GROUP_IDS) if (groups[g].served > 0) guestsServed[g] = (guestsServed[g] ?? 0) + groups[g].served;
   const ratingAfter = starRating(playerAfter, guestsServed);
 
+  // Mewa's small goal for today: paid at closing if it was reached. Tomorrow brings another.
+  let dailyResult: DaySummary['dailyGoal'] = null;
+  const todaysGoal = dailyGoalToday(open);
+  if (open.dailyGoal && todaysGoal) {
+    const done = dailyGoalMet(open.dailyGoal, open.progress, open.everyTableTaken);
+    if (done) cash += todaysGoal.reward;
+    dailyResult = { ...todaysGoal, done };
+  }
+  const dailyGoal = rollDailyGoal(dailyGoalSeed(rng, nextDay), open.dailyGoal?.id ?? null, restaurants[0], tally.revenue);
+
   // Mewa finds the secret recipe once the restaurant is doing well, or by week 3 at the latest.
   let { secretRecipe } = state;
   if (!secretRecipe && (ratingAfter >= SECRET_RECIPE.unlockStars || nextDay >= SECRET_RECIPE.unlockByDay)) {
@@ -997,6 +1052,7 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
     guestsServed,
     rank,
     ranking,
+    dailyGoal,
     menuSlots,
     // Running out of money ends the game.
     gameOver: state.gameOver || cash <= 0,
@@ -1045,6 +1101,7 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
       starsEarned: practised.earned,
       rankUp: rank > state.rank ? rank : null,
       rush: { ...open.hurried, bestStreak: streak.best, tips: streak.tips },
+      dailyGoal: dailyResult,
     },
   };
 }

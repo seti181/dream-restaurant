@@ -1095,6 +1095,14 @@ h2.spaced {
   margin: 8px 0;
 }
 
+.daily-goal {
+  padding: 8px 16px;
+}
+
+.daily-goal p {
+  margin: 0;
+}
+
 .goal-card.done {
   background: #f3f8ef;
 }

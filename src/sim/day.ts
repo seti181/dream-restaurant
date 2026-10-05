@@ -314,6 +314,7 @@ function progressRestaurant(
         review: maybeReview(rng, restaurant, visit, factors, satisfaction),
         ...regularVisit(party, restaurant, visit.seatedAt),
         ...bookingVisit(party, visit.wishMet ?? false),
+        servedAt: visit.readyAt!,
       });
       visit.eating = true;
       visit.satisfaction = satisfaction;

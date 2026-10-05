@@ -17,6 +17,7 @@ import { recipeKey } from '../sim/menu';
 import type { Review, SatisfactionFactors } from '../sim/types';
 import { bookingKindOf } from '../sim/bookings';
 import { bookingLine } from './plan/BookingsBox';
+import { goalProgressText } from './DayScreen';
 import { dishName, forecastMiss, money, signedMoney, stars } from './format';
 import { Confetti, StarRow } from './Juice';
 import { MewaTip } from './Mewa';
@@ -291,6 +292,14 @@ export function DayOverScreen() {
               </p>
             );
           })}
+          {summary.dailyGoal && (
+            <p className="said small">
+              🎯 <strong>Today’s goal:</strong> {summary.dailyGoal.text}.{' '}
+              {summary.dailyGoal.done
+                ? `Done! Mewa drops ${money(summary.dailyGoal.reward)} at the door.`
+                : `Not this time: ${goalProgressText(summary.dailyGoal, true).replace(/\.$/, '')}.`}
+            </p>
+          )}
           {summary.starsEarned.map((earned) => (
             <p key={earned.template} className="said small">
               <FoodIcon template={earned.template} /> {earned.text}

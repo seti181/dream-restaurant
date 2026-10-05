@@ -39,6 +39,7 @@ import {
   playTick,
   shooTheGull,
   hurry,
+  dailyGoalToday,
   startHappyHour,
   tallyFor,
   updateToday,
@@ -89,6 +90,8 @@ export interface LiveDay extends DayTally {
   happyHour: { from: number; until: number } | null;
   /** Flyers left in hand for people walking past. */
   flyersLeft: number;
+  /** Mewa's goal for today, and how far it has got. */
+  dailyGoal: ReturnType<typeof dailyGoalToday>;
 }
 
 interface GameStore {
@@ -197,6 +200,7 @@ function liveFrom(openDay: OpenDay): LiveDay {
     lastGull: openDay.gulls.last,
     happyHour: happyHourToday(openDay),
     flyersLeft: openDay.flyers.left,
+    dailyGoal: dailyGoalToday(openDay),
   };
 }
 

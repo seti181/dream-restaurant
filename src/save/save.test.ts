@@ -323,3 +323,11 @@ describe('upgrading version 20 saves (from before the weekly ranking)', () => {
     expect(migrate({ saveVersion: 20, savedAt: '', game: old })).toEqual(game);
   });
 });
+
+describe('upgrading version 21 saves (from before daily goals)', () => {
+  it('waits for the next morning’s goal', () => {
+    const game = newGame(67);
+    const { dailyGoal: _d, ...old } = game;
+    expect(migrate({ saveVersion: 21, savedAt: '', game: old })).toEqual({ ...game, dailyGoal: null });
+  });
+});
