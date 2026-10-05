@@ -4,7 +4,7 @@
 import { WEATHER } from '../data/weather';
 import { dateOf, formatDate, seasonWeek } from '../sim/calendar';
 import { formatTime } from '../sim/clock';
-import { playerOf, starRating } from '../sim/game';
+import { playerRating } from '../sim/game';
 import { money } from './format';
 import { COIN, STAR, WEATHER_ICONS } from './pixel/icons';
 import { PixelIcon } from './PixelIcon';
@@ -75,7 +75,7 @@ export function useHudFacts() {
     weatherId,
     weather: WEATHER[weatherId],
     cash: game.cash + (live ? live.revenue - live.ingredientCost : 0),
-    rating: starRating(playerOf(game)),
+    rating: playerRating(game),
   };
 }
 

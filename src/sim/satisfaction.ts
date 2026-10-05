@@ -28,11 +28,13 @@ export function satisfactionFactors(visit: VisitDetails): SatisfactionFactors {
   const group = GROUPS[visit.group];
   const s = balance.satisfaction;
   const skillAboveAverage = visit.waiterSkill - balance.staff.averageLevel;
+  // What they'd find a fair price: the usual one, or more for food better than they expected.
+  const fairBill = visit.typicalBill * Math.max(0.5, 1 + (visit.quality - group.expectedQuality) * s.fairPricePerQualityPoint);
   return {
     quality: clamp((visit.quality - group.expectedQuality) / s.qualityRange),
-    // Paying less than usual pleases; paying more annoys, especially price-sensitive groups.
+    // Paying less than seems fair pleases; paying more annoys, especially price-sensitive groups.
     value: clamp(
-      (1 - visit.bill / visit.typicalBill) * s.valueSlope * (0.5 + group.priceSensitivity),
+      (1 - visit.bill / fairBill) * s.valueSlope * (0.5 + group.priceSensitivity),
     ),
     // No wait is wonderful, half their patience is fine, their full patience is awful.
     wait: clamp(1 - (2 * visit.waitMinutes) / group.patienceMinutes),

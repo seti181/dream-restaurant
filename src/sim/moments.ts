@@ -7,6 +7,7 @@
 import { balance } from '../data/balance';
 import { GROUP_IDS, type GroupId } from '../data/groups';
 import { MOMENT_IDS, MOMENTS, type MomentEffect, type MomentId, type MomentNeed } from '../data/moments';
+import { KNOWN_PLACE_RANK } from './ranks';
 import { minuteOfDay, ticksPerDay } from './clock';
 import { doorClosed, seat, type DayInProgress, type Visit } from './day';
 import { calendarEventsOn } from './events';
@@ -64,6 +65,8 @@ export interface MomentContext {
   progress: DayInProgress;
   /** Adrian didn't turn up today. */
   adrianAway: boolean;
+  /** The restaurant's rank (data/ranks.ts). */
+  rank: number;
 }
 
 /** Picks how many random cards come today, and when: anywhere in the day, but not on top of each other. */
@@ -113,7 +116,7 @@ function pickByWeight(today: MomentsToday, options: MomentId[]): MomentId {
 const waiting = (visit: Visit) => !visit.eating && !visit.skipped;
 const outside = (visit: Visit, insideTables: number) => visit.tables.some((table) => table >= insideTables);
 
-function needMet(need: MomentNeed, { progress, adrianAway }: MomentContext): boolean {
+function needMet(need: MomentNeed, { progress, adrianAway, rank }: MomentContext): boolean {
   const restaurant = progress.restaurants[0];
   const floor = progress.floors[0];
   const open = !doorClosed(floor, minuteOfDay(progress.tick));
@@ -150,14 +153,23 @@ function needMet(need: MomentNeed, { progress, adrianAway }: MomentContext): boo
       return progress.conditions.weather === 'rain';
     case 'evening':
       return minuteOfDay(progress.tick) >= 17 * 60;
+    case 'knownPlace':
+      return rank >= KNOWN_PLACE_RANK;
   }
 }
 
 const canHappen = (id: MomentId, context: MomentContext) => MOMENTS[id].needs.every((need) => needMet(need, context));
 
 /** Whether one of a card's needs is met right now in an open day (for tests and tools). */
-export function checkNeed(open: { progress: DayInProgress; absent: { special?: string }[] }, need: MomentNeed): boolean {
-  return needMet(need, { progress: open.progress, adrianAway: open.absent.some((a) => a.special === 'adrian') });
+export function checkNeed(
+  open: { progress: DayInProgress; absent: { special?: string }[]; rank?: number },
+  need: MomentNeed,
+): boolean {
+  return needMet(need, {
+    progress: open.progress,
+    adrianAway: open.absent.some((a) => a.special === 'adrian'),
+    rank: open.rank ?? 0,
+  });
 }
 
 function show(today: MomentsToday, id: MomentId, minute: number, context: MomentContext): void {

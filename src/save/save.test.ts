@@ -307,3 +307,11 @@ describe('upgrading version 18 saves (from before dishes levelled up)', () => {
     expect(migrate({ saveVersion: 18, savedAt: '', game: old })).toEqual(game);
   });
 });
+
+describe('upgrading version 19 saves (from before rank-ups)', () => {
+  it('starts as a Bar with no guests counted yet', () => {
+    const game = newGame(65);
+    const { guestsServed: _g, rank: _r, ...old } = game;
+    expect(migrate({ saveVersion: 19, savedAt: '', game: old })).toEqual(game);
+  });
+});

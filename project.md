@@ -215,11 +215,12 @@ Equipment unlocks templates and adds capacity.
 
 - Every served party produces a **satisfaction** score from:
   - food quality relative to what that group expects
-  - value for money
+  - value for money (better food than they expected makes a higher price feel fair)
   - waiting time
   - ambiance
   - service
 - Satisfaction moves the group's reputation.
+- The **star rating** (1–5, on the same scale as reviews) is the reputation with each group, weighed by how many of that group the restaurant has served.
 - Some parties leave a **review**: 1–5 stars plus a short line generated from the biggest positive and negative drivers (e.g. "Best pierogi on Piwna, but the waiter vanished.").
 - **Food critic events** produce big, rare reviews.
 
@@ -769,7 +770,7 @@ Comes next, before M7c. Each item is tested in the browser and on the tablet bef
 - [x] Tomorrow's forecast at the end of the day report
 - [x] Bookings and big orders to accept or decline
 - [x] Dishes level up with use, up to three stars
-- [ ] Restaurant rank-ups with unlocks
+- [x] Restaurant rank-ups with unlocks
 - [ ] A weekly Old Town ranking against the rivals
 - [ ] Rush hour: hurry a chef or waiter, and a quick-service streak
 - [ ] Daily mini-goals next to Mewa's weekly goal
@@ -1028,3 +1029,11 @@ Moved out of M7 on 2026-10-03, so the more dynamic season (M7b) comes first.
   - **Three stars:** the dish earns the homemade taste tag, or creative if it's homemade already (most Polish classics are, so they become creative, which foodies like). Chosen over new variants, which would need content for every dish.
   - **On screen:** the Menu tab shows ★★☆ under each dish with "40 more served to ★★★" (and the earned tag among its tags), the dish creator shows each kind of dish's stars, and the day report has a line when a star is earned ("Pierogi: ★★! Pani Krystyna could cook it blindfolded now.", with the head chef's name; the lines are in `data/practice.ts`).
   - **Simulator,** 3 seasons, before → after: do nothing 4,266 → −1,010 zł; cheap and fast −34,756 → −36,270 zł (bust in week 3 as before); quality focus −5,840 → 2,235 zł (still bust in week 4, but recovers); balanced 47,738 → 39,630 zł, rating 54.1 → 60.2, Neptune 39.5 → 43.4 against Bar Błyskawica's 44.5, and the Golden Neptune won in 1 of 3 seasons (never before). Over 8 seasons, stars off → on: do nothing −2,518 → −634 zł, quality focus −3,021 → 440 zł, balanced 42,481 → 39,377 zł with rating 54.1 → 59.8, Neptune 39.7 → 43.0, and the Golden Neptune won in 2 of 8. Every strategy's rating rises by 4–6 points; the balanced player reaches its spending and moving thresholds sooner, so it ends with a little less cash. A player who builds up their dishes now has a real chance at the Golden Neptune, which seems right for progress you can feel; nothing was rebalanced.
+- 2026-10-05: Restaurant rank-ups (M7b, section 6.15 B7), and a balance pass asked for at the same time ("make 3 stars achievable, work on game balance more").
+  - **Ranks** (`data/ranks.ts`): Bar, Bistro (500 guests served and 3.0★), Restaurant (1,500 and 3.2★) and Old Town Favourite (3,500 and 3.4★). Both are needed at once, and a rank is never lost. Bistro adds a menu slot, even beyond the biggest menu board (12 → 13). Restaurant lets three new choice cards come, which need a known place: a TV cooking show (the kitchen stops 30 minutes; awareness, and more locals and foodies for three days), a famous chef from Warsaw (a gamble for foodies' reputation and a five-star review) and the city guidebook (600 zł for tourists' awareness). Old Town Favourite puts a brass plaque on the front door and spreads the word (+5 awareness with every group).
+  - **On screen:** on the day of a rank-up the day report opens with confetti, Mewa's line and what it unlocks. The Mewa tab shows the rank and the way to the next one (guests and stars, with a bar), and the Today tab's greeting names it ("Joana's Kitchen, a little bar on ul. Ogarna"). The game now counts guests served by each group all game (`guestsServed`, save version 20; older saves count from now on).
+  - **The star rating, made achievable:** it was the plain average of the five groups' reputations divided by 20 (0–5), so groups that hardly ever come (students, office workers and foodies at Ogarna, still near their starting 30) dragged it down: a well-run restaurant stayed at 2.2–2.7★ all season, and the playtest showed 1.7★. Now each group's reputation is weighed by the guests of that group served (plus 20 each, so at the start they count the same; `balance.reputation.ratingPriorGuests`), on the reviews' 1–5 scale (reputation 0 is one star, 50 three, 100 five): a quiet restaurant settles at about 3.0★ and a good one at 3.5–3.7★. Mewa finds the secret recipe at 3.3★ (was 2.0 on the old scale).
+  - **Better food is worth more:** guests find a price fair up to 0.6% higher for each quality point above what their group expects (`balance.satisfaction.fairPricePerQualityPoint`), so a premium kitchen, or one with three-star dishes, can charge more without seeming dear.
+  - **Costs:** weekly utilities 4,200 → 2,800 zł (section 6.12 calls them small; they had grown as big as Ogarna's rent), and premium ingredients cost 1.3 times the market's instead of 1.5. Doing nothing still loses money (about 30,000 zł over the season) but no longer runs out in week 5; quality focus became viable.
+  - **Simulator's balanced player** now moves to Długa at 60,000 zł instead of 45,000: moving the moment it could pay the fee left it short for Długa's first week of rent (21,000 zł) and once sent it bust. The Map tab shows every street's weekly rent, so a real player can see it coming. The simulator now prints the day each rank was reached and the star rating each week.
+  - **Simulator,** 3 seasons, before → after: do nothing −1,010 zł (bust 2/3, week 5) → 9,574 zł (never bust), rating at the end of the season 3.0★; cheap and fast −36,270 → −24,266 zł (still bust in week 3: it sells below what it costs); quality focus 2,235 zł (bust 3/3, week 4) → 8,165 zł (bust 1/3, week 6), 3.4★; balanced 39,630 → 54,189 zł, 3.6★, Neptune 43.4 → 43.7 against Bar Błyskawica's 44.8 (no longer won: it stays on Ogarna, where in the before run it sometimes moved to Długa for the Fair crowds). Over 8 seasons: do nothing −634 → 9,163 zł (bust 7/8 → 0/8), quality focus 440 → 9,711 zł (bust 8/8 → 2/8, profitable from week 4), balanced 39,377 → 52,718 zł. Ranks: balanced becomes a Bistro on day 4, a Restaurant on day 12 and an Old Town Favourite on day 25; quality focus a Bistro on day 10 and a Restaurant on day 24; doing nothing a Bistro on day 20.

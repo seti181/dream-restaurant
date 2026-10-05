@@ -43,7 +43,10 @@ export type MomentId =
   | 'tramStrike'
   | 'blackout'
   | 'shantyChoir'
-  | 'walesa';
+  | 'walesa'
+  | 'tvCookingShow'
+  | 'famousChef'
+  | 'cityGuidebook';
 
 /** Special guests who sit at a table for a while without ordering from the kitchen. */
 export type Visitor = 'merry' | 'footballer' | 'walesa' | 'filmCrew';
@@ -81,7 +84,9 @@ export type MomentNeed =
   /** Rain today. */
   | 'rainy'
   /** From five in the afternoon. */
-  | 'evening';
+  | 'evening'
+  /** The restaurant has reached the Restaurant rank (data/ranks.ts): bigger names notice it. */
+  | 'knownPlace';
 
 /** How often a card turns up, compared with the others. The weights are in balance.ts. */
 export type Rarity = 'common' | 'uncommon' | 'rare' | 'veryRare';
@@ -214,6 +219,9 @@ export const MOMENT_IDS: readonly MomentId[] = [
   'blackout',
   'shantyChoir',
   'walesa',
+  'tvCookingShow',
+  'famousChef',
+  'cityGuidebook',
 ];
 
 const EVERYONE = (points: number) => ({ tourists: points, students: points, locals: points, office: points, foodies: points });
@@ -1122,6 +1130,80 @@ export const MOMENTS: Record<MomentId, Moment> = {
         },
       },
       { label: 'Maybe next year', effect: { result: 'He paints the bakery’s sign instead. It looks wonderful.' } },
+    ],
+  },
+  // Three cards for a place people have heard of: they only come once the restaurant is a Restaurant.
+  tvCookingShow: {
+    title: 'A TV cooking show',
+    text: 'The producers of “Smaki Pomorza”, a cooking show on regional TV, want to film your chef cooking one dish. It takes the kitchen for half an hour.',
+    needs: ['knownPlace', 'soupOnMenu'],
+    rarity: 'uncommon',
+    once: true,
+    choices: [
+      {
+        label: 'Roll the cameras!',
+        effect: {
+          kitchenPause: 30,
+          awareness: { tourists: 6, students: 6, locals: 6, office: 6, foodies: 6 },
+          followUp: {
+            inDays: 1,
+            days: 3,
+            groups: { locals: 1.25, foodies: 1.25 },
+            news: { title: 'On TV last night', text: 'Half of Pomerania watched your chef stir the soup. They want to taste it now.' },
+          },
+          result: 'The kitchen stops for half an hour while your chef becomes a star. It goes out tomorrow night.',
+        },
+      },
+      { label: 'Not during service', effect: { result: 'They film at Spichlerz Bistro instead. Their chef wears a lot of make-up.' } },
+    ],
+  },
+  famousChef: {
+    title: 'A famous chef',
+    text: 'A chef with two Michelin stars from Warsaw is on holiday in Gdańsk and walks in, curious. Your chef’s hands are shaking.',
+    needs: ['knownPlace', 'doorOpen'],
+    rarity: 'rare',
+    once: true,
+    choices: [
+      {
+        label: 'Cook something special',
+        effect: {
+          qualityBoost: 5,
+          chance: 0.7,
+          reputation: { foodies: 6 },
+          review: {
+            stars: 5,
+            texts: ['Honest Baltic cooking, made with love. I’ll be back next summer.'],
+            reviewers: ['a famous chef from Warsaw'],
+          },
+          result: 'He eats every bite, asks for the recipe, and doesn’t get it. Your kitchen cooks better all evening.',
+          otherwise: {
+            reputation: { foodies: -2 },
+            result: 'He’s polite, but leaves half. Your chef is cross with the oven for the rest of the day.',
+          },
+        },
+      },
+      {
+        label: 'Treat him like anyone else',
+        effect: { reputation: { foodies: 2 }, result: 'He enjoys being nobody for an evening, and leaves a kind note.' },
+      },
+    ],
+  },
+  cityGuidebook: {
+    title: 'The city guidebook',
+    text: 'The editor of “Gdańsk in a Weekend”, the guidebook in every hotel room, asks if your restaurant would like a page in next year’s edition. The photographer costs 600 zł.',
+    needs: ['knownPlace'],
+    rarity: 'uncommon',
+    once: true,
+    choices: [
+      {
+        label: 'A page, please',
+        effect: {
+          cash: -600,
+          awareness: { tourists: 12, foodies: 4 },
+          result: 'The photographer makes your żurek look like a painting. Hotels are already handing out the proofs.',
+        },
+      },
+      { label: 'We’re fine as we are', effect: { result: 'Karczma pod Żurawiem gets the page. Their photo has a goat in it.' } },
     ],
   },
 };

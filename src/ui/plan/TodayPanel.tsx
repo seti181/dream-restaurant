@@ -3,6 +3,7 @@
 import { balance } from '../../data/balance';
 import { HAPPENINGS } from '../../data/happenings';
 import { LOCATIONS } from '../../data/locations';
+import { RANKS } from '../../data/ranks';
 import { WEATHER } from '../../data/weather';
 import { happeningIn } from '../../sim/events';
 import { weeklyBillsDue } from '../../sim/finance';
@@ -59,7 +60,7 @@ export function TodayPanel() {
     <div>
       <h1>{game.day === 0 ? 'Welcome to Gdańsk!' : 'Good morning!'}</h1>
       <p>
-        {player.name} on {LOCATIONS[player.location].name} is ready when you are.
+        {player.name}, {RANKS[game.rank].inSentence} on {LOCATIONS[player.location].name}, is ready when you are.
       </p>
 
       <section className="today-news">

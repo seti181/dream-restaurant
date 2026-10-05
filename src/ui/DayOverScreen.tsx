@@ -5,6 +5,7 @@ import { useState, type ReactNode } from 'react';
 import { GROUP_IDS, GROUPS } from '../data/groups';
 import { HAPPENINGS } from '../data/happenings';
 import { LOCATIONS } from '../data/locations';
+import { RANKS } from '../data/ranks';
 import { REGULARS } from '../data/regulars';
 import { REPLIES, REPLY_IDS } from '../data/reviews';
 import { WEATHER } from '../data/weather';
@@ -217,6 +218,7 @@ export function DayOverScreen() {
   const saved = useGame((s) => s.saved);
   const gameOver = useGame((s) => s.game.gameOver);
   const specialKey = useGame((s) => playerOf(s.game).special);
+  const restaurantName = useGame((s) => playerOf(s.game).name);
   if (!summary) return null;
 
   return (
@@ -230,7 +232,20 @@ export function DayOverScreen() {
           </p>
           <h1>{headline(summary)}</h1>
           {!gameOver && <TomorrowTeaser summary={summary} />}
-          {summary.goalCompleted && <Confetti />}
+          {(summary.goalCompleted || summary.rankUp !== null) && <Confetti />}
+          {summary.rankUp !== null && (
+            <div className="note goal-complete rank-up">
+              <p>
+                🏅 <strong>
+                  {restaurantName} is {RANKS[summary.rankUp].inSentence} now!
+                </strong>
+              </p>
+              <p className="with-icon">
+                <MewaIcon size={32} /> “{RANKS[summary.rankUp].mewa}”
+              </p>
+              <p className="small">✨ {RANKS[summary.rankUp].unlockText}</p>
+            </div>
+          )}
           {summary.goalCompleted && (
             <p className="note goal-complete">
               🎉 Goal complete: {summary.goalCompleted.text}! Mewa drops {money(summary.goalCompleted.reward)} at your

@@ -36,6 +36,7 @@ import {
   type ScenePiece,
 } from './pixel/room';
 import type { Carry, PersonKind } from './pixel/sprites';
+import { TOP_RANK } from '../sim/ranks';
 import { useGame } from './store';
 import { drawCloud, drawRainTile, drawSky, drawStreet } from './pixel/street';
 import { useFittingScale } from './useFittingScale';
@@ -390,10 +391,11 @@ export function PixelRestaurantView({
 
   const dusk = minute >= DUSK_MINUTE;
   const { decor, equipment, insideTables } = floor;
-  const roomKey = [decor.join(), equipment.join(), weather, dusk, insideTables].join('|');
+  const plaque = useGame((s) => s.game.rank >= TOP_RANK);
+  const roomKey = [decor.join(), equipment.join(), weather, dusk, insideTables, plaque].join('|');
   // The room only needs redrawing when what it shows changes.
   const look: RoomLook = useMemo(
-    () => ({ decor, equipment, weather, dusk, insideTables }),
+    () => ({ decor, equipment, weather, dusk, insideTables, plaque }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [roomKey],
   );

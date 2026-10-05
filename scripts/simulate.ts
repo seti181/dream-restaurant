@@ -16,12 +16,14 @@ import {
   momentDue,
   newGame,
   openRestaurant,
+  playerRating,
   playTick,
   shooTheGull,
   startHappyHour,
   type GameState,
 } from '../src/sim/game';
 import { isFairDay, neptuneScore } from '../src/sim/neptune';
+import { RANKS } from '../src/data/ranks';
 import { createPlayerRestaurant } from '../src/sim/setup';
 import { staffOf } from '../src/sim/staff';
 import type { Employee, Role, Staff } from '../src/sim/types';
@@ -58,6 +60,10 @@ interface SeasonResult {
   fullSeason: number;
   /** When every table was first taken on the first day (minutes after midnight), or null if never. */
   firstFullOnDay1: number | null;
+  /** The day each rank was reached (data/ranks.ts, Bistro first), or null if not this season. */
+  rankDays: (number | null)[];
+  /** The star rating at the end of each week. */
+  weeklyStars: number[];
 }
 
 /** A new game where the player's menu and team are the strategy's. */
@@ -96,6 +102,8 @@ function playSeason(strategy: Strategy, seed: number): SeasonResult {
     fullFirstWeek: 0,
     fullSeason: 0,
     firstFullOnDay1: null,
+    rankDays: RANKS.slice(1).map(() => null),
+    weeklyStars: [],
   };
   const fullTicks = { firstWeek: 0, season: 0 };
   const openTicks = { firstWeek: 0, season: 0 };
@@ -177,7 +185,11 @@ function playSeason(strategy: Strategy, seed: number): SeasonResult {
     week.walkedOut += summary.guestsWalkedOut;
     week.turnedAway += summary.guestsTurnedAway;
     week.profit += summary.profit;
+    if (summary.rankUp !== null) {
+      for (let r = 1; r <= summary.rankUp; r++) result.rankDays[r - 1] ??= day;
+    }
     state = next;
+    if (isMonday(state.day)) result.weeklyStars.push(playerRating(state));
     result.lowestCash = Math.min(result.lowestCash, state.cash);
     if (state.gameOver && result.bustWeek === null) result.bustWeek = Math.floor(day / 7) + 1;
   }
@@ -272,6 +284,31 @@ console.log(
         firsts.length === 0 ? 'never' : `${clockTime(mean(firsts))} (${firsts.length}/${seasons.length})`,
       ];
     }),
+  ),
+);
+
+console.log('\nRank-ups: the average day each rank was reached (day 0 is the first Monday), and in how many seasons\n');
+console.log(
+  table(
+    ['Strategy', ...RANKS.slice(1).map((r) => r.name)],
+    results.map(({ strategy, seasons }) => [
+      strategy.name,
+      ...RANKS.slice(1).map((_, i) => {
+        const days = seasons.map((s) => s.rankDays[i]).filter((d): d is number => d !== null);
+        return days.length === 0 ? 'never' : `day ${mean(days).toFixed(0)} (${days.length}/${seasons.length})`;
+      }),
+    ]),
+  ),
+);
+
+console.log('\nStar rating at the end of each week\n');
+console.log(
+  table(
+    ['Week', ...results.map(({ strategy }) => strategy.name)],
+    Array.from({ length: results[0].seasons[0].weeklyStars.length }, (_, w) => [
+      String(w + 1),
+      ...results.map(({ seasons }) => `${mean(seasons.map((s) => s.weeklyStars[w] ?? 0)).toFixed(2)} ★`),
+    ]),
   ),
 );
 

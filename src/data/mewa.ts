@@ -159,7 +159,7 @@ export const HELP: { title: string; text: string }[] = [
   },
   {
     title: 'Rating ★',
-    text: 'How well thought of you are overall, from 0 to 5 stars. It’s the average of your reputation with all five kinds of guests.',
+    text: 'How well thought of you are overall, from 1 to 5 stars, like the reviews guests leave. It’s your reputation with each kind of guest, and the kinds you serve most count the most.',
   },
   {
     title: 'Reputation',

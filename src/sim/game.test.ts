@@ -41,8 +41,19 @@ describe('a new game', () => {
     expect(JSON.parse(JSON.stringify(state))).toEqual(state);
   });
 
-  it('rates the player from their reputation', () => {
-    expect(starRating(playerOf(newGame(1)))).toBeCloseTo(balance.start.reputation / 20);
+  it('rates the player from their reputation, from one star to five like a review', () => {
+    expect(starRating(playerOf(newGame(1)))).toBeCloseTo(1 + (balance.start.reputation / 100) * 4);
+    const reputation = { tourists: 0, students: 100, locals: 50, office: 50, foodies: 50 };
+    expect(starRating({ ...playerOf(newGame(1)), reputation })).toBeCloseTo(3);
+  });
+
+  it('counts the groups the player serves most for the most', () => {
+    const player = { ...playerOf(newGame(1)), reputation: { tourists: 75, students: 25, locals: 75, office: 25, foodies: 25 } };
+    const plain = starRating(player);
+    const weighted = starRating(player, { tourists: 1_000, locals: 500 });
+    expect(weighted).toBeGreaterThan(plain);
+    expect(weighted).toBeLessThan(4);
+    expect(weighted).toBeGreaterThan(3.8);
   });
 });
 

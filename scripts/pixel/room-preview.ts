@@ -42,7 +42,7 @@ function guests(group: GroupId, seated: number, stage: TableGuests['stage'], sin
 
 const GROUPS: GroupId[] = ['tourists', 'locals', 'students', 'office', 'foodies'];
 
-function scene(location: LocationId, dusk: boolean, decor: DecorId[], name: string): void {
+function scene(location: LocationId, dusk: boolean, decor: DecorId[], name: string, plaque = false): void {
   const maxTables = Math.floor(LOCATIONS[location].maxSeats / balance.service.seatsPerTable);
   const terraceTables = Math.floor(LOCATIONS[location].terraceSeats / balance.service.seatsPerTable);
   const insideTables = Math.max(1, maxTables - 2);
@@ -67,7 +67,7 @@ function scene(location: LocationId, dusk: boolean, decor: DecorId[], name: stri
     atTheDoor: [],
     leftTheDoor: [],
   };
-  const look: RoomLook = { decor, equipment: floor.equipment, weather: 'sunny', dusk, insideTables };
+  const look: RoomLook = { decor, equipment: floor.equipment, weather: 'sunny', dusk, insideTables, plaque };
   const picture = new Pixels(layout.width, layout.height);
   const backdrop = hex(dusk ? '#2c3150' : '#b9ada0');
   for (let y = 0; y < layout.height; y++) for (let x = 0; x < layout.width; x++) picture.set(x, y, backdrop);
@@ -103,8 +103,9 @@ function write(picture: Pixels, x0: number, y0: number, width: number, height: n
 
 scene('ogarna', false, [], 'small-day');
 scene('ogarna', true, [], 'small-dusk');
-scene('dluga', false, ['tablecloths', 'pendantLights', 'plantWall', 'tiledStove'], 'big-decor-day');
-scene('dluga', true, ['portraits', 'seaChart', 'shipsInBottles', 'panelling', 'chandelier'], 'big-decor-dusk');
+// The bigger rooms have the top rank's brass plaque on the front door.
+scene('dluga', false, ['tablecloths', 'pendantLights', 'plantWall', 'tiledStove'], 'big-decor-day', true);
+scene('dluga', true, ['portraits', 'seaChart', 'shipsInBottles', 'panelling', 'chandelier'], 'big-decor-dusk', true);
 
 // Everyone, from the front and behind, sitting, walking and carrying a tray; then the team's faces by mood.
 const kinds: PersonKind[] = [

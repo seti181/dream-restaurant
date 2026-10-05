@@ -1042,6 +1042,10 @@ h2.spaced {
   margin: 4px 0;
 }
 
+.rank-up p {
+  margin: 4px 0;
+}
+
 .goal-card.done {
   background: #f3f8ef;
 }

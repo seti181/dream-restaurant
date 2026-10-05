@@ -64,9 +64,17 @@ describe('satisfaction', () => {
   });
 
   it('bothers students about prices more than foodies', () => {
-    const studentValue = satisfactionFactors({ ...ordinaryVisit, group: 'students', bill: 130 }).value;
-    const foodieValue = satisfactionFactors({ ...ordinaryVisit, group: 'foodies', bill: 130 }).value;
+    // Each given just the food they expect.
+    const studentValue = satisfactionFactors({ ...ordinaryVisit, group: 'students', quality: 40, bill: 130 }).value;
+    const foodieValue = satisfactionFactors({ ...ordinaryVisit, group: 'foodies', quality: 75, bill: 130 }).value;
     expect(studentValue).toBeLessThan(foodieValue);
+  });
+
+  it('finds a higher price fair for better food', () => {
+    const dear = { ...ordinaryVisit, group: 'locals' as const, bill: 115 };
+    expect(satisfactionFactors({ ...dear, quality: 85 }).value).toBeGreaterThan(satisfactionFactors({ ...dear, quality: 60 }).value);
+    // Twenty-five points better than locals expect makes 15% more feel about right.
+    expect(satisfactionFactors({ ...dear, quality: 85 }).value).toBeCloseTo(0, 1);
   });
 
   it('stays between 0 and 100 even for extreme visits', () => {

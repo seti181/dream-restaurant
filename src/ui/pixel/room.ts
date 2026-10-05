@@ -610,6 +610,8 @@ export interface RoomLook {
   dusk: boolean;
   /** Tables actually bought, inside; the lamps hang over these. */
   insideTables: number;
+  /** The brass "Old Town Favourite" plaque on the front door (the top rank, data/ranks.ts). */
+  plaque?: boolean;
 }
 
 /** A steady 0–1 number for a spot (and a salt), so textures come out the same every time they're drawn. */
@@ -726,6 +728,14 @@ function rightWall(layout: RoomLayout, look: RoomLook, u: number, z: number): Rg
   if (u >= x0 && u < x1 && z < arch) {
     if (u < x0 + 1.5 || u >= x1 - 1.5 || z >= arch - 1.5) return C.trimDark;
     if (Math.abs(du - 4.5) < 1 && Math.abs(z - 14) < 1) return C.gold;
+    // The brass "Old Town Favourite" plaque, with two lines of engraving.
+    if (look.plaque && Math.abs(du) < 3.6 && z >= 18.5 && z < 24) {
+      if (Math.abs(du) >= 3 || z < 19.1 || z >= 23.4) return C.trimDark;
+      if ((Math.abs(z - 22) < 0.45 && Math.abs(du) < 2.2) || (Math.abs(z - 20.4) < 0.45 && Math.abs(du) < 1.6)) {
+        return mix(C.gold, C.trimDark, 0.55);
+      }
+      return z >= 22.6 ? mix(C.gold, C.clockFace, 0.3) : C.gold;
+    }
     return Math.floor(u) % 4 === 0 ? C.trimDark : C.trim;
   }
   // A clock above the door.

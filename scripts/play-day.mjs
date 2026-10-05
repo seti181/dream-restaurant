@@ -7,7 +7,7 @@
 // It opens the restaurant, sets 4x speed, answers every choice card with its first answer, and
 // accepts every booking request, and screenshots the start (0-start.png), the day (1-during.png),
 // the top of each day report (report-<n>-top.png), its "Tomorrow" box (report-<n>-tomorrow.png)
-// and the next morning's Today tab at its bookings (plan-<n>.png) and its Menu tab (menu-<n>.png). The browser profile lives
+// and the next morning's Today tab at its bookings (plan-<n>.png) its Menu tab (menu-<n>.png) and its Mewa tab (mewa-<n>.png). The browser profile lives
 // in <folder>/edge-profile, so a second run with the same folder carries on from the save.
 // Uses Node's built-in WebSocket and fetch (Node 22+) and the Chrome DevTools Protocol: no dependencies.
 
@@ -145,11 +145,14 @@ for (let day = 1; day <= Number(days); day++) {
     await evaluate(`document.querySelector('.bookings')?.scrollIntoView({ block: 'center' })`);
     await sleep(300);
     await screenshot(`plan-${day + 1}`);
-    // ...and its Menu tab, then back to Today.
+    // ...its Menu and Mewa tabs, then back to Today.
     const tab = (label) => `[...document.querySelectorAll('button.tab')].find((b) => b.textContent.trim() === '${label}')?.click()`;
     await evaluate(tab('Menu'));
     await sleep(500);
     await screenshot(`menu-${day + 1}`);
+    await evaluate(tab('Mewa'));
+    await sleep(500);
+    await screenshot(`mewa-${day + 1}`);
     await evaluate(tab('Today'));
     await sleep(300);
   }

@@ -17,6 +17,8 @@ import { helpTable, moveParty, startDay, stepDay, type DayInProgress, type Floor
 import { isFavourite } from './seating';
 import { bookingsDay, rollRequest, type BookingReport, type BookingRequest } from './bookings';
 import { practiceAfterDay, withStars, type DishPractice, type StarEarned } from './practice';
+import { rankFor, totalGuests } from './ranks';
+import { RANKS } from '../data/ranks';
 import { dateOf, isMonday } from './calendar';
 import { minuteOfDay, ticksPerDay } from './clock';
 import {
@@ -108,6 +110,10 @@ export interface GameState {
   bookings: BookingRequest[];
   /** Portions of each kind of dish the kitchen has served: practice earns stars (sim/practice.ts). */
   dishPractice: DishPractice;
+  /** Guests of each group the player has served, all game: they weigh the star rating, and count for rank-ups. */
+  guestsServed: Partial<Record<GroupId, number>>;
+  /** The restaurant's rank, from 0 (Bar) up (data/ranks.ts). Never goes down. */
+  rank: number;
   /** True once the money ran out at the end of a day: the restaurant has closed for good. */
   gameOver: boolean;
   /** The player's restaurant first, then the rivals. */
@@ -150,6 +156,8 @@ export interface OpenDay {
   flyers: FlyersToday;
   /** Parties the player showed to another table, and how many of those to a favourite spot. */
   seating: { moved: number; favourites: number };
+  /** The restaurant's rank this morning (some choice cards only come to a known place). */
+  rank: number;
 }
 
 /** The player's numbers for a day, so far or in total. */
@@ -228,6 +236,8 @@ export interface DaySummary extends DayTally {
   bookingsCash: number;
   /** Kinds of dish that earned a star today. */
   starsEarned: StarEarned[];
+  /** The rank reached today, if the restaurant ranked up (an index into data/ranks.ts). */
+  rankUp: number | null;
 }
 
 export function newGame(seed: number, difficulty: Difficulty = 'normal'): GameState {
@@ -263,6 +273,8 @@ export function newGame(seed: number, difficulty: Difficulty = 'normal'): GameSt
     unlocks: [],
     bookings: [],
     dishPractice: {},
+    guestsServed: {},
+    rank: 0,
     gameOver: false,
     restaurants: [
       createPlayerRestaurant(start.name, start.menu, staffOf(team, 'chef'), staffOf(team, 'waiter')),
@@ -284,10 +296,22 @@ export function teamWages(state: GameState): number {
   return state.team.reduce((sum, person) => sum + person.wage, 0);
 }
 
-/** Star rating from 0 to 5: the average reputation across all groups. */
-export function starRating(restaurant: Restaurant): number {
-  const total = GROUP_IDS.reduce((sum, group) => sum + restaurant.reputation[group], 0);
-  return total / GROUP_IDS.length / 20;
+/**
+ * Star rating from 1 to 5, on the same scale as guests' reviews (reputation 0 is one star, 50 is
+ * three, 100 is five): the restaurant's reputation with each group, weighed by how many of that
+ * group it has served (balance.reputation.ratingPriorGuests). Without the guests served, every
+ * group counts the same.
+ */
+export function starRating(restaurant: Restaurant, served: Partial<Record<GroupId, number>> = {}): number {
+  const weight = (group: GroupId) => (served[group] ?? 0) + balance.reputation.ratingPriorGuests;
+  const total = GROUP_IDS.reduce((sum, group) => sum + restaurant.reputation[group] * weight(group), 0);
+  const reputation = total / GROUP_IDS.reduce((sum, group) => sum + weight(group), 0);
+  return 1 + (reputation / 100) * 4;
+}
+
+/** The player's star rating, as shown at the top of the screen. */
+export function playerRating(state: GameState): number {
+  return starRating(playerOf(state), state.guestsServed);
 }
 
 /** True if the player's terrace is open on this day: a valid permit, in terrace season, and no rain today. */
@@ -405,6 +429,7 @@ export function openRestaurant(state: GameState): OpenDay {
       state.upcoming.filter((u) => u.card && u.fromDay === state.day).map((u) => u.card!),
     ),
     terraceBuilt: terraceTablesBuilt(state),
+    rank: state.rank,
     help: { drinks: 0, apologies: 0, cash: 0 },
     seating: { moved: 0, favourites: 0 },
     gulls: planGulls((state.rng.s ^ Math.imul(state.day + 7, 0x85ebca6b)) >>> 0, terraceTables),
@@ -441,6 +466,7 @@ export function momentDue(open: OpenDay): boolean {
   return checkMoments(open.moments, {
     progress: open.progress,
     adrianAway: open.absent.some((a) => a.special === 'adrian'),
+    rank: open.rank,
   });
 }
 
@@ -849,11 +875,29 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
     news.push({ title: 'Mewa’s goal for the week', text: `${goalText(goalOf(goal))}. Reward: ${goalOf(goal).reward} zł.` });
   }
 
+  // Every guest served counts: for the weight of their group's opinion in the stars, and for rank-ups.
+  const guestsServed = { ...state.guestsServed };
+  for (const g of GROUP_IDS) if (groups[g].served > 0) guestsServed[g] = (guestsServed[g] ?? 0) + groups[g].served;
+  const ratingAfter = starRating(playerAfter, guestsServed);
+
   // Mewa finds the secret recipe once the restaurant is doing well, or by week 3 at the latest.
   let { secretRecipe } = state;
-  if (!secretRecipe && (starRating(playerAfter) >= SECRET_RECIPE.unlockStars || nextDay >= SECRET_RECIPE.unlockByDay)) {
+  if (!secretRecipe && (ratingAfter >= SECRET_RECIPE.unlockStars || nextDay >= SECRET_RECIPE.unlockByDay)) {
     secretRecipe = true;
     news.push({ ...SECRET_RECIPE.news });
+  }
+
+  // A new rank, and what it unlocks: more room on the menu, or word getting round.
+  const rank = rankFor(state.rank, totalGuests(guestsServed), ratingAfter);
+  let { menuSlots } = state;
+  for (const reached of RANKS.slice(state.rank + 1, rank + 1)) {
+    menuSlots += reached.menuSlots ?? 0;
+    if (reached.awareness) {
+      const [player, ...rivals] = restaurants;
+      const awareness = { ...player.awareness };
+      for (const g of GROUP_IDS) awareness[g] = Math.min(100, awareness[g] + reached.awareness);
+      restaurants = [{ ...player, awareness }, ...rivals];
+    }
   }
 
   // The Golden Neptune, on the last day of the Fair.
@@ -914,6 +958,9 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
     upcoming,
     bookings,
     dishPractice: practised.practice,
+    guestsServed,
+    rank,
+    menuSlots,
     // Running out of money ends the game.
     gameOver: state.gameOver || cash <= 0,
     restaurants,
@@ -928,8 +975,8 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
       rent,
       utilities,
       profit,
-      ratingBefore: starRating(playerBefore),
-      ratingAfter: starRating(playerAfter),
+      ratingBefore: starRating(playerBefore, state.guestsServed),
+      ratingAfter,
       groups,
       feedback: averageFeedback(outcomes, playerBefore.id),
       dishesSold: dishesSold(outcomes, playerBefore.id),
@@ -959,6 +1006,7 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
       bookings: bookingsToday.reports,
       bookingsCash,
       starsEarned: practised.earned,
+      rankUp: rank > state.rank ? rank : null,
     },
   };
 }

@@ -343,7 +343,7 @@ export const balance = {
     /** Premium ingredients make every dish this much better (quality points)... */
     premiumQualityBonus: 8,
     /** ...and cost this many times as much as the market's. */
-    premiumCostMultiplier: 1.5,
+    premiumCostMultiplier: 1.3,
   },
 
   orders: {
@@ -432,7 +432,7 @@ export const balance = {
 
   finance: {
     /** Paid every Monday, together with the week's rent. */
-    weeklyUtilities: 4_200,
+    weeklyUtilities: 2_800,
     /** Warn when cash would last fewer than this many days of wages and rent. */
     lowCashDays: 7,
   },
@@ -486,6 +486,11 @@ export const balance = {
     qualityRange: 30,
     /** How strongly paying more or less than the usual price changes happiness. */
     valueSlope: 2,
+    /**
+     * Better food is worth more: for each quality point above what their group expects, guests
+     * find a price this much higher than the usual one fair (and less for food below it).
+     */
+    fairPricePerQualityPoint: 0.006,
     /** Satisfaction (0–100) of a party that gave up waiting and walked out. */
     walkoutScore: 10,
   },
@@ -493,5 +498,11 @@ export const balance = {
   reputation: {
     /** How far reputation moves towards each party's satisfaction. Small = slow and steady. */
     smoothing: 0.035,
+    /**
+     * The star rating weighs each group's opinion by the guests of that group served so far, plus
+     * this many: like a review site, it's what your own guests think, and a group that hardly ever
+     * comes counts for little. At the start, with nobody served, every group counts the same.
+     */
+    ratingPriorGuests: 20,
   },
 } as const;

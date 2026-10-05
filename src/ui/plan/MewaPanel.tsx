@@ -1,7 +1,8 @@
-// Mewa's corner: the week's goal and the help book.
+// Mewa's corner: the week's goal, the restaurant's rank and the help book.
 
 import { HELP } from '../../data/mewa';
 import { GoalCard } from '../Mewa';
+import { RankCard } from '../RankCard';
 import { useGame } from '../store';
 
 export function MewaPanel() {
@@ -9,6 +10,7 @@ export function MewaPanel() {
   return (
     <div>
       <GoalCard />
+      <RankCard />
       {trophies > 0 && (
         <p className="trophies">
           🏆 Golden Neptunes won: <strong>{trophies}</strong>

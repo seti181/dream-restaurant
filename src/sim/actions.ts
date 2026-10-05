@@ -15,6 +15,7 @@ import { playerOf, type Difficulty, type GameState } from './game';
 import { dateOf, daysInMonth, nextDayOn } from './calendar';
 import { ambianceWith } from './interior';
 import { recipeKey } from './menu';
+import { maxMenuSlots } from './ranks';
 import { awayOn, fairWageOf, offOn, onCourseOn, staffOf, underpaid } from './staff';
 import type { Employee, Restaurant, Review, Supplier } from './types';
 
@@ -232,7 +233,7 @@ export function buyEquipment(state: GameState, id: EquipmentId): GameState {
 }
 
 export function menuBoardUnavailableReason(state: GameState): string | null {
-  if (state.menuSlots >= balance.menu.maxSlots) return 'Your menu board is as big as it gets';
+  if (state.menuSlots >= maxMenuSlots(state.rank)) return 'Your menu board is as big as it gets';
   return cantAfford(state, balance.menu.slotUpgrade.cost);
 }
 
@@ -240,7 +241,7 @@ export function menuBoardUnavailableReason(state: GameState): string | null {
 export function upgradeMenuBoard(state: GameState): GameState {
   if (menuBoardUnavailableReason(state) !== null) return state;
   const { slots, cost } = balance.menu.slotUpgrade;
-  return { ...state, menuSlots: Math.min(balance.menu.maxSlots, state.menuSlots + slots), cash: state.cash - cost };
+  return { ...state, menuSlots: Math.min(maxMenuSlots(state.rank), state.menuSlots + slots), cash: state.cash - cost };
 }
 
 export function setSupplier(state: GameState, supplier: Supplier): GameState {

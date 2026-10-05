@@ -248,7 +248,7 @@ export const STRATEGIES: Strategy[] = [
       campaigns: ['tramPoster', 'guideListing', 'social'],
       terrace: true,
       lunchSet: [0, 3],
-      relocate: { to: 'dluga', whenCash: 45_000 },
+      relocate: { to: 'dluga', whenCash: 60_000 },
       dayOffBelow: 55,
       acceptBookings: true,
     },
