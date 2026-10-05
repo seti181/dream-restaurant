@@ -2,6 +2,7 @@
 // simulation calls. Screens read from here and call the actions; they never
 // change the game state themselves.
 
+import type { ThemeNightId } from '../data/themeNights';
 import { create } from 'zustand';
 import { balance } from '../data/balance';
 import type { DecorId } from '../data/decor';
@@ -165,6 +166,8 @@ interface GameStore {
   buyTerracePermit: () => void;
   launchCampaign: (id: CampaignId) => void;
   relocate: (to: LocationId) => void;
+  /** Books a theme night for an evening this week (while planning). */
+  bookThemeNight: (id: ThemeNightId, day: number) => void;
   /** Says yes or no to a booking request. */
   acceptBooking: (id: number) => void;
   declineBooking: (id: number) => void;
@@ -397,6 +400,7 @@ export const useGame = create<GameStore>((set, get) => ({
   launchCampaign: (id) => plan((game) => actions.launchCampaign(game, id)),
   relocate: (to) => plan((game) => actions.relocate(game, to), 'beforeOpening'),
   // Mewa's tips can be dismissed on any screen, even mid-day.
+  bookThemeNight: (id, day) => plan((game) => actions.bookThemeNight(game, id, day), 'beforeOpening'),
   acceptBooking: (id) => plan((game) => actions.acceptBooking(game, id)),
   declineBooking: (id) => plan((game) => actions.declineBooking(game, id)),
   dismissTip: (tip) => set({ game: actions.dismissTip(get().game, tip) }),

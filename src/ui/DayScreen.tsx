@@ -8,6 +8,7 @@ import { formatTime, ticksPerDay } from '../sim/clock';
 import { bookingKindOf } from '../sim/bookings';
 import { bookingLine } from './plan/BookingsBox';
 import { streakTipPerGuest } from '../sim/rush';
+import { THEME_NIGHTS } from '../data/themeNights';
 import { dishName, forecastMiss, money } from './format';
 import { Cash, MuteButton, Rating, SpeedControls, useHudFacts, WeatherName } from './Hud';
 import { FoodIcon } from './PixelIcon';
@@ -386,6 +387,19 @@ function MorningNotes() {
   );
 }
 
+/** Tonight's theme night, once it starts at 18:00: until closed. */
+function ThemeNightNote({ minute }: { minute: number }) {
+  const booking = useGame((s) => (s.game.themeNight?.day === s.game.day ? s.game.themeNight : null));
+  const [closed, setClosed] = useState(false);
+  if (!booking || closed || minute < balance.themeNights.fromMinute || minute >= balance.clock.closeMinute) return null;
+  return (
+    <p className="gull-warning good">
+      <span>{THEME_NIGHTS[booking.id].tonight}</span>
+      <NoteClose onClose={() => setClosed(true)} />
+    </p>
+  );
+}
+
 /** During the lunch and dinner rushes: the team can be hurried. Until closed, once per rush. */
 function RushNote({ rush }: { rush: string | null }) {
   const [closed, setClosed] = useState<string | null>(null);
@@ -590,6 +604,7 @@ export function DayScreen() {
             </p>
           )}
           <MomentResultNote />
+          <ThemeNightNote minute={live.minute} />
           <RushNote rush={live.floor.rush ?? null} />
           <StreakNote streak={live.floor.streak ?? 0} />
           <PausedNote speed={speed} />

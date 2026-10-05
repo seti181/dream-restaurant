@@ -60,6 +60,8 @@ export interface Restaurant {
   supplier: Supplier;
   /** When today's happy hour started (minutes after midnight); only set while a day runs. See balance.happyHour. */
   happyHourFrom?: number;
+  /** Tonight's theme night, from its start: only set on the day it's on, while that day runs. */
+  themeNight?: { from: number; groups: GroupId[]; wants?: MenuWant; mood?: number };
   /** "Dziś polecamy": today's special on the board outside (a recipe key), if one is chosen. */
   special?: string;
   /** "Obiad dnia": a soup and a main (identified by recipe key) at one price, or null. */

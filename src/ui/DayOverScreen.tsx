@@ -292,6 +292,13 @@ export function DayOverScreen() {
               </p>
             );
           })}
+          {summary.themeNight && (
+            <p className="said small">
+              {summary.themeNight.icon} <strong>{summary.themeNight.name}:</strong> {summary.themeNight.guests}{' '}
+              {summary.themeNight.guests === 1 ? 'guest' : 'guests'} from 18:00
+              {summary.themeNight.wantText !== null && `, and ${summary.themeNight.portions} portions of ${summary.themeNight.wantText}`}.
+            </p>
+          )}
           {summary.dailyGoal && (
             <p className="said small">
               🎯 <strong>Today’s goal:</strong> {summary.dailyGoal.text}.{' '}

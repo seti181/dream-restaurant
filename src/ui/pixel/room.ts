@@ -1358,6 +1358,11 @@ export function scenePieces(
   pieces.push(piece(o, 'figTree', drawn('figTree', drawFigTree), fig.x, fig.y, 0, fig.x + fig.y));
 
   pieces.push(...buildingPieces(layout, floor), ...streetPieces(layout, look, floor.location));
+  // A theme night with live music: the accordion player by the front steps.
+  if (floor.musician) {
+    const at = { x: layout.door.x1 + 6, y: layout.streetY + 3 };
+    pieces.push({ ...piece(o, 'themeMusician', personImage('musician', 'front', 'stand'), at.x, at.y, -PLINTH, at.x + at.y), kind: 'busker' });
+  }
 
   // The kitchen: the chefs behind the pass, each with a pot or a pan on the cooks' side in front of
   // them; at the pick-up end, a plate for every dish on the go waits under the heat lamp.

@@ -1052,6 +1052,33 @@ h2.spaced {
   margin: 4px 0;
 }
 
+/* ---------- Theme nights (Marketing tab) ---------- */
+
+.theme-nights {
+  margin: 0 0 16px;
+  padding: 12px 16px;
+  border-radius: 16px;
+  background: #f4efe6;
+}
+
+.theme-nights h2 {
+  margin: 0 0 6px;
+}
+
+.theme-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.theme-detail {
+  margin-top: 8px;
+}
+
+.theme-detail p {
+  margin: 4px 0;
+}
+
 /* ---------- The weekly Old Town top five (Today tab) ---------- */
 
 .ranking {

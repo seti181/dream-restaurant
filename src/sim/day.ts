@@ -10,6 +10,7 @@ import { REGULARS, type RegularId } from '../data/regulars';
 import { bigOrderMinutes, matchingDishes, tablesHeld, wantMet, type BigOrderJob } from './bookings';
 import { chooseRestaurant } from './choice';
 import { rushAt, rushName, streakTipPerGuest } from './rush';
+import { themeNightOn } from './themeNights';
 import { minuteOfDay, ticksPerDay } from './clock';
 import { ORDINARY_DAY } from './events';
 import { generateParties } from './guests';
@@ -481,6 +482,12 @@ export function seat(
   // A party that booked hoped for something on the menu.
   const wishMet = party.wish ? wantMet(restaurant.menu, party.wish) : undefined;
   const wishMood = wishMet === undefined ? 0 : wishMet ? balance.bookings.wishMetMood : balance.bookings.wishMissedMood;
+  // Tonight's theme night: live music cheers everyone up; those who came for the theme hope to find it.
+  const night = restaurant.themeNight;
+  let themeMood = themeNightOn(restaurant, minute) ? (night?.mood ?? 0) : 0;
+  if (night?.wants && themeNightOn(restaurant, minute, party.group) && !wantMet(restaurant.menu, night.wants)) {
+    themeMood += balance.themeNights.missingMood;
+  }
   floor.visits.push({
     party,
     tablesUsed,
@@ -495,7 +502,7 @@ export function seat(
     leaveAt: 0,
     satisfaction: null,
     // Regulars feel at home here.
-    mood: (party.regularId ? balance.regulars.atHomeMood : 0) + wishMood,
+    mood: (party.regularId ? balance.regulars.atHomeMood : 0) + wishMood + themeMood,
     extraPatience: party.requestId === undefined ? 0 : balance.bookings.extraPatienceMinutes,
     wishMet,
   });
@@ -785,6 +792,8 @@ export interface FloorView {
   waiterHurry?: HurryState[];
   /** Parties served quickly in a row, so far. */
   streak?: number;
+  /** A musician playing by the door (a theme night with live music). */
+  musician?: boolean;
 }
 
 /** A snapshot of one restaurant for the restaurant view. Reads the day; changes nothing. */
@@ -842,5 +851,6 @@ export function floorView(progress: DayInProgress, index: number, recentMinutes 
     chefHurry: restaurant.chefs.map((_, i) => hurryState(progress, index, 'chef', i)),
     waiterHurry: restaurant.waiters.map((_, i) => hurryState(progress, index, 'waiter', i)),
     streak: floor.streak.current,
+    musician: (restaurant.themeNight?.mood ?? 0) > 0 && themeNightOn(restaurant, minute) && progress.tick <= ticksPerDay(),
   };
 }

@@ -318,6 +318,15 @@ export const balance = {
     favouriteMood: 6,
   },
 
+  themeNights: {
+    /** A theme night starts at this time (minutes after midnight) and lasts until closing. */
+    fromMinute: 18 * 60,
+    /** How much more tempting the restaurant is to the theme's groups that evening (the happy hour board is 1). */
+    appealBonus: 1,
+    /** Guests who came for the theme are this much less happy (0–100) when what they came for isn't on the menu. */
+    missingMood: -8,
+  },
+
   trends: {
     /** A dish that is this week's trend counts as this many extra matches with the group that craves it (2 = a perfect match). */
     matchWeight: 2,

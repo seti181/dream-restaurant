@@ -4,8 +4,9 @@
 
 import { balance } from '../src/data/balance';
 import { RIVAL_IDS, RIVALS, type RivalId } from '../src/data/rivals';
-import { acceptBooking } from '../src/sim/actions';
-import { isInSeason, isMonday } from '../src/sim/calendar';
+import { acceptBooking, bookThemeNight } from '../src/sim/actions';
+import { THEME_NIGHT_IDS, THEME_NIGHTS } from '../src/data/themeNights';
+import { isInSeason, isMonday, weekdayOf } from '../src/sim/calendar';
 import { wageOf } from '../src/sim/finance';
 import { minuteOfDay } from '../src/sim/clock';
 import { floorView } from '../src/sim/day';
@@ -141,6 +142,12 @@ function playSeason(strategy: Strategy, seed: number): SeasonResult {
       week = { served: 0, walkedOut: 0, turnedAway: 0, profit: 0 };
     }
 
+    // A theme night every Friday, one the menu fits.
+    if (strategy.plan?.themeNightFridays && weekdayOf(state.day) === 4) {
+      const menu = state.restaurants[0].menu;
+      const fits = THEME_NIGHT_IDS.find((id) => THEME_NIGHTS[id].wants && menu.some((dish) => dishFits(dish, THEME_NIGHTS[id].wants!)));
+      state = bookThemeNight(state, fits ?? 'accordion', state.day);
+    }
     // A strategy that takes bookings says yes to every request waiting for an answer.
     if (strategy.plan?.acceptBookings && !NO_BOOKINGS) {
       for (const request of state.bookings) if (!request.accepted) state = acceptBooking(state, request.id);

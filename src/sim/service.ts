@@ -8,6 +8,7 @@ import { GROUPS, type GroupId } from '../data/groups';
 import { dishAppeal } from './choice';
 import { freshOn, lunchSetServing, pairingQuality, priceMultiplier, specialOf, templateOf } from './menu';
 import { chance, nextFloat, type RngState } from './rng';
+import { themeCraving } from './themeNights';
 import type { Party, Restaurant, Staff, Supplier, TrendToday } from './types';
 
 const average = (values: number[], fallback: number) =>
@@ -88,17 +89,19 @@ export function chooseOrder(
   const order: MenuDish[] = [];
   const multiplier = priceMultiplier(restaurant, minute);
   const special = specialOf(restaurant);
+  // Guests who came for tonight's theme order what they came for.
+  const craving = themeCraving(restaurant, minute, party.group) ?? trend;
   for (let guest = 0; guest < party.size; guest++) {
     if (lunchSet && chance(rng, GROUPS[party.group].lunchSetAppeal)) {
       order.push(...lunchSetOrder(lunchSet));
     } else {
-      order.push(pickByAppeal(rng, food.length > 0 ? food : menu, party.group, weather, special, trend));
+      order.push(pickByAppeal(rng, food.length > 0 ? food : menu, party.group, weather, special, craving));
     }
     if (drinks.length > 0 && chance(rng, balance.orders.drinkChance)) {
-      order.push(pickByAppeal(rng, drinks, party.group, weather, special, trend));
+      order.push(pickByAppeal(rng, drinks, party.group, weather, special, craving));
     }
     if (desserts.length > 0 && chance(rng, balance.orders.dessertChance)) {
-      order.push(pickByAppeal(rng, desserts, party.group, weather, special, trend));
+      order.push(pickByAppeal(rng, desserts, party.group, weather, special, craving));
     }
   }
   return multiplier === 1 ? order : order.map((dish) => ({ ...dish, price: dish.price * multiplier }));

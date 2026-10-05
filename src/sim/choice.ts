@@ -7,6 +7,7 @@ import type { ExtraId, MenuDish } from '../data/dishes';
 import { GROUPS, type GroupId } from '../data/groups';
 import { LOCATIONS, type LocationId } from '../data/locations';
 import { interiorAppeal } from './interior';
+import { themeNightOn } from './themeNights';
 import { dishFits, freshOn, happyHourOn, lunchSetServing, priceMultiplier, specialOf, tagsOf, templateOf } from './menu';
 import { nextFloat, type RngState } from './rng';
 import type { Party, Restaurant, TrendToday } from './types';
@@ -100,6 +101,8 @@ export function utility(
     // "Dziś polecamy" on the board, all the more tempting with something fresh in season.
     specialAppeal(restaurant, inSeason) +
     interiorAppeal(restaurant, party.group) +
+    // Tonight's theme night draws its crowd.
+    (themeNightOn(restaurant, party.arrivalMinute, party.group) ? balance.themeNights.appealBonus : 0) +
     // This week's trend: the group that craves it looks for a menu that has it.
     (trend !== null && trend.group === party.group && restaurant.menu.some((dish) => dishFits(dish, trend.wants))
       ? balance.trends.appealBonus

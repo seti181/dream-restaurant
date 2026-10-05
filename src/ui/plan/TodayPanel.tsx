@@ -14,6 +14,8 @@ import { GoalCard } from '../Mewa';
 import { BookingsBox } from './BookingsBox';
 import { DAILY_GOALS } from '../../data/dailyGoals';
 import { TRENDS } from '../../data/trends';
+import { THEME_NIGHTS } from '../../data/themeNights';
+import { dateOf, WEEKDAY_NAMES } from '../../sim/calendar';
 import { trendLine } from '../../sim/trends';
 import { dailyGoalText } from '../../sim/dailyGoals';
 import { RankingBox } from './RankingBox';
@@ -101,6 +103,14 @@ export function TodayPanel() {
           <p>
             {TRENDS[game.trend.id].icon} <strong>{TRENDS[game.trend.id].name}:</strong> {trendLine(game.trend.id)}{' '}
             <span className="muted">Until Sunday.</span>
+          </p>
+        )}
+        {game.themeNight && game.themeNight.day >= game.day && game.themeNight.day < game.day + 7 && (
+          <p>
+            {THEME_NIGHTS[game.themeNight.id].icon} <strong>{THEME_NIGHTS[game.themeNight.id].name}</strong>{' '}
+            {game.themeNight.day === game.day
+              ? 'tonight, from 18:00.'
+              : `on ${WEEKDAY_NAMES[dateOf(game.themeNight.day).weekday]} evening.`}
           </p>
         )}
         {eventsToday(game).length > 0 && (

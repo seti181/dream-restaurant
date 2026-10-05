@@ -339,3 +339,11 @@ describe('upgrading version 22 saves (from before weekly trends)', () => {
     expect(migrate({ saveVersion: 22, savedAt: '', game: old })).toEqual({ ...game, trend: null });
   });
 });
+
+describe('upgrading version 23 saves (from before theme nights)', () => {
+  it('has none booked yet', () => {
+    const game = newGame(69);
+    const { themeNight: _t, ...old } = game;
+    expect(migrate({ saveVersion: 23, savedAt: '', game: old })).toEqual(game);
+  });
+});

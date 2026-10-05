@@ -89,6 +89,23 @@ await send('Page.enable');
 await send('Page.navigate', { url });
 await sleep(3000);
 await screenshot('0-start');
+// THEME=accordion (or pierogi, kashubian, seafood) books that theme night for the first evening, and
+// photographs the Marketing tab (theme-book.png) and the evening (theme-night.png).
+if (process.env.THEME) {
+  const click = (selector, text) =>
+    `[...document.querySelectorAll('${selector}')].find((b) => b.textContent.includes('${text}'))?.click()`;
+  await evaluate(click('button.tab', 'Marketing'));
+  await sleep(500);
+  const names = { accordion: 'Live accordion', pierogi: 'Pierogi night', kashubian: 'Kashubian evening', seafood: 'Seafood night' };
+  await evaluate(click('button.theme-chip', names[process.env.THEME]));
+  await sleep(300);
+  await evaluate(`document.querySelector('.theme-nights')?.scrollIntoView({ block: 'start' })`);
+  await screenshot('theme-book');
+  await evaluate(click('.theme-detail button', 'Tonight'));
+  await sleep(300);
+  await evaluate(click('button.tab', 'Today'));
+  await sleep(300);
+}
 
 // One step of a player who always says yes: returns what it did.
 const step = `(() => {
@@ -120,12 +137,18 @@ for (let day = 1; day <= Number(days); day++) {
   let last = '';
   let reached = false;
   let rushShot = false;
+  let themeShot = false;
   for (let i = 0; i < 300; i++) {
     const did = await evaluate(step);
     if (did !== last && did !== 'waiting') console.log(`day ${day}: ${did}`);
     last = did;
     if (day === 1 && i === 20) await screenshot('1-during');
     // The first ⚡ of the day (a rush): a picture of it, then hurry that chef or waiter.
+    if (process.env.THEME && day === 1 && !themeShot && (await evaluate(`document.body.innerText.includes('tonight!') || document.body.innerText.includes('night!') || document.body.innerText.includes('evening!')`))) {
+      themeShot = true;
+      await sleep(1500);
+      await screenshot('theme-night');
+    }
     if (!rushShot && (await evaluate(`Boolean(document.querySelector('.staff-hurry'))`))) {
       rushShot = true;
       await screenshot(`rush-${day}`);

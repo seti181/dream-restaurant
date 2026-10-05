@@ -23,6 +23,9 @@ import { dailyGoalMet, dailyGoalText, dailyProgress, rollDailyGoal, type DailyGo
 import { DAILY_GOALS } from '../data/dailyGoals';
 import { rollTrend, trendLine, type TrendState } from './trends';
 import { TRENDS } from '../data/trends';
+import { themeNightFor, type ThemeNightBooking } from './themeNights';
+import { THEME_NIGHTS } from '../data/themeNights';
+import { dishFits } from './menu';
 import { RANKS } from '../data/ranks';
 import { dateOf, isMonday } from './calendar';
 import { minuteOfDay, ticksPerDay } from './clock';
@@ -125,6 +128,8 @@ export interface GameState {
   dailyGoal: DailyGoalState | null;
   /** What Gdańsk is crazy about this week, or null (an older save, until next Monday). */
   trend: TrendState | null;
+  /** The theme night booked most recently (one a week), or null. */
+  themeNight: ThemeNightBooking | null;
   /** True once the money ran out at the end of a day: the restaurant has closed for good. */
   gameOver: boolean;
   /** The player's restaurant first, then the rivals. */
@@ -259,6 +264,8 @@ export interface DaySummary extends DayTally {
   rankUp: number | null;
   /** Rush hour: chefs and waiters hurried, the longest quick-service streak, and the tips it brought. */
   rush: { chefs: number; waiters: number; bestStreak: number; tips: number };
+  /** Tonight's theme night, if one was on: guests served from its start, and portions of what they came for. */
+  themeNight: { icon: string; name: string; guests: number; portions: number; wantText: string | null } | null;
   /** Today's goal from Mewa: what it was, how far it got, and whether it was done (and paid). */
   dailyGoal: { icon: string; text: string; done: boolean; progress: number; target: number; reward: number; atClosing: boolean } | null;
 }
@@ -303,6 +310,7 @@ export function newGame(seed: number, difficulty: Difficulty = 'normal'): GameSt
     gameOver: false,
     dailyGoal: rollDailyGoal(dailyGoalSeed(rng, 0), null, player),
     trend: rollTrend(trendSeed(rng, 0), 0, null),
+    themeNight: null,
     restaurants: [player, ...RIVAL_IDS.map(createRivalRestaurant)],
   };
 }
@@ -441,6 +449,7 @@ export function openRestaurant(state: GameState): OpenDay {
   const working = state.team.filter((person) => !absent.some((a) => a.id === person.id) && !awayOn(person, state.day));
   const today = {
     ...player,
+    themeNight: themeNightFor(state.themeNight, state.day),
     menu: withStars(player.menu, state.dishPractice),
     terraceTables,
     awareness: awarenessToday(state),
@@ -615,6 +624,27 @@ export function helpGuests(open: OpenDay, table: number, help: Help): boolean {
 /** Answers the choice card on screen with its first (0) or second (1) answer. */
 export function answerTheMoment(open: OpenDay, choice: 0 | 1): MomentResult | null {
   return answerMoment(open.moments, open.progress, choice);
+}
+
+/** How tonight's theme night went, if one was on. */
+function themeNightReport(state: GameState, open: OpenDay): DaySummary['themeNight'] {
+  const booking = state.themeNight;
+  if (!booking || booking.day !== state.day) return null;
+  const night = THEME_NIGHTS[booking.id];
+  const from = open.progress.restaurants[0].themeNight?.from ?? 0;
+  const evening = open.progress.outcomes.filter(
+    (o) => o.restaurant === playerOf(state).id && o.kind === 'served' && (o.servedAt ?? 0) >= from,
+  );
+  const portions = night.wants
+    ? evening.flatMap((o) => o.order).filter((dish) => dishFits(dish, night.wants!)).length
+    : 0;
+  return {
+    icon: night.icon,
+    name: night.name,
+    guests: evening.reduce((sum, o) => sum + o.size, 0),
+    portions,
+    wantText: night.wantText ?? null,
+  };
 }
 
 /** The day's numbers, broken down: which groups were served, walked out or found no table, and what sold. */
@@ -1121,6 +1151,7 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
       rankUp: rank > state.rank ? rank : null,
       rush: { ...open.hurried, bestStreak: streak.best, tips: streak.tips },
       dailyGoal: dailyResult,
+      themeNight: themeNightReport(state, open),
     },
   };
 }

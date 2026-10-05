@@ -16,6 +16,8 @@ import { dateOf, daysInMonth, nextDayOn } from './calendar';
 import { ambianceWith } from './interior';
 import { recipeKey } from './menu';
 import { maxMenuSlots } from './ranks';
+import { weekOf } from './themeNights';
+import { THEME_NIGHTS, type ThemeNightId } from '../data/themeNights';
 import { awayOn, fairWageOf, offOn, onCourseOn, staffOf, underpaid } from './staff';
 import type { Employee, Restaurant, Review, Supplier } from './types';
 
@@ -382,6 +384,22 @@ export function relocate(state: GameState, to: LocationId): GameState {
   if (relocateUnavailableReason(state, to) !== null) return state;
   const moved = withPlayer(state, afterMove(state, to));
   return { ...moved, cash: state.cash - balance.relocation.fee };
+}
+
+// ---------- Theme nights ----------
+
+/** Why this theme night can't be booked for this evening, or null if it can. One a week, this week, paid now. */
+export function themeNightUnavailableReason(state: GameState, id: ThemeNightId, day: number): string | null {
+  const booked = state.themeNight;
+  if (booked && weekOf(booked.day) === weekOf(state.day)) return 'This week’s theme night is booked';
+  if (day < state.day || weekOf(day) !== weekOf(state.day)) return 'Pick an evening this week';
+  return cantAfford(state, THEME_NIGHTS[id].cost);
+}
+
+/** Books a theme night for one evening this week, and pays for it. */
+export function bookThemeNight(state: GameState, id: ThemeNightId, day: number): GameState {
+  if (themeNightUnavailableReason(state, id, day) !== null) return state;
+  return { ...state, themeNight: { id, day }, cash: state.cash - THEME_NIGHTS[id].cost };
 }
 
 // ---------- Bookings ----------

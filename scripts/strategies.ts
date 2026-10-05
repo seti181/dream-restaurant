@@ -50,6 +50,8 @@ interface Plan {
   acceptBookings?: boolean;
   /** In a rush, hurries a chef once this many orders are waiting. */
   hurryWhenOrders?: number;
+  /** Books a theme night every Friday: one the menu fits (or live accordion). */
+  themeNightFridays?: boolean;
   /** Menu positions of a soup and a main for the lunch set. */
   lunchSet?: [number, number];
   /** Gives a day off (Monday to Thursday) to anyone whose morale is below this, where someone else can cover. */
@@ -254,6 +256,7 @@ export const STRATEGIES: Strategy[] = [
       dayOffBelow: 55,
       acceptBookings: true,
       hurryWhenOrders: 3,
+      themeNightFridays: true,
     },
   },
 ];

@@ -8,6 +8,7 @@ import { dateOf, formatDate } from '../../sim/calendar';
 import { awarenessToday } from '../../sim/game';
 import { money } from '../format';
 import { useGame } from '../store';
+import { ThemeNightBox } from './ThemeNightBox';
 
 function reaches(id: CampaignId): string {
   const groups = GROUP_IDS.filter((g) => CAMPAIGNS[id].boost[g]);
@@ -66,7 +67,9 @@ export function MarketingPanel() {
       </section>
 
       <section className="panel-column">
-        <h2>Who knows you</h2>
+        <ThemeNightBox />
+
+        <h2 className="spaced">Who knows you</h2>
         <p className="small muted">
           People can’t visit a place they’ve never heard of. Campaigns raise this; it slowly fades afterwards.
         </p>
