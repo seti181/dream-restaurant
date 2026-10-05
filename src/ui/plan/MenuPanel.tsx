@@ -16,8 +16,10 @@ import {
 import { dishUnavailableReason, extraUnavailableReason, priceRange } from '../../sim/actions';
 import { playerOf } from '../../sim/game';
 import { MAX_STARS, portionsToNextStar, starsFor, withStars } from '../../sim/practice';
+import { TRENDS } from '../../data/trends';
+import { trendLine, type TrendState } from '../../sim/trends';
 import { MONTH_NAMES } from '../../sim/calendar';
-import { extraCost, extrasOf, freshOn, ingredientCostOf, inSeasonOn, produceName, recipeKey, tagsOf, templateOf } from '../../sim/menu';
+import { dishFits, extraCost, extrasOf, freshOn, ingredientCostOf, inSeasonOn, produceName, recipeKey, tagsOf, templateOf } from '../../sim/menu';
 import { money, recipeText } from '../format';
 import { FoodIcon } from '../PixelIcon';
 import { useGame } from '../store';
@@ -65,8 +67,15 @@ function DishStars({ portions }: { portions: number }) {
 }
 
 function Tags({ dish }: { dish: MenuDish }) {
+  const trend = useGame((s) => s.game.trend);
+  const trending = trend !== null && dishFits(dish, TRENDS[trend.id].wants);
   return (
     <span className="tags">
+      {trending && trend && (
+        <span className="tag trending" title={trendLine(trend.id)}>
+          📈 trending
+        </span>
+      )}
       {tagsOf(dish).map((tag) => (
         <span key={tag} className="tag">
           {tag}
@@ -74,6 +83,12 @@ function Tags({ dish }: { dish: MenuDish }) {
       ))}
     </span>
   );
+}
+
+/** Whether some recipe of this dish could be this week's trend (for the dish creator). */
+function canTrend(template: TemplateId, trend: TrendState | null): boolean {
+  if (!trend) return false;
+  return DISH_TEMPLATES[template].variants.some((v) => dishFits({ template, variant: v.id, price: 0 }, TRENDS[trend.id].wants));
 }
 
 function PriceStepper({ dish, index }: { dish: MenuDish; index: number }) {
@@ -312,6 +327,7 @@ function DishCreator() {
                   {locked ? '🔒 ' : <FoodIcon template={id} />}
                   {DISH_TEMPLATES[id].secret && ' ⭐'}
                   {DISH_TEMPLATES[id].unlockable && ' 🇵🇹'} {DISH_TEMPLATES[id].name}
+                  {canTrend(id, game.trend) && ' 📈'}
                   {starsFor(game.dishPractice[id] ?? 0) > 0 && (
                     <span className="stars"> {'★'.repeat(starsFor(game.dishPractice[id] ?? 0))}</span>
                   )}

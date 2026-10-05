@@ -8,7 +8,7 @@ import { GROUPS, type GroupId } from '../data/groups';
 import { dishAppeal } from './choice';
 import { freshOn, lunchSetServing, pairingQuality, priceMultiplier, specialOf, templateOf } from './menu';
 import { chance, nextFloat, type RngState } from './rng';
-import type { Party, Restaurant, Staff, Supplier } from './types';
+import type { Party, Restaurant, Staff, Supplier, TrendToday } from './types';
 
 const average = (values: number[], fallback: number) =>
   values.length === 0 ? fallback : values.reduce((sum, v) => sum + v, 0) / values.length;
@@ -43,10 +43,12 @@ export function pickByAppeal(
   weather: Weather = 'cloudy',
   /** Today's special: the board outside talks guests into it. */
   special: MenuDish | null = null,
+  /** This week's trend: the group that craves it orders it more. */
+  trend: TrendToday | null = null,
 ): MenuDish {
   const weights = dishes.map(
     (dish) =>
-      (balance.orders.baseDishWeight + dishAppeal(dish, group)) *
+      (balance.orders.baseDishWeight + dishAppeal(dish, group, trend)) *
       weatherAppetite(dish, weather) *
       (dish === special ? balance.specials.orderWeight : 1),
   );
@@ -74,6 +76,7 @@ export function chooseOrder(
   party: Party,
   minute: number,
   weather: Weather = 'cloudy',
+  trend: TrendToday | null = null,
 ): MenuDish[] {
   const { menu } = restaurant;
   const lunchSet = lunchSetServing(restaurant, minute);
@@ -89,13 +92,13 @@ export function chooseOrder(
     if (lunchSet && chance(rng, GROUPS[party.group].lunchSetAppeal)) {
       order.push(...lunchSetOrder(lunchSet));
     } else {
-      order.push(pickByAppeal(rng, food.length > 0 ? food : menu, party.group, weather, special));
+      order.push(pickByAppeal(rng, food.length > 0 ? food : menu, party.group, weather, special, trend));
     }
     if (drinks.length > 0 && chance(rng, balance.orders.drinkChance)) {
-      order.push(pickByAppeal(rng, drinks, party.group, weather, special));
+      order.push(pickByAppeal(rng, drinks, party.group, weather, special, trend));
     }
     if (desserts.length > 0 && chance(rng, balance.orders.dessertChance)) {
-      order.push(pickByAppeal(rng, desserts, party.group, weather, special));
+      order.push(pickByAppeal(rng, desserts, party.group, weather, special, trend));
     }
   }
   return multiplier === 1 ? order : order.map((dish) => ({ ...dish, price: dish.price * multiplier }));

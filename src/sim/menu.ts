@@ -13,6 +13,7 @@ import {
   type Tag,
   type Variant,
 } from '../data/dishes';
+import type { MenuWant } from '../data/bookings';
 import { dateOf, MONTH_NAMES } from './calendar';
 import type { Restaurant, Supplier } from './types';
 
@@ -47,6 +48,15 @@ export function tagsOf(dish: MenuDish): Tag[] {
   return [
     ...new Set([...baseTagsOf(dish), ...extrasOf(dish).flatMap((extra) => EXTRAS[extra].tags), ...(mastered ? [mastered] : [])]),
   ];
+}
+
+/** True if the dish is what they want: in this category, with this tag, or this very dish (every one given must match). */
+export function dishFits(dish: MenuDish, want: MenuWant): boolean {
+  return (
+    (want.category === undefined || templateOf(dish).category === want.category) &&
+    (want.tag === undefined || tagsOf(dish).includes(want.tag)) &&
+    (want.template === undefined || dish.template === want.template)
+  );
 }
 
 /** Identifies a recipe: the same dish, variant and extras count as the same menu item. */

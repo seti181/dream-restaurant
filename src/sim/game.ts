@@ -21,6 +21,8 @@ import { rankFor, totalGuests } from './ranks';
 import { weeklyRanking, type OldTownRanking } from './ranking';
 import { dailyGoalMet, dailyGoalText, dailyProgress, rollDailyGoal, type DailyGoalState } from './dailyGoals';
 import { DAILY_GOALS } from '../data/dailyGoals';
+import { rollTrend, trendLine, type TrendState } from './trends';
+import { TRENDS } from '../data/trends';
 import { RANKS } from '../data/ranks';
 import { dateOf, isMonday } from './calendar';
 import { minuteOfDay, ticksPerDay } from './clock';
@@ -121,6 +123,8 @@ export interface GameState {
   ranking: OldTownRanking | null;
   /** Mewa's small goal for today, or null (an older save, until the next morning). */
   dailyGoal: DailyGoalState | null;
+  /** What Gdańsk is crazy about this week, or null (an older save, until next Monday). */
+  trend: TrendState | null;
   /** True once the money ran out at the end of a day: the restaurant has closed for good. */
   gameOver: boolean;
   /** The player's restaurant first, then the rivals. */
@@ -298,8 +302,14 @@ export function newGame(seed: number, difficulty: Difficulty = 'normal'): GameSt
     ranking: null,
     gameOver: false,
     dailyGoal: rollDailyGoal(dailyGoalSeed(rng, 0), null, player),
+    trend: rollTrend(trendSeed(rng, 0), 0, null),
     restaurants: [player, ...RIVAL_IDS.map(createRivalRestaurant)],
   };
+}
+
+/** Weekly trends get their own dice too. */
+function trendSeed(rng: RngState, day: number): number {
+  return (rng.s ^ Math.imul(day + 37, 0x1b873593)) >>> 0;
 }
 
 /** Daily goals get their own dice, so they never change anything else that's rolled. */
@@ -953,6 +963,14 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
   }
   const dailyGoal = rollDailyGoal(dailyGoalSeed(rng, nextDay), open.dailyGoal?.id ?? null, restaurants[0], tally.revenue);
 
+  // Every Monday, Gdańsk goes crazy about something new for the week.
+  let { trend } = state;
+  if (isMonday(nextDay)) {
+    trend = rollTrend(trendSeed(rng, nextDay), nextDay, state.trend?.id ?? null);
+    const details = TRENDS[trend.id];
+    news.push({ title: `${details.icon} ${details.name}`, text: `${details.story} ${trendLine(trend.id)}` });
+  }
+
   // Mewa finds the secret recipe once the restaurant is doing well, or by week 3 at the latest.
   let { secretRecipe } = state;
   if (!secretRecipe && (ratingAfter >= SECRET_RECIPE.unlockStars || nextDay >= SECRET_RECIPE.unlockByDay)) {
@@ -1053,6 +1071,7 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
     rank,
     ranking,
     dailyGoal,
+    trend,
     menuSlots,
     // Running out of money ends the game.
     gameOver: state.gameOver || cash <= 0,

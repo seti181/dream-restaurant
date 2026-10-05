@@ -26,6 +26,7 @@ import {
 import { isFairDay, neptuneScore } from '../src/sim/neptune';
 import { RANKS } from '../src/data/ranks';
 import { DAILY_GOAL_IDS } from '../src/data/dailyGoals';
+import { dishFits } from '../src/sim/menu';
 import { createPlayerRestaurant } from '../src/sim/setup';
 import { staffOf } from '../src/sim/staff';
 import type { Employee, Role, Staff } from '../src/sim/types';
@@ -70,6 +71,8 @@ interface SeasonResult {
   weeklyPlace: number[];
   /** Mewa's daily goals: how many of each came up, and how many were done. */
   dailyGoals: Record<string, { came: number; done: number }>;
+  /** Days with a trend on, and of those, days the menu had something on trend. */
+  trendDays: { on: number; matched: number };
 }
 
 /** A new game where the player's menu and team are the strategy's. */
@@ -112,6 +115,7 @@ function playSeason(strategy: Strategy, seed: number): SeasonResult {
     weeklyStars: [],
     weeklyPlace: [],
     dailyGoals: {},
+    trendDays: { on: 0, matched: 0 },
   };
   const fullTicks = { firstWeek: 0, season: 0 };
   const openTicks = { firstWeek: 0, season: 0 };
@@ -142,6 +146,11 @@ function playSeason(strategy: Strategy, seed: number): SeasonResult {
       for (const request of state.bookings) if (!request.accepted) state = acceptBooking(state, request.id);
     }
     const open = openRestaurant(state);
+    const trend = open.progress.conditions.trend;
+    if (trend) {
+      result.trendDays.on++;
+      if (open.progress.restaurants[0].menu.some((dish) => dishFits(dish, trend.wants))) result.trendDays.matched++;
+    }
     const interactive = strategy.plan?.interactive ?? false;
     while (!open.progress.done) {
       // A player who only watches says no to every card; an interactive one says yes.
@@ -356,6 +365,18 @@ console.log(
         return came === 0 ? '–' : `${Math.round((done / came) * 100)}% of ${came}`;
       }),
     ]),
+  ),
+);
+
+console.log('\nWeekly trends: share of days the menu had something on trend (the scripted menus never change for it)\n');
+console.log(
+  table(
+    ['Strategy', 'On trend'],
+    results.map(({ strategy, seasons }) => {
+      const on = seasons.reduce((sum, s) => sum + s.trendDays.on, 0);
+      const matched = seasons.reduce((sum, s) => sum + s.trendDays.matched, 0);
+      return [strategy.name, `${Math.round((matched / Math.max(1, on)) * 100)}% of ${on} days`];
+    }),
   ),
 );
 

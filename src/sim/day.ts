@@ -474,7 +474,7 @@ export function seat(
     return;
   }
   floor.freeTables -= tablesUsed;
-  let order = chooseOrder(rng, restaurant, party, minute, progress.conditions.weather);
+  let order = chooseOrder(rng, restaurant, party, minute, progress.conditions.weather, progress.conditions.trend ?? null);
   if (party.regular) order = regularsOrder(restaurant, order);
   const taken = new Set(floor.visits.flatMap((v) => v.tables));
   const tables = [...Array(allTables(restaurant)).keys()].filter((t) => !taken.has(t)).slice(0, tablesUsed);
@@ -610,7 +610,7 @@ export function stepDay(rng: RngState, progress: DayInProgress): void {
   const isFull = (floor: Floor) => floor.freeTables < 1 && floor.door.length >= balance.service.doorQueueMax;
   const full = floors.map(isFull);
   for (const party of generateParties(rng, day, tick, conditions)) {
-    const index = chooseRestaurant(rng, party, restaurants, waits, full, conditions.inSeason);
+    const index = chooseRestaurant(rng, party, restaurants, waits, full, conditions.inSeason, conditions.trend ?? null);
     if (index === null) {
       outcomes.push(lostOutcome(party, null, 'elsewhere'));
       continue;

@@ -7,19 +7,21 @@ import type { ExtraId, MenuDish } from '../data/dishes';
 import { GROUPS, type GroupId } from '../data/groups';
 import { LOCATIONS, type LocationId } from '../data/locations';
 import { interiorAppeal } from './interior';
-import { freshOn, happyHourOn, lunchSetServing, priceMultiplier, specialOf, tagsOf, templateOf } from './menu';
+import { dishFits, freshOn, happyHourOn, lunchSetServing, priceMultiplier, specialOf, tagsOf, templateOf } from './menu';
 import { nextFloat, type RngState } from './rng';
-import type { Party, Restaurant } from './types';
+import type { Party, Restaurant, TrendToday } from './types';
 
-/** How much a group likes one dish, from 0 (not their thing) to 1 (perfect). */
-export function dishAppeal(dish: MenuDish, group: GroupId): number {
+/** How much a group likes one dish, from 0 (not their thing) to 1 (perfect), with this week's trend if there is one. */
+export function dishAppeal(dish: MenuDish, group: GroupId, trend: TrendToday | null = null): number {
   const { likes } = GROUPS[group];
   const tags = tagsOf(dish);
   const template = templateOf(dish);
+  const trending = trend !== null && trend.group === group && dishFits(dish, trend.wants);
   const matches =
     likes.tags.filter((tag) => tags.includes(tag)).length +
     (likes.categories.includes(template.category) ? 1 : 0) +
-    (likes.templates.includes(dish.template) ? 1 : 0);
+    (likes.templates.includes(dish.template) ? 1 : 0) +
+    (trending ? balance.trends.matchWeight : 0);
   return Math.min(1, matches / balance.choice.matchesForFullAppeal);
 }
 
@@ -32,10 +34,10 @@ export function specialAppeal(restaurant: Restaurant, inSeason: readonly ExtraId
 }
 
 /** How tempting a menu looks to a group, 0–1: the average appeal of its best few dishes. */
-export function menuMatch(menu: MenuDish[], group: GroupId): number {
+export function menuMatch(menu: MenuDish[], group: GroupId, trend: TrendToday | null = null): number {
   const count = balance.choice.menuMatchDishes;
   const best = menu
-    .map((dish) => dishAppeal(dish, group))
+    .map((dish) => dishAppeal(dish, group, trend))
     .sort((a, b) => b - a)
     .slice(0, count);
   return best.reduce((sum, appeal) => sum + appeal, 0) / count;
@@ -64,6 +66,7 @@ export function utility(
   expectedWaitMinutes: number,
   full = false,
   inSeason: readonly ExtraId[] = [],
+  trend: TrendToday | null = null,
 ): number | null {
   const distance = distanceMetres(party.origin, restaurant.location);
   const range = balance.choice.walkRangeMetres;
@@ -84,7 +87,7 @@ export function utility(
 
   return (
     Math.log(heardOf) +
-    w.taste * menuMatch(restaurant.menu, party.group) +
+    w.taste * menuMatch(restaurant.menu, party.group, trend) +
     w.price * priceTerm +
     w.reputation * (restaurant.reputation[party.group] / 100) +
     w.awareness * (restaurant.awareness[party.group] / 100) +
@@ -96,7 +99,11 @@ export function utility(
     (happyHourOn(restaurant, party.arrivalMinute) ? balance.happyHour.appealBonus : 0) +
     // "Dziś polecamy" on the board, all the more tempting with something fresh in season.
     specialAppeal(restaurant, inSeason) +
-    interiorAppeal(restaurant, party.group) -
+    interiorAppeal(restaurant, party.group) +
+    // This week's trend: the group that craves it looks for a menu that has it.
+    (trend !== null && trend.group === party.group && restaurant.menu.some((dish) => dishFits(dish, trend.wants))
+      ? balance.trends.appealBonus
+      : 0) -
     // Through the window, people can see when every table is taken.
     (full ? balance.choice.fullPenalty : 0)
   );
@@ -115,12 +122,13 @@ export function chooseRestaurant(
   expectedWaits: number[],
   full: boolean[] = [],
   inSeason: readonly ExtraId[] = [],
+  trend: TrendToday | null = null,
 ): number | null {
   const options: { index: number | null; score: number }[] = [
     { index: null, score: balance.choice.noRestaurantUtility },
   ];
   restaurants.forEach((restaurant, index) => {
-    const score = utility(restaurant, party, expectedWaits[index], full[index] ?? false, inSeason);
+    const score = utility(restaurant, party, expectedWaits[index], full[index] ?? false, inSeason, trend);
     if (score !== null) options.push({ index, score });
   });
 

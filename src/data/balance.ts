@@ -318,6 +318,13 @@ export const balance = {
     favouriteMood: 6,
   },
 
+  trends: {
+    /** A dish that is this week's trend counts as this many extra matches with the group that craves it (2 = a perfect match). */
+    matchWeight: 2,
+    /** ...and a menu with something on trend tempts that group this much more (the happy hour board is 1). */
+    appealBonus: 0.6,
+  },
+
   dailyGoals: {
     /** A foodie party this happy (0–100) counts for "Make a foodie happy". */
     happyFoodieFrom: 55,

@@ -155,6 +155,14 @@ export interface DayConditions {
   ingredientCost: Record<string, number>;
   /** Fresh produce in season today (see the extras in data/dishes.ts). */
   inSeason: ExtraId[];
+  /** This week's trend: one group craves something (data/trends.ts). */
+  trend?: TrendToday | null;
+}
+
+/** What a weekly trend does: this group craves dishes that are what they want. */
+export interface TrendToday {
+  group: GroupId;
+  wants: MenuWant;
 }
 
 /** Each factor runs from -1 (awful) through 0 (fine) to +1 (wonderful). */

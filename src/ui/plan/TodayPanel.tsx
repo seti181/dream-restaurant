@@ -13,6 +13,8 @@ import { dishName, money } from '../format';
 import { GoalCard } from '../Mewa';
 import { BookingsBox } from './BookingsBox';
 import { DAILY_GOALS } from '../../data/dailyGoals';
+import { TRENDS } from '../../data/trends';
+import { trendLine } from '../../sim/trends';
 import { dailyGoalText } from '../../sim/dailyGoals';
 import { RankingBox } from './RankingBox';
 import { WEATHER_ICONS } from '../pixel/icons';
@@ -93,6 +95,12 @@ export function TodayPanel() {
         {happening && (
           <p>
             {HAPPENINGS[happening].icon} {HAPPENINGS[happening].text}
+          </p>
+        )}
+        {game.trend && game.day <= game.trend.untilDay && (
+          <p>
+            {TRENDS[game.trend.id].icon} <strong>{TRENDS[game.trend.id].name}:</strong> {trendLine(game.trend.id)}{' '}
+            <span className="muted">Until Sunday.</span>
           </p>
         )}
         {eventsToday(game).length > 0 && (

@@ -8,7 +8,7 @@ import { BOOKING_KIND_IDS, BOOKING_KINDS, type BookingKind, type BookingKindId, 
 import type { MenuDish } from '../data/dishes';
 import type { GroupId } from '../data/groups';
 import { weekdayOf } from './calendar';
-import { ingredientCostOf, tagsOf, templateOf } from './menu';
+import { dishFits, ingredientCostOf } from './menu';
 import { chance, createRng, nextInt, pick, weightedPick } from './rng';
 import { effectiveLevel, tablesNeeded } from './service';
 import type { BigOrder, Booking, PartyOutcome, Restaurant, Staff } from './types';
@@ -41,18 +41,9 @@ export interface BigOrderJob {
 
 export const bookingKindOf = (request: BookingRequest): BookingKind => BOOKING_KINDS[request.kind];
 
-/** True if the dish is what they want. */
-function fits(dish: MenuDish, want: MenuWant): boolean {
-  return (
-    (want.category === undefined || templateOf(dish).category === want.category) &&
-    (want.tag === undefined || tagsOf(dish).includes(want.tag)) &&
-    (want.template === undefined || dish.template === want.template)
-  );
-}
-
 /** The dishes on a menu that are what they want. */
 export function matchingDishes(menu: MenuDish[], want: MenuWant): MenuDish[] {
-  return menu.filter((dish) => fits(dish, want));
+  return menu.filter((dish) => dishFits(dish, want));
 }
 
 export function wantMet(menu: MenuDish[], want: MenuWant): boolean {

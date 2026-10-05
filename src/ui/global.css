@@ -365,6 +365,12 @@ button {
   margin-top: 4px;
 }
 
+.tag.trending {
+  background: #fde3c0;
+  color: #8a4b12;
+  font-weight: 700;
+}
+
 .stars {
   color: var(--amber);
   letter-spacing: 1px;
