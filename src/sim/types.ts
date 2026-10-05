@@ -1,5 +1,6 @@
 // Shapes of the simulation's state. Everything here is plain data so it can be saved as JSON.
 
+import type { MenuWant } from '../data/bookings';
 import type { Cuisine, EquipmentId, ExtraId, MenuDish } from '../data/dishes';
 import type { DecorId } from '../data/decor';
 import type { GroupId } from '../data/groups';
@@ -94,6 +95,10 @@ export interface Party {
   regular?: boolean;
   /** One of the named regulars with a story (data/regulars.ts). */
   regularId?: RegularId;
+  /** A party that booked through a request the player accepted: which one (see sim/bookings.ts). */
+  requestId?: number;
+  /** What a party that booked hopes to find on the menu. */
+  wish?: MenuWant;
 }
 
 /** A review left by a guest. */
@@ -118,6 +123,21 @@ export interface Booking {
   critic: boolean;
   regular?: boolean;
   regularId?: RegularId;
+  /** A booking request the player accepted (see sim/bookings.ts): tables are held for them. */
+  requestId?: number;
+  /** What they hope to find on the menu. */
+  wish?: MenuWant;
+}
+
+/** Portions a chef cooks ahead for a big order the player accepted, ready by a set time. */
+export interface BigOrder {
+  restaurant: string;
+  requestId: number;
+  /** When it should be ready, in minutes after midnight. */
+  minute: number;
+  portions: number;
+  /** The kind of dish they ordered. */
+  needs: MenuWant;
 }
 
 /** Everything about a day that isn't the restaurants: weather, events and bookings. */
@@ -130,6 +150,7 @@ export interface DayConditions {
   /** Multiplies foot traffic on each street (1 if missing). */
   locations: Partial<Record<LocationId, number>>;
   bookings: Booking[];
+  bigOrders: BigOrder[];
   /** Multiplies ingredient costs for a restaurant id (1 if missing). */
   ingredientCost: Record<string, number>;
   /** Fresh produce in season today (see the extras in data/dishes.ts). */
@@ -168,4 +189,6 @@ export interface PartyOutcome {
   review: Review | null;
   /** For a named regular: who it was, and whether their wish came true. */
   regularVisit?: { id: RegularId; wishMet: boolean };
+  /** For a party that booked through a request: which one, and whether their wish was on the menu. */
+  booking?: { id: number; wishMet: boolean };
 }

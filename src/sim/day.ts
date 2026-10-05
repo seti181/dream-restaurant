@@ -7,6 +7,7 @@ import type { EquipmentId, ExtraId, MenuDish } from '../data/dishes';
 import { GROUP_IDS, GROUPS } from '../data/groups';
 import { LOCATIONS, type LocationId } from '../data/locations';
 import { REGULARS, type RegularId } from '../data/regulars';
+import { bigOrderMinutes, matchingDishes, tablesHeld, wantMet, type BigOrderJob } from './bookings';
 import { chooseRestaurant } from './choice';
 import { minuteOfDay, ticksPerDay } from './clock';
 import { ORDINARY_DAY } from './events';
@@ -60,6 +61,8 @@ export interface Visit {
   apology?: boolean;
   /** The player showed them to another table. */
   moved?: boolean;
+  /** A party that booked: whether their wish was on the menu when they sat down. */
+  wishMet?: boolean;
   /** Reputation multipliers that apply when they leave. */
   reputationAfterwards?: Partial<Record<GroupId, number>>;
 }
@@ -90,6 +93,8 @@ export interface Floor {
   door: { party: Party; since: number }[];
   /** Parties that gave up waiting at the door, and when (for the restaurant view to show them going). */
   doorLeft: { group: GroupId; size: number; minute: number }[];
+  /** Booking requests whose party has arrived (seated, or waiting at the door). */
+  bookedIn: number[];
 }
 
 /** True while special guests keep new guests out. */
@@ -120,22 +125,30 @@ function giveUpAt(visit: Visit): number {
 /** Chefs who are free take the oldest waiting orders. */
 function startCooking(restaurant: Restaurant, floor: Floor, minute: number, inSeason: readonly ExtraId[]): void {
   if (floor.chefFreeAt.length === 0) return;
-  while (floor.queue.length > 0) {
-    const chefIndex = floor.chefFreeAt.indexOf(Math.min(...floor.chefFreeAt));
-    if (floor.chefFreeAt[chefIndex] > minute) return;
-    const visit = floor.queue.shift()!;
-    const chef = restaurant.chefs[chefIndex];
-    const start = Math.max(floor.chefFreeAt[chefIndex], visit.orderedAt);
-    const readyAt = start + prepMinutes(visit.order, chef, restaurant.menu.length);
-    // Don't cook for a table that will have given up before the food is ready;
-    // spend the time on guests who will still be there.
-    if (readyAt > giveUpAt(visit)) {
+  // Oldest orders first. An order that's waiting for a particular chef lets the next one go ahead.
+  for (const visit of [...floor.queue]) {
+    if (!floor.chefFreeAt.some((freeAt) => freeAt <= minute)) return;
+    // A party that booked agreed its dishes ahead, so the kitchen is quicker with them.
+    const ahead = visit.party.requestId === undefined ? 1 : balance.bookings.prepFactor;
+    // When each chef would have this order ready, and whether that's before the table gives up.
+    const chefs = restaurant.chefs.map((chef, i) => {
+      const readyAt = Math.max(floor.chefFreeAt[i], visit.orderedAt) + prepMinutes(visit.order, chef, restaurant.menu.length) * ahead;
+      return { i, chef, readyAt, free: floor.chefFreeAt[i] <= minute, inTime: readyAt <= giveUpAt(visit) };
+    });
+    // A free chef who can have it ready in time cooks it, the quickest of them first...
+    const cook = chefs.filter((c) => c.free && c.inTime).sort((a, b) => a.readyAt - b.readyAt)[0];
+    if (!cook) {
+      // ...or else it waits for a busy chef who still can, or nobody can: don't cook for a table
+      // that will have given up before the food is ready, and spend the time on guests who will still be there.
+      if (chefs.some((c) => c.inTime)) continue;
+      floor.queue.splice(floor.queue.indexOf(visit), 1);
       visit.skipped = true;
       continue;
     }
-    visit.readyAt = readyAt;
-    visit.quality = orderQuality(visit.order, chef, restaurant.supplier, inSeason) + floor.qualityBonus;
-    floor.chefFreeAt[chefIndex] = readyAt;
+    floor.queue.splice(floor.queue.indexOf(visit), 1);
+    visit.readyAt = cook.readyAt;
+    visit.quality = orderQuality(visit.order, cook.chef, restaurant.supplier, inSeason) + floor.qualityBonus;
+    floor.chefFreeAt[cook.i] = cook.readyAt;
   }
 }
 
@@ -253,6 +266,7 @@ function progressRestaurant(
         factors,
         review: maybeReview(rng, restaurant, visit, factors, satisfaction),
         ...regularVisit(party, restaurant, visit.seatedAt),
+        ...bookingVisit(party, visit.wishMet ?? false),
       });
       visit.eating = true;
       visit.satisfaction = satisfaction;
@@ -276,6 +290,7 @@ function progressRestaurant(
         factors: null,
         review: maybeReview(rng, restaurant, visit, null, satisfaction),
         ...regularVisit(party, null),
+        ...bookingVisit(party, visit.wishMet ?? false),
       });
       floor.walkouts.push({ group: party.group, size: party.size, minute });
       leave();
@@ -297,7 +312,13 @@ function lostOutcome(party: Party, restaurant: string | null, kind: 'noTable' | 
     factors: null,
     review: null,
     ...regularVisit(party, null),
+    ...bookingVisit(party, false),
   };
+}
+
+/** For a party that booked through a request: which one, and whether their wish was on the menu. */
+function bookingVisit(party: Party, wishMet: boolean): Pick<PartyOutcome, 'booking'> {
+  return party.requestId === undefined ? {} : { booking: { id: party.requestId, wishMet } };
 }
 
 /** For a named regular's outcome: who it was, and whether their wish came true (only if they ate). */
@@ -318,6 +339,8 @@ export interface DayInProgress {
   outcomes: PartyOutcome[];
   /** Weather, events and bookings for the day. */
   conditions: DayConditions;
+  /** Big orders the kitchens cook today. */
+  bigOrders: BigOrderJob[];
   /** True once the restaurants have closed and the last guest has left. */
   done: boolean;
 }
@@ -344,9 +367,11 @@ export function startDay(
       away: [],
       door: [],
       doorLeft: [],
+      bookedIn: [],
     })),
     outcomes: [],
     conditions,
+    bigOrders: (conditions.bigOrders ?? []).map((order) => ({ order, status: 'waiting' })),
     done: false,
   };
 }
@@ -382,10 +407,13 @@ export function seat(
     progress.outcomes.push(lostOutcome(party, restaurant.id, 'noTable'));
     return;
   }
+  if (party.requestId !== undefined && !floor.bookedIn.includes(party.requestId)) floor.bookedIn.push(party.requestId);
+  // Tables held for a booked party due soon are not for anyone else.
+  const free = floor.freeTables - (party.requestId === undefined ? heldTables(progress, index, minute) : 0);
   // The regular never gets turned away: with every table taken, he squeezes in at the bar.
-  const atTheBar = party.regular && floor.freeTables < 1;
+  const atTheBar = party.regular && free < 1;
   const tablesUsed = atTheBar ? 0 : tablesNeeded(party.size);
-  if (floor.freeTables < tablesUsed) {
+  if (free < tablesUsed) {
     // Every table is taken: wait at the door if there's room in the queue, or go elsewhere.
     // Guests who booked always wait, at the front of the queue: their table is the next one free.
     const booked = party.bookedAt !== undefined && mayQueue;
@@ -399,6 +427,9 @@ export function seat(
   if (party.regular) order = regularsOrder(restaurant, order);
   const taken = new Set(floor.visits.flatMap((v) => v.tables));
   const tables = [...Array(allTables(restaurant)).keys()].filter((t) => !taken.has(t)).slice(0, tablesUsed);
+  // A party that booked hoped for something on the menu.
+  const wishMet = party.wish ? wantMet(restaurant.menu, party.wish) : undefined;
+  const wishMood = wishMet === undefined ? 0 : wishMet ? balance.bookings.wishMetMood : balance.bookings.wishMissedMood;
   floor.visits.push({
     party,
     tablesUsed,
@@ -413,8 +444,9 @@ export function seat(
     leaveAt: 0,
     satisfaction: null,
     // Regulars feel at home here.
-    mood: party.regularId ? balance.regulars.atHomeMood : 0,
-    extraPatience: 0,
+    mood: (party.regularId ? balance.regulars.atHomeMood : 0) + wishMood,
+    extraPatience: party.requestId === undefined ? 0 : balance.bookings.extraPatienceMinutes,
+    wishMet,
   });
 }
 
@@ -425,7 +457,8 @@ export function seat(
 function serveTheDoor(rng: RngState, progress: DayInProgress, index: number, minute: number, closed: boolean): void {
   const floor = progress.floors[index];
   for (const waiting of [...floor.door]) {
-    const fits = floor.freeTables >= tablesNeeded(waiting.party.size);
+    const held = waiting.party.requestId === undefined ? heldTables(progress, index, minute) : 0;
+    const fits = floor.freeTables - held >= tablesNeeded(waiting.party.size);
     // Guests who booked wait longer for their table than people who just walked up.
     const patience = balance.service.doorWaitMinutes * (waiting.party.bookedAt ? balance.service.bookedWaitFactor : 1);
     const gaveUp = closed || minute - waiting.since >= patience;
@@ -439,12 +472,54 @@ function serveTheDoor(rng: RngState, progress: DayInProgress, index: number, min
   }
 }
 
+/** Tables kept for booked parties due in soon, or waiting at the door. */
+function heldTables(progress: DayInProgress, index: number, minute: number): number {
+  const floor = progress.floors[index];
+  const due = progress.conditions.bookings.filter((b) => b.requestId === undefined || !floor.bookedIn.includes(b.requestId));
+  return tablesHeld(due, floor.door.map((waiting) => waiting.party), progress.restaurants[index].id, minute);
+}
+
+/**
+ * A chef starts on a big order at the last moment that still gets it ready in time (or as soon
+ * as they're free), cooking the cheapest dish on the menu that fits. With nothing that fits,
+ * or nobody in the kitchen, the order falls through.
+ */
+function cookBigOrders(progress: DayInProgress, index: number, minute: number): void {
+  const restaurant = progress.restaurants[index];
+  const floor = progress.floors[index];
+  const { supplier } = restaurant;
+  const { inSeason } = progress.conditions;
+  for (const job of progress.bigOrders) {
+    if (job.status !== 'waiting' || job.order.restaurant !== restaurant.id) continue;
+    if (floor.chefFreeAt.length === 0) {
+      if (minute >= job.order.minute) Object.assign(job, { status: 'fellThrough', noChef: true });
+      continue;
+    }
+    const chefIndex = floor.chefFreeAt.indexOf(Math.min(...floor.chefFreeAt));
+    const minutes = bigOrderMinutes(job.order.portions, restaurant.chefs[chefIndex]);
+    const start = Math.max(minute, floor.chefFreeAt[chefIndex]);
+    if (start + minutes + balance.clock.tickMinutes <= job.order.minute) continue;
+    const [dish] = matchingDishes(restaurant.menu, job.order.needs).sort(
+      (a, b) => ingredientCostOf(a, supplier, inSeason) - ingredientCostOf(b, supplier, inSeason),
+    );
+    if (!dish) {
+      job.status = 'fellThrough';
+      continue;
+    }
+    job.status = 'cooking';
+    job.dish = dish;
+    job.readyAt = start + minutes;
+    floor.chefFreeAt[chefIndex] = job.readyAt;
+  }
+}
+
 /** Plays one tick of the day. */
 export function stepDay(rng: RngState, progress: DayInProgress): void {
   if (progress.done) return;
   const { day, tick, restaurants, floors, outcomes, conditions } = progress;
   const minute = minuteOfDay(tick);
   restaurants.forEach((restaurant, i) => {
+    cookBigOrders(progress, i, minute);
     progressRestaurant(rng, restaurant, floors[i], minute, outcomes, conditions);
     serveTheDoor(rng, progress, i, minute, tick >= ticksPerDay());
   });
@@ -471,6 +546,8 @@ export function stepDay(rng: RngState, progress: DayInProgress): void {
       critic: booking.critic,
       regular: booking.regular,
       regularId: booking.regularId,
+      requestId: booking.requestId,
+      wish: booking.wish,
     };
     seat(rng, progress, index, party, minute);
   }

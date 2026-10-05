@@ -86,7 +86,7 @@ export const balance = {
 
   events: {
     /** Chance each evening that something unexpected happens tomorrow. */
-    randomChancePerDay: 0.2,
+    randomChancePerDay: 0.125,
   },
 
   forecast: {
@@ -98,6 +98,31 @@ export const balance = {
     busierAbove: 1.15,
     /** …and "quieter than today" below this. */
     quieterBelow: 0.87,
+  },
+
+  bookings: {
+    /** Chance each evening that a new booking request comes in (data/bookings.ts): about three a week. */
+    requestChance: 0.43,
+    /** A request is for a day this many days after the morning it arrives. Unanswered by the evening before, it lapses. */
+    daysAhead: { min: 1, max: 3 },
+    /** Tables are held for a booked party from this many minutes before they come. */
+    holdTablesMinutes: 45,
+    /** A booked party is this many minutes more patient: the kitchen knows they're coming, and big orders take a while. */
+    extraPatienceMinutes: 20,
+    /** Their dishes were agreed ahead, so the kitchen cooks their order this many times as fast as usual. */
+    prepFactor: 0.5,
+    /** Big orders: minutes an average chef needs for each portion (a faster chef needs less). */
+    minutesPerPortion: 2,
+    /** A booked party is this much happier (0–100) when their wish is on the menu, or less happy when it isn't. */
+    wishMetMood: 5,
+    wishMissedMood: -10,
+    /** When their wish came true and they were at least this happy (0–100)... */
+    happyFrom: 55,
+    /** ...they leave a tip for each guest, and their group likes you this many points more. */
+    tipPerGuest: 25,
+    happyReputation: 2,
+    /** Reputation lost with their group when a booking is let down: no table, walking out, or an order that falls through. */
+    letDownReputation: 3,
   },
 
   reviews: {

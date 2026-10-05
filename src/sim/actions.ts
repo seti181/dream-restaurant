@@ -383,6 +383,22 @@ export function relocate(state: GameState, to: LocationId): GameState {
   return { ...moved, cash: state.cash - balance.relocation.fee };
 }
 
+// ---------- Bookings ----------
+
+/** Says yes to a booking request: the party comes (or the order is due) on its day. */
+export function acceptBooking(state: GameState, id: number): GameState {
+  const request = state.bookings.find((r) => r.id === id);
+  if (!request || request.accepted || request.day <= state.day) return state;
+  return { ...state, bookings: state.bookings.map((r) => (r.id === id ? { ...r, accepted: true } : r)) };
+}
+
+/** Says no to a booking request, politely. Once accepted, a booking stays. */
+export function declineBooking(state: GameState, id: number): GameState {
+  const request = state.bookings.find((r) => r.id === id);
+  if (!request || request.accepted) return state;
+  return { ...state, bookings: state.bookings.filter((r) => r.id !== id) };
+}
+
 // ---------- Mewa ----------
 
 /** Marks one of Mewa's tips as read. */

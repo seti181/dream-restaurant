@@ -5,8 +5,9 @@
 //   node scripts/play-day.mjs <folder> [days] [url]                 (in another)
 //
 // It opens the restaurant, sets 4x speed, answers every choice card with its first answer, and
-// screenshots the start (0-start.png), the day (1-during.png), the top of each day report
-// (report-<n>-top.png) and its "Tomorrow" box (report-<n>-tomorrow.png). The browser profile lives
+// accepts every booking request, and screenshots the start (0-start.png), the day (1-during.png),
+// the top of each day report (report-<n>-top.png), its "Tomorrow" box (report-<n>-tomorrow.png)
+// and the next morning's Today tab at its bookings (plan-<n>.png). The browser profile lives
 // in <folder>/edge-profile, so a second run with the same folder carries on from the save.
 // Uses Node's built-in WebSocket and fetch (Node 22+) and the Chrome DevTools Protocol: no dependencies.
 
@@ -94,6 +95,8 @@ const step = `(() => {
   const card = document.querySelector('.moment-card, [role=dialog]');
   const answer = card && [...card.querySelectorAll('button.primary')].find((b) => !b.disabled);
   if (answer) { answer.click(); return 'answered: ' + answer.textContent.trim(); }
+  const accept = [...document.querySelectorAll('.booking-request button')].find((b) => b.textContent.trim() === 'Accept');
+  if (accept) { accept.click(); return 'accepted a booking'; }
   const open = buttons.find((b) => b.textContent.trim().startsWith('Open the restaurant'));
   if (open) { open.click(); return 'opened the restaurant'; }
   const fast = buttons.find((b) => b.getAttribute('aria-label') === 'Four times speed' && b.getAttribute('aria-pressed') !== 'true');
@@ -138,6 +141,10 @@ for (let day = 1; day <= Number(days); day++) {
   if (day < Number(days)) {
     await evaluate(nextDay);
     await sleep(1500);
+    // The next morning's Today tab, with its bookings.
+    await evaluate(`document.querySelector('.bookings')?.scrollIntoView({ block: 'center' })`);
+    await sleep(300);
+    await screenshot(`plan-${day + 1}`);
   }
 }
 

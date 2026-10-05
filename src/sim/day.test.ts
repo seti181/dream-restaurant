@@ -4,6 +4,7 @@ import { RIVAL_IDS } from '../data/rivals';
 import { balance } from '../data/balance';
 import type { GroupId } from '../data/groups';
 import { utility } from './choice';
+import { ORDINARY_DAY } from './events';
 import { floorView, runDay, seat, startDay, stepDay } from './day';
 import { newGame, playerOf } from './game';
 import { createRng } from './rng';
@@ -201,5 +202,21 @@ describe('the queue at the door', () => {
     const player = forRestaurant(outcomes, 'player');
     const count = (kind: PartyOutcome['kind']) => player.filter((o) => o.kind === kind).reduce((sum, o) => sum + o.size, 0);
     expect(count('noTable')).toBeLessThan(count('served'));
+  });
+});
+
+describe('the kitchen', () => {
+  it('waits for a quick chef rather than give a slow one an order they can’t finish in time', () => {
+    const fast: Staff = { skill: 3, speed: 5 };
+    const slow: Staff = { skill: 3, speed: 1 };
+    const progress = startDay(2, oldTown(starterMenu, [fast, slow]), { ...ORDINARY_DAY, traffic: 0 });
+    const party = { group: 'locals' as const, size: 2, origin: 'ogarna' as const, arrivalMinute: 660 };
+    seat(createRng(1), progress, 0, party, 660);
+    // The quick chef is busy for a few minutes; the slow one is free but would take far too long.
+    progress.floors[0].chefFreeAt = [672, 0];
+    const visit = progress.floors[0].visits[0];
+    while (visit.readyAt === null && !visit.skipped && progress.tick < 10) stepDay(createRng(2), progress);
+    expect(visit.skipped).toBe(false);
+    expect(progress.floors[0].chefFreeAt[0]).toBe(visit.readyAt);
   });
 });

@@ -264,13 +264,12 @@ Since the season became six weeks from 8 July (section 6.14), Easter, Majówka, 
 
 **Random events (cozy):**
 
-- a tour bus group arrives
+(The tour bus, the wedding party and the regular's birthday were surprises here until M7b; they are now booking requests to accept or decline, section 6.15 A2.)
+
 - a food critic visits
 - a local newspaper feature
 - a supplier discount week
 - street works reduce traffic
-- a wedding party booking
-- a regular's birthday
 - a seagull steals a pierogi (pure flavour, tiny effect)
 
 ### 6.11 Goals and tutorial: Mewa the seagull
@@ -768,7 +767,7 @@ Each item is tested in the browser and on the tablet before the next one starts.
 Comes next, before M7c. Each item is tested in the browser and on the tablet before the next one starts. In order of how much each is expected to help:
 
 - [x] Tomorrow's forecast at the end of the day report
-- [ ] Bookings and big orders to accept or decline
+- [x] Bookings and big orders to accept or decline
 - [ ] Dishes level up with use, up to three stars
 - [ ] Restaurant rank-ups with unlocks
 - [ ] A weekly Old Town ranking against the rivals
@@ -1015,3 +1014,11 @@ Moved out of M7 on 2026-10-03, so the more dynamic season (M7b) comes first.
   - **Happenings** (`data/happenings.ts`): nine small things that change who is out for one day: a cruise ship at Westerplatte, exam retakes over, a Lechia home match, a conference at AmberExpo, food bloggers on Długi Targ, a beach day at Brzeźno, late trains from Warsaw, an open-air concert on Ołowianka, offices closing early on Friday. One comes up on about half the days; some only on certain weekdays or in certain weather. Happenings are always as forecast.
   - **Only the weather can be wrong:** on about 12% of days it turns as the doors open (sunny to cloudy, cloudy to sunny or rain, rain to cloudy, a heatwave to plain sun), with a note on screen and in that day's report. A happening that needs the weather (the beach day) is called off when the weather turns. Numbers are in `balance.forecast`.
   - **Simulator,** 3 seasons, before → after: do nothing −4,643 → −1,736 zł; cheap and fast −39,238 → −32,224 zł; quality focus −6,022 → −2,465 zł; balanced 43,824 → 40,431 zł (profitable from week 3 instead of 2, lowest cash 7,583 → 11,083 zł). Small shifts from the new dice rolls; the rivals and the Neptune race are unchanged, so nothing was rebalanced.
+- 2026-10-05: Bookings and big orders (M7b, section 6.15 A2), settled as built.
+  - **Requests** (`data/bookings.ts`, numbers in `balance.bookings`): one may come in each evening (43%, about three a week), for a day one to three days after the morning it arrives, never two for the same day. They wait in a new Bookings box on the Today tab with Accept and Decline, which says whether today's menu has what they want. A request not answered by the evening before its day lapses, with a line in the next morning's news. An accepted booking can't be cancelled. The day report's Tomorrow box (and its teaser) mention a booking for tomorrow and any request waiting for an answer, and a note at opening says who's booked today.
+  - **Table bookings:** a wedding party (12–16 locals, Friday or Saturday at 17:00, they'd love a dessert), a tour bus (10–14 tourists at 13:00, something Polish), a birthday table (5–8 locals at 19:00, pierogi), an office leaving-do (6–10 office workers on weekdays at 18:00, something to toast with), a student society (8–12 students at 20:00, something hearty) and a supper club (4–6 foodies at 19:30, something from the sea). Never more guests than the dining room holds. Their tables are held for 45 minutes before they come, and while they wait at the door. Their dishes were agreed ahead, so the kitchen cooks their order twice as fast, and they're 20 minutes more patient. Their wish on the menu makes them a little happier (+5), and missing it less happy (−10). With the wish met and at least 55 satisfaction they tip 25 zł a guest and their group likes you 2 points more; no table or walking out costs 3 points with their group.
+  - **Big orders:** 20–30 lunches for an office (weekdays, ready at 12:30, 36 zł each, any main), 15–25 soups for the Crane museum (13:00, 22 zł), 20–30 plates of pierogi for a parish fête (weekends, 15:00, 32 zł) and 20–30 desserts for a summer camp (16:00, 18 zł). A chef cooks them at 2 minutes a portion for an average chef (less for a quick one), starting at the last moment that gets them ready in time, using the dish on the menu that fits with the cheapest ingredients; the ingredients are paid. With nothing on the menu that fits, or nobody cooking, the order falls through: no money, and 3 reputation points lost with that group.
+  - **The surprise tour bus, wedding and birthday** became requests (chosen 2026-10-05): the daily chance of a surprise event went from 20% to 12.5%, so the food critic, the newspaper and the rest come as often as before. Saves (version 18) drop any of those three that were running.
+  - **Kitchen fix found on the way:** a free but slow chef took an order they couldn't finish before the guests lost patience, and the order was dropped (the guests walked out), even when a quicker chef would be free in a few minutes. Now an order goes to a free chef who can make it in time; failing that it waits for a busy one who can, and later orders go ahead meanwhile; it's only dropped when nobody could. In one simulated season, hiring a slow perfectionist chef had turned 25 walk-outs a day into 130 and the restaurant went bust.
+  - **Simulator,** 3 seasons, before → after (balanced and quality focus accept every request; do nothing and cheap and fast never answer): do nothing −1,736 → 4,266 zł (no longer out of money: fewer surprise street works and other dice); cheap and fast −32,224 → −34,756 zł (bust in week 3 as before); quality focus −2,465 → −5,840 zł (bust in week 4 as before); balanced 40,431 → 47,738 zł, rating 50.6 → 54.1, Neptune 37.1 → 39.5 against Bar Błyskawica's 45.0, guests lost 10,824 → 12,533 (walk-ins find tables held). Over 8 seasons, accepting every request against never answering: balanced 36,240 → 42,481 zł, quality focus −3,798 → −3,021 zł. `NO_BOOKINGS=1 npm run simulate` leaves every request unanswered, to compare.
+  - **Tuned on the way:** at first (tips 15 zł, tables held an hour, 2.5 minutes a portion, big orders about 20% cheaper) accepting every request cost the balanced restaurant money: its tables are full most of the day, so held tables turn paying walk-ins away.

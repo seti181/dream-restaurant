@@ -991,6 +991,44 @@ h2.spaced {
   background: #fdf6ea;
 }
 
+/* ---------- Bookings (Today tab) ---------- */
+
+.bookings {
+  margin: 0 0 16px;
+  padding: 12px 16px;
+  border-radius: 16px;
+  background: #f4efe6;
+}
+
+.bookings h2 {
+  margin: 0 0 6px;
+}
+
+.booking-request {
+  margin: 8px 0;
+  padding: 10px 12px;
+  border: 2px dashed var(--sand);
+  border-radius: 12px;
+  background: #fff;
+}
+
+.booking-request p {
+  margin: 4px 0;
+}
+
+.booking-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+  margin-top: 8px;
+}
+
+.secondary.quiet {
+  border-color: var(--sand);
+  color: #8a7466;
+}
+
 .goal-card h2 {
   margin: 0 0 4px;
 }

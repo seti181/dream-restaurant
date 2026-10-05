@@ -14,6 +14,8 @@ import { formatTime } from '../sim/clock';
 import { eventsToday, playerOf, type DaySummary } from '../sim/game';
 import { recipeKey } from '../sim/menu';
 import type { Review, SatisfactionFactors } from '../sim/types';
+import { bookingKindOf } from '../sim/bookings';
+import { bookingLine } from './plan/BookingsBox';
 import { dishName, forecastMiss, money, signedMoney, stars } from './format';
 import { Confetti, StarRow } from './Juice';
 import { MewaTip } from './Mewa';
@@ -88,11 +90,13 @@ function TomorrowTeaser({ summary }: { summary: DaySummary }) {
   const { tomorrow } = summary;
   if (game.day !== tomorrow.day) return null;
   const happening = tomorrow.happening && HAPPENINGS[tomorrow.happening];
+  const booked = game.bookings.filter((r) => r.accepted && r.day === tomorrow.day).map((r) => bookingKindOf(r).name.toLowerCase());
   return (
     <p className="tomorrow-teaser">
       <PixelIcon art={WEATHER_ICONS[tomorrow.weather]} name={`weather:${tomorrow.weather}`} />{' '}
       <strong>Tomorrow:</strong> {WEATHER[tomorrow.weather].name.toLowerCase()} and {CROWD_SHORT[tomorrow.crowd]}
-      {happening && `, and ${happening.short}`}. <span className="muted">More at the bottom.</span>
+      {happening && `, and ${happening.short}`}
+      {booked.length > 0 && `, with ${booked.join(' and ')} booked`}. <span className="muted">More at the bottom.</span>
     </p>
   );
 }
@@ -105,6 +109,8 @@ function Tomorrow({ summary }: { summary: DaySummary }) {
   if (game.day !== tomorrow.day) return null;
   const happening = tomorrow.happening && HAPPENINGS[tomorrow.happening];
   const events = eventsToday(game);
+  const booked = game.bookings.filter((r) => r.accepted && r.day === tomorrow.day);
+  const waiting = game.bookings.filter((r) => !r.accepted).length;
   return (
     <section className="today-news tomorrow">
       <h2>Tomorrow: {formatDate(dateOf(tomorrow.day))}</h2>
@@ -125,6 +131,17 @@ function Tomorrow({ summary }: { summary: DaySummary }) {
       <p>
         👥 {CROWD[tomorrow.crowd]} {LOCATIONS[playerOf(game).location].name}.
       </p>
+      {booked.map((request) => (
+        <p key={request.id}>
+          {bookingKindOf(request).icon} <strong>Booked:</strong> {bookingLine(request)}.
+        </p>
+      ))}
+      {waiting > 0 && (
+        <p>
+          📬 {waiting === 1 ? 'A booking request is' : `${waiting} booking requests are`} waiting for an answer on the
+          Today tab.
+        </p>
+      )}
       <p className="small muted">The forecast is right most days, but Gdańsk weather has a mind of its own.</p>
     </section>
   );
@@ -247,6 +264,11 @@ export function DayOverScreen() {
               </p>
             );
           })}
+          {summary.bookings.map((booking) => (
+            <p key={booking.name} className="said small">
+              {booking.icon} <strong>{booking.name}.</strong> {booking.text}
+            </p>
+          ))}
           {summary.staffNews.map((line) => (
             <p key={line} className="said small">
               🧑‍🍳 {line}
@@ -364,6 +386,9 @@ export function DayOverScreen() {
                 <Row label="Wages" value={`−${money(summary.wages)}`} />
                 {summary.momentsCash !== 0 && (
                   <Row label="Cards and free drinks" value={signedMoney(summary.momentsCash)} />
+                )}
+                {summary.bookingsCash !== 0 && (
+                  <Row label="Bookings: tips and orders" value={signedMoney(summary.bookingsCash)} />
                 )}
                 {summary.rent > 0 && <Row label="Rent for the week" value={`−${money(summary.rent)}`} />}
                 {summary.utilities > 0 && <Row label="Utilities" value={`−${money(summary.utilities)}`} />}

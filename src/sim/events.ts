@@ -14,11 +14,12 @@ import {
 import { HAPPENING_IDS, HAPPENINGS, type HappeningId } from '../data/happenings';
 import { REGULAR } from '../data/personal';
 import { inSeasonOn } from './menu';
+import { acceptedOn } from './bookings';
 import { regularsBookings } from './regulars';
 import { WEATHER_IDS, type Weather } from '../data/weather';
 import { dateOf, weekdayOf } from './calendar';
 import type { GameState } from './game';
-import { chance, nextFloat, type RngState } from './rng';
+import { chance, weightedPick, type RngState } from './rng';
 import type { DayConditions } from './types';
 
 /** A plain day: cloudy, no events, no bookings. */
@@ -28,19 +29,10 @@ export const ORDINARY_DAY: DayConditions = {
   groups: {},
   locations: {},
   bookings: [],
+  bigOrders: [],
   ingredientCost: {},
   inSeason: [],
 };
-
-/** Picks one of several options, each with a weight. */
-function weightedPick<T>(rng: RngState, options: readonly T[], weight: (option: T) => number): T {
-  let roll = nextFloat(rng) * options.reduce((sum, option) => sum + weight(option), 0);
-  for (const option of options) {
-    roll -= weight(option);
-    if (roll < 0) return option;
-  }
-  return options[options.length - 1];
-}
 
 export function rollWeather(rng: RngState, day: number): Weather {
   const chances = balance.weather.monthChances[dateOf(day).month - 1];
@@ -112,6 +104,7 @@ export function conditionsFor(state: GameState): DayConditions {
     groups: {},
     locations: {},
     bookings: [],
+    bigOrders: [],
     ingredientCost: {},
     inSeason: inSeasonOn(state.day),
   };
@@ -158,5 +151,9 @@ export function conditionsFor(state: GameState): DayConditions {
   }
   // The named regulars come on their own days, each with a story to tell.
   conditions.bookings.push(...regularsBookings(state.day, player.id));
+  // Booking requests the player accepted for today: parties at their tables, and big orders.
+  const accepted = acceptedOn(state.bookings, state.day, player);
+  conditions.bookings.push(...accepted.tables);
+  conditions.bigOrders.push(...accepted.orders);
   return conditions;
 }

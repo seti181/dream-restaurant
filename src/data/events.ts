@@ -109,15 +109,9 @@ export const CALENDAR_EVENTS: Record<CalendarEventId, CalendarEvent> = {
 
 // ---------- Random events ----------
 
-export type RandomEventId =
-  | 'tourBus'
-  | 'foodCritic'
-  | 'newspaper'
-  | 'supplierDiscount'
-  | 'streetWorks'
-  | 'wedding'
-  | 'birthday'
-  | 'seagull';
+// The tour bus, the wedding party and the birthday table used to be surprises here; they
+// are booking requests now, which the player can accept or decline (data/bookings.ts).
+export type RandomEventId = 'foodCritic' | 'newspaper' | 'supplierDiscount' | 'streetWorks' | 'seagull';
 
 export interface RandomEvent {
   name: string;
@@ -140,21 +134,10 @@ export interface RandomEvent {
 }
 
 export const RANDOM_EVENT_IDS: readonly RandomEventId[] = [
-  'tourBus', 'foodCritic', 'newspaper', 'supplierDiscount', 'streetWorks', 'wedding', 'birthday', 'seagull',
+  'foodCritic', 'newspaper', 'supplierDiscount', 'streetWorks', 'seagull',
 ];
 
 export const RANDOM_EVENTS: Record<RandomEventId, RandomEvent> = {
-  tourBus: {
-    name: 'A tour bus!',
-    descriptions: [
-      'A coach full of hungry tourists has booked your place for lunch at 13:00.',
-      'A tour group from Kraków has booked lunch at 13:00. Their guide promised them “the real Gdańsk”.',
-      'A coach of Swedish cruise passengers has booked your tables for 13:00. They have heard about the żurek.',
-    ],
-    weight: 3,
-    days: 1,
-    booking: { group: 'tourists', size: 12, hour: 13 },
-  },
   foodCritic: {
     name: 'A food critic is in town',
     descriptions: [
@@ -198,28 +181,6 @@ export const RANDOM_EVENTS: Record<RandomEventId, RandomEvent> = {
     weight: 2,
     days: 3,
     streetTraffic: 0.6,
-  },
-  wedding: {
-    name: 'A wedding party',
-    descriptions: [
-      'A wedding party has booked your dining room for 17:00. Get the kompot ready!',
-      'A young couple from Oliwa are celebrating their wedding with you at 17:00. Babcia will be inspecting the pierogi.',
-      'A wedding party is coming at 17:00, straight from St. Mary’s. Expect dancing.',
-    ],
-    weight: 1,
-    days: 1,
-    booking: { group: 'locals', size: 16, hour: 17 },
-  },
-  birthday: {
-    name: 'A regular’s birthday',
-    descriptions: [
-      'One of your regulars is celebrating with family tonight at 19:00.',
-      'A regular is turning seventy and wants to celebrate with you at 19:00. There will be singing.',
-      'A regular has booked a birthday table for 19:00. They asked for “the usual, times six”.',
-    ],
-    weight: 2,
-    days: 1,
-    booking: { group: 'locals', size: 6, hour: 19 },
   },
   seagull: {
     name: 'Seagull thief',

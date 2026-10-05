@@ -15,6 +15,7 @@ import { RIVAL_IDS } from '../data/rivals';
 import type { Weather } from '../data/weather';
 import { helpTable, moveParty, startDay, stepDay, type DayInProgress, type FloorView, type Help } from './day';
 import { isFavourite } from './seating';
+import { bookingsDay, rollRequest, type BookingReport, type BookingRequest } from './bookings';
 import { dateOf, isMonday } from './calendar';
 import { minuteOfDay, ticksPerDay } from './clock';
 import {
@@ -102,6 +103,8 @@ export interface GameState {
   unlocks: string[];
   /** Things coming up because of earlier answers: more of some groups for a while, or a card coming back. */
   upcoming: Upcoming[];
+  /** Booking requests waiting for an answer, and the ones accepted, until their day is over. */
+  bookings: BookingRequest[];
   /** True once the money ran out at the end of a day: the restaurant has closed for good. */
   gameOver: boolean;
   /** The player's restaurant first, then the rivals. */
@@ -216,6 +219,10 @@ export interface DaySummary extends DayTally {
   happyHour: { from: number; until: number } | null;
   /** Guests the player showed to another table, and to a favourite spot. */
   seating: { moved: number; favourites: number };
+  /** How today's accepted bookings went. */
+  bookings: BookingReport[];
+  /** What they brought: tips and big orders' payments, less the big orders' ingredients. */
+  bookingsCash: number;
 }
 
 export function newGame(seed: number, difficulty: Difficulty = 'normal'): GameState {
@@ -249,6 +256,7 @@ export function newGame(seed: number, difficulty: Difficulty = 'normal'): GameSt
     // Ana from Coimbra comes by in week 2 with the Portuguese corner.
     upcoming: [{ fromDay: PORTUGUESE_CORNER.day, untilDay: PORTUGUESE_CORNER.day, card: PORTUGUESE_CORNER.card }],
     unlocks: [],
+    bookings: [],
     gameOver: false,
     restaurants: [
       createPlayerRestaurant(start.name, start.menu, staffOf(team, 'chef'), staffOf(team, 'waiter')),
@@ -700,6 +708,18 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
     reputation: addToGroups(playerAfter.reputation, regularsToday.reputation),
     awareness: addToGroups(playerAfter.awareness, regularsToday.awareness),
   };
+  // Today's bookings: tips from happy parties, payment for big orders, and disappointment for any let down.
+  const bookingsToday = bookingsDay(
+    state.bookings,
+    state.day,
+    open.progress.outcomes,
+    open.progress.bigOrders,
+    open.progress.restaurants[0],
+    open.progress.conditions.ingredientCost[playerBefore.id] ?? 1,
+    open.progress.conditions.inSeason,
+  );
+  const bookingsCash = bookingsToday.cash - bookingsToday.ingredientCost;
+  playerAfter = { ...playerAfter, reputation: addToGroups(playerAfter.reputation, bookingsToday.reputation) };
   // A day's work makes people a little tired; a day off (or in bed) puts them right.
   // Anyone who wished for today off finds out whether they got it.
   const wishes = settleWishes(state.team, state.day);
@@ -714,7 +734,7 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
   const wages = teamWages({ ...state, team: open.team });
   const { rent, utilities } = weeklyBillsDue(playerBefore, state.day);
   const momentsCash = open.moments.cash + open.help.cash;
-  const profit = tally.revenue - tally.ingredientCost - wages - rent - utilities + momentsCash;
+  const profit = tally.revenue - tally.ingredientCost - wages - rent - utilities + momentsCash + bookingsCash;
 
   const nextDay = state.day + 1;
   const news: NewsItem[] = [];
@@ -839,6 +859,23 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
     season = { ratings: {}, fairGuests: {} };
   }
 
+  // Requests for tomorrow that weren't answered lapse (they book somewhere else), and maybe a new one comes in.
+  const lapsed = state.bookings.filter((r) => !r.accepted && r.day <= nextDay);
+  if (lapsed.length > 0) {
+    news.push({
+      title: 'Bookings',
+      text: `Nobody answered ${lapsed.length === 1 ? 'a booking request' : 'some booking requests'}, so they went somewhere else.`,
+    });
+  }
+  const bookings = state.bookings.filter((r) => r.day > nextDay || (r.day === nextDay && r.accepted));
+  const request = rollRequest(
+    (state.rng.s ^ Math.imul(state.day + 29, 0x2545f491)) >>> 0,
+    nextDay,
+    bookings,
+    restaurants[0],
+  );
+  if (request) bookings.push(request);
+
   // Tomorrow's weather, and maybe something small going on in town.
   const weather = rollWeather(rng, nextDay);
   const happening = rollHappening(rng, nextDay, weather);
@@ -864,6 +901,7 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
     team,
     unlocks: [...state.unlocks, ...unlocked],
     upcoming,
+    bookings,
     // Running out of money ends the game.
     gameOver: state.gameOver || cash <= 0,
     restaurants,
@@ -906,6 +944,8 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
       flyers: { handedOut: open.flyers.handedOut, parties: open.flyers.parties, guests: open.flyers.guests },
       happyHour: happyHourToday(open),
       seating: open.seating,
+      bookings: bookingsToday.reports,
+      bookingsCash,
     },
   };
 }

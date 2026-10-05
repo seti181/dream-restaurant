@@ -148,8 +148,8 @@ describe('choice cards', () => {
     const { state: next } = closeDay(state, open);
     expect(next.news.map((n) => n.title)).toContain('Your dessert is famous');
     expect(conditionsFor(next).groups.foodies).toBeGreaterThan(1);
-    // ...for one day only.
-    expect(conditionsFor({ ...next, day: next.day + 1 }).groups.foodies ?? 1).toBe(1);
+    // ...for one day only (leaving out anything else going on in town that day).
+    expect(conditionsFor({ ...next, day: next.day + 1, happening: null }).groups.foodies ?? 1).toBe(1);
   });
 
   it('can bring a card back: the proposal couple return a week later for their engagement dinner', () => {

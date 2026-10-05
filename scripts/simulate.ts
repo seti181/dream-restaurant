@@ -4,6 +4,7 @@
 
 import { balance } from '../src/data/balance';
 import { RIVAL_IDS, RIVALS, type RivalId } from '../src/data/rivals';
+import { acceptBooking } from '../src/sim/actions';
 import { isInSeason, isMonday } from '../src/sim/calendar';
 import { wageOf } from '../src/sim/finance';
 import { minuteOfDay } from '../src/sim/clock';
@@ -32,6 +33,8 @@ const seedsFromEnv = (globalThis as { process?: { env: Record<string, string | u
 const SEEDS = seedsFromEnv ? seedsFromEnv.split(',').map(Number) : [1, 2, 3];
 /** `NO_CARDS=1 npm run simulate` plays without choice cards, to compare against. */
 const NO_CARDS = (globalThis as { process?: { env: Record<string, string | undefined> } }).process?.env.NO_CARDS === '1';
+/** `NO_BOOKINGS=1 npm run simulate` leaves every booking request unanswered, to compare against. */
+const NO_BOOKINGS = (globalThis as { process?: { env: Record<string, string | undefined> } }).process?.env.NO_BOOKINGS === '1';
 
 interface SeasonResult {
   /** Cash at the end of each week. */
@@ -118,6 +121,10 @@ function playSeason(strategy: Strategy, seed: number): SeasonResult {
       week = { served: 0, walkedOut: 0, turnedAway: 0, profit: 0 };
     }
 
+    // A strategy that takes bookings says yes to every request waiting for an answer.
+    if (strategy.plan?.acceptBookings && !NO_BOOKINGS) {
+      for (const request of state.bookings) if (!request.accepted) state = acceptBooking(state, request.id);
+    }
     const open = openRestaurant(state);
     const interactive = strategy.plan?.interactive ?? false;
     while (!open.progress.done) {

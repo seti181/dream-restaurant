@@ -48,3 +48,13 @@ export function pick<T>(rng: RngState, items: readonly T[]): T {
   if (items.length === 0) throw new Error('pick() needs at least one item');
   return items[nextInt(rng, 0, items.length - 1)];
 }
+
+/** Picks one of several options, each with a weight. */
+export function weightedPick<T>(rng: RngState, options: readonly T[], weight: (option: T) => number): T {
+  let roll = nextFloat(rng) * options.reduce((sum, option) => sum + weight(option), 0);
+  for (const option of options) {
+    roll -= weight(option);
+    if (roll < 0) return option;
+  }
+  return options[options.length - 1];
+}

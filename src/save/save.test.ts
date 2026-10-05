@@ -285,3 +285,17 @@ describe('upgrading version 15 saves (from before three regulars were renamed)',
     expect(upgraded.regulars).toEqual({ filip: story, henryk: story, weronika: story, fletcher: story });
   });
 });
+
+describe('upgrading version 17 saves (from before booking requests)', () => {
+  it('starts with no requests, and drops surprise bookings that are requests now', () => {
+    const game = newGame(63);
+    const { bookings: _b, ...old } = game;
+    const events = [
+      { id: 'wedding', fromDay: 0, untilDay: 0 },
+      { id: 'streetWorks', fromDay: 0, untilDay: 2 },
+    ];
+    const upgraded = migrate({ saveVersion: 17, savedAt: '', game: { ...old, events } })!;
+    expect(upgraded.bookings).toEqual([]);
+    expect(upgraded.events).toEqual([{ id: 'streetWorks', fromDay: 0, untilDay: 2 }]);
+  });
+});

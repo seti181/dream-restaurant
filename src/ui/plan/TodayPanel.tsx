@@ -10,6 +10,7 @@ import { eventsToday, playerOf, teamWages, type GameState } from '../../sim/game
 import { freshOn, inSeasonOn, produceName, specialOf } from '../../sim/menu';
 import { dishName, money } from '../format';
 import { GoalCard } from '../Mewa';
+import { BookingsBox } from './BookingsBox';
 import { WEATHER_ICONS } from '../pixel/icons';
 import { FoodIcon, PixelIcon } from '../PixelIcon';
 import { useGame } from '../store';
@@ -83,6 +84,8 @@ export function TodayPanel() {
         ))}
         <SpecialLine />
       </section>
+
+      <BookingsBox />
 
       <GoalCard />
 

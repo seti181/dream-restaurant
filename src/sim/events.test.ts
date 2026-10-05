@@ -79,20 +79,10 @@ describe('random events', () => {
     events: [{ id, fromDay: 0, untilDay: days - 1 }],
   });
 
-  it('send a tour bus straight to the player at 13:00', () => {
-    const conditions = conditionsFor(withEvent('tourBus'));
-    expect(conditions.bookings).toEqual([
-      { restaurant: 'player', group: 'tourists', size: 12, minute: 13 * 60, critic: false },
+  it('send a food critic straight to the player at 19:00', () => {
+    expect(conditionsFor(withEvent('foodCritic')).bookings).toEqual([
+      { restaurant: 'player', group: 'foodies', size: 1, minute: 19 * 60, critic: true },
     ]);
-    const { outcomes } = runDay(createRng(5), 0, withEvent('tourBus').restaurants, conditions);
-    const bus = outcomes.find((o) => o.restaurant === 'player' && o.size === 12);
-    expect(bus).toBeDefined();
-  });
-
-  it('never book more guests than the dining room holds', () => {
-    const state = withEvent('wedding');
-    const seats = playerOf(state).tables * balance.service.seatsPerTable;
-    expect(conditionsFor(state).bookings[0].size).toBe(Math.min(16, seats));
   });
 
   it('make ingredients cheaper during a supplier discount', () => {

@@ -46,6 +46,8 @@ interface Plan {
   happyHourAt?: number;
   /** Plays along during the day: says yes to choice cards, shoos gulls, looks after waiting tables. */
   interactive?: boolean;
+  /** Says yes to every booking request (otherwise they're left unanswered and lapse). */
+  acceptBookings?: boolean;
   /** Menu positions of a soup and a main for the lunch set. */
   lunchSet?: [number, number];
   /** Gives a day off (Monday to Thursday) to anyone whose morale is below this, where someone else can cover. */
@@ -219,6 +221,7 @@ export const STRATEGIES: Strategy[] = [
       campaigns: ['social'],
       premiumSupplier: true,
       dayOffBelow: 55,
+      acceptBookings: true,
     },
   },
   {
@@ -247,6 +250,7 @@ export const STRATEGIES: Strategy[] = [
       lunchSet: [0, 3],
       relocate: { to: 'dluga', whenCash: 45_000 },
       dayOffBelow: 55,
+      acceptBookings: true,
     },
   },
 ];

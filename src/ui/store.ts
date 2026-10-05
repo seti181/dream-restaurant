@@ -159,6 +159,9 @@ interface GameStore {
   buyTerracePermit: () => void;
   launchCampaign: (id: CampaignId) => void;
   relocate: (to: LocationId) => void;
+  /** Says yes or no to a booking request. */
+  acceptBooking: (id: number) => void;
+  declineBooking: (id: number) => void;
   dismissTip: (tip: TipId) => void;
   skipTips: () => void;
   setDifficulty: (difficulty: Difficulty) => void;
@@ -381,6 +384,8 @@ export const useGame = create<GameStore>((set, get) => ({
   launchCampaign: (id) => plan((game) => actions.launchCampaign(game, id)),
   relocate: (to) => plan((game) => actions.relocate(game, to), 'beforeOpening'),
   // Mewa's tips can be dismissed on any screen, even mid-day.
+  acceptBooking: (id) => plan((game) => actions.acceptBooking(game, id)),
+  declineBooking: (id) => plan((game) => actions.declineBooking(game, id)),
   dismissTip: (tip) => set({ game: actions.dismissTip(get().game, tip) }),
   skipTips: () => set({ game: actions.skipTips(get().game) }),
   setDifficulty: (difficulty) => plan((game) => actions.setDifficulty(game, difficulty), 'beforeOpening'),

@@ -5,6 +5,8 @@ import { useEffect, useState, type ReactNode } from 'react';
 import type { TableGuests } from '../sim/day';
 import { balance } from '../data/balance';
 import { formatTime, ticksPerDay } from '../sim/clock';
+import { bookingKindOf } from '../sim/bookings';
+import { bookingLine } from './plan/BookingsBox';
 import { dishName, forecastMiss, money } from './format';
 import { Cash, MuteButton, Rating, SpeedControls, useHudFacts, WeatherName } from './Hud';
 import { FoodIcon } from './PixelIcon';
@@ -321,6 +323,8 @@ function MorningNotes() {
   const absent = useGame((s) => s.live?.absent ?? []);
   const said = useGame((s) => s.openDay?.forecastSaid ?? null);
   const weather = useGame((s) => s.openDay?.weather ?? null);
+  const game = useGame((s) => s.game);
+  const booked = game.bookings.filter((r) => r.accepted && r.day === game.day);
   const [closed, setClosed] = useState<string[]>([]);
   const [expired, setExpired] = useState(false);
   useEffect(() => {
@@ -331,6 +335,7 @@ function MorningNotes() {
   const notes = [
     ...(said && weather ? [{ text: forecastMiss(said, weather), good: weather !== 'rain' }] : []),
     ...absent.map((excuse) => ({ text: excuse, good: false })),
+    ...booked.map((r) => ({ text: `${bookingKindOf(r).icon} Booked today: ${bookingLine(r)}.`, good: true })),
   ];
   return (
     <>
