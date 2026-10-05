@@ -315,3 +315,11 @@ describe('upgrading version 19 saves (from before rank-ups)', () => {
     expect(migrate({ saveVersion: 19, savedAt: '', game: old })).toEqual(game);
   });
 });
+
+describe('upgrading version 20 saves (from before the weekly ranking)', () => {
+  it('waits for next Monday’s paper', () => {
+    const game = newGame(66);
+    const { ranking: _r, ...old } = game;
+    expect(migrate({ saveVersion: 20, savedAt: '', game: old })).toEqual(game);
+  });
+});

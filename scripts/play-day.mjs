@@ -142,7 +142,7 @@ for (let day = 1; day <= Number(days); day++) {
     await evaluate(nextDay);
     await sleep(1500);
     // The next morning's Today tab, with its bookings.
-    await evaluate(`document.querySelector('.bookings')?.scrollIntoView({ block: 'center' })`);
+    await evaluate(`(document.querySelector('.ranking') ?? document.querySelector('.bookings'))?.scrollIntoView({ block: 'start' })`);
     await sleep(300);
     await screenshot(`plan-${day + 1}`);
     // ...its Menu and Mewa tabs, then back to Today.

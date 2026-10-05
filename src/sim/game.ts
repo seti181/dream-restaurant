@@ -18,6 +18,7 @@ import { isFavourite } from './seating';
 import { bookingsDay, rollRequest, type BookingReport, type BookingRequest } from './bookings';
 import { practiceAfterDay, withStars, type DishPractice, type StarEarned } from './practice';
 import { rankFor, totalGuests } from './ranks';
+import { weeklyRanking, type OldTownRanking } from './ranking';
 import { RANKS } from '../data/ranks';
 import { dateOf, isMonday } from './calendar';
 import { minuteOfDay, ticksPerDay } from './clock';
@@ -114,6 +115,8 @@ export interface GameState {
   guestsServed: Partial<Record<GroupId, number>>;
   /** The restaurant's rank, from 0 (Bar) up (data/ranks.ts). Never goes down. */
   rank: number;
+  /** Dziennik Bałtycki's latest Old Town top five (every Monday from week 2), or null before the first. */
+  ranking: OldTownRanking | null;
   /** True once the money ran out at the end of a day: the restaurant has closed for good. */
   gameOver: boolean;
   /** The player's restaurant first, then the rivals. */
@@ -275,6 +278,7 @@ export function newGame(seed: number, difficulty: Difficulty = 'normal'): GameSt
     dishPractice: {},
     guestsServed: {},
     rank: 0,
+    ranking: null,
     gameOver: false,
     restaurants: [
       createPlayerRestaurant(start.name, start.menu, staffOf(team, 'chef'), staffOf(team, 'waiter')),
@@ -910,6 +914,24 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
     season = { ratings: {}, fairGuests: {} };
   }
 
+  // Every Monday, the paper's Old Town top five: the race for the Golden Neptune so far.
+  // (Not the morning after the Neptune itself: the day report has the real thing.)
+  let { ranking } = state;
+  if (isMonday(nextDay) && neptune === null) {
+    const fair = isFairDay(state.day);
+    let neptuneDay = nextDay;
+    while (fair && !isNeptuneDay(neptuneDay)) neptuneDay++;
+    ranking = weeklyRanking({
+      day: nextDay,
+      restaurants,
+      stars: (r) => (r.id === playerBefore.id ? ratingAfter : starRating(r, week.served[r.id])),
+      weekServed: week.served,
+      season,
+      daysToNeptune: fair ? neptuneDay - nextDay : null,
+      previous: state.ranking,
+    });
+  }
+
   // Requests for tomorrow that weren't answered lapse (they book somewhere else), and maybe a new one comes in.
   const lapsed = state.bookings.filter((r) => !r.accepted && r.day <= nextDay);
   if (lapsed.length > 0) {
@@ -960,6 +982,7 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
     dishPractice: practised.practice,
     guestsServed,
     rank,
+    ranking,
     menuSlots,
     // Running out of money ends the game.
     gameOver: state.gameOver || cash <= 0,

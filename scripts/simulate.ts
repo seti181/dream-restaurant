@@ -64,6 +64,8 @@ interface SeasonResult {
   rankDays: (number | null)[];
   /** The star rating at the end of each week. */
   weeklyStars: number[];
+  /** The player's place in each Monday's Old Town top five (1 = first). */
+  weeklyPlace: number[];
 }
 
 /** A new game where the player's menu and team are the strategy's. */
@@ -104,6 +106,7 @@ function playSeason(strategy: Strategy, seed: number): SeasonResult {
     firstFullOnDay1: null,
     rankDays: RANKS.slice(1).map(() => null),
     weeklyStars: [],
+    weeklyPlace: [],
   };
   const fullTicks = { firstWeek: 0, season: 0 };
   const openTicks = { firstWeek: 0, season: 0 };
@@ -190,6 +193,7 @@ function playSeason(strategy: Strategy, seed: number): SeasonResult {
     }
     state = next;
     if (isMonday(state.day)) result.weeklyStars.push(playerRating(state));
+    if (state.ranking?.day === state.day) result.weeklyPlace.push(state.ranking.rows.findIndex((row) => row.id === 'player') + 1);
     result.lowestCash = Math.min(result.lowestCash, state.cash);
     if (state.gameOver && result.bustWeek === null) result.bustWeek = Math.floor(day / 7) + 1;
   }
@@ -308,6 +312,17 @@ console.log(
     Array.from({ length: results[0].seasons[0].weeklyStars.length }, (_, w) => [
       String(w + 1),
       ...results.map(({ seasons }) => `${mean(seasons.map((s) => s.weeklyStars[w] ?? 0)).toFixed(2)} ★`),
+    ]),
+  ),
+);
+
+console.log('\nPlace in the Old Town top five each Monday (average over seasons; 1 = first)\n');
+console.log(
+  table(
+    ['Monday', ...results.map(({ strategy }) => strategy.name)],
+    Array.from({ length: results[0].seasons[0].weeklyPlace.length }, (_, w) => [
+      `week ${w + 2}`,
+      ...results.map(({ seasons }) => mean(seasons.map((s) => s.weeklyPlace[w] ?? 0)).toFixed(1)),
     ]),
   ),
 );

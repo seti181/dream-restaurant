@@ -12,6 +12,7 @@ import { freshOn, inSeasonOn, produceName, specialOf } from '../../sim/menu';
 import { dishName, money } from '../format';
 import { GoalCard } from '../Mewa';
 import { BookingsBox } from './BookingsBox';
+import { RankingBox } from './RankingBox';
 import { WEATHER_ICONS } from '../pixel/icons';
 import { FoodIcon, PixelIcon } from '../PixelIcon';
 import { useGame } from '../store';
@@ -62,6 +63,8 @@ export function TodayPanel() {
       <p>
         {player.name}, {RANKS[game.rank].inSentence} on {LOCATIONS[player.location].name}, is ready when you are.
       </p>
+
+      <RankingBox />
 
       <section className="today-news">
         <h2>Today in Gdańsk</h2>
