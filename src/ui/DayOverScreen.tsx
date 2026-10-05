@@ -85,6 +85,18 @@ const CROWD_SHORT: Record<DaySummary['tomorrow']['crowd'], string> = {
   quieter: 'quieter than today',
 };
 
+/** "You hurried 2 chefs and a waiter. Best quick-service streak: 9 tables in a row (+120 zł in tips)." */
+function rushText(rush: DaySummary['rush']): string {
+  const people = [
+    rush.chefs > 0 ? (rush.chefs === 1 ? 'a chef' : `${rush.chefs} chefs`) : null,
+    rush.waiters > 0 ? (rush.waiters === 1 ? 'a waiter' : `${rush.waiters} waiters`) : null,
+  ].filter(Boolean);
+  const hurried = people.length > 0 ? `In the rush you hurried ${people.join(' and ')}.` : '';
+  const tips = rush.tips > 0 ? ` (+${money(rush.tips)} in tips)` : '';
+  const streak = rush.bestStreak >= 3 ? `Best quick-service streak: ${rush.bestStreak} tables in a row${tips}.` : '';
+  return [hurried, streak].filter(Boolean).join(' ');
+}
+
 /** One line near the top of the report, so tomorrow isn't missed: the whole forecast is at the bottom. */
 function TomorrowTeaser({ summary }: { summary: DaySummary }) {
   const game = useGame((s) => s.game);
@@ -307,6 +319,11 @@ export function DayOverScreen() {
                 `👨‍🍳 The chef came out to apologise ${summary.help.apologies === 1 ? 'once' : `${summary.help.apologies} times`}.`}
             </p>
           )}
+          {(summary.rush.chefs + summary.rush.waiters > 0 || summary.rush.bestStreak >= 3) && (
+            <p className="said small">
+              ⚡ {rushText(summary.rush)}
+            </p>
+          )}
           {summary.seating.moved > 0 && (
             <p className="said small">
               🪑 You showed {summary.seating.moved} {summary.seating.moved === 1 ? 'group' : 'groups'} to a new table
@@ -407,6 +424,7 @@ export function DayOverScreen() {
                 {summary.momentsCash !== 0 && (
                   <Row label="Cards and free drinks" value={signedMoney(summary.momentsCash)} />
                 )}
+                {summary.rush.tips > 0 && <Row label="Quick-service tips" value={signedMoney(summary.rush.tips)} />}
                 {summary.bookingsCash !== 0 && (
                   <Row label="Bookings: tips and orders" value={signedMoney(summary.bookingsCash)} />
                 )}

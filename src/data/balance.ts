@@ -318,6 +318,29 @@ export const balance = {
     favouriteMood: 6,
   },
 
+  rush: {
+    /** The lunch and dinner peaks, when the player can hurry the team (minutes after midnight). */
+    windows: [
+      { name: 'Lunch rush', from: 12 * 60, until: 14 * 60 },
+      { name: 'Dinner rush', from: 18 * 60, until: 20 * 60 + 30 },
+    ],
+    /** A hurried chef or waiter works faster for this many minutes (once each per rush)... */
+    hurryMinutes: 20,
+    /** ...and then needs a breather this long: a chef starts nothing, a waiter steps off the floor. */
+    restMinutes: 10,
+    /** A hurried chef cooks this many times as fast. */
+    chefSpeedFactor: 1.5,
+    /** A hurried waiter is this many speed levels quicker (up to 5). */
+    waiterSpeedBonus: 2,
+    /** A party served within this share of their patience keeps the quick-service streak going... */
+    streakFastShare: 0.5,
+    /** ...and from this many in a row, each party in the streak tips this much for each guest. */
+    streakTips: [
+      { from: 5, tipPerGuest: 1 },
+      { from: 10, tipPerGuest: 2 },
+    ],
+  },
+
   help: {
     /** Tapping a waiting table: a free drink costs this much for each guest at it... */
     drinkCostPerGuest: 6,

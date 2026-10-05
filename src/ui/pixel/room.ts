@@ -1439,6 +1439,11 @@ function seatDepth(seat: Seat): number {
   return seat.x + seat.y;
 }
 
+/** Where one of the chefs stands behind the pass (for tapping them). */
+export function chefSpot(layout: RoomLayout, chefs: number, index: number): Point {
+  return { x: chefSpots(layout, chefs)[index], y: 18 };
+}
+
 /** Where each chef stands, at the stove behind the pass. */
 function chefSpots(layout: RoomLayout, chefs: number): number[] {
   const from = layout.kitchenX + PASS_FROM + PICK_UP + 1;

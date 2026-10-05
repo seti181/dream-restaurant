@@ -9,6 +9,7 @@ import { LOCATIONS, type LocationId } from '../data/locations';
 import { REGULARS, type RegularId } from '../data/regulars';
 import { bigOrderMinutes, matchingDishes, tablesHeld, wantMet, type BigOrderJob } from './bookings';
 import { chooseRestaurant } from './choice';
+import { rushAt, rushName, streakTipPerGuest } from './rush';
 import { minuteOfDay, ticksPerDay } from './clock';
 import { ORDINARY_DAY } from './events';
 import { generateParties } from './guests';
@@ -95,6 +96,30 @@ export interface Floor {
   doorLeft: { group: GroupId; size: number; minute: number }[];
   /** Booking requests whose party has arrived (seated, or waiting at the door). */
   bookedIn: number[];
+  /** Chefs and waiters the player hurried in a rush: faster until `until`, then a breather until `restUntil`. */
+  hurries: Hurry[];
+  /** Parties served quickly in a row, the best run today, and the tips the streak brought. */
+  streak: { current: number; best: number; tips: number };
+}
+
+/** A chef or waiter hurried in a rush (see sim/rush.ts). */
+export interface Hurry {
+  role: 'chef' | 'waiter';
+  /** Who it is (Staff.look), so nobody is hurried twice in one rush. */
+  look: number;
+  /** Which rush (an index into balance.rush.windows). */
+  rush: number;
+  until: number;
+  restUntil: number;
+  /** Chefs: their place in the kitchen (the index into chefFreeAt). */
+  chef?: number;
+  /** Waiters: who they are normally, and the hurried version working the floor meanwhile. */
+  waiter?: { normal: Staff; hurried: Staff; done: boolean };
+}
+
+/** A chef's hurry today, if they were hurried. The latest one counts. */
+function chefHurry(floor: Floor, chef: number): Hurry | undefined {
+  return floor.hurries.filter((h) => h.role === 'chef' && h.chef === chef).at(-1);
 }
 
 /** True while special guests keep new guests out. */
@@ -131,9 +156,15 @@ function startCooking(restaurant: Restaurant, floor: Floor, minute: number, inSe
     // A party that booked agreed its dishes ahead, so the kitchen is quicker with them.
     const ahead = visit.party.requestId === undefined ? 1 : balance.bookings.prepFactor;
     // When each chef would have this order ready, and whether that's before the table gives up.
+    // A hurried chef cooks faster; after the hurry they take a breather and start nothing new.
     const chefs = restaurant.chefs.map((chef, i) => {
-      const readyAt = Math.max(floor.chefFreeAt[i], visit.orderedAt) + prepMinutes(visit.order, chef, restaurant.menu.length) * ahead;
-      return { i, chef, readyAt, free: floor.chefFreeAt[i] <= minute, inTime: readyAt <= giveUpAt(visit) };
+      const hurry = chefHurry(floor, i);
+      const resting = hurry !== undefined && minute >= hurry.until && minute < hurry.restUntil;
+      let start = Math.max(floor.chefFreeAt[i], visit.orderedAt);
+      if (hurry && start >= hurry.until && start < hurry.restUntil) start = hurry.restUntil;
+      const faster = hurry && start < hurry.until ? 1 / balance.rush.chefSpeedFactor : 1;
+      const readyAt = start + prepMinutes(visit.order, chef, restaurant.menu.length) * ahead * faster;
+      return { i, chef, readyAt, free: floor.chefFreeAt[i] <= minute && !resting, inTime: readyAt <= giveUpAt(visit) };
     });
     // A free chef who can have it ready in time cooks it, the quickest of them first...
     const cook = chefs.filter((c) => c.free && c.inTime).sort((a, b) => a.readyAt - b.readyAt)[0];
@@ -198,6 +229,13 @@ function progressRestaurant(
   outcomes: PartyOutcome[],
   conditions: DayConditions,
 ): void {
+  // A hurried waiter's spurt is over: they step off the floor for a breather.
+  for (const hurry of floor.hurries) {
+    if (!hurry.waiter || hurry.waiter.done || hurry.until > minute) continue;
+    hurry.waiter.done = true;
+    restaurant.waiters = restaurant.waiters.filter((waiter) => waiter !== hurry.waiter!.hurried);
+    floor.away.push({ waiter: hurry.waiter.normal, back: hurry.restUntil });
+  }
   // Waiters who were off the floor come back.
   for (const away of [...floor.away]) {
     if (away.back > minute) continue;
@@ -253,6 +291,15 @@ function progressRestaurant(
       });
       const satisfaction = Math.max(0, Math.min(100, satisfactionScore(factors) + visit.mood));
       updateReputation(restaurant, party, satisfaction);
+      // Quick service keeps the streak going, and a long streak brings tips.
+      const patience = GROUPS[party.group].patienceMinutes + visit.extraPatience;
+      if (visit.readyAt! - visit.seatedAt <= patience * balance.rush.streakFastShare) {
+        floor.streak.current++;
+        floor.streak.best = Math.max(floor.streak.best, floor.streak.current);
+        floor.streak.tips += streakTipPerGuest(floor.streak.current) * party.size;
+      } else {
+        floor.streak.current = 0;
+      }
       outcomes.push({
         restaurant: restaurant.id,
         group: party.group,
@@ -293,6 +340,7 @@ function progressRestaurant(
         ...bookingVisit(party, visit.wishMet ?? false),
       });
       floor.walkouts.push({ group: party.group, size: party.size, minute });
+      floor.streak.current = 0;
       leave();
     }
   }
@@ -368,6 +416,8 @@ export function startDay(
       door: [],
       doorLeft: [],
       bookedIn: [],
+      hurries: [],
+      streak: { current: 0, best: 0, tips: 0 },
     })),
     outcomes: [],
     conditions,
@@ -608,6 +658,52 @@ export function moveParty(progress: DayInProgress, index: number, from: number, 
   return visit;
 }
 
+/** Where a chef or waiter is with hurrying: free to hurry, hurrying, catching their breath, done for this rush, or no rush on. */
+export type HurryState = 'ready' | 'hurrying' | 'resting' | 'used' | 'none';
+
+/** The minute the restaurant view shows (the last tick played), which the player's taps go by. */
+const shownMinute = (progress: DayInProgress) => minuteOfDay(Math.max(0, progress.tick - 1));
+
+function hurryOf(floor: Floor, role: Hurry['role'], look: number, rush: number): Hurry | undefined {
+  return floor.hurries.find((h) => h.role === role && h.look === look && h.rush === rush);
+}
+
+/** How it stands with hurrying the chef or waiter at this place in the kitchen or on the floor. */
+export function hurryState(progress: DayInProgress, index: number, role: Hurry['role'], at: number): HurryState {
+  const minute = shownMinute(progress);
+  const rush = rushAt(minute);
+  const restaurant = progress.restaurants[index];
+  const person = (role === 'chef' ? restaurant.chefs : restaurant.waiters)[at];
+  if (rush === null || !person || progress.tick > ticksPerDay()) return 'none';
+  const hurry = hurryOf(progress.floors[index], role, person.look ?? at, rush);
+  if (!hurry) return 'ready';
+  return minute < hurry.until ? 'hurrying' : minute < hurry.restUntil ? 'resting' : 'used';
+}
+
+/**
+ * The player hurries a chef or a waiter during a rush, once each per rush: for a while a chef
+ * cooks faster and a waiter takes orders faster, and then they need a breather. Returns false
+ * if they can't be hurried now.
+ */
+export function hurryStaff(progress: DayInProgress, index: number, role: Hurry['role'], at: number): boolean {
+  if (hurryState(progress, index, role, at) !== 'ready') return false;
+  const minute = shownMinute(progress);
+  const rush = rushAt(minute)!;
+  const restaurant = progress.restaurants[index];
+  const floor = progress.floors[index];
+  const until = minute + balance.rush.hurryMinutes;
+  const restUntil = until + balance.rush.restMinutes;
+  if (role === 'chef') {
+    floor.hurries.push({ role, look: restaurant.chefs[at].look ?? at, rush, until, restUntil, chef: at });
+    return true;
+  }
+  const normal = restaurant.waiters[at];
+  const hurried: Staff = { ...normal, speed: Math.min(5, normal.speed + balance.rush.waiterSpeedBonus) };
+  restaurant.waiters = restaurant.waiters.map((waiter) => (waiter === normal ? hurried : waiter));
+  floor.hurries.push({ role, look: normal.look ?? at, rush, until, restUntil, waiter: { normal, hurried, done: false } });
+  return true;
+}
+
 /** Plays one day from opening until the last guest leaves. The input restaurants are not changed. */
 export function runDay(
   rng: RngState,
@@ -681,6 +777,13 @@ export interface FloorView {
   leftTheDoor: { group: GroupId; size: number; minute: number }[];
   /** A gull on the terrace, after the plate at this table (filled in by the game, not the day). */
   gull?: { table: number } | null;
+  /** The rush on right now ("Lunch rush"), if any. */
+  rush?: string | null;
+  /** For each chef and each waiter on the floor, in the same order: how it stands with hurrying them. */
+  chefHurry?: HurryState[];
+  waiterHurry?: HurryState[];
+  /** Parties served quickly in a row, so far. */
+  streak?: number;
 }
 
 /** A snapshot of one restaurant for the restaurant view. Reads the day; changes nothing. */
@@ -734,5 +837,9 @@ export function floorView(progress: DayInProgress, index: number, recentMinutes 
       .map(({ group, size }) => ({ group, size })),
     atTheDoor: floor.door.map(({ party, since }) => ({ group: party.group, size: party.size, since })),
     leftTheDoor: floor.doorLeft.filter((left) => minute - left.minute < recentMinutes),
+    rush: progress.tick > ticksPerDay() ? null : rushName(minute),
+    chefHurry: restaurant.chefs.map((_, i) => hurryState(progress, index, 'chef', i)),
+    waiterHurry: restaurant.waiters.map((_, i) => hurryState(progress, index, 'waiter', i)),
+    streak: floor.streak.current,
   };
 }

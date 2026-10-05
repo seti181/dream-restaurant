@@ -48,6 +48,8 @@ interface Plan {
   interactive?: boolean;
   /** Says yes to every booking request (otherwise they're left unanswered and lapse). */
   acceptBookings?: boolean;
+  /** In a rush, hurries a chef once this many orders are waiting. */
+  hurryWhenOrders?: number;
   /** Menu positions of a soup and a main for the lunch set. */
   lunchSet?: [number, number];
   /** Gives a day off (Monday to Thursday) to anyone whose morale is below this, where someone else can cover. */
@@ -251,6 +253,7 @@ export const STRATEGIES: Strategy[] = [
       relocate: { to: 'dluga', whenCash: 60_000 },
       dayOffBelow: 55,
       acceptBookings: true,
+      hurryWhenOrders: 3,
     },
   },
 ];

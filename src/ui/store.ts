@@ -38,6 +38,7 @@ import {
   openRestaurant,
   playTick,
   shooTheGull,
+  hurry,
   startHappyHour,
   tallyFor,
   updateToday,
@@ -121,6 +122,8 @@ interface GameStore {
   drinkCostAt: (table: number) => number | null;
   /** Shoos the gull off the terrace. */
   shooGull: () => void;
+  /** Hurries the chef or waiter at this place during a rush. */
+  hurry: (role: 'chef' | 'waiter', at: number) => void;
   /** Hands a flyer to someone from this group walking past: true if they'll come in, false if not, null if none are left. */
   handFlyer: (group: GroupId) => boolean | null;
   /** Someone who took a flyer has reached the door: their party comes in. */
@@ -327,6 +330,12 @@ export const useGame = create<GameStore>((set, get) => ({
     const { openDay } = get();
     if (!openDay || !shooTheGull(openDay)) return;
     play('seagull');
+    set({ live: liveFrom(openDay) });
+  },
+
+  hurry: (role, at) => {
+    const { openDay } = get();
+    if (!openDay || !hurry(openDay, role, at)) return;
     set({ live: liveFrom(openDay) });
   },
 

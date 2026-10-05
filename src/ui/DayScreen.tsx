@@ -7,6 +7,7 @@ import { balance } from '../data/balance';
 import { formatTime, ticksPerDay } from '../sim/clock';
 import { bookingKindOf } from '../sim/bookings';
 import { bookingLine } from './plan/BookingsBox';
+import { streakTipPerGuest } from '../sim/rush';
 import { dishName, forecastMiss, money } from './format';
 import { Cash, MuteButton, Rating, SpeedControls, useHudFacts, WeatherName } from './Hud';
 import { FoodIcon } from './PixelIcon';
@@ -351,6 +352,31 @@ function MorningNotes() {
   );
 }
 
+/** During the lunch and dinner rushes: the team can be hurried. Until closed, once per rush. */
+function RushNote({ rush }: { rush: string | null }) {
+  const [closed, setClosed] = useState<string | null>(null);
+  if (!rush || closed === rush) return null;
+  return (
+    <p className="gull-warning good">
+      <span>🔥 {rush}! Tap ⚡ on a chef or a waiter to hurry them: faster for a while, then a breather.</span>
+      <NoteClose onClose={() => setClosed(rush)} />
+    </p>
+  );
+}
+
+/** Tables served quickly in a row: from five, each one tips a little. */
+function StreakNote({ streak }: { streak: number }) {
+  if (streak < 3) return null;
+  const tips = streakTipPerGuest(streak);
+  return (
+    <p className="gull-warning good streak-note">
+      <span>
+        ⚡ {streak} quick tables in a row{tips > 0 ? `: ${tips} zł a guest in tips!` : '. Keep it up!'}
+      </span>
+    </p>
+  );
+}
+
 /** "Paused": until the clock runs again, or until closed (it comes back with the next pause). */
 function PausedNote({ speed }: { speed: number }) {
   const [closed, setClosed] = useState(false);
@@ -391,6 +417,7 @@ const NOTE_SECONDS = 4;
 export function DayScreen() {
   const live = useGame((s) => s.live);
   const shooGull = useGame((s) => s.shooGull);
+  const hurryStaff = useGame((s) => s.hurry);
   const handFlyer = useGame((s) => s.handFlyer);
   const flyerArrives = useGame((s) => s.flyerArrives);
   const openManager = useGame((s) => s.openManager);
@@ -457,6 +484,7 @@ export function DayScreen() {
           if (guests) setSelected({ table, since: guests.since });
         }}
         onGullTap={shooGull}
+        onStaffTap={hurryStaff}
         onPasserTap={flyers > 0 ? handFlyer : undefined}
         onFlyerArrives={flyerArrives}
         freeTables={choosing && stillThere ? free : []}
@@ -512,6 +540,8 @@ export function DayScreen() {
             </p>
           )}
           <MomentResultNote />
+          <RushNote rush={live.floor.rush ?? null} />
+          <StreakNote streak={live.floor.streak ?? 0} />
           <PausedNote speed={speed} />
         </div>
       )}

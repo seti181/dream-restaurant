@@ -1778,6 +1778,35 @@ h2.spaced {
   cursor: pointer;
 }
 
+/* Rush hour: ⚡ on a chef or a waiter who can be hurried, and a small sign on the hurried ones. */
+.staff-hurry {
+  position: absolute;
+  z-index: 5003;
+  width: 52px;
+  height: 52px;
+  padding: 0;
+  border: 3px solid var(--amber);
+  border-radius: 50%;
+  background: rgba(255, 244, 230, 0.3);
+  font-size: 1.4rem;
+  line-height: 1;
+  transform: translate(-50%, -50%);
+  cursor: pointer;
+  animation: tap-ring 0.9s ease-in-out infinite;
+}
+
+.staff-hurry-sign {
+  position: absolute;
+  z-index: 5003;
+  font-size: 1.2rem;
+  transform: translate(-50%, -150%);
+  pointer-events: none;
+}
+
+.staff-hurry-sign.resting {
+  opacity: 0.85;
+}
+
 .table-help.selected {
   border: 3px solid var(--sea);
   background: rgba(47, 111, 143, 0.12);

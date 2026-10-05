@@ -13,6 +13,7 @@ import {
   answerTheMoment,
   closeDay,
   helpGuests,
+  hurry,
   momentDue,
   newGame,
   openRestaurant,
@@ -141,6 +142,13 @@ function playSeason(strategy: Strategy, seed: number): SeasonResult {
     while (!open.progress.done) {
       // A player who only watches says no to every card; an interactive one says yes.
       if (!NO_CARDS && momentDue(open)) answerTheMoment(open, interactive ? 0 : 1);
+      // In a rush, a busy kitchen gets hurried.
+      const hurryWhen = strategy.plan?.hurryWhenOrders;
+      if (hurryWhen !== undefined) {
+        const view = floorView(open.progress, 0);
+        const chef = view.chefHurry?.indexOf('ready') ?? -1;
+        if (view.rush && view.ordersWaiting >= hurryWhen && chef >= 0) hurry(open, 'chef', chef);
+      }
       const happyHourAt = strategy.plan?.happyHourAt;
       if (happyHourAt !== undefined && minuteOfDay(open.progress.tick) >= happyHourAt) startHappyHour(open);
       if (interactive) {

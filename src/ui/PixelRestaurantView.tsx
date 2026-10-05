@@ -9,11 +9,12 @@ import type { GroupId } from '../data/groups';
 import type { Visitor } from '../data/moments';
 import { REGULARS } from '../data/regulars';
 import type { Weather } from '../data/weather';
-import type { FloorView, TableGuests } from '../sim/day';
+import type { FloorView, HurryState, TableGuests } from '../sim/day';
 import { money } from './format';
 import { project } from './pixel/iso';
 import { imageUrl, type Pixels } from './pixel/raster';
 import {
+  chefSpot,
   depthAt,
   drawRoom,
   guestKind,
@@ -27,6 +28,7 @@ import {
   scenePieces,
   seatsAt,
   servePath,
+  waiterSpot,
   walkPath,
   walkStrip,
   WALK_FRAMES,
@@ -367,6 +369,7 @@ export function PixelRestaurantView({
   onFreeTableTap,
   onPasserTap,
   onFlyerArrives,
+  onStaffTap,
 }: {
   floor: FloorView;
   weather: Weather;
@@ -383,6 +386,8 @@ export function PixelRestaurantView({
   onPasserTap?: (group: GroupId) => boolean | null;
   /** Someone who took a flyer has reached the foot of the steps. */
   onFlyerArrives?: (group: GroupId) => void;
+  /** Hurrying a chef or a waiter during a rush. */
+  onStaffTap?: (role: 'chef' | 'waiter', at: number) => void;
 }) {
   const speed = useGame((s) => s.speed);
   const maxTables = Math.floor(LOCATIONS[floor.location].maxSeats / balance.service.seatsPerTable);
@@ -499,6 +504,29 @@ export function PixelRestaurantView({
             );
           })}
         {floor.gull && <Gull layout={layout} floor={floor} scale={scale} onTap={onGullTap} />}
+        {/* In a rush: ⚡ on each chef and each waiter standing by who can be hurried, and how the hurried ones are doing. */}
+        {floor.chefHurry?.map((state, i) => (
+          <StaffHurry
+            key={`hurryChef${i}`}
+            state={state}
+            at={project(layout.origin, chefSpot(layout, floor.chefHurry!.length, i).x, 18, 20)}
+            scale={scale}
+            label="Hurry this chef"
+            onTap={onStaffTap && (() => onStaffTap('chef', i))}
+          />
+        ))}
+        {floor.waiterHurry?.map((state, i) =>
+          busyWaiters.has(i) && state === 'ready' ? null : (
+            <StaffHurry
+              key={`hurryWaiter${i}`}
+              state={state}
+              at={project(layout.origin, waiterSpot(layout, i).x, waiterSpot(layout, i).y, 20)}
+              scale={scale}
+              label="Hurry this waiter"
+              onTap={onStaffTap && (() => onStaffTap('waiter', i))}
+            />
+          ),
+        )}
         {onFreeTableTap &&
           freeTables.map(({ table, favourite }) => {
             const middle = tableMiddle(layout, floor.insideTables, table);
@@ -661,6 +689,40 @@ function Gull({ layout, floor, scale, onTap }: { layout: RoomLayout; floor: Floo
       )}
     </>
   );
+}
+
+// ---------- Rush hour ----------
+
+/** ⚡ to tap on someone who can be hurried; a small sign on someone hurrying (⚡) or catching their breath (☕). */
+function StaffHurry({
+  state,
+  at,
+  scale,
+  label,
+  onTap,
+}: {
+  state: HurryState;
+  at: { sx: number; sy: number };
+  scale: number;
+  label: string;
+  onTap?: () => void;
+}) {
+  const style = { left: at.sx * scale, top: at.sy * scale };
+  if (state === 'ready' && onTap) {
+    return (
+      <button type="button" className="staff-hurry" style={style} aria-label={label} onClick={onTap}>
+        ⚡
+      </button>
+    );
+  }
+  if (state === 'hurrying' || state === 'resting') {
+    return (
+      <span className={`staff-hurry-sign ${state}`} style={style} aria-hidden="true">
+        {state === 'hurrying' ? '⚡' : '☕'}
+      </span>
+    );
+  }
+  return null;
 }
 
 // ---------- People giving up on the queue ----------

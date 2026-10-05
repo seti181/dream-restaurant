@@ -13,7 +13,7 @@ import { LOCATIONS } from '../data/locations';
 import { PORTUGUESE_CORNER, SECRET_RECIPE, SPECIAL_STAFF, type SpecialStaffId } from '../data/personal';
 import { RIVAL_IDS } from '../data/rivals';
 import type { Weather } from '../data/weather';
-import { helpTable, moveParty, startDay, stepDay, type DayInProgress, type FloorView, type Help } from './day';
+import { helpTable, hurryStaff, moveParty, startDay, stepDay, type DayInProgress, type FloorView, type Help } from './day';
 import { isFavourite } from './seating';
 import { bookingsDay, rollRequest, type BookingReport, type BookingRequest } from './bookings';
 import { practiceAfterDay, withStars, type DishPractice, type StarEarned } from './practice';
@@ -161,6 +161,8 @@ export interface OpenDay {
   seating: { moved: number; favourites: number };
   /** The restaurant's rank this morning (some choice cards only come to a known place). */
   rank: number;
+  /** Chefs and waiters the player hurried in today's rushes. */
+  hurried: { chefs: number; waiters: number };
 }
 
 /** The player's numbers for a day, so far or in total. */
@@ -241,6 +243,8 @@ export interface DaySummary extends DayTally {
   starsEarned: StarEarned[];
   /** The rank reached today, if the restaurant ranked up (an index into data/ranks.ts). */
   rankUp: number | null;
+  /** Rush hour: chefs and waiters hurried, the longest quick-service streak, and the tips it brought. */
+  rush: { chefs: number; waiters: number; bestStreak: number; tips: number };
 }
 
 export function newGame(seed: number, difficulty: Difficulty = 'normal'): GameState {
@@ -434,6 +438,7 @@ export function openRestaurant(state: GameState): OpenDay {
     ),
     terraceBuilt: terraceTablesBuilt(state),
     rank: state.rank,
+    hurried: { chefs: 0, waiters: 0 },
     help: { drinks: 0, apologies: 0, cash: 0 },
     seating: { moved: 0, favourites: 0 },
     gulls: planGulls((state.rng.s ^ Math.imul(state.day + 7, 0x85ebca6b)) >>> 0, terraceTables),
@@ -516,6 +521,14 @@ export function moveGuests(open: OpenDay, from: number, to: number): { favourite
   }
   open.seating.moved++;
   return { favourite };
+}
+
+/** The player hurries the chef (or waiter) at this place in the kitchen (or on the floor). Returns false if they can't be hurried now. */
+export function hurry(open: OpenDay, role: 'chef' | 'waiter', at: number): boolean {
+  if (!hurryStaff(open.progress, 0, role, at)) return false;
+  if (role === 'chef') open.hurried.chefs++;
+  else open.hurried.waiters++;
+  return true;
 }
 
 /** The chef's apologies left today. */
@@ -771,7 +784,8 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
   const wages = teamWages({ ...state, team: open.team });
   const { rent, utilities } = weeklyBillsDue(playerBefore, state.day);
   const momentsCash = open.moments.cash + open.help.cash;
-  const profit = tally.revenue - tally.ingredientCost - wages - rent - utilities + momentsCash + bookingsCash;
+  const streak = open.progress.floors[0].streak;
+  const profit = tally.revenue - tally.ingredientCost - wages - rent - utilities + momentsCash + bookingsCash + streak.tips;
 
   const nextDay = state.day + 1;
   const news: NewsItem[] = [];
@@ -1030,6 +1044,7 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
       bookingsCash,
       starsEarned: practised.earned,
       rankUp: rank > state.rank ? rank : null,
+      rush: { ...open.hurried, bestStreak: streak.best, tips: streak.tips },
     },
   };
 }
