@@ -2375,23 +2375,304 @@ h2.spaced {
   background: #a99d91;
 }
 
-/* M8 (project.md section 9.5): the sketchbook still behind the day screen, shown with "?sketch". */
-.sketch-still {
+/* M8 (project.md section 9.5): the restaurant in the sketchbook look, shown with "?sketch". */
+.sk-wrap {
   position: relative;
   flex: 1;
   min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   overflow: hidden;
   background: #fbf6ea;
 }
 
-.sketch-still img {
+.sk-scene {
+  position: relative;
+  flex: none;
+  overflow: hidden;
+}
+
+.sk-layer,
+.sk-person,
+.sk-plate {
   position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+  left: 0;
+  top: 0;
+  pointer-events: none;
   user-select: none;
   -webkit-user-drag: none;
+}
+
+.sk-frame {
+  z-index: 900;
+}
+
+/* Walkers are moved and scaled from their top-left corner. */
+.sk-walker {
+  transform-origin: 0 0;
+}
+
+/* One cell of a sheet of poses; two cells stepping in a loop for a walk, a fork or a pan. */
+.sk-cell {
+  width: 100%;
+  height: 100%;
+  background-repeat: no-repeat;
+}
+
+.sk-frames {
+  animation: sk-frames 1s steps(2) infinite;
+}
+
+@keyframes sk-frames {
+  from { background-position-x: var(--from); }
+  to { background-position-x: var(--to); }
+}
+
+/* Walking: the steps, and a little bounce with each one. */
+.sk-stepping {
+  animation-name: sk-frames, sk-bounce;
+  animation-timing-function: steps(2), ease-in-out;
+  animation-iteration-count: infinite;
+}
+
+@keyframes sk-bounce {
+  0%, 50%, 100% { translate: 0 0; }
+  25%, 75% { translate: 0 -2%; }
+}
+
+.sk-plate {
+  background-repeat: no-repeat;
+}
+
+/* Steam curling up from a hot soup. */
+.sk-steam {
+  position: absolute;
+  left: 40%;
+  bottom: 60%;
+  width: 20%;
+  height: 120%;
+  border-left: 1.5px solid rgba(59, 42, 36, 0.4);
+  border-radius: 50%;
+  animation: sk-steam 2.4s ease-in infinite;
+}
+
+@keyframes sk-steam {
+  from { transform: translateY(20%) scaleY(0.6); opacity: 0; }
+  40% { opacity: 1; }
+  to { transform: translateY(-60%) scaleY(1.1); opacity: 0; }
+}
+
+/* Speech bubbles drawn in ink, over everything in the room. */
+.sk-bubble {
+  position: absolute;
+  z-index: 950;
+  transform: translate(-50%, -100%);
+  padding: 3px 7px 4px;
+  border: 1.6px solid #3b2a24;
+  border-radius: 14px 12px 13px 11px;
+  background: #fffaf0;
+  box-shadow: 1px 2px 0 rgba(59, 42, 36, 0.25);
+  font-size: 19px;
+  line-height: 1;
+  pointer-events: none;
+  animation: sk-pop 0.3s ease-out;
+}
+
+.sk-bubble::after {
+  content: '';
+  position: absolute;
+  left: 46%;
+  bottom: -7px;
+  width: 9px;
+  height: 9px;
+  border-right: 1.6px solid #3b2a24;
+  border-bottom: 1.6px solid #3b2a24;
+  background: #fffaf0;
+  transform: rotate(40deg) skewX(-10deg);
+}
+
+.sk-bubble.tappable {
+  border-color: #c4574b;
+  box-shadow: 0 0 0 3px rgba(196, 87, 75, 0.25);
+  animation: sk-pop 0.3s ease-out, tap-me 1.4s ease-in-out 0.3s infinite;
+}
+
+.sk-bubble.selected {
+  border-color: #4c78ab;
+  box-shadow: 0 0 0 3px rgba(76, 120, 171, 0.3);
+}
+
+.sk-badge {
+  position: absolute;
+  right: -10px;
+  bottom: -6px;
+  font-size: 12px;
+}
+
+.sk-walker-bubble {
+  left: 50%;
+  top: 6%;
+}
+
+@keyframes sk-pop {
+  from { transform: translate(-50%, -100%) scale(0.3); opacity: 0; }
+}
+
+/* Hand-drawn icons from the baked sheet, in bubbles and on buttons. */
+.sk-icon {
+  display: inline-block;
+  flex: none;
+  background-repeat: no-repeat;
+  vertical-align: middle;
+}
+
+.sk-bubble-face {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+}
+
+.sk-bubble-after {
+  font-family: Kalam, 'Segoe Print', cursive;
+  font-size: 20px;
+  font-weight: 700;
+  color: #c4574b;
+}
+
+/* Waiting for food: the bubble is a ring of patience that empties as they wait, green, then amber, then red. */
+.sk-bubble.sk-ring {
+  padding: 4px;
+  border: none;
+  border-radius: 50%;
+  background: conic-gradient(var(--tone) calc(var(--patience) * 1turn), rgba(59, 42, 36, 0.14) 0);
+  --tone: #5e9460;
+}
+
+.sk-bubble.sk-ring.amber {
+  --tone: #e0a43a;
+}
+
+.sk-bubble.sk-ring.red {
+  --tone: #c4574b;
+  animation: sk-pop 0.3s ease-out, sk-shake 1.2s ease-in-out 0.3s infinite;
+}
+
+.sk-bubble.sk-ring::after {
+  display: none;
+}
+
+.sk-ring .sk-bubble-face {
+  padding: 4px;
+  border: 1.6px solid #3b2a24;
+  border-radius: 50%;
+  background: #fffaf0;
+}
+
+@keyframes sk-shake {
+  0%, 100% { transform: translate(-50%, -100%) rotate(0); }
+  10% { transform: translate(-50%, -100%) rotate(-6deg); }
+  20% { transform: translate(-50%, -100%) rotate(6deg); }
+  30% { transform: translate(-50%, -100%) rotate(0); }
+}
+
+/* Guests getting frustrated: a round button beside their bubble to help them. */
+.sk-help {
+  position: absolute;
+  z-index: 970;
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  padding: 0;
+  border: 2px solid #3b2a24;
+  border-radius: 50%;
+  background: #fffaf0;
+  box-shadow: 0 0 0 4px rgba(196, 87, 75, 0.85), 2px 3px 0 4px rgba(59, 42, 36, 0.25);
+  transform: translate(-50%, -50%);
+  cursor: pointer;
+  animation: sk-help-pop 0.3s ease-out, sk-help 1.1s ease-in-out 0.3s infinite;
+  -webkit-tap-highlight-color: transparent;
+}
+
+@keyframes sk-help-pop {
+  from { scale: 0.3; opacity: 0; }
+}
+
+@keyframes sk-help {
+  50% { box-shadow: 0 0 0 8px rgba(196, 87, 75, 0.45), 2px 3px 0 8px rgba(59, 42, 36, 0.12); }
+}
+
+.sk-staff-hurry {
+  display: grid;
+  place-items: center;
+  background: #fffaf0;
+}
+
+/* A table to look after: the whole area of its bubble and its guests can be tapped. */
+.sk-tend {
+  position: absolute;
+  padding: 0;
+  border: none;
+  border-radius: 18px;
+  background: transparent;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.sk-tend:focus-visible {
+  outline: 3px solid #4c78ab;
+}
+
+/* Money floating up from a table, in handwriting, with a heart if they loved it. */
+.sk-float {
+  position: absolute;
+  z-index: 955;
+  transform: translate(-50%, -100%);
+  pointer-events: none;
+  white-space: nowrap;
+  font-family: Kalam, 'Segoe Print', cursive;
+  font-size: 20px;
+  font-weight: 700;
+  color: #3b2a24;
+  text-shadow: 0 0 3px #fffaf0, 0 0 6px #fffaf0;
+  animation: float-up 1.8s ease-out forwards;
+}
+
+.sk-heart {
+  margin-left: 4px;
+  color: #c4574b;
+}
+
+/* The wall clock above the door, telling the day's time. */
+.sk-clock {
+  position: absolute;
+  z-index: 1;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.sk-hand {
+  position: absolute;
+  left: 50%;
+  bottom: 50%;
+  width: 2px;
+  border-radius: 2px;
+  background: #3b2a24;
+  transform-origin: 50% 100%;
+}
+
+.sk-hand.hour {
+  height: 28%;
+  width: 3px;
+}
+
+.sk-hand.minute {
+  height: 40%;
+}
+
+.sk-gull {
+  z-index: 940;
 }
 
 .day-screen .pixel-wrap {

@@ -59,15 +59,16 @@ export function lastBakeTime(): BakeTime | null {
 /**
  * The picture for `key`, drawn from the SVG that `draw` returns (w × h units) at `scale` device
  * pixels per unit. Returns an image URL. The same key gives the same picture without drawing again.
+ * Pictures without writing (people, tables) can leave out the font, which saves a little time.
  */
-export function bake(key: string, draw: () => string, w: number, h: number, scale: number): Promise<string> {
+export function bake(key: string, draw: () => string, w: number, h: number, scale: number, fonts = true): Promise<string> {
   const cached = baked.get(key);
   if (cached) return cached;
   const picture = (async () => {
     const started = performance.now();
-    const css = await embeddedFonts();
+    const css = fonts ? await embeddedFonts() : '';
     const fontReady = performance.now();
-    const svg = draw().replace('<defs>', `<defs><style>${css}</style>`);
+    const svg = css ? draw().replace('<defs>', `<defs><style>${css}</style>`) : draw();
     const svgUrl = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
     try {
       const img = new Image();

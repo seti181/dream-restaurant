@@ -667,6 +667,13 @@ The game's new look, replacing the pixel art of section 9.1 everywhere: the rest
 - **The HUD and buttons:** paper scraps taped onto the page, a little crooked, with handwritten numbers. Buttons are paper tags with a red running stitch, at least 48 px. Longer text (menus, reports, card texts) stays in a clear, readable font; handwriting is for numbers, headings and notes.
 - **Evenings:** a blue dusk wash over the page, with the lamps, candles and windows glowing warm.
 
+**The street outside** (added 2026-10-06): the day has a second view, outside the restaurant, switched with a button.
+- **The scene:** the restaurant's townhouse on a street like Długi Targ, among tall gabled neighbours in sorbet colours. It has its painted sign, its door and warm lit windows, and the Town Hall spire behind.
+- **The terrace** sits on the pavement in front of the house. The terrace tables move here from the room, with their guests eating outside.
+- **Passers-by:** people of every group stroll both ways along the street. Tapping one hands them a flyer, as now.
+- **Also outside:** the queue at the door, the gull landing on the terrace plates, the musician on live-music theme nights, and the sky, rain and lamps at dusk.
+- **The other view:** when something needs the player in the view that isn't showing (a gull, a queue, a table waiting for help), a small badge appears on the switch.
+
 **How it is built**
 
 - **Code:** a new folder, `src/ui/sketch/`, replaces `src/ui/pixel/` piece by piece. It starts from `concepts-v8.ts`: the palette, the painter (the wash plus the ink line), the motifs (rosette, tulip, folk band, hatching, bunting), people (`figure`), Mewa and the page frame. Everything is still drawn by the game in code, as SVG, so nothing is downloaded and decor, weather and dusk combine freely. Picture files are allowed if a piece really needs one (decided 2026-10-06).
@@ -681,22 +688,32 @@ The game's new look, replacing the pixel art of section 9.1 everywhere: the rest
 
 **Settled while building** (each recorded in the decision log as it is decided)
 
-- The front-view layout for each of the six premises: how many tables fit in one row, whether a front row (a little larger, nearer) is needed, and how the bigger premises show (a wider room, or the cellar room as a second scene).
-- Where the terrace goes: on the pavement in front of the house, along the bottom of the page.
-- How people move: guests come in from the door on the street side and walk along the floor to their table; waiters cross between the hatch and the tables.
+- The front-view layout for each of the six premises: settled 2026-10-06 (two or three staggered rows, the room as wide as the premises needs; see the decision log). The cellar room of "Bigger premises" (M7c) is still open.
+- Where the terrace goes: settled 2026-10-06, in the street outside view (above).
+- How the inside and outside views are switched, and what the badge shows.
+- How people move: settled 2026-10-06 (in through the door in the back wall, along the aisles, seen from behind walking away; each visit on its own timeline a little behind the game; see the decision log).
 - What becomes of the street panorama: the street is seen through the windows and along the pavement strip; the isometric street goes.
 - How the planning screens use the page: one sketchbook page per tab, or a notebook with ribbon tabs.
+
+**Where M8 stands** (2026-10-06, for picking it up in a new chat): the foundations, the room and its people are done, seen with `?sketch` (the normal game still shows the pixel art until the street outside is done too). The inside view is `src/ui/SketchRoomView.tsx`, its drawing code is in `src/ui/sketch/` (`frontRoom.ts` layout and walks, `roomArt.ts` the room, tables and page, `people.ts` and `cast.ts` people, `sheets.ts` sheets of poses, `icons.ts` drawn icons, `bake.ts` baking). For the street outside, these are waiting:
+- Passers-by and flyers: the view takes `onPasserTap` and `onFlyerArrives` but doesn't use them yet; the old view's `usePassersBy` (in `PixelRestaurantView.tsx`: who strolls at which time of day, at most three at once, a flyer taker heading for the door) is the logic to bring over.
+- The terrace: terrace tables are the `floor.tables` from `floor.insideTables` on, with their own guests; the inside view leaves them out. They need the same seats, poses, bubbles, help button and serving as inside tables (the waiter walks out of the door to them).
+- The gull: shown in the inside view's open door for now (`DoorGull`), to be tapped there; it belongs on the terrace plates outside.
+- The queue at the door (`floor.atTheDoor`, `leftTheDoor`) is drawn inside by the door; outside it would stand on the pavement by the door.
+- The musician (`floor.musician`) isn't drawn yet.
+- Each street's landmark (section 9.5, the street outside) and the switch with its badge.
 
 **Order of work** (the items of M8, one at a time, each tested in the browser and on the tablet):
 
 1. **Foundations and one still scene:** `src/ui/sketch/` with the palette, painter, motifs and page frame; the bake-and-cache pipeline; the handwriting font. The day screen shows the concept scene as a still picture behind today's UI. Measure baking time and frame rate on the tablet.
 2. **The room in the front view:** walls, windows onto the street, bar, kitchen hatch, floor and the tables laid out from `floorView()` for all six premises; the decor items in their four styles; the equipment in the hatch.
 3. **People:** the five guest groups, chefs, waiters, Tomek, Adrian, the Friday regular, the food critic and Mewa. They get poses (walk, sit, eat, drink, carry, cook, wave) and simple CSS walking. Bubbles (wishes, patience, rush) become ink speech bubbles, along with the floating coins and hearts.
-4. **Light and weather:** sky, clouds and sun in the windows from the day's weather, rain, the evening dusk with glowing lamps and candles, and the terrace on the pavement.
-5. **The HUD and controls:** paper scraps, tape, handwritten numbers and stitched paper-tag buttons. Choice cards and rush prompts become notes pinned to the page.
-6. **Planning screens and pop-ups** (replaces Graphics B): Menu, Staff, Kitchen, Interior, Marketing and the cards as sketchbook pages; the day report as a journal page with Mewa's notes in the margin.
-7. **The map and icons:** the Old Town map as an ink-and-wash sketch map; food and UI icons in ink and wash.
-8. **Retire the pixel art:** remove `src/ui/pixel/` and its tests and tools once nothing uses them; check the bundle size and the tablet's speed.
+4. **The street outside:** the second view (above), with the terrace, the queue, passers-by and flyers, the gull and the musician, and a switch with a badge.
+5. **Light and weather:** sky, clouds and sun from the day's weather, inside and outside; rain; the evening dusk with glowing lamps, candles and windows.
+6. **The HUD and controls:** paper scraps, tape, handwritten numbers and stitched paper-tag buttons. Choice cards and rush prompts become notes pinned to the page.
+7. **Planning screens and pop-ups** (replaces Graphics B): Menu, Staff, Kitchen, Interior, Marketing and the cards as sketchbook pages; the day report as a journal page with Mewa's notes in the margin.
+8. **The map and icons:** the Old Town map as an ink-and-wash sketch map; food and UI icons in ink and wash.
+9. **Retire the pixel art:** remove `src/ui/pixel/` and its tests and tools once nothing uses them; check the bundle size and the tablet's speed.
 
 ## 10. Personal touches (fill in)
 
@@ -851,12 +868,13 @@ Each item is tested in the browser and on the tablet before the next one starts.
 
 **M8 – The Kashubian sketchbook look (section 9.5)**
 
-Chosen on 2026-10-06. **This comes first**, before the rest of M7b and M7c. Each item is tested in the browser and on the tablet before the next one starts.
+Chosen on 2026-10-06. **This comes first**, before the rest of M7b and M7c. The restaurant and the street outside come first, alive and animated; then the HUD, menus and pop-ups are restyled to match. Each item is tested in the browser and on the tablet before the next one starts.
 
 - [x] Foundations: `src/ui/sketch/`, the bake-and-cache pipeline, the handwriting font, and the concept scene as a still on the day screen
-- [ ] The restaurant room in the front view, laid out from `floorView()` for every premises, with decor and equipment
-- [ ] People: guests, staff, special characters and Mewa, with poses, walking and ink speech bubbles
-- [ ] Light and weather: the windows' sky, rain, the evening and the terrace
+- [x] The restaurant room in the front view, laid out from `floorView()` for every premises, with decor and equipment
+- [x] People: guests, staff, special characters and Mewa, with poses, walking, eating and other animations, and ink speech bubbles
+- [ ] The street outside: a second view of the Old Town with the terrace, the queue, passers-by to hand flyers to, the gull and the musician
+- [ ] Light and weather: the sky, rain and the evening, inside and outside
 - [ ] The HUD and controls as paper scraps and stitched tags
 - [ ] Planning screens, cards and pop-ups as sketchbook pages; the day report as a journal page
 - [ ] The Old Town map and the icons in ink and wash
@@ -1182,3 +1200,16 @@ Moved out of M7 on 2026-10-03, so the more dynamic season (M7b) comes first.
   - **The wobble is one filter over the whole picture,** not one per shape. Per shape (1,354 of them), the concept's still took 1.7 s to bake on a desktop; as one filter, 0.2 s, and it looks almost the same, a touch crisper. Floor shadows, clouds and the page's ragged edge keep their own soft wash.
   - **Baking:** the SVG is drawn once into an offscreen canvas at the size it covers the screen, in the screen's own pixels (at most 4096 pixels across), saved as a PNG and cached by a key. In the game on a desktop, the still is ready about 0.9–1.1 s after the day screen opens: 0.02–0.06 s for the font, 0.09–0.16 s to draw, and the rest waiting while the game starts the day. The `?perf` meter shows these three numbers. To be measured on the tablet.
   - **Seen with `?sketch`:** the day screen shows the still behind the clock, numbers, notes and buttons, until the next M8 items make the new view playable; without it the game is unchanged. On narrow screens the still is trimmed at the sides for now; the room item lays the room out to fit.
+- 2026-10-06: The restaurant inside, in the sketchbook look (M8, section 9.5), settled as built. Seen with `?sketch`; it becomes the normal view once the street outside is done too.
+  - **The room** (`src/ui/sketch/frontRoom.ts`): seen from the front. The back wall faces the street, with the windows (one fewer than columns of tables, so there's wall between them for pictures) and the door; the bar is on the left and the kitchen hatch on the right. Tables stand in two staggered rows (up to 8 tables) or three (10 or 12), so back-row faces show between front-row heads. Each table seats two behind it and one at each end, turned towards it with their knees under the cloth, so only their shoes show under the hem (chosen over crossed legs beside the table, which would have tangled with the next table's guests or meant spreading the tables and drawing everyone smaller). The room is as wide as the premises' most tables need, and as tall as the screen's shape asks; on a taller screen the rows spread out a little and the wall takes the rest. A restaurant with fewer tables than spots has them in the middle.
+  - **Sizes:** people are 195 units tall seated and 196 standing, each row nearer us 6% bigger; anyone standing or walking shrinks towards the back wall (82% there). On the tablet a seated guest is about 150–170 pixels tall.
+  - **What's drawn** (`roomArt.ts`): the wall with tulip-and-rosette wallpaper and bunting; windows onto Długi Targ with St Mary's, the Town Hall and Neptune, the sky by the weather (sun, clouds, rain) and lit windows at dusk; the bar with bottles and taps; the open door with the chalkboard above it showing today's first three dishes; the kitchen through the hatch, with the clock above it telling the day's time. All 13 decor items have a place: the chandelier, portraits, carved oak panelling, ships in bottles on the bar, lanterns, the sea chart, embroidered tablecloths, clay pots, the tiled stove, brass pendant lamps, the plant wall, the communal table as carved oak trestle tables, and azulejo tiles. So do the six pieces of equipment (espresso machine and cake display on the bar; range, pizza oven, grill and fryer in the kitchen), and the Old Town Favourite's plaque.
+  - **People** (`cast.ts`, `sheets.ts`): eight looks for each group (tourists with cameras and sun hats or caps, students with backpacks, locals in embroidery, office workers with ties or lanyards, foodies with scarves and berets); the critic, the Friday regular, Filip, Fletcher, Henryk, Weronika, Wałęsa and his guard, the footballer; waiters, Tomek (bald, beaming, a kompot stain) and Adrian (a messy blond tuft, rabbit teeth); chefs. Each is drawn once in a sheet of poses (a guest: reading the menu, waiting, arms crossed, eating in two steps, the same at a table's end, walking in two steps, standing, and walking away in two steps), facing right, and mirrored to face left. Seen from behind, people show the back of the head and their hair (a braid, a bun, a bald patch with its fringe), hats, backpacks, scarves and the bow of an apron.
+  - **Alive:** guests walk in through the door to their table, side by side rather than in single file (two steps and a little bounce, at the game's speed); anyone walking up the room, towards the back wall (out of the door, round to a seat behind a table, a waiter back to the hatch), is seen from behind; sit and order, wait (arms crossed when it's taking too long), and eat (fork up and down); waiters carry plates from the hatch and walk back with the empty tray; chefs toss their pans while cooking; soup steams; ink speech bubbles pop up over tables; the money floats up in handwriting with a heart; parties that give up leave through the door, cross. Every tap still works: looking after a table (tap its bubble or the guests themselves; a first version only caught taps just under the bubble, so waiting tables seemed not to respond), moving a party, hurrying a chef or waiter, and shooing a gull, which shows in the open door until the street outside has its own view. Passers-by, flyers, the terrace and the musician come with that view.
+  - **Pictures:** everything is baked once, in the background, one picture at a time; a sheet of poses takes about 15–35 ms to draw on a desktop, and the day runs at 60 fps. Tests cover every premises and screen shape, the walks from the door to every seat, and every picture and person.
+  - **For checking:** `npx tsx scripts/pixel/sketch-preview.ts <folder>` draws three full houses (a small room, one with all the decor, the biggest at dusk), and `?sketch&slots=12` lays the room out for that many tables.
+- 2026-10-06: The restaurant inside, after a playtest (M8): waiting made clear, the waiter's timing fixed, a button to help, and drawn icons.
+  - **The waiter served at once.** The game moves on about five minutes a real second at 1×, guests order within five minutes and often have their food within fifteen; walking in at a stroll across the wide room took 3–8 seconds, so they sat down after their food was ready and the waiter came straight over. A first fix made everyone walk briskly (1.4 s at most), which looked rushed. Now the room shows each visit on its own timeline, a little behind the game and counted in game minutes, so it follows pausing and 2× or 4×: guests stroll in (130 units a second, at most 3.5 s across the biggest room), read the menu for 10 game minutes (2 s at 1×), then wait at least 10 more, longer if the kitchen isn't done, before a waiter sets off from the hatch with their plates (175 units a second, at most 2.2 s). The food only shows on the table, and the money floats up, when the waiter puts it down; a table nobody could serve (every waiter busy) gets its food after 50 minutes. The meal (76 minutes in the game) still leaves about 10 s at 1× of eating on screen.
+  - **Waiting is shown:** a bubble with an empty plate and a ring of patience round it, emptying as they wait: green, then amber with an hourglass past half, then red with a cross face and a little shake. Before, waiting showed nothing until they were impatient.
+  - **A button to help:** guests getting frustrated (the same moment the old view let them be helped) get a round button beside their bubble, a glass of kompot with a heart, pulsing; it opens the help (a free drink, the chef's apology, another table). Tapping the guests or the bubble still works too.
+  - **Drawn icons instead of emojis** in the room (`src/ui/sketch/icons.ts`, one baked sheet): reading the menu, waiting, the hourglass, faces (cross, loved it, happy, so-so, sad), heart and a missed wish; every wish (no meat, dill, fish, soup, something sweet, pierogi, coffee, spicy, a Polish classic, mushrooms); the Friday regular's lemon, the named regulars (laptop, book, anchor, pencil), the special guests (a shot glass, a football, Wałęsa's V, a clapperboard), the critic's pen, the hurry bolt and the coffee break, and a waving hand for later. The emojis in the panels and menus go with the HUD and menus items.

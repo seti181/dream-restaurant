@@ -77,7 +77,7 @@ const VISITOR_BUBBLES: Record<Visitor, string> = { merry: '🥃', footballer: '�
 const HAPPY = 60;
 
 /** How a table feels, as an emoji bubble, or null for no bubble. */
-function bubbleFor(guests: TableGuests): string | null {
+export function bubbleFor(guests: TableGuests): string | null {
   // The Friday regular wants one thing, and the whole room knows it.
   if (guests.regular && guests.stage !== 'eating') return '🍋';
   // The named regulars show who they are until their food comes.
