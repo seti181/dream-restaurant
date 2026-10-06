@@ -191,6 +191,16 @@ describe('the pictures', () => {
       }
     const L = streetLayout(4, ASPECTS[0], 'dluga');
     const look = { weather: 'sunny' as const, dusk: false, name: 'Kitchen', special: 'Pierogi', terraceOpen: true };
+    // Held upright the page is taller, and the towers and the sky stay just above the roofs, not stretched up from the top.
+    for (const id of Object.keys(LOCATIONS) as LocationId[]) {
+      const tall = streetLayout(0, 0.6, id);
+      const svg = streetPicture(new Painter(), tall, look);
+      expectSound(svgPicture(tall.width, tall.height, svg));
+      // A tower is a brick path 120 (St Mary's) or 56 (the Town Hall) wide; its height must stay a tower's, not the page's.
+      const towers = [...svg.matchAll(/h(?:120|56) v([\d.]+) h-(?:120|56) Z" fill="#b9694c"/g)].map((m) => Number(m[1]));
+      if (['dluga', 'mariacka', 'ogarna', 'piwna'].includes(id)) expect(towers.length).toBeGreaterThan(0);
+      for (const height of towers) expect(height).toBeLessThan(500);
+    }
     expect(streetPicture(new Painter(), L, look)).toBe(streetPicture(new Painter(), L, look));
   });
 

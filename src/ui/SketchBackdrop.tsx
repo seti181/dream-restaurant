@@ -12,11 +12,17 @@ import { streetPicture } from './sketch/streetArt';
 import { useBaked, useBox } from './sketchView/shared';
 import { useGame } from './store';
 
+/** The tallest shape the street behind the screens is drawn in (width over height). */
+const NARROWEST_SHAPE = 1.3;
+
 export function SketchBackdrop({ weather, evening }: { weather: Weather; evening: boolean }) {
   const restaurant = useGame((s) => s.game.restaurants[0]);
   const { wrap, box } = useBox();
   const aspect = box.width > 0 && box.height > 0 ? Math.round((box.width / box.height) * 20) / 20 : 0;
-  const layout = useMemo(() => streetLayout(0, aspect || 1364 / 603, restaurant.location), [aspect, restaurant.location]);
+  // Never drawn taller than a little wider than square: held upright, the tablet shows the middle of a wide
+  // street, the restaurant and its neighbours, rather than a sliver of street under a tall sky.
+  const shape = Math.max(aspect || 1364 / 603, NARROWEST_SHAPE);
+  const layout = useMemo(() => streetLayout(0, shape, restaurant.location), [shape, restaurant.location]);
   const dpr = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1;
   // The street fills the screen (cut at the edges if need be); it is washed out, so a little softer is fine.
   const cover = box.width > 0 ? Math.max(box.width / layout.width, box.height / layout.height) : 0;
@@ -30,7 +36,7 @@ export function SketchBackdrop({ weather, evening }: { weather: Weather; evening
     terraceOpen: false,
   };
   const street = useBaked(
-    streetScale > 0 ? `backdrop|${restaurant.location}|${aspect}|${weather}|${evening}|${look.name}|${look.special}|${streetScale}` : null,
+    streetScale > 0 ? `backdrop|${restaurant.location}|${shape}|${weather}|${evening}|${look.name}|${look.special}|${streetScale}` : null,
     () => svgPicture(layout.width, layout.height, streetPicture(new Painter(), layout, look)),
     layout.width,
     layout.height,

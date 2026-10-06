@@ -50,6 +50,8 @@ function sky(pt: Painter, L: StreetLayout, look: StreetLook): string {
   const [top, low] = look.dusk ? DUSK : SKY[look.weather];
   const id = pt.id('sky');
   let g = `<defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${top}"/><stop offset="1" stop-color="${low}"/></linearGradient></defs><rect x="-10" y="-10" width="${L.width + 20}" height="${L.ground + 10}" fill="url(#${id})"/>`;
+  // Everything in the sky sits just above the roofs, however tall the page.
+  g += `<g transform="translate(0 ${skyDrop(L)})">`;
   if (!look.dusk && (look.weather === 'sunny' || look.weather === 'heatwave')) g += `<circle cx="${L.width * 0.82}" cy="70" r="${look.weather === 'heatwave' ? 34 : 26}" fill="#ffe08a" filter="url(#wash)"/>`;
   if (look.dusk) g += `<circle cx="${L.width * 0.18}" cy="64" r="18" fill="#f4ecc8"/>` + [0, 1, 2, 3, 4, 5].map((k) => `<circle cx="${100 + k * 230}" cy="${30 + ((k * 37) % 50)}" r="1.8" fill="#fffaf0"/>`).join('');
   const clouds = look.weather === 'cloudy' ? 6 : look.weather === 'rain' ? 8 : look.weather === 'sunny' ? 3 : 1;
@@ -60,13 +62,27 @@ function sky(pt: Painter, L: StreetLayout, look: StreetLook): string {
     g += `<g filter="url(#wash)" opacity="0.95"><ellipse cx="${cx}" cy="${cy}" rx="${58 + (k % 3) * 14}" ry="18" fill="${tone}"/><ellipse cx="${cx + 26}" cy="${cy - 12}" rx="34" ry="18" fill="${tone}"/><ellipse cx="${cx - 30}" cy="${cy - 6}" rx="26" ry="14" fill="${tone}"/></g>`;
   }
   if (look.weather !== 'rain' && !look.dusk) g += pt.line(`M${L.width * 0.3},96 q8,-7 16,0 q8,-7 16,0 M${L.width * 0.62},70 q6,-5 12,0 q6,-5 12,0`, 'ink', 1.4);
-  return g;
+  return g + '</g>';
 }
 
 /** Each street's landmark, over the roofs (or standing among the houses). */
+/**
+ * How far the sky's things (sun, clouds, the towers behind the roofs) move down on a taller page than
+ * the tablet's, so they stay just above the houses instead of stretching up from the top of the page.
+ */
+function skyDrop(L: StreetLayout): number {
+  return Math.max(0, L.ground - SKYLINE_GROUND);
+}
+
+/** Where the houses stand on the tablet's screen (1364×603) with no terrace: the sky was drawn for this. */
+const SKYLINE_GROUND = 483;
+
 function landmark(pt: Painter, L: StreetLayout, look: StreetLook): string {
   const brick = '#b9694c';
+  const o = skyDrop(L);
+  // A brick tower from `top` (as on the tablet's screen) down to the street.
   const tower = (x: number, w: number, top: number) => {
+    top += o;
     let t = pt.rect(x, top, w, L.ground - top, brick) + [0, 1, 2, 3, 4].map((k) => pt.rect(x + 2 + (k * (w - 12)) / 4, top - 12, 8, 14, brick)).join('');
     for (let y = top + 30; y < L.ground - 140; y += 64) t += `<rect x="${x + w / 2 - 6}" y="${y}" width="12" height="34" rx="6" fill="${dark(brick, 0.4)}"/>`;
     return t;
@@ -75,7 +91,16 @@ function landmark(pt: Painter, L: StreetLayout, look: StreetLook): string {
     case 'dluga': {
       // The Main Town Hall: a tall brick tower with a slender spire and a golden king on top.
       const x = L.width * 0.78;
-      return tower(x - 28, 56, 120) + pt.fill(`M${x - 34},124 L${x},26 L${x + 34},124 Z`, '#4f7f6a') + pt.rect(x - 4, 10, 8, 18, 'brass') + pt.circle(x, 8, 5, 'yellow') + pt.circle(x, 170, 14, 'white') + pt.line(`M${x},170 l0,-9 M${x},170 l7,3`, 'ink', 2);
+      return (
+        tower(x - 28, 56, 120) +
+        `<g transform="translate(0 ${o})">` +
+        pt.fill(`M${x - 34},124 L${x},26 L${x + 34},124 Z`, '#4f7f6a') +
+        pt.rect(x - 4, 10, 8, 18, 'brass') +
+        pt.circle(x, 8, 5, 'yellow') +
+        pt.circle(x, 170, 14, 'white') +
+        pt.line(`M${x},170 l0,-9 M${x},170 l7,3`, 'ink', 2) +
+        '</g>'
+      );
     }
     case 'mariacka':
     case 'ogarna':
@@ -104,7 +129,10 @@ function landmark(pt: Painter, L: StreetLayout, look: StreetLook): string {
       return z;
     }
     case 'spichrzow':
-      return pt.line(`M${L.width * 0.88},${L.ground - 250} V40 M${L.width * 0.88},50 l80,30 M${L.width * 0.88},50 l-50,20`, '#c4574b', 6) + (look.dusk ? `<circle cx="${L.width * 0.88}" cy="44" r="6" fill="#ffd98a"/>` : '');
+      return (
+        pt.line(`M${L.width * 0.88},${L.ground - 250} V${40 + o} M${L.width * 0.88},${50 + o} l80,30 M${L.width * 0.88},${50 + o} l-50,20`, '#c4574b', 6) +
+        (look.dusk ? `<circle cx="${L.width * 0.88}" cy="${44 + o}" r="6" fill="#ffd98a"/>` : '')
+      );
   }
   return '';
 }
