@@ -4,7 +4,7 @@ A cozy restaurant management game set in Gdańsk's Old Town, made as a gift for 
 Inspired by 90s management games like Pizza Syndicate, but gentler: no crime, no sabotage.
 The player is up against friendly rivals, fighting only for the city's hungry guests.
 
-- **Platform:** Android tablet (Samsung Galaxy Tab A series), landscape, touch only
+- **Platform:** Android tablet (Samsung Galaxy Tab A series), landscape (held upright, the day shows the room above the street), touch only
 - **Language:** English
 - **Tone:** cozy, warm, funny, low-stress
 - **Length:** one season (six weeks in July and August) takes roughly two hours ("two or three evenings"); free play continues afterwards
@@ -35,7 +35,7 @@ The season runs through the summer holidays until the great St. Dominic's Fair i
 
 - Web game built with **TypeScript + React + Vite**, installed as a **PWA**: an icon on the home screen that opens full screen and works offline.
 - Hosted free on **GitHub Pages**. Updates reach the tablet automatically.
-- **Layout:** landscape only.
+- **Layout:** landscape first. Held upright, the day screen shows the room above and the street below (M8, decided 2026-10-06); the other screens simply reflow.
   - Responsive from about 850×530 CSS pixels upwards: Samsung tablets lay the page out smaller than their screen's pixels (the Galaxy Tab A lays it out at 1364×603).
   - Touch targets at least 48 px.
   - Nothing depends on hover.
@@ -667,6 +667,8 @@ The game's new look, replacing the pixel art of section 9.1 everywhere: the rest
 - **The HUD and buttons:** paper scraps taped onto the page, a little crooked, with handwritten numbers. Buttons are paper tags with a red running stitch, at least 48 px. Longer text (menus, reports, card texts) stays in a clear, readable font; handwriting is for numbers, headings and notes.
 - **Evenings:** a blue dusk wash over the page, with the lamps, candles and windows glowing warm.
 
+**Held upright** (added and built 2026-10-06): the day screen with the tablet held upright shows the room above and the street below, both at once, so there's no Inside/Outside switch. Chosen from three concepts drawn with the game's art (`art/concepts/upright/`, made by `scripts/pixel/concepts-upright.ts`): A, the room above and the street below (chosen); B, a tall townhouse cut open, the dining room upstairs over the bar and kitchen; C, the same room close up, swiped sideways.
+
 **Light and weather** (agreed 2026-10-06, golden hour included, for the M8 item of that name): today the evening is a single switch at 19:30, where the room's picture snaps to a dark version but the people in it stay in daylight, and the street does the same.
 - **The day in three lights, fading rather than snapping:** day (11:00–17:30) as now, with soft sunbeams falling from the windows across the floor on sunny and heatwave days; a golden hour (17:30–19:30), a warm amber wash with the candles lit on the tables; and evening (19:30–22:00), a blue dusk wash with the lamps, candles and the neighbours' windows glowing warm. Each change fades in over a couple of seconds.
 - **One wash over everything:** the wash is a single see-through layer over the whole scene, so it tints the people as well as the room, and costs almost nothing on the tablet (no blend modes or other heavy effects).
@@ -879,6 +881,7 @@ Chosen on 2026-10-06. **This comes first**, before the rest of M7b and M7c. The 
 - [x] People: guests, staff, special characters and Mewa, with poses, walking, eating and other animations, and ink speech bubbles
 - [x] Every icon drawn: one ink-and-wash icon for each of the game's emojis, shown in place of the emoji wherever a text has one; Mewa, the coins, stars, weather, dishes and the team's portraits redrawn; the Who's who legend with the new people
 - [x] The street outside: a second view of the Old Town with the terrace, the queue, passers-by to hand flyers to, the gull and the musician
+- [x] Held upright: the room above, the street below (concept A, added 2026-10-06)
 - [ ] Light and weather: the sky, rain and the evening, inside and outside
 - [ ] The HUD and controls as paper scraps and stitched tags
 - [x] Planning screens, cards and pop-ups as sketchbook pages; the day report as a journal page
@@ -952,7 +955,7 @@ Moved out of M7 on 2026-10-03, so the more dynamic season (M7b) comes first.
 
 - Final game title?
 - Should the player choose a restaurant concept at the start (e.g. Polish tavern vs bistro) or build it freely? The current plan is free-form with no fixed concept.
-- Portrait support ever? The current plan is landscape only.
+- Portrait support ever? Answered 2026-10-06: the day screen held upright shows the room above and the street below (concept A of `art/concepts/upright/`); the other screens reflow.
 - How much text-based humour is wanted in reviews and events? More is more fun, but also more writing.
 
 ## 16. Decision log
@@ -1243,3 +1246,8 @@ Moved out of M7 on 2026-10-03, so the more dynamic season (M7b) comes first.
   - **Choice cards during the day** are notes pinned to the page, a little askew, with a red drawing pin.
 - 2026-10-06: Light and weather (M8) planned: the day in three lights (day, a golden hour from 17:30 and evening from 19:30), each fading in; one see-through wash over the whole scene, people included; warm glow around candles, the bar's lamps and street lamps; rain falling outside and a wash for each weather inside. The golden hour was confirmed by the player. Only how things look; no new weather and no change to the simulation (section 9.5, "Light and weather").
 - 2026-10-06: Playtest on the tablet held upright: behind the planning screens St Mary's was a tall brick column with no church to it. The street's sky and landmarks were drawn at fixed heights from the top of the page, so on a taller page the towers stretched down to the roofs. They now stand just above the houses on any page (the sun, moon, stars and clouds too), unchanged on the tablet held sideways; the street behind the planning screens is never drawn taller than a little wider than square, so held upright it shows the restaurant and its neighbours close up. Held upright, the day's room still has a tall empty wall above it: the game is laid out for the tablet held sideways.
+- 2026-10-06: Held upright (M8), settled as built after the player found the upright tablet's day screen poor (a tall empty wall over the room). Of three concepts (`art/concepts/upright/`), the player chose A: the room above, the street below, both live at once.
+  - **Both views at once:** the same two views as sideways, each given the shape of a small tablet held sideways (1.6 wide to 1 high, like 850×530), stacked in the middle of the screen, so each lays itself out as it would there (no tall wall or sky); on a shorter screen they shrink to fit. The Inside/Outside switch is hidden upright, and the Flyers button no longer switches views, since the street is already in sight. Every tap works in both: tables, help, moving a party, hurrying staff, the gull, flyers.
+  - **The panels:** the clock and the money along the top, the day's numbers on a second row under them, the round buttons and speed along the bottom, all outside the pictures.
+  - **Turning the tablet** switches between the two layouts at once (`useUpright` in `src/ui/sketchView/shared.tsx` follows the screen's orientation). Held sideways nothing changed.
+  - **Checked** at 800×1280 and 851×1150 (the tablet held upright), and sideways at 1364×603. Two scenes animate at once upright, so the frame rate there is worth checking on the tablet with `?perf`.

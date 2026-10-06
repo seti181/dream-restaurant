@@ -72,7 +72,8 @@ Add `?perf` to the game's address to show the performance meter (for checking on
 
 ## Tablet and UI rules
 
-- Landscape only. The tablet lays the page out at 1364×603 CSS pixels: check every screen there. Layout must also work from about 850×530 upwards.
+- Landscape first. The tablet lays the page out at 1364×603 CSS pixels: check every screen there. Layout must also work from about 850×530 upwards.
+- Held upright (about 851×1150), the day screen shows the room above and the street below, each shaped like an 850×530 screen; the other screens reflow. Check day-screen changes upright too.
 - Touch targets at least 48 px.
 - No hover-only interactions.
 - Disable pinch-zoom and pull-to-refresh.

@@ -493,6 +493,22 @@ export function useFloats(floor: FloorView, served: Set<string>): Float[] {
 
 // ---------- The view ----------
 
+/** True while the tablet is held upright (taller than wide): the day shows the room and the street together. */
+export function useUpright(): boolean {
+  const query = typeof window !== 'undefined' && window.matchMedia ? window.matchMedia('(orientation: portrait)') : null;
+  const [upright, setUpright] = useState(query?.matches ?? false);
+  useEffect(() => {
+    if (!query) return;
+    const changed = () => setUpright(query.matches);
+    changed();
+    query.addEventListener('change', changed);
+    return () => query.removeEventListener('change', changed);
+    // The query object is the same for the page's whole life.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  return upright;
+}
+
 /** The size of the box the view fills. */
 export function useBox() {
   const wrap = useRef<HTMLDivElement>(null);

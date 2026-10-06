@@ -18,6 +18,7 @@ import { MomentCard, MomentResultNote, NoteClose } from './MomentCard';
 import { GROUP_COLOURS } from './pixel/sprites';
 import { canHelp, canTend, PixelRestaurantView } from './PixelRestaurantView';
 import { SketchRoomView, sketchWanted } from './SketchRoomView';
+import { useUpright } from './sketchView/shared';
 import { SketchStreetView } from './SketchStreetView';
 import { whatNeedsYou } from './sketch/street';
 import type { IconId } from './sketch/icons';
@@ -502,6 +503,7 @@ export function DayScreen() {
   const [stat, setStat] = useState<StatId | null>(null);
   const [legend, setLegend] = useState(false);
   const [outside, setOutside] = useState(false);
+  const upright = useUpright();
   const [note, setNote] = useState<{ text: string; at: number } | null>(null);
   const location = useGame((s) => playerOf(s.game).location);
   const moveGuests = useGame((s) => s.moveGuests);
@@ -556,53 +558,63 @@ export function DayScreen() {
     setChoosing(false);
   };
   const flyers = !live.closing ? live.flyersLeft : 0;
-  // The sketchbook look shows the restaurant inside or the street outside, with a switch between them.
+  // The sketchbook look shows the restaurant inside or the street outside, with a switch between them;
+  // held upright, the room above and the street below, both at once (project.md section 9.5).
   const RestaurantView = !sketchWanted ? PixelRestaurantView : outside ? SketchStreetView : SketchRoomView;
+  const both = sketchWanted && upright;
   const needs = whatNeedsYou(live.floor, canHelp);
+  // What each view is shown and what a tap on it does; held upright, both views get the same.
+  const view = {
+    floor: live.floor,
+    weather,
+    minute: live.minute,
+    selectedTable: stillThere ? selected!.table : null,
+    onTableTap: (table: number) => {
+      const guests = live.floor.tables[table];
+      if (guests) setSelected({ table, since: guests.since });
+    },
+    onGullTap: shooGull,
+    onStaffTap: hurryStaff,
+    onPasserTap:
+      flyers > 0
+        ? (group: GroupId) => {
+            // Everyone who takes a flyer has heard of you now; some come straight in. Say which it was.
+            const comes = handFlyer(group);
+            if (comes !== null) {
+              const last = flyers === 1 ? ' That was your last flyer today.' : '';
+              setNote({
+                text: comes ? `🙂 They took your flyer and they’re coming in!${last}` : `👋 They took your flyer. Not today, but now they know your name.${last}`,
+                at: Date.now(),
+              });
+            }
+            return comes;
+          }
+        : undefined,
+    onFlyerArrives: flyerArrives,
+    freeTables: choosing && stillThere ? free : [],
+    onFreeTableTap: (to: number) => {
+      if (!selected) return;
+      const favourite = moveGuests(selected.table, to);
+      if (favourite !== null) {
+        setNote({
+          text: favourite ? '🪑 Their favourite spot! They’re delighted. ⭐' : '🪑 They follow you to their new table.',
+          at: Date.now(),
+        });
+      }
+      close();
+    },
+  };
 
   return (
-    <main className="day-screen">
-      <RestaurantView
-        floor={live.floor}
-        weather={weather}
-        minute={live.minute}
-        selectedTable={stillThere ? selected!.table : null}
-        onTableTap={(table) => {
-          const guests = live.floor.tables[table];
-          if (guests) setSelected({ table, since: guests.since });
-        }}
-        onGullTap={shooGull}
-        onStaffTap={hurryStaff}
-        onPasserTap={
-          flyers > 0
-            ? (group) => {
-                // Everyone who takes a flyer has heard of you now; some come straight in. Say which it was.
-                const comes = handFlyer(group);
-                if (comes !== null) {
-                  const last = flyers === 1 ? ' That was your last flyer today.' : '';
-                  setNote({
-                    text: comes ? `🙂 They took your flyer and they’re coming in!${last}` : `👋 They took your flyer. Not today, but now they know your name.${last}`,
-                    at: Date.now(),
-                  });
-                }
-                return comes;
-              }
-            : undefined
-        }
-        onFlyerArrives={flyerArrives}
-        freeTables={choosing && stillThere ? free : []}
-        onFreeTableTap={(to) => {
-          if (!selected) return;
-          const favourite = moveGuests(selected.table, to);
-          if (favourite !== null) {
-            setNote({
-              text: favourite ? '🪑 Their favourite spot! They’re delighted. ⭐' : '🪑 They follow you to their new table.',
-              at: Date.now(),
-            });
-          }
-          close();
-        }}
-      />
+    <main className={both ? 'day-screen upright' : 'day-screen'}>
+      {both ? (
+        <div className="day-stack">
+          <SketchRoomView {...view} />
+          <SketchStreetView {...view} />
+        </div>
+      ) : (
+        <RestaurantView {...view} />
+      )}
 
       {/* Along the top: the clock, the day's numbers and the money. */}
       <div className="day-top">
@@ -669,12 +681,12 @@ export function DayScreen() {
           disabled={flyers === 0}
           onClick={() => {
             // People walk past outside: the Flyers button takes you there.
-            if (sketchWanted) setOutside(true);
+            if (sketchWanted && !upright) setOutside(true);
             setNote({ text: '📜 Tap someone walking past to hand them a flyer.', at: Date.now() });
           }}
         />
         <RoundButton icon="👥" label="Who’s who" expanded={legend} onClick={() => setLegend(!legend)} />
-        {sketchWanted && (
+        {sketchWanted && !upright && (
           <RoundButton
             icon={<Icon id={outside ? 'chefHat' : `street:${live.floor.location}`} size={30} />}
             label={outside ? 'Inside' : 'Outside'}

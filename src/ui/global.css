@@ -3761,3 +3761,46 @@ h2.spaced {
   box-shadow: 2px 3px 0 rgba(59, 36, 51, 0.3);
   pointer-events: none;
 }
+
+/* ---------- The day held upright (M8): the room above, the street below ---------- */
+
+/* Room at the top for the panels (two rows) and at the bottom for the buttons; the two views between. */
+.day-screen.upright {
+  flex-direction: column;
+  box-sizing: border-box;
+  padding: 136px 0 100px;
+  background: #fbf6ea;
+}
+
+.day-stack {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 4px;
+}
+
+/* Each view shaped like a small tablet held sideways (850×530), so each is laid out as it would be there:
+   no tall empty wall or sky. On a shorter screen they shrink to fit. */
+.day-stack > * {
+  flex: 0 1 auto;
+  min-height: 0;
+  aspect-ratio: 1.6;
+}
+
+/* The clock and the money on the first row, the day's numbers on a second, all above the pictures. */
+.day-screen.upright .day-top {
+  flex-wrap: wrap;
+  row-gap: 8px;
+}
+
+.day-screen.upright .day-stats {
+  order: 3;
+  flex-basis: 100%;
+  justify-content: center;
+}
+
+.day-screen.upright .day-notes {
+  top: 142px;
+}
