@@ -49,7 +49,8 @@ describe('a theme night', () => {
     const seafoodNoFish = { ...player, themeNight: themeNightFor({ id: 'seafood', day: 0 }, 0) };
     const moodAt = (restaurant: typeof player) => {
       const progress = startDay(0, [restaurant]);
-      seat(createRng(1), progress, 0, party('tourists', evening), evening);
+      // A booked party: walk-ins sometimes come with a wish, which would change their mood too.
+      seat(createRng(1), progress, 0, { ...party('tourists', evening), bookedAt: 'player' }, evening);
       return progress.floors[0].visits[0].mood;
     };
     expect(moodAt(accordion)).toBe(THEME_NIGHTS.accordion.mood);

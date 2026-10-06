@@ -17,7 +17,8 @@ import { generateParties } from './guests';
 import { extrasOf, ingredientCostOf, templateOf } from './menu';
 import { writeReview } from './reviews';
 import { wishMet } from './regulars';
-import { chance, type RngState } from './rng';
+import { chance, createRng, pick, type RngState } from './rng';
+import { WISH_IDS, WISHES, type WishId } from '../data/wishes';
 import { satisfactionFactors, satisfactionScore, updatedReputation } from './satisfaction';
 import {
   averageLevel,
@@ -65,6 +66,8 @@ export interface Visit {
   moved?: boolean;
   /** A party that booked: whether their wish was on the menu when they sat down. */
   wishMet?: boolean;
+  /** A party that walked in hoping for something, and whether the menu had it. */
+  walkInWish?: { id: WishId; met: boolean };
   /** Reputation multipliers that apply when they leave. */
   reputationAfterwards?: Partial<Record<GroupId, number>>;
 }
@@ -316,6 +319,7 @@ function progressRestaurant(
         ...regularVisit(party, restaurant, visit.seatedAt),
         ...bookingVisit(party, visit.wishMet ?? false),
         servedAt: visit.readyAt!,
+        ...(visit.walkInWish ? { wish: visit.walkInWish } : {}),
       });
       visit.eating = true;
       visit.satisfaction = satisfaction;
@@ -340,6 +344,7 @@ function progressRestaurant(
         review: maybeReview(rng, restaurant, visit, null, satisfaction),
         ...regularVisit(party, null),
         ...bookingVisit(party, visit.wishMet ?? false),
+        ...(visit.walkInWish ? { wish: visit.walkInWish } : {}),
       });
       floor.walkouts.push({ group: party.group, size: party.size, minute });
       floor.streak.current = 0;
@@ -391,6 +396,8 @@ export interface DayInProgress {
   conditions: DayConditions;
   /** Big orders the kitchens cook today. */
   bigOrders: BigOrderJob[];
+  /** Dice for guests' wishes, kept apart so they never change who comes or what they order. */
+  wishRng: RngState;
   /** True once the restaurants have closed and the last guest has left. */
   done: boolean;
 }
@@ -400,6 +407,8 @@ export function startDay(
   day: number,
   restaurants: Restaurant[],
   conditions: DayConditions = ORDINARY_DAY,
+  /** Seeds the dice for guests' wishes (the same for a day however it's played). */
+  wishSeed = Math.imul(day + 1, 0x632be5ab) >>> 0,
 ): DayInProgress {
   const working = restaurants.map((r) => ({ ...r, reputation: { ...r.reputation } }));
   return {
@@ -424,6 +433,7 @@ export function startDay(
     outcomes: [],
     conditions,
     bigOrders: (conditions.bigOrders ?? []).map((order) => ({ order, status: 'waiting' })),
+    wishRng: createRng(wishSeed),
     done: false,
   };
 }
@@ -482,6 +492,16 @@ export function seat(
   // A party that booked hoped for something on the menu.
   const wishMet = party.wish ? wantMet(restaurant.menu, party.wish) : undefined;
   const wishMood = wishMet === undefined ? 0 : wishMet ? balance.bookings.wishMetMood : balance.bookings.wishMissedMood;
+  // Now and then a party walks into the player's restaurant hoping for something on the menu.
+  let walkInWish: Visit['walkInWish'];
+  if (index === 0 && !party.bookedAt && !party.regular && !party.regularId && chance(progress.wishRng, balance.wishes.chance)) {
+    const options = WISH_IDS.filter((id) => WISHES[id].groups.includes(party.group));
+    if (options.length > 0) {
+      const id = pick(progress.wishRng, options);
+      walkInWish = { id, met: wantMet(restaurant.menu, WISHES[id].want) };
+    }
+  }
+  const walkInMood = walkInWish ? (walkInWish.met ? balance.wishes.metMood : balance.wishes.missedMood) : 0;
   // Tonight's theme night: live music cheers everyone up; those who came for the theme hope to find it.
   const night = restaurant.themeNight;
   let themeMood = themeNightOn(restaurant, minute) ? (night?.mood ?? 0) : 0;
@@ -502,7 +522,8 @@ export function seat(
     leaveAt: 0,
     satisfaction: null,
     // Regulars feel at home here.
-    mood: (party.regularId ? balance.regulars.atHomeMood : 0) + wishMood + themeMood + (restaurant.moodBonus ?? 0),
+    mood: (party.regularId ? balance.regulars.atHomeMood : 0) + wishMood + themeMood + walkInMood + (restaurant.moodBonus ?? 0),
+    walkInWish,
     extraPatience: party.requestId === undefined ? 0 : balance.bookings.extraPatienceMinutes,
     wishMet,
   });
@@ -756,6 +777,8 @@ export interface TableGuests {
   tablesUsed: number;
   /** When they sat down: tells one party at this table from the next. */
   since: number;
+  /** What they hoped for (its bubble), and whether the menu had it. */
+  wish?: { bubble: string; met: boolean } | null;
 }
 
 export interface FloorView {
@@ -826,6 +849,7 @@ export function floorView(progress: DayInProgress, index: number, recentMinutes 
         moved: visit.moved ?? false,
         tablesUsed: visit.tablesUsed,
         since: visit.seatedAt,
+        wish: visit.walkInWish ? { bubble: WISHES[visit.walkInWish.id].bubble, met: visit.walkInWish.met } : null,
       };
     });
   }

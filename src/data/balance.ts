@@ -318,6 +318,14 @@ export const balance = {
     favouriteMood: 6,
   },
 
+  wishes: {
+    /** Share of parties walking into the player's restaurant who hope for something (data/wishes.ts). */
+    chance: 0.1,
+    /** How much happier (0–100) they are when it's on the menu, or less happy when it isn't. */
+    metMood: 8,
+    missedMood: -2,
+  },
+
   cookOffs: {
     /** Chance each Wednesday, from the second week, that a rival challenges the player to a duel (data/cookOffs.ts)... */
     chance: 0.5,

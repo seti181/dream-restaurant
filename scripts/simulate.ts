@@ -79,6 +79,8 @@ interface SeasonResult {
   dailyGoals: Record<string, { came: number; done: number }>;
   /** Days with a trend on, and of those, days the menu had something on trend. */
   trendDays: { on: number; matched: number };
+  /** Guests' wishes: tables that asked, and found it on the menu. */
+  wishes: { asked: number; granted: number };
   /** Cook-off challenges: judged, entered, and won. */
   cookOffs: { judged: number; entered: number; won: number };
   /** Each rival move, and how it came out. */
@@ -128,6 +130,7 @@ function playSeason(strategy: Strategy, seed: number): SeasonResult {
     trendDays: { on: 0, matched: 0 },
     rivalMoves: [],
     cookOffs: { judged: 0, entered: 0, won: 0 },
+    wishes: { asked: 0, granted: 0 },
   };
   const fullTicks = { firstWeek: 0, season: 0 };
   const openTicks = { firstWeek: 0, season: 0 };
@@ -236,6 +239,8 @@ function playSeason(strategy: Strategy, seed: number): SeasonResult {
     week.walkedOut += summary.guestsWalkedOut;
     week.turnedAway += summary.guestsTurnedAway;
     week.profit += summary.profit;
+    result.wishes.asked += summary.wishes.asked;
+    result.wishes.granted += summary.wishes.granted;
     if (summary.cookOff) {
       result.cookOffs.judged++;
       if (summary.cookOff.playerDish) result.cookOffs.entered++;
@@ -411,6 +416,18 @@ console.log(
       const on = seasons.reduce((sum, s) => sum + s.trendDays.on, 0);
       const matched = seasons.reduce((sum, s) => sum + s.trendDays.matched, 0);
       return [strategy.name, `${Math.round((matched / Math.max(1, on)) * 100)}% of ${on} days`];
+    }),
+  ),
+);
+
+console.log('\nGuests’ wishes: tables that found what they hoped for on the menu\n');
+console.log(
+  table(
+    ['Strategy', 'Granted'],
+    results.map(({ strategy, seasons }) => {
+      const asked = seasons.reduce((sum, s) => sum + s.wishes.asked, 0);
+      const granted = seasons.reduce((sum, s) => sum + s.wishes.granted, 0);
+      return [strategy.name, `${Math.round((granted / Math.max(1, asked)) * 100)}% of ${asked}`];
     }),
   ),
 );

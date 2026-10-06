@@ -3,7 +3,7 @@
 // How often they come, and what they pay, is tuned in balance.ts (balance.bookings).
 // See project.md section 6.15, A2.
 
-import type { Category, Tag, TemplateId } from './dishes';
+import type { Category, ExtraId, Tag, TemplateId } from './dishes';
 import type { GroupId } from './groups';
 
 export type BookingKindId =
@@ -23,6 +23,12 @@ export interface MenuWant {
   category?: Category;
   tag?: Tag;
   template?: TemplateId;
+  /** This variant of the dish. */
+  variant?: string;
+  /** One of these extras on it. */
+  extras?: ExtraId[];
+  /** Or any one of these (instead of the above). */
+  anyOf?: MenuWant[];
 }
 
 interface BookingKindBase {

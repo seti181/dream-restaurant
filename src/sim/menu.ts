@@ -52,10 +52,13 @@ export function tagsOf(dish: MenuDish): Tag[] {
 
 /** True if the dish is what they want: in this category, with this tag, or this very dish (every one given must match). */
 export function dishFits(dish: MenuDish, want: MenuWant): boolean {
+  if (want.anyOf) return want.anyOf.some((one) => dishFits(dish, one));
   return (
     (want.category === undefined || templateOf(dish).category === want.category) &&
     (want.tag === undefined || tagsOf(dish).includes(want.tag)) &&
-    (want.template === undefined || dish.template === want.template)
+    (want.template === undefined || dish.template === want.template) &&
+    (want.variant === undefined || dish.variant === want.variant) &&
+    (want.extras === undefined || extrasOf(dish).some((extra) => want.extras!.includes(extra)))
   );
 }
 

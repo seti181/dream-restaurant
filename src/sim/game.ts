@@ -29,6 +29,7 @@ import { answerRivalMove, rivalMoveOn, rollRivalMove, type RivalMoveState } from
 import { RIVAL_MOVES } from '../data/rivalMoves';
 import { judgeCookOff, rollCookOff, type CookOffResult, type CookOffState } from './cookOffs';
 import { COOK_OFFS } from '../data/cookOffs';
+import { WISHES } from '../data/wishes';
 import { dishFits } from './menu';
 import { RANKS } from '../data/ranks';
 import { dateOf, isMonday } from './calendar';
@@ -278,6 +279,8 @@ export interface DaySummary extends DayTally {
   rivalMoveCost: number;
   /** A cook-off judged today. */
   cookOff: CookOffResult | null;
+  /** Guests' wishes today: how many asked, how many found it on the menu, and what was missing (most asked first). */
+  wishes: { asked: number; granted: number; missing: { text: string; count: number }[] };
   /** Tonight's theme night, if one was on: guests served from its start, and portions of what they came for. */
   themeNight: { icon: string; name: string; guests: number; portions: number; wantText: string | null } | null;
   /** Today's goal from Mewa: what it was, how far it got, and whether it was done (and paid). */
@@ -649,6 +652,20 @@ function rivalMoveCostToday(state: GameState, guestsServed: number): number {
   if (!move || state.day < move.day || state.day > move.untilDay) return 0;
   const kind = RIVAL_MOVES[move.id];
   return (kind.answers[move.answer ?? kind.unanswered].effects.costPerGuest ?? 0) * guestsServed;
+}
+
+/** Guests' wishes today: asked, granted, and what was missing, for tomorrow's menu. */
+function wishesToday(outcomes: readonly PartyOutcome[], playerId: string): DaySummary['wishes'] {
+  const wished = outcomes.filter((o) => o.restaurant === playerId && o.wish);
+  const missing = new Map<string, number>();
+  for (const o of wished) {
+    if (!o.wish!.met) missing.set(WISHES[o.wish!.id].text, (missing.get(WISHES[o.wish!.id].text) ?? 0) + 1);
+  }
+  return {
+    asked: wished.length,
+    granted: wished.filter((o) => o.wish!.met).length,
+    missing: [...missing].map(([text, count]) => ({ text, count })).sort((a, b) => b.count - a.count),
+  };
 }
 
 /** How tonight's theme night went, if one was on. */
@@ -1233,6 +1250,7 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
       rivalMove: rivalMoveReport,
       rivalMoveCost,
       cookOff: cookOffResult,
+      wishes: wishesToday(outcomes, playerBefore.id),
     },
   };
 }

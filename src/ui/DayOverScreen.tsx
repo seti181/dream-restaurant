@@ -293,6 +293,14 @@ export function DayOverScreen() {
               </p>
             );
           })}
+          {summary.wishes.asked > 0 && (
+            <p className="said small">
+              💭 <strong>Wishes:</strong> {summary.wishes.granted} of {summary.wishes.asked}{' '}
+              {summary.wishes.asked === 1 ? 'table' : 'tables'} found what they hoped for.
+              {summary.wishes.missing.length > 0 &&
+                ` Asked for but missing: ${summary.wishes.missing.map((m) => (m.count > 1 ? `${m.text} (×${m.count})` : m.text)).join(', ')}. A hint for tomorrow’s menu?`}
+            </p>
+          )}
           {summary.cookOff && (
             <p className="said small">
               ⚔️ <strong>The cook-off with {RIVALS[summary.cookOff.rival].name}:</strong>{' '}

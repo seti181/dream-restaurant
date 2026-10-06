@@ -106,7 +106,7 @@ export const DAILY_GOALS: Record<DailyGoalId, DailyGoal> = {
   },
   takings: {
     icon: '💰',
-    text: 'Take {n} zł today, more than yesterday',
+    text: 'Take {n} zł today',
     short: 'takings',
     perTable: 500,
     min: 1500,

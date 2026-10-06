@@ -84,6 +84,9 @@ function bubbleFor(guests: TableGuests): string | null {
   if (guests.regularId && guests.stage !== 'eating') return REGULARS[guests.regularId].emoji;
   // Special guests show why they're here, all the way through.
   if (guests.visitor) return VISITOR_BUBBLES[guests.visitor];
+  // Guests who walked in hoping for something say so while they order, and show whether they found it.
+  if (guests.wish && guests.stage !== 'eating' && guests.impatience <= 0.5) return guests.wish.bubble;
+  if (guests.wish && guests.stage === 'eating' && guests.eatingFor <= 15) return guests.wish.met ? '❤️' : '🤷';
   if (guests.stage === 'ordering') return '💬';
   if (guests.stage === 'waiting') {
     if (guests.impatience > 0.8) return '😤';

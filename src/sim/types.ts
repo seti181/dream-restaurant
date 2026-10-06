@@ -1,6 +1,7 @@
 // Shapes of the simulation's state. Everything here is plain data so it can be saved as JSON.
 
 import type { MenuWant } from '../data/bookings';
+import type { WishId } from '../data/wishes';
 import type { Cuisine, EquipmentId, ExtraId, MenuDish } from '../data/dishes';
 import type { DecorId } from '../data/decor';
 import type { GroupId } from '../data/groups';
@@ -210,4 +211,6 @@ export interface PartyOutcome {
   booking?: { id: number; wishMet: boolean };
   /** Served parties: when their food arrived (minutes after midnight). */
   servedAt?: number;
+  /** A party that walked in hoping for something (data/wishes.ts), and whether the menu had it. */
+  wish?: { id: WishId; met: boolean };
 }
