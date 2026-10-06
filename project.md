@@ -667,6 +667,14 @@ The game's new look, replacing the pixel art of section 9.1 everywhere: the rest
 - **The HUD and buttons:** paper scraps taped onto the page, a little crooked, with handwritten numbers. Buttons are paper tags with a red running stitch, at least 48 px. Longer text (menus, reports, card texts) stays in a clear, readable font; handwriting is for numbers, headings and notes.
 - **Evenings:** a blue dusk wash over the page, with the lamps, candles and windows glowing warm.
 
+**Light and weather** (proposed 2026-10-06, for the M8 item of that name; the golden hour is still to be confirmed): today the evening is a single switch at 19:30, where the room's picture snaps to a dark version but the people in it stay in daylight, and the street does the same.
+- **The day in three lights, fading rather than snapping:** day (11:00–17:30) as now, with soft sunbeams falling from the windows across the floor on sunny and heatwave days; a golden hour (17:30–19:30), a warm amber wash with the candles lit on the tables; and evening (19:30–22:00), a blue dusk wash with the lamps, candles and the neighbours' windows glowing warm. Each change fades in over a couple of seconds.
+- **One wash over everything:** the wash is a single see-through layer over the whole scene, so it tints the people as well as the room, and costs almost nothing on the tablet (no blend modes or other heavy effects).
+- **Glow:** soft round pools of warm light around the candles on each table (flickering gently), the bar's lamps and the street lamps outside, as simple CSS gradients that fade in from the golden hour.
+- **Weather you can see moving:** rain falls as one moving layer outside, and a cooler grey wash lies over the room inside (the windows keep their drawn rain streaks); a heatwave is warmer and brighter, with stronger sunbeams; a cloudy day is a little muted. Inside and outside always show the same weather and time.
+- **Not in it:** no new kinds of weather and no change to the simulation; it is only how things look. Snow or storms aren't planned, and would only be suggested for later.
+- **Checked** with screenshots of every weather at 11:00, 18:00 and 21:00, inside and outside, and the frame rate with `?perf`.
+
 **The street outside** (added 2026-10-06): the day has a second view, outside the restaurant, switched with a button.
 - **The scene:** the restaurant's townhouse on a street like Długi Targ, among tall gabled neighbours in sorbet colours. It has its painted sign, its door and warm lit windows, and the Town Hall spire behind.
 - **The terrace** sits on the pavement in front of the house. The terrace tables move here from the room, with their guests eating outside.
