@@ -3449,3 +3449,126 @@ h2.spaced {
 .sketchbook :is(.note, .icon-button, .stepper button, .person, .shop-item, .choice-card, .text-input, .creator-summary, .lunch-set, .today-news, .review, .move, .goal-card, .bookings, .booking-request, .theme-nights, .rival-move, .help-entry, .code-box, .moment-result, .help-panel, .stat-panel, .dish-row.special, .tomorrow-teaser) {
   border-radius: 4px;
 }
+
+/* Inside the tabs: cards as scraps of paper with a slightly wobbly ink outline, like a hand-drawn box. */
+.sketchbook :is(.person, .shop-item, .choice-card, .goal-card, .bookings, .theme-nights, .today-news, .lunch-set, .creator-summary, .review, .help-entry, .rival-move) {
+  border: 2px solid rgba(59, 36, 51, 0.5);
+  border-radius: 3px 9px 4px 8px / 8px 4px 9px 3px;
+  background-color: #fffaf0;
+  box-shadow: 3px 3px 0 rgba(59, 36, 51, 0.12);
+}
+
+/* A wash of colour for the boxes that stand apart: today's news blue, the goal amber, the bookings and theme nights sand. */
+.sketchbook .today-news {
+  background-color: #e8f0f2;
+}
+
+.sketchbook .goal-card {
+  background-color: #fbefd5;
+}
+
+.sketchbook :is(.bookings, .theme-nights) {
+  background-color: #f4ead8;
+}
+
+.sketchbook .shop-item.owned {
+  border-color: rgba(60, 122, 58, 0.6);
+  background-color: #eef4e4;
+}
+
+.sketchbook .choice-card[aria-pressed='true'] {
+  border-color: var(--sea);
+  background-color: #e3eef2;
+  box-shadow: inset 0 0 0 1px var(--sea), 3px 3px 0 rgba(59, 36, 51, 0.12);
+}
+
+/* The team's cards are taped onto the page, like photos in a scrapbook. */
+.sketchbook .person {
+  position: relative;
+}
+
+.sketchbook .person::before {
+  content: '';
+  position: absolute;
+  top: -9px;
+  left: 50%;
+  width: 76px;
+  height: 18px;
+  transform: translateX(-50%) rotate(-3deg);
+  background: rgba(233, 194, 122, 0.6);
+  box-shadow: 0 1px 1px rgba(59, 36, 51, 0.12);
+  pointer-events: none;
+}
+
+.sketchbook .person:nth-child(even)::before {
+  transform: translateX(-50%) rotate(4deg);
+  background: rgba(194, 87, 122, 0.35);
+}
+
+/* Small buttons (prices, the special's star, remove) as the day screen's square tags. */
+.sketchbook :is(.stepper button, .icon-button) {
+  border: 2px solid #3b2433;
+  border-radius: 0;
+  background: #f1e2c4;
+  box-shadow: 2px 2px 0 rgba(59, 36, 51, 0.25);
+  color: var(--ink);
+}
+
+.sketchbook :is(.stepper button, .icon-button):active:not(:disabled) {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0 rgba(59, 36, 51, 0.25);
+}
+
+/* Bars drawn in ink, filled with hatched watercolour. */
+.sketchbook :is(.meter, .morale-bar) {
+  box-sizing: border-box;
+  border: 2px solid #3b2433;
+  border-radius: 0;
+  background: #fffaf0;
+}
+
+.sketchbook .meter {
+  height: 14px;
+}
+
+.sketchbook .morale-bar {
+  height: 12px;
+}
+
+.sketchbook .meter div {
+  background: repeating-linear-gradient(-45deg, var(--amber) 0 6px, #f2bd62 6px 9px);
+}
+
+.sketchbook .morale-bar span {
+  background: repeating-linear-gradient(-45deg, var(--leaf) 0 5px, #5a9a52 5px 8px);
+}
+
+.sketchbook .morale-bar span.low {
+  background: repeating-linear-gradient(-45deg, var(--brick) 0 5px, #cf6a52 5px 8px);
+}
+
+/* Subheadings handwritten too; tags as little stitched labels; text boxes as paper. */
+.sketchbook .card h3 {
+  font-family: Kalam, 'Segoe Print', cursive;
+  font-weight: 700;
+  font-size: 1.15rem;
+}
+
+.sketchbook .tag {
+  border: 1px dashed rgba(47, 111, 143, 0.55);
+  border-radius: 2px;
+  background: transparent;
+}
+
+.sketchbook :is(.text-input, textarea) {
+  border: 2px solid rgba(59, 36, 51, 0.5);
+  border-radius: 3px;
+  background: #fffaf0;
+}
+
+/* A choice card's two answers: both handwritten, at a size that keeps them on one line. */
+.sketchbook .moment-choices button {
+  font-family: Kalam, 'Segoe Print', cursive;
+  font-size: 1.15rem;
+  line-height: 1.15;
+}
