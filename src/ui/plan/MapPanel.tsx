@@ -12,6 +12,7 @@ import { money } from '../format';
 import { NoteClose } from '../MomentCard';
 import { OldTownMap } from '../OldTownMap';
 import { PixelRestaurantView } from '../PixelRestaurantView';
+import { SketchRoomView, sketchWanted } from '../SketchRoomView';
 import { useGame } from '../store';
 
 /** Mid-morning, before the doors open. */
@@ -40,7 +41,11 @@ function StreetPreviewDialog({ id, onClose }: { id: LocationId; onClose: () => v
           <NoteClose onClose={onClose} />
         </header>
         <div className="preview-view">
-          <PixelRestaurantView floor={preview.floor} weather={game.weather} minute={BEFORE_OPENING} />
+          {sketchWanted ? (
+            <SketchRoomView floor={preview.floor} weather={game.weather} minute={BEFORE_OPENING} />
+          ) : (
+            <PixelRestaurantView floor={preview.floor} weather={game.weather} minute={BEFORE_OPENING} />
+          )}
         </div>
       </div>
     </div>

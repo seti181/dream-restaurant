@@ -12,6 +12,8 @@ import { lightAt, washOf } from '../sketchView/shared';
 import { chefSheet, guestSheet, musicianSheet, waiterSheet } from './sheets';
 import { doorWalk, passerWalk, streetLamps, streetLayout, streetQueueSpot, terraceMove, terraceServe, terraceWalkIn, toTheDoor, whatNeedsYou } from './street';
 import { streetPicture } from './streetArt';
+import { oldTownMapPicture, SKETCH_MAP_H, SKETCH_MAP_W, sketchMapPoint } from './mapArt';
+import { mapPixel } from '../pixel/map';
 import type { LocationId } from '../../data/locations';
 import type { TableGuests } from '../../sim/day';
 import { ICON_CELL, ICON_COLUMNS, ICON_ROWS, iconForEmoji, iconOf, iconSheet } from './icons';
@@ -262,6 +264,21 @@ describe('the pictures', () => {
     expect(drawn).not.toContain('url(#lampglow)');
     expect(drawn).not.toContain('l-7,22');
     expectSound(svgPicture(S.width, S.height, streetPicture(new Painter(), S, { ...street, weather: 'sunny', dusk: false, golden: true })));
+  });
+
+  it('draw the Old Town map, with every street where the old map had it', () => {
+    const map = oldTownMapPicture(new Painter());
+    expectSound(svgPicture(SKETCH_MAP_W, SKETCH_MAP_H, map));
+    expect(map).toBe(oldTownMapPicture(new Painter()));
+    for (const place of Object.values(LOCATIONS)) {
+      const at = sketchMapPoint(place.mapPosition.x, place.mapPosition.y);
+      const old = mapPixel(place.mapPosition.x, place.mapPosition.y);
+      expect(at).toEqual({ x: old.px * 4, y: old.py * 4 });
+      expect(at.x).toBeGreaterThan(0);
+      expect(at.x).toBeLessThan(SKETCH_MAP_W);
+      expect(at.y).toBeGreaterThan(0);
+      expect(at.y).toBeLessThan(SKETCH_MAP_H);
+    }
   });
 
   it('draw the same room the same way every time', () => {
