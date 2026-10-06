@@ -16,12 +16,14 @@ import { GROUP_LOOKS } from './sketch/cast';
 import { LAYER, zOf, type Point } from './sketch/frontRoom';
 import { Painter, svgPicture } from './sketch/painter';
 import { mewa } from './sketch/people';
-import { chairsPicture, pageFramePicture, PLATE_CELL, PLATES, platesPicture, TABLE_BOX, tablePicture } from './sketch/roomArt';
+import { CANDLE_RISE, chairsPicture, pageFramePicture, PLATE_CELL, PLATES, platesPicture, TABLE_BOX, tablePicture } from './sketch/roomArt';
 import { MUSICIAN_SHEET, musicianSheet, STAND_CELL, GUEST_SHEET, WALK_BACK_CELL, WALK_CELL } from './sketch/sheets';
-import { doorWalk, FRONT_Z, BACK_Z, passerWalk, streetDepth, streetLayout, streetQueueSpot, terraceMove, terraceServe, terraceWalkIn, toTheDoor, type StreetLayout } from './sketch/street';
+import { doorWalk, FRONT_Z, BACK_Z, passerWalk, streetDepth, streetLamps, streetLayout, streetQueueSpot, terraceMove, terraceServe, terraceWalkIn, toTheDoor, type StreetLayout } from './sketch/street';
 import { streetPicture, type StreetLook } from './sketch/streetArt';
 import {
-  DUSK_MINUTE,
+  lightAt,
+  LightLayer,
+  type Glow,
   GUEST_PACE,
   guestSpec,
   kindAt,
@@ -96,14 +98,25 @@ export function SketchStreetView({
   const spots = Math.min(floor.terraceTables, layout.tables.length);
   const terraceOpen = floor.tables.length > inside;
   const special = menu.find((d) => recipeKey(d) === specialKey) ?? null;
-  const look: StreetLook = { weather, dusk: minute >= DUSK_MINUTE, name, special: special ? dishName(special).split(/ · |, with /)[0] : null, terraceOpen };
-  const lookKey = [weather, look.dusk, name, look.special, terraceOpen].join('|');
+  // The light of the day, as inside: the sky changes with it, and the live light fades over everything.
+  const light = lightAt(minute);
+  const lit = light !== 'day';
+  const look: StreetLook = {
+    weather,
+    dusk: light === 'evening',
+    golden: light === 'golden',
+    live: true,
+    name,
+    special: special ? dishName(special).split(/ · |, with /)[0] : null,
+    terraceOpen,
+  };
+  const lookKey = [weather, light, name, look.special, terraceOpen].join('|');
   const street = useBaked(ready ? `street|${floor.location}|${floor.terraceTables}|${aspect}|${lookKey}|${bakeScale}` : null, () => svgPicture(layout.width, layout.height, streetPicture(new Painter(), layout, look)), layout.width, layout.height, bakeScale, true);
   const frame = useBaked(ready ? `frame|${layout.width}|${layout.height}|${bakeScale}` : null, () => svgPicture(layout.width, layout.height, pageFramePicture(new Painter(), layout.width, layout.height)), layout.width, layout.height, bakeScale);
   const embroidered = floor.decor.includes('tablecloths');
   const tableScale = bakeScale * 1.12;
   const chairs = useBaked(ready ? `chairs|${tableScale}` : null, () => svgPicture(TABLE_BOX.width, TABLE_BOX.height, chairsPicture(new Painter())), TABLE_BOX.width, TABLE_BOX.height, tableScale);
-  const table = useBaked(ready ? `table|${embroidered}|false|${tableScale}` : null, () => svgPicture(TABLE_BOX.width, TABLE_BOX.height, tablePicture(new Painter(), embroidered, false)), TABLE_BOX.width, TABLE_BOX.height, tableScale);
+  const table = useBaked(ready ? `table|${embroidered}|false|${lit}|${tableScale}` : null, () => svgPicture(TABLE_BOX.width, TABLE_BOX.height, tablePicture(new Painter(), embroidered, false, lit)), TABLE_BOX.width, TABLE_BOX.height, tableScale);
   const platesW = PLATES.length * PLATE_CELL.width;
   const plates = useBaked(ready ? `plates|${tableScale}` : null, () => svgPicture(platesW, PLATE_CELL.height, platesPicture(new Painter())), platesW, PLATE_CELL.height, tableScale);
 
@@ -175,6 +188,12 @@ export function SketchStreetView({
 
   const musicianUrl = floor.musician ? sheets.get(musicianSpec.key) : undefined;
 
+  // A candle on every terrace table that's out, and the street's lamps.
+  const glows: Glow[] = [
+    ...(terraceOpen ? layout.tables.slice(0, spots) : []).map((spot) => ({ x: at(spot.x), y: at(spot.top - CANDLE_RISE * spot.scale), r: at(95 * spot.scale), kind: 'candle' as const })),
+    ...streetLamps(layout).map((lamp) => ({ x: at(lamp.x), y: at(lamp.y), r: at(lamp.r), kind: 'lamp' as const })),
+  ];
+
   return (
     <div ref={wrap} className="sk-wrap">
       <div className="sk-scene" style={{ width: at(layout.width), height: at(layout.height) }} role="img" aria-label="The street outside your restaurant">
@@ -216,6 +235,7 @@ export function SketchStreetView({
           />
         ))}
         {floor.gull && spotOf(floor.gull.table) && <Gull spot={spotOf(floor.gull.table)!} scale={scale} onTap={onGullTap} />}
+        <LightLayer light={light} weather={weather} glows={glows} rain />
         {frame && <img src={frame} className="sk-layer sk-frame" alt="" style={{ width: at(layout.width), height: at(layout.height) }} />}
         {bubbles}
         {onFreeTableTap &&

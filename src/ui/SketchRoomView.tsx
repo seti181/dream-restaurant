@@ -15,11 +15,13 @@ import { dishName, money } from './format';
 import { Icon } from './Icon';
 import { chefSpot, depthScale, frontLayout, LAYER, moveWalk, serveWalk, waiterSpot, walkIn, zOf } from './sketch/frontRoom';
 import { Painter, svgPicture } from './sketch/painter';
-import { chairsPicture, hatchCounterPicture, pageFramePicture, PLATE_CELL, PLATES, platesPicture, roomPicture, TABLE_BOX, tablePicture, wallClock, type RoomLook } from './sketch/roomArt';
+import { CANDLE_RISE, chairsPicture, hatchCounterPicture, pageFramePicture, PLATE_CELL, PLATES, platesPicture, roomLamps, roomPicture, TABLE_BOX, tablePicture, wallClock, type RoomLook } from './sketch/roomArt';
 import { CHEF_CELLS, CHEF_SHEET, WAITER_CELLS, WAITER_SHEET } from './sketch/sheets';
 import {
   chefSpec,
-  DUSK_MINUTE,
+  lightAt,
+  LightLayer,
+  type Glow,
   kindAt,
   partyAtTable,
   Person,
@@ -78,13 +80,17 @@ export function SketchRoomView({
   const at = (n: number) => n * scale;
 
   // ----- The room, the counter in front of the chefs, the page around it, the tables and plates -----
-  const dusk = minute >= DUSK_MINUTE;
+  // The light of the day: the pictures change with it (windows, candles), and the live light fades over them.
+  const light = lightAt(minute);
+  const dusk = light === 'evening';
+  const golden = light === 'golden';
+  const lit = light !== 'day';
   const specials = menu
     .filter((d) => !d.fromLunchSet)
     .slice(0, 3)
     .map((d) => ({ name: shorten(dishName(d)), price: d.price }));
-  const look: RoomLook = { decor: floor.decor, equipment: floor.equipment, weather, dusk, plaque, specials };
-  const lookKey = [look.decor.join(), look.equipment.join(), weather, dusk, plaque, specials.map((s) => s.name + s.price).join()].join('|');
+  const look: RoomLook = { decor: floor.decor, equipment: floor.equipment, weather, dusk, golden, live: true, plaque, specials };
+  const lookKey = [look.decor.join(), look.equipment.join(), weather, light, plaque, specials.map((s) => s.name + s.price).join()].join('|');
   const ready = bakeScale > 0;
   const room = useBaked(ready ? `room|${slots}|${aspect}|${lookKey}|${bakeScale}` : null, () => svgPicture(layout.width, layout.height, roomPicture(new Painter(), layout, look)), layout.width, layout.height, bakeScale, true);
   const counter = useBaked(ready ? `counter|${slots}|${aspect}|${bakeScale}` : null, () => svgPicture(layout.width, layout.height, hatchCounterPicture(new Painter(), layout)), layout.width, layout.height, bakeScale);
@@ -93,7 +99,7 @@ export function SketchRoomView({
   const oak = floor.decor.includes('communalTable');
   const tableScale = bakeScale * MAX_ROW_SCALE;
   const chairs = useBaked(ready ? `chairs|${tableScale}` : null, () => svgPicture(TABLE_BOX.width, TABLE_BOX.height, chairsPicture(new Painter())), TABLE_BOX.width, TABLE_BOX.height, tableScale);
-  const table = useBaked(ready ? `table|${embroidered}|${oak}|${tableScale}` : null, () => svgPicture(TABLE_BOX.width, TABLE_BOX.height, tablePicture(new Painter(), embroidered, oak)), TABLE_BOX.width, TABLE_BOX.height, tableScale);
+  const table = useBaked(ready ? `table|${embroidered}|${oak}|${lit}|${tableScale}` : null, () => svgPicture(TABLE_BOX.width, TABLE_BOX.height, tablePicture(new Painter(), embroidered, oak, lit)), TABLE_BOX.width, TABLE_BOX.height, tableScale);
   const platesW = PLATES.length * PLATE_CELL.width;
   const plates = useBaked(ready ? `plates|${tableScale}` : null, () => svgPicture(platesW, PLATE_CELL.height, platesPicture(new Painter())), platesW, PLATE_CELL.height, tableScale);
 
@@ -167,6 +173,12 @@ export function SketchRoomView({
 
   const clock = wallClock(layout);
 
+  // A candle on every table, and the decor's lamps.
+  const glows: Glow[] = [
+    ...layout.tables.slice(0, furnished).map((spot) => ({ x: at(spot.x), y: at(spot.top - CANDLE_RISE * spot.scale), r: at(95 * spot.scale), kind: 'candle' as const })),
+    ...roomLamps(layout, floor.decor).map((lamp) => ({ x: at(lamp.x), y: at(lamp.y), r: at(lamp.r), kind: 'lamp' as const })),
+  ];
+
   return (
     <div ref={wrap} className="sk-wrap">
       <div className="sk-scene" style={{ width: at(layout.width), height: at(layout.height) }} role="img" aria-label="Your restaurant">
@@ -189,6 +201,7 @@ export function SketchRoomView({
         {walks.map((walk) => (
           <Walker key={walk.id} walk={walk} url={sheets.get(walk.sheet.key)} depth={depth} scale={scale} speed={speed} onDone={done} />
         ))}
+        <LightLayer light={light} weather={weather} glows={glows} />
         {frame && <img src={frame} className="sk-layer sk-frame" alt="" style={{ width: at(layout.width), height: at(layout.height) }} />}
         {bubbles}
         {onFreeTableTap &&

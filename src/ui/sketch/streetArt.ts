@@ -8,7 +8,7 @@ import type { Weather } from '../../data/weather';
 import { folkBand, hatch, rosette } from './motifs';
 import type { Painter } from './painter';
 import { dark, HAND, light } from './palette';
-import type { House, StreetLayout } from './street';
+import { streetLamps, type House, type StreetLayout } from './street';
 
 export interface StreetLook {
   weather: Weather;
@@ -19,6 +19,13 @@ export interface StreetLook {
   special: string | null;
   /** The terrace is open today (closed in the rain, or without a permit): parasols up or folded. */
   terraceOpen: boolean;
+  /** The golden hour before the evening: a warm sky and a low sun. */
+  golden?: boolean;
+  /**
+   * Lit live by the day view (section 9.5, "Light and weather"): the picture leaves out its lamp glows, the
+   * evening's blue and the still rain, which the view lays over it, moving and fading in.
+   */
+  live?: boolean;
 }
 
 const SKY: Record<Weather, [string, string]> = {
@@ -28,6 +35,7 @@ const SKY: Record<Weather, [string, string]> = {
   rain: ['#8d9ba6', '#bcc6cc'],
 };
 const DUSK: [string, string] = ['#2f3c6a', '#7b6f96'];
+const GOLDEN: [string, string] = ['#f0b582', '#fae5c4'];
 const FACADES = ['#e9b7a0', 'facadeA', 'facadeB', 'facadeC', 'facadeD', 'facadeE'];
 
 const escape = (t: string) => t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -39,20 +47,24 @@ export function streetPicture(pt: Painter, L: StreetLayout, look: StreetLook): s
   g += home(pt, L, look);
   g += pavement(pt, L, look);
   g += parasols(pt, L, look);
-  if (look.weather === 'rain')
+  if (look.weather === 'rain' && !look.live)
     for (let k = 0; k < 90; k++) g += `<path d="M${(k * 173) % L.width},${(k * 97) % L.height} l-7,22" stroke="#eef4f8" stroke-width="1.4" opacity="0.6"/>`;
   g += `<rect width="${L.width}" height="${L.height}" filter="url(#grain)"/>`;
-  if (look.dusk) g += `<rect width="${L.width}" height="${L.height}" fill="#2c3a66" opacity="0.18"/>`;
+  if (look.dusk && !look.live) g += `<rect width="${L.width}" height="${L.height}" fill="#2c3a66" opacity="0.18"/>`;
   return g;
 }
 
 function sky(pt: Painter, L: StreetLayout, look: StreetLook): string {
-  const [top, low] = look.dusk ? DUSK : SKY[look.weather];
+  const [top, low] = look.dusk ? DUSK : look.golden ? GOLDEN : SKY[look.weather];
   const id = pt.id('sky');
   let g = `<defs><linearGradient id="${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${top}"/><stop offset="1" stop-color="${low}"/></linearGradient></defs><rect x="-10" y="-10" width="${L.width + 20}" height="${L.ground + 10}" fill="url(#${id})"/>`;
   // Everything in the sky sits just above the roofs, however tall the page.
   g += `<g transform="translate(0 ${skyDrop(L)})">`;
-  if (!look.dusk && (look.weather === 'sunny' || look.weather === 'heatwave')) g += `<circle cx="${L.width * 0.82}" cy="70" r="${look.weather === 'heatwave' ? 34 : 26}" fill="#ffe08a" filter="url(#wash)"/>`;
+  // The sun: high by day, low and orange in the golden hour.
+  if (!look.dusk && (look.weather === 'sunny' || look.weather === 'heatwave'))
+    g += look.golden
+      ? `<circle cx="${L.width * 0.88}" cy="170" r="30" fill="#f6a85a" filter="url(#wash)"/>`
+      : `<circle cx="${L.width * 0.82}" cy="70" r="${look.weather === 'heatwave' ? 34 : 26}" fill="#ffe08a" filter="url(#wash)"/>`;
   if (look.dusk) g += `<circle cx="${L.width * 0.18}" cy="64" r="18" fill="#f4ecc8"/>` + [0, 1, 2, 3, 4, 5].map((k) => `<circle cx="${100 + k * 230}" cy="${30 + ((k * 37) % 50)}" r="1.8" fill="#fffaf0"/>`).join('');
   const clouds = look.weather === 'cloudy' ? 6 : look.weather === 'rain' ? 8 : look.weather === 'sunny' ? 3 : 1;
   const tone = look.weather === 'rain' ? '#c9d0d6' : look.dusk ? '#9c94b6' : '#fffaf0';
@@ -250,9 +262,9 @@ function pavement(pt: Painter, L: StreetLayout, look: StreetLook): string {
     for (let x = 0; x < L.width; x += 26) g += pt.rect(x + 2, L.frontLane + 22, 22, 11, '#b8a684', 4) + pt.rect(x + 14, L.frontLane + 36, 22, 11, '#b8a684', 4);
   }
   // Street lamps, lit at dusk.
-  for (const lx of [L.home.x0 - 60, L.width - 120]) {
+  for (const { x: lx } of streetLamps(L).slice(0, 2)) {
     g += pt.line(`M${lx},${L.ground + 14} V${L.ground - 150}`, '#3a3236', 4) + pt.fill(`M${lx - 12},${L.ground - 150} h24 l-4,-26 h-16 Z`, look.dusk ? '#ffd98a' : '#e8e2d2') + pt.line(`M${lx - 14},${L.ground - 176} h28`, '#3a3236', 3);
-    if (look.dusk) g += `<ellipse cx="${lx}" cy="${L.ground - 150}" rx="70" ry="60" fill="url(#lampglow)" style="mix-blend-mode:screen"/>`;
+    if (look.dusk && !look.live) g += `<ellipse cx="${lx}" cy="${L.ground - 150}" rx="70" ry="60" fill="url(#lampglow)" style="mix-blend-mode:screen"/>`;
   }
   // The chalkboard by the door.
   const b = L.board;

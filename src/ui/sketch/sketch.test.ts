@@ -7,9 +7,10 @@ import type { Weather } from '../../data/weather';
 import { GROUP_LOOKS, type SketchKind } from './cast';
 import { frontLayout, moveWalk, PITCH, serveWalk, walkIn } from './frontRoom';
 import { Painter, svgPicture } from './painter';
-import { chairsPicture, hatchCounterPicture, pageFramePicture, platesPicture, roomPicture, tablePicture } from './roomArt';
+import { chairsPicture, hatchCounterPicture, pageFramePicture, platesPicture, roomLamps, roomPicture, tablePicture } from './roomArt';
+import { lightAt, washOf } from '../sketchView/shared';
 import { chefSheet, guestSheet, musicianSheet, waiterSheet } from './sheets';
-import { doorWalk, passerWalk, streetLayout, streetQueueSpot, terraceMove, terraceServe, terraceWalkIn, toTheDoor, whatNeedsYou } from './street';
+import { doorWalk, passerWalk, streetLamps, streetLayout, streetQueueSpot, terraceMove, terraceServe, terraceWalkIn, toTheDoor, whatNeedsYou } from './street';
 import { streetPicture } from './streetArt';
 import type { LocationId } from '../../data/locations';
 import type { TableGuests } from '../../sim/day';
@@ -160,6 +161,45 @@ describe('the street outside', () => {
   });
 });
 
+describe('the light of the day', () => {
+  it('turns golden at half past five and to evening at half past seven', () => {
+    expect(lightAt(11 * 60)).toBe('day');
+    expect(lightAt(17 * 60 + 29)).toBe('day');
+    expect(lightAt(17 * 60 + 30)).toBe('golden');
+    expect(lightAt(19 * 60 + 29)).toBe('golden');
+    expect(lightAt(19 * 60 + 30)).toBe('evening');
+    expect(lightAt(22 * 60)).toBe('evening');
+  });
+
+  it('washes every light and weather in a see-through colour, and leaves a sunny day clear', () => {
+    const weathers: Weather[] = ['sunny', 'heatwave', 'cloudy', 'rain'];
+    for (const light of ['day', 'golden', 'evening'] as const)
+      for (const weather of weathers) {
+        const wash = washOf(light, weather);
+        expect(wash).toMatch(/^rgba\(\d+, \d+, \d+, 0(\.\d+)?\)$/);
+        expect(Number(wash.split(', ')[3].slice(0, -1))).toBeLessThanOrEqual(0.3);
+      }
+    expect(washOf('day', 'sunny')).toBe('rgba(255, 255, 255, 0)');
+  });
+
+  it('lights the bar and the hatch every evening, and the decor’s lamps where they hang', () => {
+    for (const slots of SLOTS) {
+      const L = frontLayout(slots, ASPECTS[0]);
+      expect(roomLamps(L, [])).toHaveLength(2);
+      expect(roomLamps(L, DECOR_IDS).length).toBeGreaterThan(2);
+      for (const lamp of roomLamps(L, DECOR_IDS)) {
+        expect(lamp.x).toBeGreaterThan(0);
+        expect(lamp.x).toBeLessThan(L.width);
+        expect(lamp.y).toBeGreaterThan(0);
+      }
+    }
+    for (const id of Object.keys(LOCATIONS) as LocationId[]) {
+      const L = streetLayout(0, ASPECTS[0], id);
+      for (const lamp of streetLamps(L)) expect(lamp.y).toBeLessThan(L.ground);
+    }
+  });
+});
+
 describe('the pictures', () => {
   const weathers: Weather[] = ['sunny', 'heatwave', 'cloudy', 'rain'];
 
@@ -202,6 +242,26 @@ describe('the pictures', () => {
       for (const height of towers) expect(height).toBeLessThan(500);
     }
     expect(streetPicture(new Painter(), L, look)).toBe(streetPicture(new Painter(), L, look));
+  });
+
+  it('draw the golden hour and the live-lit pictures, with the candles out by day', () => {
+    const L = frontLayout(8, ASPECTS[0]);
+    const look = { decor: DECOR_IDS, equipment: EQUIPMENT_IDS, weather: 'sunny' as const, dusk: false, golden: true, live: true, plaque: false, specials: [] };
+    expectSound(svgPicture(L.width, L.height, roomPicture(new Painter(), L, look)));
+    // Lit live, the room leaves its glows and the evening's blue to the view.
+    const evening = roomPicture(new Painter(), L, { ...look, golden: false, dusk: true });
+    expect(evening).not.toContain('url(#lampglow)');
+    expect(evening).not.toContain('#2c3a66');
+    expect(roomPicture(new Painter(), L, { ...look, golden: false, dusk: true, live: false })).toContain('#2c3a66');
+    expect(tablePicture(new Painter(), true, false, false)).not.toContain('#ffc94a');
+    expect(tablePicture(new Painter(), true, false, true)).toContain('#ffc94a');
+    const S = streetLayout(4, ASPECTS[0], 'dluga');
+    const street = { weather: 'rain' as const, dusk: true, name: 'Kitchen', special: null, terraceOpen: false, live: true };
+    const drawn = streetPicture(new Painter(), S, street);
+    expectSound(svgPicture(S.width, S.height, drawn));
+    expect(drawn).not.toContain('url(#lampglow)');
+    expect(drawn).not.toContain('l-7,22');
+    expectSound(svgPicture(S.width, S.height, streetPicture(new Painter(), S, { ...street, weather: 'sunny', dusk: false, golden: true })));
   });
 
   it('draw the same room the same way every time', () => {

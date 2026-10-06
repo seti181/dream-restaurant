@@ -17,6 +17,13 @@ export interface RoomLook {
   equipment: readonly EquipmentId[];
   weather: Weather;
   dusk: boolean;
+  /** The golden hour before the evening: a warm sky in the windows. */
+  golden?: boolean;
+  /**
+   * Lit live by the day view (section 9.5, "Light and weather"): the picture leaves out its own lamp glows and
+   * the evening's blue, which the view lays over everything, people too, and fades in.
+   */
+  live?: boolean;
   /** The brass plaque of an Old Town Favourite. */
   plaque: boolean;
   /** Up to three of today's dishes for the chalkboard: a short name and the price. */
@@ -25,6 +32,10 @@ export interface RoomLook {
 
 const SKY: Record<Weather, string> = { sunny: '#b9dbea', heatwave: '#f2dcb0', cloudy: '#cdd6dc', rain: '#a3b2be' };
 const DUSK_SKY = '#4a5a8a';
+const GOLDEN_SKY = '#f3c48e';
+
+/** The sky in the windows and the door: the weather's by day, warm in the golden hour, blue in the evening. */
+const skyOf = (look: RoomLook) => (look.dusk ? DUSK_SKY : look.golden ? GOLDEN_SKY : SKY[look.weather]);
 
 // ---------- The room ----------
 
@@ -39,7 +50,7 @@ export function roomPicture(pt: Painter, L: FrontLayout, look: RoomLook): string
   g += floor(pt, L);
   g += lights(pt, L, look);
   g += `<rect width="${L.width}" height="${L.height}" filter="url(#grain)"/>`;
-  if (look.dusk) g += `<rect width="${L.width}" height="${L.height}" fill="#2c3a66" opacity="0.22"/>`;
+  if (look.dusk && !look.live) g += `<rect width="${L.width}" height="${L.height}" fill="#2c3a66" opacity="0.22"/>`;
   return g;
 }
 
@@ -61,7 +72,7 @@ function wall(pt: Painter, L: FrontLayout): string {
 
 /** Windows onto Długi Targ: sky for the weather, gables, St Mary's, the Town Hall and Neptune, curtains and geraniums. */
 function windows(pt: Painter, L: FrontLayout, look: RoomLook): string {
-  const sky = look.dusk ? DUSK_SKY : SKY[look.weather];
+  const sky = skyOf(look);
   const facades = ['facadeA', 'facadeB', 'facadeC', 'facadeD', 'facadeE'];
   let g = '';
   L.windows.forEach(({ x: wx, w: ww, top, sill }, i) => {
@@ -123,14 +134,19 @@ function panelling(pt: Painter, L: FrontLayout, carved: boolean, azulejo: boolea
   return g;
 }
 
+/** The bare stretches of wall: before the first window, between windows, and up to the door. */
+function wallGaps(L: FrontLayout): { x: number; w: number }[] {
+  const edges = [L.bar.x1, ...L.windows.flatMap((w) => [w.x - 30, w.x + w.w + 30]), L.door.x - L.door.width / 2 - 20];
+  const gaps: { x: number; w: number }[] = [];
+  for (let i = 0; i + 1 < edges.length; i += 2) if (edges[i + 1] - edges[i] > 50) gaps.push({ x: (edges[i] + edges[i + 1]) / 2, w: edges[i + 1] - edges[i] });
+  return gaps;
+}
+
 /** Things on the walls between the windows: the ship picture with Mewa on it, painted plates, and the decor. */
 function wallDecor(pt: Painter, L: FrontLayout, look: RoomLook): string {
   const has = (d: DecorId) => look.decor.includes(d);
   const p = pt.p;
-  // The bare stretches of wall: before the first window, between windows, and up to the door.
-  const edges = [L.bar.x1, ...L.windows.flatMap((w) => [w.x - 30, w.x + w.w + 30]), L.door.x - L.door.width / 2 - 20];
-  const gaps: { x: number; w: number }[] = [];
-  for (let i = 0; i + 1 < edges.length; i += 2) if (edges[i + 1] - edges[i] > 50) gaps.push({ x: (edges[i] + edges[i + 1]) / 2, w: edges[i + 1] - edges[i] });
+  const gaps = wallGaps(L);
   const upper = Math.max(70, L.floorY - 300);
   const lower = L.floorY - 190;
   const items: ((x: number, y: number) => string)[] = [];
@@ -211,7 +227,7 @@ function door(pt: Painter, L: FrontLayout, look: RoomLook): string {
   const left = x - width / 2;
   const arch = `M${left},${L.floorY} L${left},${top + 30} Q${left},${top} ${x},${top - 4} Q${left + width},${top} ${left + width},${top + 30} L${left + width},${L.floorY} Z`;
   const clip = pt.id('door');
-  const street = look.dusk ? DUSK_SKY : SKY[look.weather];
+  const street = skyOf(look);
   let g = pt.fill(arch, street);
   g += `<clipPath id="${clip}"><path d="${arch}"/></clipPath><g clip-path="url(#${clip})">${pt.rect(left + 10, top + 30, 40, L.floorY - top, 'facadeB')}${pt.rect(left + 54, top + 50, 40, L.floorY - top, 'facadeD')}${pt.rect(left - 4, L.floorY - 26, width + 8, 30, 'street')}</g>`;
   // The door leaf, open into the room.
@@ -308,7 +324,8 @@ function lights(pt: Painter, L: FrontLayout, look: RoomLook): string {
   if (look.decor.includes('pendantLights'))
     for (const t of L.tables.filter((t) => t.row === 0)) {
       const y = L.floorY - 150;
-      g += pt.line(`M${t.x},46 L${t.x},${y - 22}`, 'ink', 1.4) + pt.fill(`M${t.x - 22},${y} Q${t.x - 18},${y - 24} ${t.x},${y - 26} Q${t.x + 18},${y - 24} ${t.x + 22},${y} Z`, 'brass') + `<ellipse cx="${t.x}" cy="${y + 2}" rx="10" ry="4" fill="#fff1c0"/><ellipse cx="${t.x}" cy="${y + 40}" rx="70" ry="60" fill="url(#lampglow)" style="mix-blend-mode:screen"/>`;
+      g += pt.line(`M${t.x},46 L${t.x},${y - 22}`, 'ink', 1.4) + pt.fill(`M${t.x - 22},${y} Q${t.x - 18},${y - 24} ${t.x},${y - 26} Q${t.x + 18},${y - 24} ${t.x + 22},${y} Z`, 'brass') + `<ellipse cx="${t.x}" cy="${y + 2}" rx="10" ry="4" fill="#fff1c0"/>`;
+      if (!look.live) g += `<ellipse cx="${t.x}" cy="${y + 40}" rx="70" ry="60" fill="url(#lampglow)" style="mix-blend-mode:screen"/>`;
     }
   if (look.decor.includes('chandelier')) {
     // In front of the middle window, clear of the pictures on the wall.
@@ -317,15 +334,36 @@ function lights(pt: Painter, L: FrontLayout, look: RoomLook): string {
     const y = Math.min(150, L.floorY - 200);
     g += pt.line(`M${x},46 L${x},${y - 20}`, 'brass', 2) + pt.fill(`M${x - 56},${y} Q${x},${y + 26} ${x + 56},${y} Q${x},${y + 10} ${x - 56},${y} Z`, 'brass');
     for (const dx of [-50, -25, 0, 25, 50]) g += pt.rect(x + dx - 3, y - 14, 6, 14, 'white', 2) + `<path d="M${x + dx},${y - 24} q4,5 0,10 q-4,-5 0,-10 Z" fill="#ffc94a"/>`;
-    g += `<ellipse cx="${x}" cy="${y + 30}" rx="160" ry="110" fill="url(#lampglow)" style="mix-blend-mode:screen"/>`;
+    if (!look.live) g += `<ellipse cx="${x}" cy="${y + 30}" rx="160" ry="110" fill="url(#lampglow)" style="mix-blend-mode:screen"/>`;
   }
   return g;
+}
+
+/**
+ * Where the room's light comes from in the evening, and how far it reaches, for the live light: the bar's
+ * shelves and the kitchen hatch always, and the decor's pendants, chandelier and lanterns.
+ */
+export function roomLamps(L: FrontLayout, decor: readonly DecorId[]): { x: number; y: number; r: number }[] {
+  const lamps: { x: number; y: number; r: number }[] = [
+    { x: (L.bar.x0 + L.bar.x1) / 2, y: L.floorY - 150, r: 150 },
+    { x: (L.hatch.x0 + L.hatch.x1) / 2, y: (L.hatch.top + L.hatch.counter) / 2, r: 170 },
+  ];
+  if (decor.includes('pendantLights')) for (const t of L.tables.filter((t) => t.row === 0)) lamps.push({ x: t.x, y: L.floorY - 140, r: 90 });
+  if (decor.includes('chandelier')) {
+    const w = L.windows[Math.floor((L.windows.length - 1) / 2)];
+    lamps.push({ x: w.x + w.w / 2, y: Math.min(150, L.floorY - 200) + 20, r: 170 });
+  }
+  if (decor.includes('lanterns')) for (const gap of wallGaps(L)) lamps.push({ x: gap.x, y: 91, r: 60 });
+  return lamps;
 }
 
 // ---------- Tables, chairs and plates ----------
 
 /** The box a table's pictures are drawn in, around its middle (page units, at scale 1). */
 export const TABLE_BOX = { left: -134, top: -118, width: 268, height: 220 };
+
+/** How far above a table's top its candle's flame is, at the table's scale. */
+export const CANDLE_RISE = 27;
 
 /** The chairs at a table: two behind it, and one at each end. Drawn behind everyone sitting there. */
 export function chairsPicture(pt: Painter): string {
@@ -353,7 +391,7 @@ export function chairsPicture(pt: Painter): string {
 }
 
 /** A table: a long cloth (plain, or embroidered with the Kashubian tablecloths), a candle and a little vase; or bare oak for the communal table. */
-export function tablePicture(pt: Painter, embroidered: boolean, oak: boolean): string {
+export function tablePicture(pt: Painter, embroidered: boolean, oak: boolean, lit = true): string {
   const ox = -TABLE_BOX.left;
   const oy = -TABLE_BOX.top;
   let g = pt.shadow(ox, oy + CLOTH + 2, 112, 8, 0.18);
@@ -369,7 +407,8 @@ export function tablePicture(pt: Painter, embroidered: boolean, oak: boolean): s
     else g += pt.line(`M${ox - 86},${oy + CLOTH - 14} Q${ox},${oy + CLOTH - 9} ${ox + 86},${oy + CLOTH - 14}`, 'clothBand', 3, 'stroke-dasharray="7 4"');
     g += pt.fill(`M${ox - 82},${oy} Q${ox},${oy - 14} ${ox + 82},${oy} Q${ox},${oy + 14} ${ox - 82},${oy} Z`, 'cloth');
   }
-  g += pt.rect(ox - 3, oy - 22, 6, 18, 'white', 2) + `<path d="M${ox},${oy - 32} q4,5 0,10 q-4,-5 0,-10 Z" fill="#ffc94a"/>`;
+  // The candle, lit from the golden hour (or always, for pictures that aren't lit live).
+  g += pt.rect(ox - 3, oy - 22, 6, 18, 'white', 2) + (lit ? `<path d="M${ox},${oy - 32} q4,5 0,10 q-4,-5 0,-10 Z" fill="#ffc94a"/>` : pt.line(`M${ox},${oy - 22} v-4`, 'ink', 1.2));
   g += pt.fill(`M${ox + 12},${oy - 2} q-3,-10 3,-14 q6,4 3,14 Z`, 'blue') + pt.circle(ox + 15, oy - 18, 3, 'red');
   return g;
 }

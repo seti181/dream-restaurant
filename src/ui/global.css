@@ -3804,3 +3804,66 @@ h2.spaced {
 .day-screen.upright .day-notes {
   top: 142px;
 }
+
+/* ---------- Light and weather (M8): the wash, the glows and the rain over each scene ---------- */
+
+/* One see-through wash over the scene, people and all, under the page frame; it fades from one light to the next. */
+.sk-light {
+  position: absolute;
+  inset: 0;
+  z-index: 880;
+  pointer-events: none;
+  transition: background-color 3s ease;
+}
+
+/* A pool of warm light around a candle or a lamp, fading in with the golden hour or the evening. */
+.sk-glow {
+  position: absolute;
+  z-index: 885;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 214, 135, 0.62) 0, rgba(255, 198, 115, 0.3) 38%, rgba(255, 188, 105, 0) 70%);
+  pointer-events: none;
+  transition: opacity 3s ease;
+}
+
+.sk-glow.candle {
+  animation: sk-flicker 2.4s ease-in-out infinite alternate;
+}
+
+@keyframes sk-flicker {
+  0% { transform: scale(0.93); }
+  45% { transform: scale(1.05); }
+  100% { transform: scale(0.98); }
+}
+
+/* Rain falling outside: a tile of streaks sliding down exactly one tile per loop, so it never jumps. */
+.sk-rain-window {
+  position: absolute;
+  inset: 0;
+  z-index: 884;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.sk-rain {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -160px;
+  height: calc(100% + 160px);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cg stroke='%23eef4f8' stroke-width='1.4' stroke-linecap='round' opacity='0.75'%3E%3Cpath d='M20 6l-5 16M70 30l-5 16M122 12l-5 16M44 74l-5 16M100 92l-5 16M148 64l-5 16M10 118l-5 16M80 136l-5 16M134 128l-5 16'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 160px 160px;
+  animation: sk-rain 0.55s linear infinite;
+}
+
+@keyframes sk-rain {
+  from { transform: translate3d(0, 0, 0); }
+  to { transform: translate3d(0, 160px, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sk-glow.candle,
+  .sk-rain {
+    animation: none;
+  }
+}

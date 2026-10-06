@@ -6,6 +6,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { REGULARS } from '../../data/regulars';
 import type { GroupId } from '../../data/groups';
+import type { Weather } from '../../data/weather';
 import type { FloorView, GuestStage, TableGuests } from '../../sim/day';
 import { Icon } from '../Icon';
 import { bake } from '../sketch/bake';
@@ -38,8 +39,64 @@ export const SERVE_BY_MINUTES = 50;
 export const STAGGER = 0.3;
 /** Seconds a waiter stands at the table putting the plates down. */
 export const SERVING_PAUSE = 0.4;
-/** From this time the evening falls: the sky outside darkens. */
+/** From this time the golden hour: a warm light, and the candles are lit. */
+export const GOLDEN_MINUTE = 17 * 60 + 30;
+/** From this time the evening falls: the sky outside darkens and the lamps glow. */
 export const DUSK_MINUTE = 19 * 60 + 30;
+
+/** The day in three lights (project.md section 9.5, "Light and weather"). */
+export type Light = 'day' | 'golden' | 'evening';
+
+export function lightAt(minute: number): Light {
+  return minute >= DUSK_MINUTE ? 'evening' : minute >= GOLDEN_MINUTE ? 'golden' : 'day';
+}
+
+/** The see-through wash over a scene, people and all: the evening's blue, the golden hour's amber, or the weather's by day. */
+export function washOf(light: Light, weather: Weather): string {
+  if (light === 'evening') return 'rgba(32, 42, 104, 0.3)';
+  if (light === 'golden') return weather === 'rain' ? 'rgba(150, 110, 90, 0.18)' : 'rgba(255, 158, 72, 0.15)';
+  if (weather === 'rain') return 'rgba(78, 98, 124, 0.16)';
+  if (weather === 'cloudy') return 'rgba(110, 116, 132, 0.1)';
+  if (weather === 'heatwave') return 'rgba(255, 196, 90, 0.1)';
+  return 'rgba(255, 255, 255, 0)';
+}
+
+/** A pool of warm light, in screen pixels: a candle's (lit from the golden hour, flickering) or a lamp's (lit in the evening). */
+export interface Glow {
+  x: number;
+  y: number;
+  r: number;
+  kind: 'candle' | 'lamp';
+}
+
+/**
+ * The light over a scene: one see-through wash over everything below the page frame, and the glows of
+ * candles and lamps; both fade from one light to the next. Plain colours and gradients, no blending, so it
+ * costs the tablet next to nothing.
+ */
+export function LightLayer({ light, weather, glows, rain = false }: { light: Light; weather: Weather; glows: Glow[]; rain?: boolean }) {
+  return (
+    <>
+      <div className="sk-light" style={{ backgroundColor: washOf(light, weather) }} aria-hidden="true" />
+      {rain && weather === 'rain' && (
+        <div className="sk-rain-window" aria-hidden="true">
+          <div className="sk-rain" />
+        </div>
+      )}
+      {glows.map((g, i) => {
+        const on = g.kind === 'candle' ? light !== 'day' : light === 'evening';
+        return (
+          <span
+            key={i}
+            className={`sk-glow ${g.kind}`}
+            aria-hidden="true"
+            style={{ left: g.x - g.r, top: g.y - g.r, width: g.r * 2, height: g.r * 2, opacity: on ? 1 : 0, animationDelay: `${-((i * 0.77) % 2.4)}s` }}
+          />
+        );
+      })}
+    </>
+  );
+}
 /** Guests at least this happy with their food send up a heart with their money. */
 export const HAPPY = 60;
 /** Real seconds the money floats up from a table. */

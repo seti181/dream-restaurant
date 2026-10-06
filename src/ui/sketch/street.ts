@@ -148,6 +148,16 @@ export function whatNeedsYou(
   };
 }
 
+/** The street's lamps (two on the pavement, one by the door), where their light is, and how far it reaches. */
+export function streetLamps(L: StreetLayout): { x: number; y: number; r: number }[] {
+  const { x, width, top } = L.door;
+  return [
+    { x: L.home.x0 - 60, y: L.ground - 160, r: 90 },
+    { x: L.width - 120, y: L.ground - 160, r: 90 },
+    { x: x - width / 2 - 22, y: top + 21, r: 55 },
+  ];
+}
+
 /** How big someone is drawn standing at depth y: smaller by the houses, bigger near us. */
 export function streetDepth(L: StreetLayout, y: number): number {
   const t = Math.max(0, Math.min(1.1, (y - L.backLane) / Math.max(1, L.frontLane - L.backLane)));
