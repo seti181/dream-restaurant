@@ -60,6 +60,13 @@ export interface Restaurant {
   supplier: Supplier;
   /** When today's happy hour started (minutes after midnight); only set while a day runs. See balance.happyHour. */
   happyHourFrom?: number;
+  /** A rival move's effects on this restaurant, only set while that day runs (see sim/rivalMoves.ts): */
+  /** menu prices multiplied by this (a price war)... */
+  priceFactor?: number;
+  /** ...these groups tempted more between these times (a lunch deal)... */
+  pull?: { groups: GroupId[]; from: number; until: number; bonus: number };
+  /** ...and every guest this much happier (free kompot). */
+  moodBonus?: number;
   /** Tonight's theme night, from its start: only set on the day it's on, while that day runs. */
   themeNight?: { from: number; groups: GroupId[]; wants?: MenuWant; mood?: number };
   /** "Dziś polecamy": today's special on the board outside (a recipe key), if one is chosen. */

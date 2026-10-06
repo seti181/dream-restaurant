@@ -347,3 +347,11 @@ describe('upgrading version 23 saves (from before theme nights)', () => {
     expect(migrate({ saveVersion: 23, savedAt: '', game: old })).toEqual(game);
   });
 });
+
+describe('upgrading version 24 saves (from before rival moves)', () => {
+  it('starts with no rival move', () => {
+    const game = newGame(70);
+    const { rivalMove: _r, ...old } = game;
+    expect(migrate({ saveVersion: 24, savedAt: '', game: old })).toEqual(game);
+  });
+});

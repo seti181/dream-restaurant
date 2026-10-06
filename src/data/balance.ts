@@ -318,6 +318,13 @@ export const balance = {
     favouriteMood: 6,
   },
 
+  rivalMoves: {
+    /** Chance each Monday that a rival makes a move against the player (data/rivalMoves.ts)... */
+    chancePerMonday: 0.5,
+    /** ...from this day on (the second Monday). */
+    firstDay: 7,
+  },
+
   themeNights: {
     /** A theme night starts at this time (minutes after midnight) and lasts until closing. */
     fromMinute: 18 * 60,

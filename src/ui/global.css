@@ -1079,6 +1079,32 @@ h2.spaced {
   margin: 4px 0;
 }
 
+/* ---------- A rival's move (Today tab) ---------- */
+
+.rival-move {
+  margin: 12px 0 16px;
+  padding: 12px 16px;
+  border-left: 6px solid var(--brick);
+  border-radius: 12px;
+  background: #fbeee8;
+}
+
+.rival-move h2 {
+  margin: 2px 0 6px;
+}
+
+.rival-move p {
+  margin: 4px 0;
+}
+
+.rival-move-from {
+  color: var(--brick);
+  font-size: 0.85rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
 /* ---------- The weekly Old Town top five (Today tab) ---------- */
 
 .ranking {

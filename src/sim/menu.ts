@@ -178,7 +178,8 @@ export function lunchSetServing(
 
 /** What share of menu prices guests pay at this minute: less during happy hour. */
 export function priceMultiplier(restaurant: Restaurant, minute: number): number {
-  return happyHourOn(restaurant, minute) ? 1 - balance.happyHour.discount : 1;
+  const happyHour = happyHourOn(restaurant, minute) ? 1 - balance.happyHour.discount : 1;
+  return happyHour * (restaurant.priceFactor ?? 1);
 }
 
 /** True during the hour after the player started today's happy hour. */

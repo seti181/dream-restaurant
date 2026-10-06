@@ -8,7 +8,7 @@ import type { GameState } from '../sim/game';
 import { startGoal } from '../sim/goals';
 import { PORTUGUESE_CORNER } from '../data/personal';
 
-export const SAVE_VERSION = 24;
+export const SAVE_VERSION = 25;
 const SAVE_KEY = 'old-town-kitchen/save';
 
 interface SaveFile {
@@ -218,6 +218,11 @@ function upgradeFrom23(game: Record<string, unknown>): Record<string, unknown> {
   return { themeNight: null, ...game };
 }
 
+/** Version 24 → 25 (M7b rival moves): no rival has made a move against the player yet. */
+function upgradeFrom24(game: Record<string, unknown>): Record<string, unknown> {
+  return { rivalMove: null, ...game };
+}
+
 /**
  * Brings a save from any older version up to date, one version at a time.
  * Returns null for saves that can't be understood.
@@ -321,6 +326,10 @@ export function migrate(data: unknown): GameState | null {
   if (version === 23) {
     game = upgradeFrom23(game as unknown as Record<string, unknown>) as unknown as GameState;
     version = 24;
+  }
+  if (version === 24) {
+    game = upgradeFrom24(game as unknown as Record<string, unknown>) as unknown as GameState;
+    version = 25;
   }
 
   return looksLikeGame(game) ? game : null;

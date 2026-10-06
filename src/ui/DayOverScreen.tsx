@@ -292,6 +292,11 @@ export function DayOverScreen() {
               </p>
             );
           })}
+          {summary.rivalMove && (
+            <p className="said small">
+              {summary.rivalMove.icon} <strong>{summary.rivalMove.title}</strong> is over. {summary.rivalMove.result}
+            </p>
+          )}
           {summary.themeNight && (
             <p className="said small">
               {summary.themeNight.icon} <strong>{summary.themeNight.name}:</strong> {summary.themeNight.guests}{' '}
@@ -441,6 +446,7 @@ export function DayOverScreen() {
                   <Row label="Cards and free drinks" value={signedMoney(summary.momentsCash)} />
                 )}
                 {summary.rush.tips > 0 && <Row label="Quick-service tips" value={signedMoney(summary.rush.tips)} />}
+                {summary.rivalMoveCost > 0 && <Row label="Free kompot (price war)" value={`−${money(summary.rivalMoveCost)}`} />}
                 {summary.bookingsCash !== 0 && (
                   <Row label="Bookings: tips and orders" value={signedMoney(summary.bookingsCash)} />
                 )}

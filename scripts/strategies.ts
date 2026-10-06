@@ -52,6 +52,8 @@ interface Plan {
   hurryWhenOrders?: number;
   /** Books a theme night every Friday: one the menu fits (or live accordion). */
   themeNightFridays?: boolean;
+  /** Answers a rival's move with this answer (otherwise it's left unanswered). */
+  rivalAnswer?: 0 | 1 | 2;
   /** Menu positions of a soup and a main for the lunch set. */
   lunchSet?: [number, number];
   /** Gives a day off (Monday to Thursday) to anyone whose morale is below this, where someone else can cover. */
@@ -257,6 +259,7 @@ export const STRATEGIES: Strategy[] = [
       acceptBookings: true,
       hurryWhenOrders: 3,
       themeNightFridays: true,
+      rivalAnswer: 0,
     },
   },
 ];

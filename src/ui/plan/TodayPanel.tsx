@@ -19,6 +19,7 @@ import { dateOf, WEEKDAY_NAMES } from '../../sim/calendar';
 import { trendLine } from '../../sim/trends';
 import { dailyGoalText } from '../../sim/dailyGoals';
 import { RankingBox } from './RankingBox';
+import { RivalMoveCard } from './RivalMoveCard';
 import { WEATHER_ICONS } from '../pixel/icons';
 import { FoodIcon, PixelIcon } from '../PixelIcon';
 import { useGame } from '../store';
@@ -87,6 +88,7 @@ export function TodayPanel() {
         {player.name}, {RANKS[game.rank].inSentence} on {LOCATIONS[player.location].name}, is ready when you are.
       </p>
 
+      <RivalMoveCard />
       <RankingBox />
 
       <section className="today-news">

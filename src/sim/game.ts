@@ -25,6 +25,8 @@ import { rollTrend, trendLine, type TrendState } from './trends';
 import { TRENDS } from '../data/trends';
 import { themeNightFor, type ThemeNightBooking } from './themeNights';
 import { THEME_NIGHTS } from '../data/themeNights';
+import { answerRivalMove, rivalMoveOn, rollRivalMove, type RivalMoveState } from './rivalMoves';
+import { RIVAL_MOVES } from '../data/rivalMoves';
 import { dishFits } from './menu';
 import { RANKS } from '../data/ranks';
 import { dateOf, isMonday } from './calendar';
@@ -130,6 +132,8 @@ export interface GameState {
   trend: TrendState | null;
   /** The theme night booked most recently (one a week), or null. */
   themeNight: ThemeNightBooking | null;
+  /** A rival's latest move against the player, answered or waiting for an answer, or null. */
+  rivalMove: RivalMoveState | null;
   /** True once the money ran out at the end of a day: the restaurant has closed for good. */
   gameOver: boolean;
   /** The player's restaurant first, then the rivals. */
@@ -264,6 +268,10 @@ export interface DaySummary extends DayTally {
   rankUp: number | null;
   /** Rush hour: chefs and waiters hurried, the longest quick-service streak, and the tips it brought. */
   rush: { chefs: number; waiters: number; bestStreak: number; tips: number };
+  /** A rival's move, on its last day: how it came out. */
+  rivalMove: { icon: string; title: string; result: string } | null;
+  /** What answering a rival cost today (free kompot for every guest). */
+  rivalMoveCost: number;
   /** Tonight's theme night, if one was on: guests served from its start, and portions of what they came for. */
   themeNight: { icon: string; name: string; guests: number; portions: number; wantText: string | null } | null;
   /** Today's goal from Mewa: what it was, how far it got, and whether it was done (and paid). */
@@ -311,6 +319,7 @@ export function newGame(seed: number, difficulty: Difficulty = 'normal'): GameSt
     dailyGoal: rollDailyGoal(dailyGoalSeed(rng, 0), null, player),
     trend: rollTrend(trendSeed(rng, 0), 0, null),
     themeNight: null,
+    rivalMove: null,
     restaurants: [player, ...RIVAL_IDS.map(createRivalRestaurant)],
   };
 }
@@ -458,7 +467,8 @@ export function openRestaurant(state: GameState): OpenDay {
   };
   const rivalsToday = rivals.map((rival) => ({ ...rival, awareness: rivalAwarenessToday(rival) }));
   return {
-    progress: startDay(state.day, [today, ...rivalsToday], conditionsFor(actual)),
+    // A rival's move on the go changes their prices, deals or board, and the player's answer the player's.
+    progress: startDay(state.day, rivalMoveOn(state, state.day, [today, ...rivalsToday]), conditionsFor(actual)),
     weather,
     forecastSaid: weather !== state.weather ? state.weather : null,
     rng,
@@ -624,6 +634,14 @@ export function helpGuests(open: OpenDay, table: number, help: Help): boolean {
 /** Answers the choice card on screen with its first (0) or second (1) answer. */
 export function answerTheMoment(open: OpenDay, choice: 0 | 1): MomentResult | null {
   return answerMoment(open.moments, open.progress, choice);
+}
+
+/** What answering today's rival move costs: free kompot for each guest served, while it lasts. */
+function rivalMoveCostToday(state: GameState, guestsServed: number): number {
+  const move = state.rivalMove;
+  if (!move || state.day < move.day || state.day > move.untilDay) return 0;
+  const kind = RIVAL_MOVES[move.id];
+  return (kind.answers[move.answer ?? kind.unanswered].effects.costPerGuest ?? 0) * guestsServed;
 }
 
 /** How tonight's theme night went, if one was on. */
@@ -868,7 +886,9 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
   // Whoever worked today is paid today; anyone hired during the day starts tomorrow.
   const wages = teamWages({ ...state, team: open.team });
   const { rent, utilities } = weeklyBillsDue(playerBefore, state.day);
-  const momentsCash = open.moments.cash + open.help.cash;
+  // Answering a rival with free kompot costs a little for every guest served while it lasts.
+  const rivalMoveCost = rivalMoveCostToday(state, tally.guestsServed);
+  const momentsCash = open.moments.cash + open.help.cash - rivalMoveCost;
   const streak = open.progress.floors[0].streak;
   const profit = tally.revenue - tally.ingredientCost - wages - rent - utilities + momentsCash + bookingsCash + streak.tips;
 
@@ -1073,7 +1093,7 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
   // Tomorrow's weather, and maybe something small going on in town.
   const weather = rollWeather(rng, nextDay);
   const happening = rollHappening(rng, nextDay, weather);
-  const next: GameState = {
+  let next: GameState = {
     ...state,
     day: nextDay,
     cash,
@@ -1107,6 +1127,22 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
     gameOver: state.gameOver || cash <= 0,
     restaurants,
   };
+
+  // A rival's move nobody answered by closing is taken as it comes (data/rivalMoves.ts, `unanswered`).
+  const move = state.rivalMove;
+  if (move && move.answer === null && move.day <= state.day) next = answerRivalMove(next, RIVAL_MOVES[move.id].unanswered);
+  const rivalMoveReport: DaySummary['rivalMove'] =
+    next.rivalMove && next.rivalMove.untilDay === state.day && next.rivalMove.day <= state.day
+      ? { icon: RIVAL_MOVES[next.rivalMove.id].icon, title: RIVAL_MOVES[next.rivalMove.id].title, result: next.rivalMove.result ?? '' }
+      : null;
+  // On some Mondays, a rival makes a move against the player.
+  if (isMonday(nextDay)) {
+    const rivalMove = rollRivalMove((rng.s ^ Math.imul(nextDay + 43, 0x5bd1e995)) >>> 0, nextDay, next);
+    if (rivalMove) {
+      const kind = RIVAL_MOVES[rivalMove.id];
+      next = { ...next, rivalMove, news: [...next.news, { title: `${kind.icon} ${kind.title}`, text: 'A card is waiting for your answer, at the top of this tab.' }] };
+    }
+  }
 
   return {
     state: next,
@@ -1152,6 +1188,8 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
       rush: { ...open.hurried, bestStreak: streak.best, tips: streak.tips },
       dailyGoal: dailyResult,
       themeNight: themeNightReport(state, open),
+      rivalMove: rivalMoveReport,
+      rivalMoveCost,
     },
   };
 }

@@ -101,6 +101,13 @@ export function utility(
     // "Dziś polecamy" on the board, all the more tempting with something fresh in season.
     specialAppeal(restaurant, inSeason) +
     interiorAppeal(restaurant, party.group) +
+    // A rival's special deal for some groups (a lunch deal).
+    (restaurant.pull &&
+    restaurant.pull.groups.includes(party.group) &&
+    party.arrivalMinute >= restaurant.pull.from &&
+    party.arrivalMinute < restaurant.pull.until
+      ? restaurant.pull.bonus
+      : 0) +
     // Tonight's theme night draws its crowd.
     (themeNightOn(restaurant, party.arrivalMinute, party.group) ? balance.themeNights.appealBonus : 0) +
     // This week's trend: the group that craves it looks for a menu that has it.

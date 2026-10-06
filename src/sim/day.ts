@@ -502,7 +502,7 @@ export function seat(
     leaveAt: 0,
     satisfaction: null,
     // Regulars feel at home here.
-    mood: (party.regularId ? balance.regulars.atHomeMood : 0) + wishMood + themeMood,
+    mood: (party.regularId ? balance.regulars.atHomeMood : 0) + wishMood + themeMood + (restaurant.moodBonus ?? 0),
     extraPatience: party.requestId === undefined ? 0 : balance.bookings.extraPatienceMinutes,
     wishMet,
   });

@@ -5,6 +5,7 @@
 import { balance } from '../src/data/balance';
 import { RIVAL_IDS, RIVALS, type RivalId } from '../src/data/rivals';
 import { acceptBooking, bookThemeNight } from '../src/sim/actions';
+import { answerRivalMove } from '../src/sim/rivalMoves';
 import { THEME_NIGHT_IDS, THEME_NIGHTS } from '../src/data/themeNights';
 import { isInSeason, isMonday, weekdayOf } from '../src/sim/calendar';
 import { wageOf } from '../src/sim/finance';
@@ -41,6 +42,8 @@ const SEEDS = seedsFromEnv ? seedsFromEnv.split(',').map(Number) : [1, 2, 3];
 const NO_CARDS = (globalThis as { process?: { env: Record<string, string | undefined> } }).process?.env.NO_CARDS === '1';
 /** `NO_BOOKINGS=1 npm run simulate` leaves every booking request unanswered, to compare against. */
 const NO_BOOKINGS = (globalThis as { process?: { env: Record<string, string | undefined> } }).process?.env.NO_BOOKINGS === '1';
+/** `NO_RIVAL_MOVES=1 npm run simulate` plays without rival moves against the player, to compare against. */
+const NO_RIVAL_MOVES = (globalThis as { process?: { env: Record<string, string | undefined> } }).process?.env.NO_RIVAL_MOVES === '1';
 
 interface SeasonResult {
   /** Cash at the end of each week. */
@@ -74,6 +77,8 @@ interface SeasonResult {
   dailyGoals: Record<string, { came: number; done: number }>;
   /** Days with a trend on, and of those, days the menu had something on trend. */
   trendDays: { on: number; matched: number };
+  /** Each rival move, and how it came out. */
+  rivalMoves: string[];
 }
 
 /** A new game where the player's menu and team are the strategy's. */
@@ -117,6 +122,7 @@ function playSeason(strategy: Strategy, seed: number): SeasonResult {
     weeklyPlace: [],
     dailyGoals: {},
     trendDays: { on: 0, matched: 0 },
+    rivalMoves: [],
   };
   const fullTicks = { firstWeek: 0, season: 0 };
   const openTicks = { firstWeek: 0, season: 0 };
@@ -147,6 +153,10 @@ function playSeason(strategy: Strategy, seed: number): SeasonResult {
       const menu = state.restaurants[0].menu;
       const fits = THEME_NIGHT_IDS.find((id) => THEME_NIGHTS[id].wants && menu.some((dish) => dishFits(dish, THEME_NIGHTS[id].wants!)));
       state = bookThemeNight(state, fits ?? 'accordion', state.day);
+    }
+    // A rival's move waiting for an answer.
+    if (state.rivalMove && state.rivalMove.answer === null && strategy.plan?.rivalAnswer !== undefined) {
+      state = answerRivalMove(state, strategy.plan.rivalAnswer);
     }
     // A strategy that takes bookings says yes to every request waiting for an answer.
     if (strategy.plan?.acceptBookings && !NO_BOOKINGS) {
@@ -216,6 +226,9 @@ function playSeason(strategy: Strategy, seed: number): SeasonResult {
     week.walkedOut += summary.guestsWalkedOut;
     week.turnedAway += summary.guestsTurnedAway;
     week.profit += summary.profit;
+    if (summary.rivalMove) {
+      result.rivalMoves.push(`day ${day}: ${summary.rivalMove.title}: ${summary.rivalMove.result}`);
+    }
     if (state.dailyGoal && summary.dailyGoal) {
       const tally = (result.dailyGoals[state.dailyGoal.id] ??= { came: 0, done: 0 });
       tally.came++;
@@ -224,7 +237,7 @@ function playSeason(strategy: Strategy, seed: number): SeasonResult {
     if (summary.rankUp !== null) {
       for (let r = 1; r <= summary.rankUp; r++) result.rankDays[r - 1] ??= day;
     }
-    state = next;
+    state = NO_RIVAL_MOVES ? { ...next, rivalMove: null } : next;
     if (isMonday(state.day)) result.weeklyStars.push(playerRating(state));
     if (state.ranking?.day === state.day) result.weeklyPlace.push(state.ranking.rows.findIndex((row) => row.id === 'player') + 1);
     result.lowestCash = Math.min(result.lowestCash, state.cash);
@@ -386,6 +399,13 @@ console.log(
     }),
   ),
 );
+
+console.log('\nRival moves, and how they came out (the first season of each strategy)\n');
+for (const { strategy, seasons } of results) {
+  console.log(`${strategy.name}:`);
+  for (const line of seasons[0].rivalMoves) console.log(`  ${line}`);
+  if (seasons[0].rivalMoves.length === 0) console.log('  none');
+}
 
 console.log('\nCash at the end of each week\n');
 const weeks = results[0].seasons[0].weeklyCash.length;
