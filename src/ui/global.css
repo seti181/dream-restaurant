@@ -3867,3 +3867,162 @@ h2.spaced {
     animation: none;
   }
 }
+
+/* ---------- The HUD and controls as paper scraps and stitched tags (M8) ---------- */
+
+/* Panels: scraps of cream paper with a soft shadow instead of a heavy ink frame, a little askew, taped on. */
+.sketchbook :is(.frame, .day-stats .stat, .hud-when, .hud-money, .hud-controls, .stat-panel, .help-panel) {
+  border: none;
+  border-radius: 2px 4px 3px 2px;
+  background: #fdf7ea;
+  box-shadow: 0 0 0 1px rgba(59, 36, 51, 0.12), 2px 3px 6px rgba(59, 36, 51, 0.25);
+}
+
+.sketchbook :is(.day-clock, .day-money, .day-stats .stat, .hud-when, .hud-money, .hud-controls) {
+  position: relative;
+}
+
+.sketchbook :is(.day-clock, .day-money, .day-stats .stat, .day-controls, .hud-when, .hud-money, .hud-controls, .legend-panel)::before {
+  content: '';
+  position: absolute;
+  top: -7px;
+  left: 50%;
+  width: 52px;
+  height: 14px;
+  transform: translateX(-50%) rotate(-3deg);
+  background: rgba(233, 194, 122, 0.62);
+  box-shadow: 0 1px 1px rgba(59, 36, 51, 0.1);
+  pointer-events: none;
+}
+
+.sketchbook :is(.day-money, .hud-money, .day-stats .stat:nth-child(even))::before {
+  transform: translateX(-50%) rotate(4deg);
+  background: rgba(194, 87, 122, 0.36);
+}
+
+.sketchbook :is(.day-clock, .hud-when) {
+  rotate: -1deg;
+}
+
+.sketchbook :is(.day-money, .hud-money) {
+  rotate: 1deg;
+}
+
+.sketchbook .day-stats .stat:nth-child(odd) {
+  rotate: -0.8deg;
+}
+
+.sketchbook .day-stats .stat:nth-child(even) {
+  rotate: 0.7deg;
+}
+
+.sketchbook .day-stats .stat.open {
+  background: #fff;
+  box-shadow: inset 0 0 0 2px var(--sea), 2px 3px 6px rgba(59, 36, 51, 0.25);
+}
+
+/* Numbers handwritten, as in the sketchbook; the little labels stay in the clear font. */
+/* (The day's small numbers stay in the clear font: a handwritten 1 is a single stroke, and "0/16" read as "0//6".) */
+.sketchbook :is(.day-time, .hud-clock, .day-money, .hud-money .hud-stat) {
+  font-family: Kalam, 'Segoe Print', cursive;
+  font-weight: 700;
+}
+
+.sketchbook :is(.day-time, .hud-clock) {
+  font-size: 2.15rem;
+  line-height: 1.05;
+}
+
+
+/* Round buttons: paper badges with a red running stitch inside the rim; their names on little paper tags. */
+.sketchbook .round-icon {
+  border: 2px solid #3b2433;
+  background: #fdf7ea;
+  box-shadow: 2px 3px 5px rgba(59, 36, 51, 0.28);
+  outline: 2px dashed rgba(181, 69, 47, 0.85);
+  outline-offset: -8px;
+}
+
+.sketchbook .round-button:active:not(:disabled) .round-icon {
+  box-shadow: 1px 1px 3px rgba(59, 36, 51, 0.28);
+}
+
+.sketchbook .round-button[aria-expanded='true'] .round-icon {
+  background: #fff;
+  outline-color: var(--sea);
+}
+
+.sketchbook .round-label {
+  border: none;
+  border-radius: 2px;
+  background: #fdf7ea;
+  box-shadow: 0 0 0 1px rgba(59, 36, 51, 0.3), 1px 2px 3px rgba(59, 36, 51, 0.2);
+}
+
+/* Sound and speed: small stitched tags; the chosen one red with a cream stitch. */
+.sketchbook :is(.day-controls, .hud) :is(.mute, .speed button) {
+  border: none;
+  border-radius: 3px;
+  background: #f6ead0;
+  box-shadow: inset 0 0 0 1px rgba(59, 36, 51, 0.4);
+  outline: 1.5px dashed rgba(181, 69, 47, 0.7);
+  outline-offset: -5px;
+}
+
+.sketchbook :is(.day-controls, .hud) .speed button[aria-pressed='true'] {
+  background: var(--brick);
+  color: #fff;
+  outline-color: rgba(255, 246, 230, 0.85);
+}
+
+.sketchbook :is(.day-controls, .hud) .speed button:disabled {
+  outline-color: rgba(181, 69, 47, 0.3);
+}
+
+/* Notes during the day: torn-off notes, a strip of coloured tape in the corner saying what kind. */
+.sketchbook .day-notes > :is(.gull-warning, .moment-result, .paused) {
+  position: relative;
+  /* These notes are placed with left/top elsewhere; here they just sit in the column. */
+  inset: auto;
+  border: none;
+  border-radius: 2px 3px 2px 3px;
+  background: #fdf7ea;
+  box-shadow: 0 0 0 1px rgba(59, 36, 51, 0.12), 2px 3px 6px rgba(59, 36, 51, 0.25);
+}
+
+.sketchbook .day-notes > :is(.gull-warning, .moment-result, .paused)::before {
+  content: '';
+  position: absolute;
+  top: -5px;
+  left: -8px;
+  width: 38px;
+  height: 13px;
+  transform: rotate(-24deg);
+  background: var(--tape, rgba(181, 69, 47, 0.55));
+  pointer-events: none;
+}
+
+.sketchbook .day-notes > .gull-warning.good {
+  --tape: rgba(60, 122, 58, 0.55);
+}
+
+.sketchbook .day-notes > .moment-result {
+  --tape: rgba(233, 162, 59, 0.65);
+}
+
+.sketchbook .day-notes > .paused {
+  --tape: rgba(47, 111, 143, 0.55);
+}
+
+/* The gaps between notes leave room for their tape. */
+.sketchbook .day-notes {
+  gap: 12px;
+  padding: 6px 4px 4px 8px;
+}
+
+.sketchbook .day-notes .mewa-bubble {
+  border: none;
+  border-radius: 2px;
+  background: #fbefc0;
+  box-shadow: 2px 3px 6px rgba(59, 36, 51, 0.25);
+}
