@@ -39,8 +39,6 @@ import {
 } from './sketchView/shared';
 import { useGame } from './store';
 
-/** The sketchbook look (M8), inside and outside. "?pixel" at the end of the game's address shows the old pixel art until it is retired. */
-export const sketchWanted = typeof location === 'undefined' || !new URLSearchParams(location.search).has('pixel');
 /** For checking the layouts: "?slots=12" lays the room out for that many tables, whatever the premises. */
 const slotsWanted = typeof location !== 'undefined' ? Number(new URLSearchParams(location.search).get('slots')) || 0 : 0;
 

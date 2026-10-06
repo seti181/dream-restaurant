@@ -13,7 +13,6 @@ import { chefSheet, guestSheet, musicianSheet, waiterSheet } from './sheets';
 import { doorWalk, passerWalk, streetLamps, streetLayout, streetQueueSpot, terraceMove, terraceServe, terraceWalkIn, toTheDoor, whatNeedsYou } from './street';
 import { streetPicture } from './streetArt';
 import { oldTownMapPicture, SKETCH_MAP_H, SKETCH_MAP_W, sketchMapPoint } from './mapArt';
-import { mapPixel } from '../pixel/map';
 import type { LocationId } from '../../data/locations';
 import type { TableGuests } from '../../sim/day';
 import { ICON_CELL, ICON_COLUMNS, ICON_ROWS, iconForEmoji, iconOf, iconSheet } from './icons';
@@ -270,10 +269,11 @@ describe('the pictures', () => {
     const map = oldTownMapPicture(new Painter());
     expectSound(svgPicture(SKETCH_MAP_W, SKETCH_MAP_H, map));
     expect(map).toBe(oldTownMapPicture(new Painter()));
-    for (const place of Object.values(LOCATIONS)) {
+    // Where the pixel-art map put each street's marker (four times bigger), recorded when it was retired.
+    const OLD: Record<LocationId, [number, number]> = { ogarna: [224, 644], piwna: [148, 196], mariacka: [748, 164], dluga: [448, 492], pobrzeze: [972, 268], spichrzow: [1196, 612] };
+    for (const [id, place] of Object.entries(LOCATIONS) as [LocationId, (typeof LOCATIONS)[LocationId]][]) {
       const at = sketchMapPoint(place.mapPosition.x, place.mapPosition.y);
-      const old = mapPixel(place.mapPosition.x, place.mapPosition.y);
-      expect(at).toEqual({ x: old.px * 4, y: old.py * 4 });
+      expect([at.x, at.y]).toEqual(OLD[id]);
       expect(at.x).toBeGreaterThan(0);
       expect(at.x).toBeLessThan(SKETCH_MAP_W);
       expect(at.y).toBeGreaterThan(0);

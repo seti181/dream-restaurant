@@ -474,7 +474,7 @@ button {
   font-size: 1.1rem;
 }
 
-/* A person's pixel face, three times as big, kept crisp. */
+/* A team member's drawn portrait. */
 .portrait {
   flex: none;
   align-self: center;
@@ -1317,8 +1317,6 @@ h2.spaced {
   background: #eef4f7;
 }
 
-
-
 .mute {
   min-width: 56px;
   min-height: 48px;
@@ -1424,63 +1422,6 @@ h2.spaced {
   background: rgba(181, 69, 47, 0.95);
 }
 
-/* ---------- The pixel-art restaurant view ---------- */
-
-.pixel-wrap {
-  position: relative;
-  flex: 1;
-  min-height: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  border-radius: 16px;
-  /* The street picture fills this; the colour only shows for a moment while it's drawn. */
-  background: #a99d91;
-}
-
-.pixel-scene {
-  position: relative;
-}
-
-.pixel {
-  position: absolute;
-  height: auto;
-  image-rendering: pixelated;
-  pointer-events: none;
-  user-select: none;
-}
-
-.pixel.steam {
-  animation: steam 1.6s ease-in-out infinite;
-}
-
-/*
- * Guests eating and chefs stirring: the picture holds two poses side by side, the box shows one,
- * and the picture jumps along inside it. A forkful comes now and then; stirring goes back and forth.
- * Moving it with a transform keeps it cheap for the tablet.
- */
-.pixel-frames {
-  position: absolute;
-  overflow: hidden;
-  pointer-events: none;
-}
-
-.pixel-frames > .pixel {
-  left: 0;
-  top: 0;
-  animation-iteration-count: infinite;
-  animation-timing-function: step-end;
-}
-
-.pixel.bite {
-  animation-name: bite;
-}
-
-.pixel.stir {
-  animation-name: stir;
-}
-
 @keyframes bite {
   0%, 72% { transform: none; }
   73%, 100% { transform: translateX(var(--frame)); }
@@ -1495,85 +1436,24 @@ h2.spaced {
   50% { transform: translateY(-3px); opacity: 0.4; }
 }
 
-.pixel.flicker {
-  transform-origin: 50% 100%;
-  animation: flicker 0.45s steps(2) infinite;
-}
-
 @keyframes flicker {
   50% { transform: scaleY(0.7); opacity: 0.85; }
-}
-
-/* Pigeons bob for crumbs; the accordion player sways. Steps keep it pixel-crisp and cheap. */
-.pixel.pecking {
-  animation: pecking 1.3s steps(2) infinite;
 }
 
 @keyframes pecking {
   60% { transform: translateY(1px); }
 }
 
-.pixel.busking {
-  transform-origin: 50% 100%;
-  animation: busking 1.8s steps(2) infinite;
-}
-
 @keyframes busking {
   50% { transform: rotate(-3deg); }
-}
-
-.pixel.bobbing {
-  animation: bobbing 2.6s steps(2) infinite;
 }
 
 @keyframes bobbing {
   50% { transform: translateY(1px); }
 }
 
-.pixel-bubble,
-.pixel-badge {
-  position: absolute;
-  transform: translate(-50%, -100%);
-  pointer-events: none;
-  line-height: 1;
-}
-
-.pixel-bubble {
-  padding: 3px 5px;
-  border: 2px solid #3b2433;
-  border-radius: 8px;
-  background: #fffaf0;
-  font-size: 15px;
-  animation: bubble-pop 0.3s ease-out;
-}
-
-.pixel-badge {
-  font-size: 12px;
-}
-
 @keyframes bubble-pop {
   from { transform: translate(-50%, -100%) scale(0.3); opacity: 0; }
-}
-
-/* Money floating up from a table when it pays, in gold with a dark pixel outline; a heart if they loved it. */
-.pixel-float {
-  position: absolute;
-  z-index: 5005;
-  transform: translate(-50%, -100%);
-  pointer-events: none;
-  white-space: nowrap;
-  line-height: 1;
-  font-size: 17px;
-  font-weight: 800;
-  color: #f6c945;
-  text-shadow: 0 2px 0 #3b2433, 2px 0 0 #3b2433, -2px 0 0 #3b2433, 0 -2px 0 #3b2433;
-  animation: float-up 1.8s ease-out forwards;
-}
-
-.pixel-heart {
-  margin-left: 4px;
-  color: #ef6f8a;
-  font-size: 19px;
 }
 
 @keyframes float-up {
@@ -1583,26 +1463,8 @@ h2.spaced {
   100% { transform: translate(-50%, -300%); opacity: 0; }
 }
 
-/* A guest walking: the browser moves them; this steps through the four walking frames. */
-.pixel-walker {
-  position: absolute;
-  left: 0;
-  top: 0;
-  background-repeat: no-repeat;
-  image-rendering: pixelated;
-  pointer-events: none;
-  animation-name: walk-steps;
-  animation-timing-function: steps(4);
-  animation-iteration-count: infinite;
-}
-
 @keyframes walk-steps {
   to { background-position: var(--walk-shift) 0; }
-}
-
-.pixel-bubble,
-.pixel-badge {
-  z-index: 5000;
 }
 
 .walker-bubble {
@@ -1610,46 +1472,17 @@ h2.spaced {
   top: 4px;
 }
 
-/* Someone walking past who can be handed a flyer: a tap area of at least 48 px around them. */
-.pixel-walker.tappable {
-  pointer-events: auto;
-  cursor: pointer;
-}
+/* ---------- The Old Town map ---------- */
 
-.pixel-walker.tappable::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: max(100%, 48px);
-  height: max(100%, 56px);
-  transform: translate(-50%, -50%);
-}
-
-/* ---------- The pixel-art Old Town map ---------- */
-
-.pixel-map-wrap {
+.old-town-map-wrap {
   min-width: 0;
 }
 
-.pixel-map {
+.old-town-map {
   position: relative;
   overflow: hidden;
   border: 3px solid #3b2433;
   border-radius: 12px;
-}
-
-.map-note {
-  position: absolute;
-  transform: translateX(-50%);
-  padding: 0 5px;
-  border-radius: 6px;
-  background: rgba(255, 250, 240, 0.85);
-  font-size: 0.72rem;
-  font-style: italic;
-  color: var(--sea);
-  white-space: nowrap;
-  pointer-events: none;
 }
 
 .map-marker {
@@ -1812,18 +1645,6 @@ h2.spaced {
   }
 }
 
-/* Weather in the sky behind the houses. */
-.sky-clouds {
-  position: absolute;
-  overflow: hidden;
-  pointer-events: none;
-}
-
-.pixel.cloud {
-  left: 0;
-  animation: cloud-drift linear infinite;
-}
-
 @keyframes cloud-drift {
   from {
     transform: translateX(calc(-1 * var(--cloud-width)));
@@ -1831,17 +1652,6 @@ h2.spaced {
   to {
     transform: translateX(var(--sky-width));
   }
-}
-
-.rain-layer {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 50000;
-  pointer-events: none;
-  image-rendering: pixelated;
-  animation: rain-fall 0.45s linear infinite;
 }
 
 @keyframes rain-fall {
@@ -1898,18 +1708,6 @@ h2.spaced {
   background: rgba(47, 111, 143, 0.12);
 }
 
-.pixel-bubble.tappable {
-  border-color: var(--amber);
-  box-shadow: 0 0 0 2px rgba(233, 162, 59, 0.45);
-  animation: bubble-pop 0.3s ease-out, tap-me 1.4s ease-in-out 0.3s infinite;
-}
-
-.pixel-bubble.selected {
-  background: #fdf0d8;
-  box-shadow: 0 0 0 3px var(--sea);
-  animation: none;
-}
-
 @keyframes tap-me {
   50% {
     box-shadow: 0 0 0 5px rgba(233, 162, 59, 0.2);
@@ -1950,11 +1748,6 @@ h2.spaced {
 
 .help-buttons .primary:disabled {
   opacity: 0.55;
-}
-
-/* A gull on the terrace. */
-.pixel.gull {
-  animation: gull-swoop 0.6s ease-out, gull-peck 0.5s steps(2) 0.6s infinite;
 }
 
 @keyframes gull-swoop {
@@ -2045,37 +1838,6 @@ h2.spaced {
   animation: tap-ring 0.9s ease-in-out infinite;
 }
 
-/* The riverside along the bottom of the planning screens and the day report. */
-.screen.with-panorama {
-  position: relative;
-  /*
-   * Leaves the lower part of the riverside showing below the card: houses, the quay and the river.
-   * Measured against the height, so a wide but short landscape screen keeps room for the card.
-   */
-  padding-bottom: min(16vw, 15vh);
-}
-
-.screen.with-panorama > .card {
-  position: relative;
-  z-index: 1;
-}
-
-.panorama {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 0;
-  pointer-events: none;
-}
-
-.panorama img {
-  display: block;
-  width: 100%;
-  height: auto;
-  image-rendering: pixelated;
-}
-
 /*
  * Tablets in landscape: Samsung tablets show the page at about 960×600 (or less) CSS pixels,
  * so on short screens everything around the content gets slimmer and the content keeps its room.
@@ -2102,11 +1864,6 @@ h2.spaced {
   .screen {
     padding: 10px 12px;
   }
-
-  .screen.with-panorama {
-    padding-bottom: min(16vw, 11vh);
-  }
-
 
   .plan-card {
     padding: 10px 16px;
@@ -2317,7 +2074,6 @@ h2.spaced {
   pointer-events: auto;
 }
 
-
 /* Difficulty cards that can't change right now (during the day). */
 .choice-card:disabled {
   opacity: 0.55;
@@ -2344,7 +2100,7 @@ h2.spaced {
 
 /* ---------- The day: the restaurant fills the screen (project.md section 9.3, A) ---------- */
 
-/* A pixel-art frame: a dark outline, a thin gold line inside it and a hard shadow. */
+/* A panel on the page (drawn as a taped paper scrap in the sketchbook look, below). */
 .frame {
   box-sizing: border-box;
   border: 3px solid #3b2433;
@@ -2708,10 +2464,6 @@ h2.spaced {
 
 .sk-gull {
   z-index: 940;
-}
-
-.day-screen .pixel-wrap {
-  border-radius: 0;
 }
 
 /* Along the top: the clock on the left, the day's numbers in the middle, the money on the right. */
@@ -3933,7 +3685,6 @@ h2.spaced {
   line-height: 1.05;
 }
 
-
 /* Round buttons: paper badges with a red running stitch inside the rim; their names on little paper tags. */
 .sketchbook .round-icon {
   border: 2px solid #3b2433;
@@ -4029,7 +3780,7 @@ h2.spaced {
 
 /* ---------- The Old Town map in ink and wash (M8) ---------- */
 
-.sketchbook .pixel-map {
+.sketchbook .old-town-map {
   border: none;
   border-radius: 2px;
   box-shadow: 0 0 0 1px rgba(59, 36, 51, 0.15), 3px 4px 8px rgba(59, 36, 51, 0.28);

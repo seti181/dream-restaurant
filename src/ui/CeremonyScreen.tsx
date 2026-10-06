@@ -20,7 +20,7 @@ export function CeremonyScreen() {
   const best = winner.score;
 
   return (
-    <PanoramaScreen weather="sunny" evening fair={false}>
+    <PanoramaScreen weather="sunny" evening>
       <div className="card plan-card ceremony">
         <div className="plan-body">
           <p className="eyebrow">St. Dominic’s Fair · the Golden Neptune</p>

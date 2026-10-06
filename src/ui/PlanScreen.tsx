@@ -17,7 +17,6 @@ import { MenuPanel } from './plan/MenuPanel';
 import { StaffPanel } from './plan/StaffPanel';
 import { TodayPanel } from './plan/TodayPanel';
 import { PanoramaScreen } from './Panorama';
-import { isFairDay } from '../sim/neptune';
 import { useGame, type PlanTab } from './store';
 
 /** The tabs, each a ribbon bookmark with its drawn icon in the sketchbook look. */
@@ -46,12 +45,11 @@ export function PlanScreen() {
   const closeManager = useGame((s) => s.closeManager);
   const tabs = duringDay ? TABS.filter(({ tab }) => !BEFORE_OPENING_ONLY.includes(tab)) : TABS;
   const shown = duringDay && BEFORE_OPENING_ONLY.includes(planTab) ? 'menu' : planTab;
-  const day = useGame((s) => s.game.day);
   const weather = useGame((s) => s.openDay?.weather ?? s.game.weather);
   const [waitNoteClosed, setWaitNoteClosed] = useState(false);
 
   return (
-    <PanoramaScreen weather={weather} evening={false} fair={isFairDay(day)}>
+    <PanoramaScreen weather={weather} evening={false}>
       <div className="card plan-card notebook">
         <nav className="tabs" aria-label="Planning">
           {tabs.map(({ tab, label, icon }) => (

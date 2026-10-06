@@ -50,6 +50,15 @@ const GROUP_LEGS: Record<GroupId, string[]> = {
   foodies: ['black', '#5e4632', 'black', '#3b4252'],
 };
 
+/** Each guest group's colour, for the bars in the day's numbers. */
+export const GROUP_COLOURS: Record<GroupId, string> = {
+  tourists: '#e9a23b',
+  students: '#4f9a4a',
+  locals: '#b5452f',
+  office: '#7fb2d3',
+  foodies: '#7b4f9d',
+};
+
 /** How many looks each group has: hair, tops, trousers and hats mixed differently. */
 export const GROUP_LOOKS = 8;
 

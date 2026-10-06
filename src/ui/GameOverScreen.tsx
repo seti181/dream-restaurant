@@ -13,7 +13,7 @@ export function GameOverScreen() {
   const lastDay = Math.max(0, game.day - 1);
 
   return (
-    <PanoramaScreen weather="sunny" evening fair={false}>
+    <PanoramaScreen weather="sunny" evening>
       <div className="card plan-card ceremony">
         <div className="plan-body">
           <p className="eyebrow">{formatDate(dateOf(lastDay))} · closing time</p>

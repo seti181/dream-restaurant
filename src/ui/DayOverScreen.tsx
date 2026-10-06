@@ -26,8 +26,6 @@ import { MewaIcon } from './MewaIcon';
 import { WEATHER_ICON } from './sketch/icons';
 import { FoodIcon, Icon } from './Icon';
 import { PanoramaScreen } from './Panorama';
-import { sketchWanted } from './SketchRoomView';
-import { isFairDay } from '../sim/neptune';
 import { useGame } from './store';
 
 type Factor = keyof SatisfactionFactors;
@@ -237,19 +235,17 @@ export function DayOverScreen() {
   if (!summary) return null;
 
   return (
-    <PanoramaScreen weather={summary.weather} evening fair={isFairDay(summary.day)}>
+    <PanoramaScreen weather={summary.weather} evening>
       <div className="card plan-card journal">
         <div className="plan-body">
-          {/* A journal page: Mewa's notes in the margin (the sketchbook look), the day written up beside them. */}
+          {/* A journal page: Mewa's notes in the margin, the day written up beside them. */}
           <div className="journal-page">
             <aside className="journal-margin">
-              {sketchWanted && (
-                <span className="journal-mewa" aria-hidden="true">
-                  <MewaIcon size={88} />
-                </span>
-              )}
+              <span className="journal-mewa" aria-hidden="true">
+                <MewaIcon size={88} />
+              </span>
               <MewaTip screen="dayOver" />
-              {!gameOver && sketchWanted && <TomorrowTeaser summary={summary} />}
+              {!gameOver && <TomorrowTeaser summary={summary} />}
             </aside>
             <div className="journal-entry">
               <p className="eyebrow">
@@ -257,7 +253,6 @@ export function DayOverScreen() {
                 {summary.events.length > 0 && ` · ${summary.events.join(' · ')}`}
               </p>
               <h1>{headline(summary)}</h1>
-              {!gameOver && !sketchWanted && <TomorrowTeaser summary={summary} />}
               {(summary.goalCompleted || summary.rankUp !== null) && <Confetti />}
               {summary.rankUp !== null && (
                 <div className="note goal-complete rank-up">

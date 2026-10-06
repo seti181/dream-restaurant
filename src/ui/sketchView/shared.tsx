@@ -12,7 +12,6 @@ import { Icon } from '../Icon';
 import { bake } from '../sketch/bake';
 import { GROUP_LOOKS, type SketchKind } from '../sketch/cast';
 import { LAYER, type Point, type TableSpot } from '../sketch/frontRoom';
-import { canHelp, canTend } from '../PixelRestaurantView';
 import { PLATE_CELL, PLATES } from '../sketch/roomArt';
 import { iconOf, type IconId } from '../sketch/icons';
 import { Painter, svgPicture } from '../sketch/painter';
@@ -564,6 +563,16 @@ export function useUpright(): boolean {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   return upright;
+}
+
+/** True when a table's guests are waiting long enough to show the hourglass or a cross face, and can still be helped. */
+export function canHelp(guests: TableGuests | null): boolean {
+  return guests !== null && guests.stage === 'waiting' && guests.impatience > 0.5 && !(guests.drink && guests.apology);
+}
+
+/** True for guests the player can still do something for: seated, food not here yet. */
+export function canTend(guests: TableGuests | null): boolean {
+  return guests !== null && guests.stage !== 'eating' && guests.visitor === null;
 }
 
 /** The size of the box the view fills. */

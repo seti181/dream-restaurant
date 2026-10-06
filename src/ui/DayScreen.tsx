@@ -15,10 +15,9 @@ import { FoodIcon, Icon } from './Icon';
 import type { GroupId } from '../data/groups';
 import { MewaTip } from './Mewa';
 import { MomentCard, MomentResultNote, NoteClose } from './MomentCard';
-import { GROUP_COLOURS } from './pixel/sprites';
-import { canHelp, canTend, PixelRestaurantView } from './PixelRestaurantView';
-import { SketchRoomView, sketchWanted } from './SketchRoomView';
-import { useUpright } from './sketchView/shared';
+import { GROUP_COLOURS } from './sketch/cast';
+import { SketchRoomView } from './SketchRoomView';
+import { canHelp, canTend, useUpright } from './sketchView/shared';
 import { RankingTable } from './plan/RankingBox';
 import { SketchStreetView } from './SketchStreetView';
 import { whatNeedsYou } from './sketch/street';
@@ -560,10 +559,10 @@ export function DayScreen() {
     setChoosing(false);
   };
   const flyers = !live.closing ? live.flyersLeft : 0;
-  // The sketchbook look shows the restaurant inside or the street outside, with a switch between them;
-  // held upright, the room above and the street below, both at once (project.md section 9.5).
-  const RestaurantView = !sketchWanted ? PixelRestaurantView : outside ? SketchStreetView : SketchRoomView;
-  const both = sketchWanted && upright;
+  // The restaurant inside or the street outside, with a switch between them; held upright, the room
+  // above and the street below, both at once (project.md section 9.5).
+  const RestaurantView = outside ? SketchStreetView : SketchRoomView;
+  const both = upright;
   const needs = whatNeedsYou(live.floor, canHelp);
   // What each view is shown and what a tap on it does; held upright, both views get the same.
   const view = {
@@ -683,7 +682,7 @@ export function DayScreen() {
           disabled={flyers === 0}
           onClick={() => {
             // People walk past outside: the Flyers button takes you there.
-            if (sketchWanted && !upright) setOutside(true);
+            if (!upright) setOutside(true);
             setNote({ text: '📜 Tap someone walking past to hand them a flyer.', at: Date.now() });
           }}
         />
@@ -705,7 +704,7 @@ export function DayScreen() {
             setLegend(false);
           }}
         />
-        {sketchWanted && !upright && (
+        {!upright && (
           <RoundButton
             icon={<Icon id={outside ? 'chefHat' : `street:${live.floor.location}`} size={30} />}
             label={outside ? 'Inside' : 'Outside'}
