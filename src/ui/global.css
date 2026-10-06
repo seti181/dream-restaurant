@@ -3134,3 +3134,318 @@ h2.spaced {
 .today-news.tomorrow {
   margin-top: 24px;
 }
+
+/* ---------- M8: the screens around the day as sketchbook pages (project.md section 9.5) ---------- */
+
+/* Groups that only the sketchbook look draws as panels or paper; otherwise they don't change the layout. */
+.hud-when,
+.hud-money,
+.hud-controls,
+.plan-page {
+  display: contents;
+}
+
+/* Behind everything: the restaurant's street, washed pale, inside the sketchbook page frame. */
+.sk-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  background: #fbf6ea;
+  pointer-events: none;
+}
+
+.sk-backdrop-street,
+.sk-backdrop-frame {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.sk-backdrop-street {
+  object-fit: cover;
+  object-position: center bottom;
+}
+
+.sk-backdrop-wash {
+  position: absolute;
+  inset: 0;
+  background: rgba(251, 246, 234, 0.45);
+}
+
+.sketchbook .screen.with-sketch {
+  position: relative;
+  padding: 8px 46px 24px;
+}
+
+.sketchbook .screen.with-sketch > :not(.sk-backdrop) {
+  position: relative;
+  z-index: 1;
+}
+
+/* Along the top: the date, the money and the controls in panels, like the day screen's corners. */
+.sketchbook .hud {
+  position: relative;
+  z-index: 2;
+  align-items: flex-start;
+  gap: 10px;
+  min-height: 0;
+  padding: 10px 12px 0;
+  background: none;
+  color: var(--ink);
+}
+
+.sketchbook .hud-when,
+.sketchbook .hud-money,
+.sketchbook .hud-controls {
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+  border: 3px solid #3b2433;
+  background: var(--cream);
+  box-shadow: inset 0 0 0 2px #e9c27a, 4px 4px 0 rgba(59, 36, 51, 0.35);
+}
+
+.sketchbook .hud-when {
+  gap: 12px;
+  min-height: 52px;
+  padding: 3px 14px 4px 12px;
+}
+
+.sketchbook .hud-clock {
+  font-size: 2rem;
+  font-weight: 800;
+  color: var(--brick);
+}
+
+.sketchbook .hud-date {
+  line-height: 1.2;
+}
+
+.sketchbook .hud-date strong {
+  font-size: 1.05rem;
+}
+
+.sketchbook .hud-date span {
+  color: var(--sea);
+  opacity: 1;
+}
+
+.sketchbook .hud-weather {
+  font-size: 1rem;
+  color: var(--sea);
+}
+
+.sketchbook .hud-money {
+  gap: 14px;
+  min-height: 52px;
+  padding: 4px 14px;
+}
+
+.sketchbook .hud-stat {
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.sketchbook .hud-money .hud-stat + .hud-stat {
+  color: #a8752a;
+}
+
+.sketchbook .hud-controls {
+  gap: 4px;
+  padding: 4px;
+}
+
+.sketchbook .hud-controls .speed {
+  gap: 4px;
+}
+
+.sketchbook .hud .mute,
+.sketchbook .hud .speed button {
+  min-width: 52px;
+  min-height: 48px;
+  border: 2px solid #3b2433;
+  border-radius: 0;
+  background: #f1e2c4;
+  color: var(--ink);
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.sketchbook .hud .speed button[aria-pressed='true'] {
+  background: var(--sea);
+  color: #fff;
+}
+
+/* Every card is a sheet of the sketchbook: cream paper, an ink line with a thin gold one inside. */
+.sketchbook .card {
+  border: 3px solid #3b2433;
+  border-radius: 0;
+  background: #fbf6ea;
+  box-shadow: inset 0 0 0 2px #e9c27a, 5px 5px 0 rgba(59, 36, 51, 0.35);
+}
+
+.sketchbook .card h1,
+.sketchbook .card h2,
+.sketchbook .moment-card h2,
+.sketchbook .preview-card h2 {
+  font-family: Kalam, 'Segoe Print', cursive;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.sketchbook .card h1 {
+  font-size: 2.4rem;
+}
+
+.sketchbook .card h2 {
+  font-size: 1.3rem;
+}
+
+/* The planning notebook: ribbon bookmarks along the top of the page, the open one joining it. */
+.sketchbook .plan-card.notebook {
+  width: min(1180px, 100%);
+  padding: 0;
+  border: none;
+  background: none;
+  box-shadow: none;
+}
+
+.sketchbook .tabs {
+  position: relative;
+  z-index: 1;
+  align-items: flex-end;
+  gap: 4px;
+  margin: 0 0 -3px;
+  padding: 0 12px;
+  border-bottom: none;
+}
+
+.sketchbook .tab {
+  --tab-colour: var(--brick);
+  --tab-tint: #f6d8cf;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 46px;
+  margin-bottom: 3px;
+  padding: 3px 11px 0 7px;
+  border: 3px solid #3b2433;
+  border-bottom: none;
+  border-radius: 10px 10px 0 0;
+  background: var(--tab-tint);
+  box-shadow: inset 0 5px 0 var(--tab-colour);
+  color: var(--ink);
+  font-family: Kalam, 'Segoe Print', cursive;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.sketchbook .tab:nth-child(5n + 2) {
+  --tab-colour: var(--amber);
+  --tab-tint: #f8e3b5;
+}
+
+.sketchbook .tab:nth-child(5n + 3) {
+  --tab-colour: var(--leaf);
+  --tab-tint: #d8e8cf;
+}
+
+.sketchbook .tab:nth-child(5n + 4) {
+  --tab-colour: var(--sea);
+  --tab-tint: #d3e4ee;
+}
+
+.sketchbook .tab:nth-child(5n + 5) {
+  --tab-colour: #c2577a;
+  --tab-tint: #f1d6e0;
+}
+
+/* The open tab is taller and the page's own paper, covering the page's top line where it joins. */
+.sketchbook .tab[aria-pressed='true'] {
+  min-height: 56px;
+  margin-bottom: 0;
+  padding-bottom: 3px;
+  background: #fbf6ea;
+  color: var(--ink);
+}
+
+.sketchbook .plan-page {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  padding: 4px 22px 12px;
+  border: 3px solid #3b2433;
+  background: #fbf6ea;
+  box-shadow: inset 0 0 0 2px #e9c27a, 5px 5px 0 rgba(59, 36, 51, 0.35);
+}
+
+.sketchbook .plan-footer {
+  border-top: 2px dashed #d9c3a0;
+}
+
+/* Buttons as paper tags: the main one red with a stitched edge, the others cream. */
+.sketchbook .primary {
+  border: 3px solid #3b2433;
+  border-radius: 3px;
+  background: var(--brick);
+  box-shadow: 4px 4px 0 rgba(59, 36, 51, 0.35);
+  outline: 2px dashed rgba(255, 246, 230, 0.75);
+  outline-offset: -8px;
+  font-family: Kalam, 'Segoe Print', cursive;
+  font-size: 1.35rem;
+}
+
+.sketchbook .primary:active:not(:disabled) {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0 rgba(59, 36, 51, 0.35);
+}
+
+.sketchbook .secondary {
+  border: 2px solid #3b2433;
+  border-radius: 3px;
+  background: #fffaf0;
+  box-shadow: 2px 2px 0 rgba(59, 36, 51, 0.3);
+  color: var(--ink);
+}
+
+.sketchbook .secondary.danger {
+  background: var(--brick);
+  color: #fff;
+}
+
+.sketchbook .chip {
+  border-color: #3b2433;
+  border-radius: 4px;
+  background: #fffaf0;
+  color: var(--ink);
+}
+
+.sketchbook .chip[aria-pressed='true'] {
+  background: var(--sea);
+  color: #fff;
+}
+
+/* Mewa's tips: a note on the page in her blue ink. */
+.sketchbook .mewa-bubble {
+  border: 2px solid #3b2433;
+  border-radius: 4px;
+  background: #fffaf0;
+  box-shadow: 3px 3px 0 rgba(59, 36, 51, 0.25);
+}
+
+/* Choice cards and the map's previews: sheets laid on the page. */
+.sketchbook .moment-card,
+.sketchbook .preview-card {
+  border: 3px solid #3b2433;
+  border-radius: 0;
+  background: #fbf6ea;
+  box-shadow: inset 0 0 0 2px #e9c27a, 6px 6px 0 rgba(59, 36, 51, 0.35);
+}
+
+/* Boxes on the page: squared off like cut paper, not the old rounded cards. */
+.sketchbook :is(.note, .icon-button, .stepper button, .person, .shop-item, .choice-card, .text-input, .creator-summary, .lunch-set, .today-news, .review, .move, .goal-card, .bookings, .booking-request, .theme-nights, .rival-move, .help-entry, .code-box, .moment-result, .help-panel, .stat-panel, .dish-row.special, .tomorrow-teaser) {
+  border-radius: 4px;
+}

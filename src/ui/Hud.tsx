@@ -112,23 +112,30 @@ export function Hud() {
 
   return (
     <header className="hud">
-      <div className="hud-date">
-        <strong>{facts.date}</strong>
-        <span>Week {facts.week}</span>
+      {/* In the sketchbook look each group is a little panel, like the day screen's corners. */}
+      <div className="hud-when">
+        {live && <div className="hud-clock">{formatTime(live.minute)}</div>}
+        <div className="hud-date">
+          <strong>{facts.date}</strong>
+          <span>Week {facts.week}</span>
+        </div>
+        <div className="hud-weather" aria-label="Weather">
+          <WeatherName facts={facts} />
+        </div>
       </div>
-      <div className="hud-weather" aria-label="Weather">
-        <WeatherName facts={facts} />
-      </div>
-      {live && <div className="hud-clock">{formatTime(live.minute)}</div>}
       <div className="hud-spacer" />
-      <div className="hud-stat" aria-label="Cash">
-        <Cash facts={facts} />
+      <div className="hud-money">
+        <div className="hud-stat" aria-label="Cash">
+          <Cash facts={facts} />
+        </div>
+        <div className="hud-stat" aria-label="Rating">
+          <Rating facts={facts} />
+        </div>
       </div>
-      <div className="hud-stat" aria-label="Rating">
-        <Rating facts={facts} />
+      <div className="hud-controls">
+        <MuteButton />
+        <SpeedControls />
       </div>
-      <MuteButton />
-      <SpeedControls />
     </header>
   );
 }

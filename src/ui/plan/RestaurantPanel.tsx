@@ -3,6 +3,7 @@
 import { useMemo } from 'react';
 import { restingFloor } from '../../sim/game';
 import { PixelRestaurantView } from '../PixelRestaurantView';
+import { SketchRoomView, sketchWanted } from '../SketchRoomView';
 import { useGame } from '../store';
 
 /** Mid-morning, before the doors open. */
@@ -17,7 +18,11 @@ export function RestaurantPanel() {
         Your restaurant before the doors open. New tables, decor and equipment show up here as soon as you buy them.
       </p>
       <div className="restaurant-panel-view">
-        <PixelRestaurantView floor={floor} weather={game.weather} minute={BEFORE_OPENING} />
+        {sketchWanted ? (
+          <SketchRoomView floor={floor} weather={game.weather} minute={BEFORE_OPENING} />
+        ) : (
+          <PixelRestaurantView floor={floor} weather={game.weather} minute={BEFORE_OPENING} />
+        )}
       </div>
     </div>
   );

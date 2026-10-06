@@ -5,6 +5,8 @@ import type { ReactNode } from 'react';
 import type { Weather } from '../data/weather';
 import { drawPanorama, panoramaSky } from './pixel/panorama';
 import { imageUrl } from './pixel/raster';
+import { SketchBackdrop } from './SketchBackdrop';
+import { sketchWanted } from './SketchRoomView';
 
 /** Each kind of panorama is drawn once and kept. */
 const drawn = new Map<string, string>();
@@ -19,7 +21,7 @@ function panoramaUrl(evening: boolean, fair: boolean): string {
   return url;
 }
 
-/** A screen with the sky behind it and the riverside along the bottom, below the card. */
+/** A screen with the sky behind it and the riverside along the bottom, below the card (or, in the sketchbook look, the street). */
 export function PanoramaScreen({
   weather,
   evening,
@@ -31,6 +33,14 @@ export function PanoramaScreen({
   fair: boolean;
   children: ReactNode;
 }) {
+  // The sketchbook look: the restaurant's street inside the sketchbook page frame, behind everything.
+  if (sketchWanted)
+    return (
+      <main className="screen with-sketch">
+        <SketchBackdrop weather={weather} evening={evening} />
+        {children}
+      </main>
+    );
   return (
     <main className="screen with-panorama" style={{ background: panoramaSky(weather, evening) }}>
       <div className="panorama" aria-hidden="true">

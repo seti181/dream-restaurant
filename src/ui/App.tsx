@@ -5,6 +5,7 @@ import { GameOverScreen } from './GameOverScreen';
 import { Hud } from './Hud';
 import { PerfMeter, perfMeterWanted } from './PerfMeter';
 import { PlanScreen } from './PlanScreen';
+import { sketchWanted } from './SketchRoomView';
 import { useGame } from './store';
 
 export function App() {
@@ -13,7 +14,8 @@ export function App() {
   // During the day the restaurant fills the screen, with the clock and the money in its corners.
   const dayScreen = phase === 'open' && !managing;
   return (
-    <div className="app">
+    // The sketchbook look (M8) for the screens around the day too; "?pixel" keeps the old look.
+    <div className={sketchWanted ? 'app sketchbook' : 'app'}>
       {!dayScreen && <Hud />}
       {(phase === 'plan' || (phase === 'open' && managing)) && <PlanScreen />}
       {dayScreen && <DayScreen />}

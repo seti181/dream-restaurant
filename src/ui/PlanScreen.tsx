@@ -1,7 +1,9 @@
 // Planning: time is paused. Tabs for today's overview, the menu and the staff,
 // with the "Open the restaurant" button always at hand.
 
-import { useState, type ReactNode } from 'react';
+import { useState } from 'react';
+import { Icon } from './Icon';
+import type { IconId } from './sketch/icons';
 import { NoteClose } from './MomentCard';
 import { InteriorPanel } from './plan/InteriorPanel';
 import { KitchenPanel } from './plan/KitchenPanel';
@@ -11,7 +13,6 @@ import { MarketingPanel } from './plan/MarketingPanel';
 import { MewaPanel } from './plan/MewaPanel';
 import { SettingsPanel } from './plan/SettingsPanel';
 import { MewaTip } from './Mewa';
-import { MewaIcon } from './MewaIcon';
 import { MenuPanel } from './plan/MenuPanel';
 import { StaffPanel } from './plan/StaffPanel';
 import { TodayPanel } from './plan/TodayPanel';
@@ -19,24 +20,18 @@ import { PanoramaScreen } from './Panorama';
 import { isFairDay } from '../sim/neptune';
 import { useGame, type PlanTab } from './store';
 
-const TABS: { tab: PlanTab; label: ReactNode }[] = [
-  { tab: 'today', label: 'Today' },
-  { tab: 'menu', label: 'Menu' },
-  { tab: 'kitchen', label: 'Kitchen' },
-  { tab: 'interior', label: 'Interior' },
-  { tab: 'staff', label: 'Staff' },
-  { tab: 'marketing', label: 'Marketing' },
-  { tab: 'restaurant', label: 'Restaurant' },
-  { tab: 'map', label: 'Map' },
-  {
-    tab: 'mewa',
-    label: (
-      <span className="with-icon">
-        <MewaIcon size={24} /> Mewa
-      </span>
-    ),
-  },
-  { tab: 'settings', label: '⚙️ Settings' },
+/** The tabs, each a ribbon bookmark with its drawn icon in the sketchbook look. */
+const TABS: { tab: PlanTab; label: string; icon: IconId }[] = [
+  { tab: 'today', label: 'Today', icon: 'clipboard' },
+  { tab: 'menu', label: 'Menu', icon: 'plate' },
+  { tab: 'kitchen', label: 'Kitchen', icon: 'pan' },
+  { tab: 'interior', label: 'Interior', icon: 'chair' },
+  { tab: 'staff', label: 'Staff', icon: 'chefHat' },
+  { tab: 'marketing', label: 'Marketing', icon: 'newspaper' },
+  { tab: 'restaurant', label: 'Restaurant', icon: 'candle' },
+  { tab: 'map', label: 'Map', icon: 'anchor' },
+  { tab: 'mewa', label: 'Mewa', icon: 'mewa' },
+  { tab: 'settings', label: 'Settings', icon: 'gear' },
 ];
 
 /** Tabs that only make sense before opening: the empty restaurant. */
@@ -57,9 +52,9 @@ export function PlanScreen() {
 
   return (
     <PanoramaScreen weather={weather} evening={false} fair={isFairDay(day)}>
-      <div className="card plan-card">
+      <div className="card plan-card notebook">
         <nav className="tabs" aria-label="Planning">
-          {tabs.map(({ tab, label }) => (
+          {tabs.map(({ tab, label, icon }) => (
             <button
               key={tab}
               type="button"
@@ -67,46 +62,50 @@ export function PlanScreen() {
               aria-pressed={shown === tab}
               onClick={() => setPlanTab(tab)}
             >
-              {label}
+              <Icon id={icon} size={26} />
+              <span>{label}</span>
             </button>
           ))}
         </nav>
-        <div className="plan-body">
-          {duringDay ? (
-            !waitNoteClosed && (
-              <p className="note small closable">
-                <span>
-                  ⏸ The restaurant waits while you're here. Changes to the menu, prices, the lunch set and the supplier
-                  count straight away; purchases, campaigns and new staff arrive tomorrow morning.
-                </span>
-                <NoteClose onClose={() => setWaitNoteClosed(true)} />
-              </p>
-            )
-          ) : (
-            <MewaTip screen="plan" />
-          )}
-          {shown === 'today' && <TodayPanel />}
-          {shown === 'menu' && <MenuPanel />}
-          {shown === 'kitchen' && <KitchenPanel />}
-          {shown === 'interior' && <InteriorPanel />}
-          {shown === 'staff' && <StaffPanel />}
-          {shown === 'marketing' && <MarketingPanel />}
-          {shown === 'restaurant' && <RestaurantPanel />}
-          {shown === 'map' && <MapPanel />}
-          {shown === 'mewa' && <MewaPanel />}
-          {shown === 'settings' && <SettingsPanel />}
+        {/* The page under the tabs: the sketchbook look draws it as paper, with the tabs sticking out above. */}
+        <div className="plan-page">
+          <div className="plan-body">
+            {duringDay ? (
+              !waitNoteClosed && (
+                <p className="note small closable">
+                  <span>
+                    ⏸ The restaurant waits while you're here. Changes to the menu, prices, the lunch set and the supplier
+                    count straight away; purchases, campaigns and new staff arrive tomorrow morning.
+                  </span>
+                  <NoteClose onClose={() => setWaitNoteClosed(true)} />
+                </p>
+              )
+            ) : (
+              <MewaTip screen="plan" />
+            )}
+            {shown === 'today' && <TodayPanel />}
+            {shown === 'menu' && <MenuPanel />}
+            {shown === 'kitchen' && <KitchenPanel />}
+            {shown === 'interior' && <InteriorPanel />}
+            {shown === 'staff' && <StaffPanel />}
+            {shown === 'marketing' && <MarketingPanel />}
+            {shown === 'restaurant' && <RestaurantPanel />}
+            {shown === 'map' && <MapPanel />}
+            {shown === 'mewa' && <MewaPanel />}
+            {shown === 'settings' && <SettingsPanel />}
+          </div>
+          <footer className="plan-footer">
+            {duringDay ? (
+              <button type="button" className="primary" onClick={closeManager}>
+                Back to the restaurant
+              </button>
+            ) : (
+              <button type="button" className="primary" onClick={open}>
+                Open the restaurant
+              </button>
+            )}
+          </footer>
         </div>
-        <footer className="plan-footer">
-          {duringDay ? (
-            <button type="button" className="primary" onClick={closeManager}>
-              Back to the restaurant
-            </button>
-          ) : (
-            <button type="button" className="primary" onClick={open}>
-              Open the restaurant
-            </button>
-          )}
-        </footer>
       </div>
     </PanoramaScreen>
   );
