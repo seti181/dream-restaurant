@@ -42,6 +42,22 @@ export const GUEST_SHEET: Sheet = { cells: WALK_BACK_CELL + 2, cellW: 220, cellH
 /** A waiter: walking with a full tray, walking back with an empty one, standing by, and walking away with the tray at one side. */
 export const WAITER_SHEET: Sheet = { cells: 7, cellW: 220, cellH: 340, anchorX: 110, anchorY: 260 };
 export const WAITER_CELLS = { full: 0, empty: 2, stand: 4, away: 5 } as const;
+/** The accordion player: two cells, the bellows open and squeezed. */
+export const MUSICIAN_SHEET: Sheet = { cells: 2, cellW: 220, cellH: 340, anchorX: 110, anchorY: 260 };
+
+export function musicianSheet(pt: Painter): string {
+  const look = lookFor('musician', 0);
+  return cells(
+    pt,
+    MUSICIAN_SHEET,
+    [
+      { pose: { arms: 'accordion', walk: 0, mouth: 'laugh', eyes: 'happy' }, standing: true },
+      { pose: { arms: 'accordion', walk: 1, mouth: 'smile', eyes: 'happy' }, standing: true },
+    ],
+    look,
+  );
+}
+
 /** A chef: tossing a pan (two cells), and standing by. */
 export const CHEF_SHEET: Sheet = { cells: 3, cellW: 250, cellH: 340, anchorX: 110, anchorY: 260 };
 export const CHEF_CELLS = { cook: 0, idle: 2 } as const;

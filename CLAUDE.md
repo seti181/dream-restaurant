@@ -7,9 +7,9 @@
 - It is a personal gift, for one player on an Android tablet (Samsung Galaxy Tab A series).
 - It is installed as a PWA from GitHub Pages.
 - The full design is in `project.md`. Read the relevant section before starting any feature.
-- **The priority is the new look: M8, "The Kashubian sketchbook look".** The next task is the first unchecked item of M8 in `project.md` section 12: **the street outside**, a second view of the Old Town with the terrace, the queue, passers-by to hand flyers to, the gull and the musician, and a switch between inside and outside. The plan is in section 9.5 ("The street outside", "Where M8 stands" lists what's waiting for it), the reference picture is `art/concepts/v8/sketchbook-page.png`, and the decision log (section 16, 2026-10-06) records how the inside was built. Propose a small design first (the street's layout and landmarks per location, the switch and its badge), then build it.
+- **The priority is the new look: M8, "The Kashubian sketchbook look".** The next task is the first unchecked item of M8 in `project.md` section 12: **light and weather**, the sky, rain and the evening, inside and outside. The plan is in section 9.5 ("Light and weather", and "Where M8 stands" says what the street already has), the reference picture is `art/concepts/v8/sketchbook-page.png`, and the decision log (section 16, 2026-10-06) records how the inside and the street outside were built. Propose a small design first, then build it.
 - Every icon is drawn (done 2026-10-06): emojis written anywhere in the game's text show as drawn icons, because the game's JSX swaps them (`src/ui/iconJsx`, `src/ui/Icon.tsx`). A new emoji needs a drawing and an entry in `FROM_EMOJI` in `src/ui/sketch/icons.ts` (a test fails otherwise); for an icon on its own, use `<Icon id="..." size={...} />`. Check with `node scripts/emoji-check.mjs <folder>`.
-- The new look shows with `?sketch` on the game's address; it becomes the normal view once the inside and the street outside both work. The inside is `src/ui/SketchRoomView.tsx` with its drawing code in `src/ui/sketch/`. Visits there run on their own timeline, a little behind the game (see the decision log), so the room can show walking in, reading the menu, waiting and being served.
+- The sketchbook look is the normal view of the day (since the street outside, 2026-10-06); `?pixel` on the game's address shows the old pixel art until it is retired. The inside is `src/ui/SketchRoomView.tsx`, the street outside `src/ui/SketchStreetView.tsx` (a round button switches them, with a badge for what needs the player on the other side), what they share is in `src/ui/sketchView/shared.tsx`, and their drawing code is in `src/ui/sketch/`. Visits run on their own timeline, a little behind the game (see the decision log), so the views can show walking in, reading the menu, waiting and being served.
 - After M8: the last item of M7b (the morning market), then M7c. M5's "Balancing" item stays open as an ongoing task alongside them, and M6 is the gift day itself.
 - M7b's ideas are described in section 6.15, but only in outline: the details of each are settled when it is built. Look at the code first, propose a small design, and once it is built, record what was settled in the decision log (section 16), as was done for "Tomorrow's forecast".
 
@@ -44,12 +44,12 @@ npx vite preview --port 4179 --strictPort       # serve the build for play-day.m
 node scripts/play-day.mjs <folder> [days]       # play days in headless Edge at 1364x603 and screenshot the screens and day reports
 npx tsx scripts/pixel/concepts-v8.ts            # write the sketchbook concept page to art/concepts/v8/html
 node scripts/pixel/shoot.mjs <html|folder> <png|folder> [w] [h]  # render HTML/SVG pages to PNGs in headless Edge
-npx tsx scripts/pixel/sketch-preview.ts <folder>  # draw full houses in the sketchbook look (then shoot.mjs <folder>/html <folder>)
+npx tsx scripts/pixel/sketch-preview.ts <folder>  # draw full houses and the six streets in the sketchbook look (then shoot.mjs <folder>/html <folder>)
 node scripts/catch-moment.mjs <url> <selector> <out.png> [speed] [seconds]  # play until something shows (e.g. ".sk-ring"), pause, screenshot
 node scripts/emoji-check.mjs <folder> [url]  # walk every screen, list any emoji still shown as text, screenshot each
 ```
 
-Add `?perf` to the game's address to show the performance meter (for checking on the tablet). Add `?sketch` to see the new sketchbook look on the day screen while M8 is being built (both together: `?sketch&perf`); `?sketch&slots=12` lays the room out for that many tables.
+Add `?perf` to the game's address to show the performance meter (for checking on the tablet). Add `?pixel` to see the old pixel-art day screen until M8 retires it; `?slots=12` lays the sketchbook room out for that many tables.
 
 ## Architecture rules
 
@@ -92,5 +92,5 @@ Add `?perf` to the game's address to show the performance meter (for checking on
 - Ask before adding a new dependency.
 - Don't add features that aren't in `project.md`. Suggest them instead, and add accepted decisions to the decision log (section 16).
 - When changing balance numbers, or adding anything that changes who comes or what they spend, run `npm run simulate` and report the before and after results. For the "before", run it on the last commit in a separate `git worktree` (with a junction to this `node_modules`) rather than stashing the working files.
-- For UI changes, look at the screen at 1364×603 with `scripts/play-day.mjs` (above), and read its screenshots. For the sketchbook look, add `?sketch` to its address (`node scripts/play-day.mjs <folder> 1 "http://localhost:4179/dream-restaurant/?sketch&perf"`); for moments that come and go, use `scripts/catch-moment.mjs`; for the art itself, `scripts/pixel/sketch-preview.ts`.
+- For UI changes, look at the screen at 1364×603 with `scripts/play-day.mjs` (above), and read its screenshots. For the outside view, click the round button labelled "Outside"; for moments that come and go, use `scripts/catch-moment.mjs`; for the art itself, `scripts/pixel/sketch-preview.ts`.
 - When a task is finished and checked, commit it and push to `main` when the user asks (pushing deploys to GitHub Pages through `.github/workflows/deploy.yml`). The `gh` CLI isn't installed.

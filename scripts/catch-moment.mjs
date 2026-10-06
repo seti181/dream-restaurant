@@ -4,7 +4,7 @@
 // to any card that pauses the day, and prints errors from the page. Needs the build served:
 //   npm run build && npx vite preview --port 4179 --strictPort
 //   node scripts/catch-moment.mjs <url> <selector> <out.png> [speed button label] [max seconds]
-//   e.g. node scripts/catch-moment.mjs "http://localhost:4179/dream-restaurant/?sketch" ".sk-ring" ring.png "Twice as fast" 90
+//   e.g. node scripts/catch-moment.mjs "http://localhost:4179/dream-restaurant/" ".sk-ring" ring.png "Twice as fast" 90
 // Each run uses a fresh browser profile, so the app's offline cache can't serve an old build.
 import { execSync, spawn } from 'node:child_process';
 import { rmSync, writeFileSync } from 'node:fs';

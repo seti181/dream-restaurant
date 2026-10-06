@@ -34,7 +34,7 @@ export interface Pose {
   stool?: boolean;
   /** The face turned left (-1), front (0) or right (1). */
   turn?: number;
-  arms?: 'rest' | 'wave' | 'tray' | 'glass' | 'fork' | 'eat' | 'menu' | 'cross' | 'swing' | 'pan' | 'panDown' | 'pour';
+  arms?: 'rest' | 'wave' | 'tray' | 'glass' | 'fork' | 'eat' | 'menu' | 'cross' | 'swing' | 'pan' | 'panDown' | 'pour' | 'accordion';
   /** What's on a tray: plates and a glass, or nothing (walking back). */
   tray?: 'full' | 'empty';
   /** Sitting sideways: the crossed legs point the way they face (under the table), or away ('out'). */
@@ -196,6 +196,21 @@ export function figure(pt: Painter, x: number, y: number, h: number, lk: Look, p
       pt.line(`M${x - 10 * s},${shoulder + 13 * s} h${20 * s} M${x - 10 * s},${shoulder + 19 * s} h${16 * s} M${x - 10 * s},${shoulder + 25 * s} h${18 * s}`, 'red', 1.2 * s) +
       arm(...L, x - 14 * s, shoulder + 24 * s) +
       arm(...R, x + 14 * s, shoulder + 24 * s);
+  if (a === 'accordion') {
+    // Playing the accordion: the bellows open and close (walk 0 open, 1 squeezed).
+    const half = (pose.walk === 1 ? 14 : 24) * s;
+    const top = shoulder + 8 * s;
+    const h = 34 * s;
+    let bellows = `M${x - half + 8 * s},${top}`;
+    const folds = 6;
+    for (let k = 1; k <= folds; k++) bellows += ` L${x - half + 8 * s + ((2 * half - 16 * s) * k) / folds},${top + (k % 2 ? 4 * s : 0)}`;
+    bellows += ` V${top + h} L${x - half + 8 * s},${top + h} Z`;
+    g += pt.fill(bellows, '#f4ecd6');
+    for (let k = 1; k < folds; k++) g += pt.line(`M${x - half + 8 * s + ((2 * half - 16 * s) * k) / folds},${top} v${h}`, dark('#f4ecd6', 0.3), 1);
+    g += pt.rect(x - half - 6 * s, top - 4 * s, 16 * s, h + 8 * s, 'red', 3 * s) + pt.rect(x + half - 10 * s, top - 4 * s, 16 * s, h + 8 * s, 'red', 3 * s);
+    g += [0, 1, 2].map((k) => `<circle cx="${x - half + 2 * s}" cy="${top + 6 * s + k * 10 * s}" r="${2 * s}" fill="#fffaf0"/>`).join('');
+    g += arm(...L, x - half - 2 * s, top + h / 2) + arm(...R, x + half + 2 * s, top + h / 2);
+  }
   if (a === 'cross') g += arm(...L, x + shoulderW * 0.22, shoulder + 22 * s) + arm(...R, x - shoulderW * 0.22, shoulder + 26 * s);
   if (a === 'swing') {
     const k = pose.walk === 1 ? -1 : 1;

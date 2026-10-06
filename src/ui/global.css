@@ -2608,6 +2608,42 @@ h2.spaced {
   background: #fffaf0;
 }
 
+/* Someone walking past outside who can be handed a flyer: a tap area of at least 48 px round them. */
+.sk-walker.tappable {
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.sk-walker.tappable::before {
+  content: '';
+  position: absolute;
+  left: 25%;
+  top: 20%;
+  width: max(50%, 48px);
+  height: 60%;
+}
+
+/* Something on the other side of the Inside/Outside switch wants the player: a badge on its corner. */
+.round-button {
+  position: relative;
+}
+
+.round-badge {
+  position: absolute;
+  top: -8px;
+  right: -6px;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 2px solid #c4574b;
+  border-radius: 50%;
+  background: #fffaf0;
+  box-shadow: 0 0 0 3px rgba(196, 87, 75, 0.3);
+  animation: sk-help 1.1s ease-in-out infinite;
+  pointer-events: none;
+}
+
 /* A table to look after: the whole area of its bubble and its guests can be tapped. */
 .sk-tend {
   position: absolute;

@@ -8,7 +8,11 @@ import { GROUP_LOOKS, type SketchKind } from './cast';
 import { frontLayout, moveWalk, PITCH, serveWalk, walkIn } from './frontRoom';
 import { Painter, svgPicture } from './painter';
 import { chairsPicture, hatchCounterPicture, pageFramePicture, platesPicture, roomPicture, tablePicture } from './roomArt';
-import { chefSheet, guestSheet, waiterSheet } from './sheets';
+import { chefSheet, guestSheet, musicianSheet, waiterSheet } from './sheets';
+import { doorWalk, passerWalk, streetLayout, streetQueueSpot, terraceMove, terraceServe, terraceWalkIn, toTheDoor, whatNeedsYou } from './street';
+import { streetPicture } from './streetArt';
+import type { LocationId } from '../../data/locations';
+import type { TableGuests } from '../../sim/day';
 import { ICON_CELL, ICON_COLUMNS, ICON_ROWS, iconForEmoji, iconOf, iconSheet } from './icons';
 import { WISHES } from '../../data/wishes';
 import { REGULARS } from '../../data/regulars';
@@ -82,6 +86,80 @@ describe('the room seen from the front', () => {
   });
 });
 
+describe('the street outside', () => {
+  const streets = (Object.keys(LOCATIONS) as LocationId[]).flatMap((id) =>
+    [0, Math.floor(LOCATIONS[id].terraceSeats / balance.service.seatsPerTable)].flatMap((terrace) => ASPECTS.map((aspect) => ({ id, terrace, aspect }))),
+  );
+
+  it('has a spot for every terrace table, on the pavement to the right of the door', () => {
+    for (const { id, terrace, aspect } of streets) {
+      const L = streetLayout(terrace, aspect, id);
+      expect(L.tables).toHaveLength(terrace);
+      expect(L.height).toBeGreaterThanOrEqual(603);
+      for (const t of L.tables) {
+        expect(t.x).toBeGreaterThan(L.door.x + L.door.width);
+        for (const s of t.seats) {
+          expect(s.x).toBeGreaterThan(0);
+          expect(s.x).toBeLessThan(L.width);
+          expect(s.y).toBeGreaterThan(L.backLane);
+          expect(s.y).toBeLessThan(L.frontLane);
+        }
+      }
+      for (const a of L.tables) for (const b of L.tables) if (a !== b && a.row === b.row) expect(Math.abs(a.x - b.x)).toBeGreaterThanOrEqual(PITCH - 1);
+    }
+  });
+
+  it('lines the street with houses that never overlap, leaving the Żuraw its quay', () => {
+    for (const { id, terrace, aspect } of streets) {
+      const L = streetLayout(terrace, aspect, id);
+      const all = [L.home, ...L.houses].sort((a, b) => a.x0 - b.x0);
+      for (let i = 1; i < all.length; i++) expect(all[i].x0).toBeGreaterThanOrEqual(all[i - 1].x1 - 1);
+      expect(all.at(-1)!.x1).toBeGreaterThanOrEqual(L.width);
+      for (const h of all) expect(h.top).toBeLessThan(L.ground);
+      if (id === 'pobrzeze') expect(all[0].x0).toBeGreaterThanOrEqual(300);
+      else expect(all[0].x0).toBeLessThanOrEqual(0);
+      expect(L.river).toBe(id === 'pobrzeze' || id === 'spichrzow');
+    }
+  });
+
+  it('walks guests to the terrace and the door, waiters out of the door, and passers right across', () => {
+    for (const { id, terrace } of streets) {
+      const L = streetLayout(terrace, ASPECTS[0], id);
+      L.tables.forEach((t, spot) => {
+        t.seats.forEach((s, seat) => {
+          const path = terraceWalkIn(L, spot, seat);
+          expect(path[0].x < 0 || path[0].x > L.width).toBe(true);
+          expect(path.at(-1)).toMatchObject({ x: s.x, y: s.y });
+        });
+        expect(terraceServe(L, spot)[0].x).toBe(L.door.x);
+        const next = (spot + 1) % terrace;
+        expect(terraceMove(L, spot, 0, next, 1).at(-1)).toMatchObject({ x: L.tables[next].seats[1].x, y: L.tables[next].seats[1].y });
+      });
+      for (const fromLeft of [true, false]) expect(Math.abs(doorWalk(L, 2, fromLeft).at(-1)!.x - L.door.x)).toBeLessThan(L.door.width / 2);
+      for (const back of [true, false])
+        for (const ltr of [true, false]) {
+          const [a, b] = passerWalk(L, back, ltr);
+          expect(Math.min(a.x, b.x)).toBeLessThan(0);
+          expect(Math.max(a.x, b.x)).toBeGreaterThan(L.width);
+          expect(a.x < b.x).toBe(ltr);
+        }
+      const handed = toTheDoor(L, { x: 900, y: L.frontLane, z: 60 });
+      expect(handed.at(-1)!.x).toBe(L.door.x);
+      for (let place = 0; place < 4; place++) expect(streetQueueSpot(L, place, 3).x).toBeGreaterThan(0);
+    }
+  });
+
+  it('badges the switch with what needs the player on the other side', () => {
+    const waiting = { stage: 'waiting' } as TableGuests;
+    const help = (g: TableGuests | null) => g !== null && g.stage === 'waiting';
+    const floor = { tables: [null, waiting, null], insideTables: 2, gull: null, atTheDoor: [] };
+    expect(whatNeedsYou(floor, help)).toEqual({ inside: 'help', outside: null });
+    expect(whatNeedsYou({ ...floor, tables: [null, null, waiting] }, help)).toEqual({ inside: null, outside: 'help' });
+    expect(whatNeedsYou({ ...floor, atTheDoor: [{}] } as never, help).outside).toBe('hourglass');
+    expect(whatNeedsYou({ ...floor, gull: {}, atTheDoor: [{}] } as never, help).outside).toBe('mewa');
+  });
+});
+
 describe('the pictures', () => {
   const weathers: Weather[] = ['sunny', 'heatwave', 'cloudy', 'rain'];
 
@@ -102,6 +180,20 @@ describe('the pictures', () => {
       }
   });
 
+  it('draw every street, with or without a terrace, in every weather, by day and at dusk', () => {
+    for (const id of Object.keys(LOCATIONS) as LocationId[])
+      for (const [i, weather] of weathers.entries()) {
+        const L = streetLayout(i % 2 ? Math.floor(LOCATIONS[id].terraceSeats / balance.service.seatsPerTable) : 0, ASPECTS[i % 2], id);
+        const look = { weather, dusk: i >= 2, name: 'Joanna’s & Co <Kitchen>', special: i % 2 ? 'Żurek' : null, terraceOpen: i % 2 === 1 };
+        const svg = svgPicture(L.width, L.height, streetPicture(new Painter(), L, look));
+        expectSound(svg);
+        expect(svg).not.toContain('<Kitchen>');
+      }
+    const L = streetLayout(4, ASPECTS[0], 'dluga');
+    const look = { weather: 'sunny' as const, dusk: false, name: 'Kitchen', special: 'Pierogi', terraceOpen: true };
+    expect(streetPicture(new Painter(), L, look)).toBe(streetPicture(new Painter(), L, look));
+  });
+
   it('draw the same room the same way every time', () => {
     const L = frontLayout(8, ASPECTS[0]);
     const look = { decor: DECOR_IDS, equipment: EQUIPMENT_IDS, weather: 'sunny' as const, dusk: false, plaque: true, specials: [] };
@@ -119,6 +211,7 @@ describe('the pictures', () => {
     for (const kind of kinds) for (let v = 0; v < GROUP_LOOKS; v++) expectSound(svgPicture(2860, 340, guestSheet(new Painter(), kind, v)));
     for (const kind of ['waiter', 'tomek', 'adrian'] as const) expectSound(svgPicture(1100, 340, waiterSheet(new Painter(), kind, 2)));
     for (let v = 0; v < 6; v++) expectSound(svgPicture(750, 340, chefSheet(new Painter(), v)));
+    expectSound(svgPicture(500, 340, musicianSheet(new Painter())));
   });
 });
 

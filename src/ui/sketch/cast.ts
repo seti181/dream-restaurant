@@ -16,6 +16,7 @@ export type SketchKind =
   | 'walesa'
   | 'guard'
   | 'footballer'
+  | 'musician'
   | 'waiter'
   | 'tomek'
   | 'adrian'
@@ -129,6 +130,9 @@ export function lookFor(kind: SketchKind, variant = 0): Look {
       return { skin: 'skin', hair: '#d9d6cf', hairStyle: 'short', top: '#4a4a55', legs: '#4a4a55', moustache: true, extras: ['shirt', 'badge'] };
     case 'guard':
       return { skin: 'skin2', hair: '#7a5a3e', hairStyle: 'short', top: '#1f1c23', legs: '#1f1c23', glasses: 'dark', extras: ['shirt', 'earpiece'] };
+    case 'musician':
+      // The accordion player on live-music nights: a flat cap, a blue jumper and a grey moustache.
+      return { skin: 'skin', hair: '#9a948c', hairStyle: 'short', top: '#2f5f86', legs: '#3b3a44', hat: 'flatcap', moustache: true, extras: ['scarf'] };
     case 'footballer':
       return { skin: '#d9a27f', hair: '#4a3426', hairStyle: 'short', top: '#1f7a3a', legs: '#ffffff', pattern: 'stripes' };
     default:

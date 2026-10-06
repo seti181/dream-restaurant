@@ -16,8 +16,11 @@ import type { GroupId } from '../data/groups';
 import { MewaTip } from './Mewa';
 import { MomentCard, MomentResultNote, NoteClose } from './MomentCard';
 import { GROUP_COLOURS } from './pixel/sprites';
-import { canTend, PixelRestaurantView } from './PixelRestaurantView';
+import { canHelp, canTend, PixelRestaurantView } from './PixelRestaurantView';
 import { SketchRoomView, sketchWanted } from './SketchRoomView';
+import { SketchStreetView } from './SketchStreetView';
+import { whatNeedsYou } from './sketch/street';
+import type { IconId } from './sketch/icons';
 import { isFavourite } from '../sim/seating';
 import { playerOf } from '../sim/game';
 import { FAVOURITE_SPOTS, GROUP_IDS, GROUPS, SPOT_NAMES } from '../data/groups';
@@ -25,8 +28,6 @@ import { GULLS } from '../data/gulls';
 import { play } from './sound';
 import { useGame, type LiveDay } from './store';
 
-/** The restaurant as it is drawn: the pixel art, or with "?sketch" the new sketchbook look (M8). */
-const RestaurantView = sketchWanted ? SketchRoomView : PixelRestaurantView;
 
 type StatId = 'served' | 'takings' | 'walkedOut' | 'turnedAway' | 'goal';
 
@@ -254,6 +255,7 @@ function RoundButton({
   detail,
   disabled,
   expanded,
+  badge,
   onClick,
 }: {
   icon: ReactNode;
@@ -261,6 +263,8 @@ function RoundButton({
   detail?: string;
   disabled?: boolean;
   expanded?: boolean;
+  /** Something wanting the player's attention, shown on the button's corner. */
+  badge?: IconId | null;
   onClick: () => void;
 }) {
   return (
@@ -268,6 +272,11 @@ function RoundButton({
       <span className="round-icon" aria-hidden="true">
         {icon}
       </span>
+      {badge && (
+        <span className="round-badge">
+          <Icon id={badge} size={24} />
+        </span>
+      )}
       <span className="round-label">
         {label}
         {detail && <small>{detail}</small>}
@@ -492,6 +501,7 @@ export function DayScreen() {
   const [choosing, setChoosing] = useState(false);
   const [stat, setStat] = useState<StatId | null>(null);
   const [legend, setLegend] = useState(false);
+  const [outside, setOutside] = useState(false);
   const [note, setNote] = useState<{ text: string; at: number } | null>(null);
   const location = useGame((s) => playerOf(s.game).location);
   const moveGuests = useGame((s) => s.moveGuests);
@@ -546,6 +556,9 @@ export function DayScreen() {
     setChoosing(false);
   };
   const flyers = !live.closing ? live.flyersLeft : 0;
+  // The sketchbook look shows the restaurant inside or the street outside, with a switch between them.
+  const RestaurantView = !sketchWanted ? PixelRestaurantView : outside ? SketchStreetView : SketchRoomView;
+  const needs = whatNeedsYou(live.floor, canHelp);
 
   return (
     <main className="day-screen">
@@ -639,9 +652,21 @@ export function DayScreen() {
           label="Flyers"
           detail={`${flyers} left`}
           disabled={flyers === 0}
-          onClick={() => setNote({ text: '📜 Tap someone walking past to hand them a flyer.', at: Date.now() })}
+          onClick={() => {
+            // People walk past outside: the Flyers button takes you there.
+            if (sketchWanted) setOutside(true);
+            setNote({ text: '📜 Tap someone walking past to hand them a flyer.', at: Date.now() });
+          }}
         />
         <RoundButton icon="👥" label="Who’s who" expanded={legend} onClick={() => setLegend(!legend)} />
+        {sketchWanted && (
+          <RoundButton
+            icon={<Icon id={outside ? 'chefHat' : `street:${live.floor.location}`} size={30} />}
+            label={outside ? 'Inside' : 'Outside'}
+            badge={outside ? needs.inside : needs.outside}
+            onClick={() => setOutside(!outside)}
+          />
+        )}
       </div>
       <div className="frame day-controls">
         <MuteButton />

@@ -8,7 +8,7 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-const [folder, url = 'http://localhost:4179/dream-restaurant/?sketch'] = process.argv.slice(2);
+const [folder, url = 'http://localhost:4179/dream-restaurant/'] = process.argv.slice(2);
 if (!folder) {
   console.error('Usage: node scripts/emoji-check.mjs <folder> [url]');
   process.exit(1);

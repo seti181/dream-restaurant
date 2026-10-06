@@ -18,6 +18,10 @@ import { Painter, svgPicture } from '../../src/ui/sketch/painter';
 import { figure, type Pose } from '../../src/ui/sketch/people';
 import { chairsPicture, hatchCounterPicture, pageFramePicture, PLATE_CELL, platesPicture, roomPicture, TABLE_BOX, tablePicture, type RoomLook } from '../../src/ui/sketch/roomArt';
 import { SEATED_HEIGHT, STANDING_HEIGHT } from '../../src/ui/sketch/sheets';
+import { streetDepth, streetLayout, streetQueueSpot } from '../../src/ui/sketch/street';
+import { streetPicture } from '../../src/ui/sketch/streetArt';
+import type { LocationId } from '../../src/data/locations';
+import type { Weather } from '../../src/data/weather';
 
 const folder = process.argv[2] ?? 'art/sketch-preview';
 const W = 1364;
@@ -99,3 +103,40 @@ for (const [name, slots, look] of rooms) {
   );
 }
 console.log(`written ${folder}/html; now: node scripts/pixel/shoot.mjs ${folder}/html ${folder}`);
+
+// ---------- The street outside, for each of the six streets ----------
+
+const streets: [LocationId, number, Weather, boolean][] = [
+  ['ogarna', 2, 'sunny', false],
+  ['piwna', 3, 'cloudy', false],
+  ['mariacka', 5, 'sunny', false],
+  ['dluga', 4, 'heatwave', false],
+  ['pobrzeze', 6, 'sunny', true],
+  ['spichrzow', 4, 'rain', false],
+];
+for (const [i, [location, terrace, weather, dusk]] of streets.entries()) {
+  const L = streetLayout(terrace, W / H, location);
+  const pt = new Painter();
+  let body = streetPicture(pt, L, { weather, dusk, name: "Joana's Kitchen", special: 'Pierogi', terraceOpen: weather !== 'rain' });
+  L.tables.forEach((t, n) => {
+    const box = (svg: string) => `<g transform="translate(${t.x + TABLE_BOX.left * t.scale},${t.top + TABLE_BOX.top * t.scale}) scale(${t.scale})">${svg}</g>`;
+    body += box(chairsPicture(pt));
+    for (let s = 0; s < 2 + (n % 3); s++) {
+      const seat = t.seats[s];
+      body += figure(pt, seat.x, seat.y, SEATED_HEIGHT * t.scale, lookFor(GROUP_IDS[(n + s) % 5], n * 3 + s), { sit: true, stool: seat.end, turn: seat.mirror ? -1 : 1, arms: s % 2 ? 'fork' : 'rest', mouth: 'smile' });
+    }
+    body += box(tablePicture(pt, true, false));
+  });
+  for (let p = 0; p < 2; p++) {
+    const q = streetQueueSpot(L, 0, p);
+    body += figure(pt, q.x, q.y, STANDING_HEIGHT * streetDepth(L, q.y), lookFor('tourists', p), { arms: 'rest', mouth: 'smile', turn: 1 });
+  }
+  body += figure(pt, 300, L.frontLane, STANDING_HEIGHT * streetDepth(L, L.frontLane), lookFor('students', 1), { arms: 'swing', walk: 0, turn: 1, mouth: 'smile' });
+  body += figure(pt, L.width - 260, L.frontLane, STANDING_HEIGHT * streetDepth(L, L.frontLane), lookFor('locals', 2), { arms: 'swing', walk: 1, turn: -1, mouth: 'smile' });
+  body += pageFramePicture(pt, L.width, L.height);
+  const scale = Math.min(W / L.width, H / L.height);
+  writeFileSync(
+    `${folder}/html/${4 + i}-street-${location}.html`,
+    `<!doctype html><meta charset="utf-8"><body style="margin:0;background:#fbf6ea"><div style="width:${W}px;height:${H}px;display:flex;align-items:center;justify-content:center"><img style="width:${L.width * scale}px" src="data:image/svg+xml;base64,${Buffer.from(svgPicture(L.width, L.height, body)).toString('base64')}"></div></body>`,
+  );
+}
