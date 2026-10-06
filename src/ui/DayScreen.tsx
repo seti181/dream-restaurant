@@ -350,7 +350,7 @@ function WhoIsWho({ flyersLeft, onClose }: { flyersLeft: number; onClose: () => 
         </li>
         {flyersLeft > 0 && (
           <li>
-            <Icon id="scroll" /> tap someone walking past to hand them a flyer
+            <Icon id="scroll" /> tap someone walking past outside to hand them a flyer: <Icon id="happy" /> they’re coming in, <Icon id="wave" /> not today, but now they know your name
           </li>
         )}
       </ul>
@@ -573,7 +573,22 @@ export function DayScreen() {
         }}
         onGullTap={shooGull}
         onStaffTap={hurryStaff}
-        onPasserTap={flyers > 0 ? handFlyer : undefined}
+        onPasserTap={
+          flyers > 0
+            ? (group) => {
+                // Everyone who takes a flyer has heard of you now; some come straight in. Say which it was.
+                const comes = handFlyer(group);
+                if (comes !== null) {
+                  const last = flyers === 1 ? ' That was your last flyer today.' : '';
+                  setNote({
+                    text: comes ? `🙂 They took your flyer and they’re coming in!${last}` : `👋 They took your flyer. Not today, but now they know your name.${last}`,
+                    at: Date.now(),
+                  });
+                }
+                return comes;
+              }
+            : undefined
+        }
         onFlyerArrives={flyerArrives}
         freeTables={choosing && stillThere ? free : []}
         onFreeTableTap={(to) => {

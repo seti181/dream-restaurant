@@ -236,12 +236,17 @@ export function figure(pt: Painter, x: number, y: number, h: number, lk: Look, p
       arm(...L, x - shoulderW * 0.2, shoulder + 30 * s) +
       arm(...R, x + shoulderW * 0.6, shoulder + 4 * s) +
       pt.fill(`M${x + shoulderW * 0.6 - 5 * s},${shoulder + 4 * s} h${10 * s} v${-22 * s} l${-2 * s},${-8 * s} h${-6 * s} l${-2 * s},${8 * s} Z`, 'glassG');
-  // Neck, long hair behind the head, ears and the head.
-  g += pt.rect(x - 6 * s, shoulder - 8 * s, 12 * s, 10 * s, dark(col(lk.skin), 0.08));
+  // Long hair behind the head, the neck, the ears and the head. Long hair falls in two locks past the
+  // shoulders, with the neck and chest showing between them (one block under the chin read as a beard).
   if (lk.hairStyle === 'long' || lk.hairStyle === 'bob' || lk.hairStyle === 'braid') {
     const len = lk.hairStyle === 'long' ? 1.9 : lk.hairStyle === 'bob' ? 1.15 : 0.9;
-    g += pt.fill(`M${fx - headR * 1.08},${headY - headR * 0.2} Q${fx - headR * 1.25},${headY + headR * len} ${fx - headR * 0.4},${headY + headR * len} L${fx + headR * 0.4},${headY + headR * len} Q${fx + headR * 1.25},${headY + headR * len} ${fx + headR * 1.08},${headY - headR * 0.2} Z`, lk.hair);
+    const gap = lk.hairStyle === 'long' ? 0.62 : 0.4;
+    g += pt.fill(
+      `M${fx - headR * 1.08},${headY - headR * 0.2} Q${fx - headR * 1.25},${headY + headR * len} ${fx - headR * 0.8},${headY + headR * len} L${fx - headR * gap},${headY + headR * len} L${fx - headR * gap},${headY + headR * 0.9} L${fx + headR * gap},${headY + headR * 0.9} L${fx + headR * gap},${headY + headR * len} L${fx + headR * 0.8},${headY + headR * len} Q${fx + headR * 1.25},${headY + headR * len} ${fx + headR * 1.08},${headY - headR * 0.2} Z`,
+      lk.hair,
+    );
   }
+  g += pt.rect(x - 6 * s, shoulder - 8 * s, 12 * s, 10 * s, dark(col(lk.skin), 0.08));
   if (lk.hairStyle === 'braid') {
     for (let i = 0; i < 4; i++) g += pt.circle(fx + headR * 1.0, headY + headR * (0.5 + i * 0.42), headR * 0.24, lk.hair);
     g += pt.circle(fx + headR * 1.0, headY + headR * 2.2, headR * 0.16, 'red');
