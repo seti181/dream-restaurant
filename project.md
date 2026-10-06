@@ -448,6 +448,8 @@ All numbers live in `src/data/` (`balance.ts`, `dishes.ts`, `locations.ts`, `riv
 
 ### 9.1 Art direction: cozy pixel art (chosen 2026-10-01)
 
+> **Superseded on 2026-10-06** by the Kashubian sketchbook look (section 9.5). The pixel art below is what the game has today; it stays until M8 replaces it piece by piece.
+
 The game moves from flat SVG illustration to **cozy pixel art with 2D sprites**. The current flat SVG art stays as the placeholder until the pixel art replaces it piece by piece.
 
 **What we take from each reference image:**
@@ -612,6 +614,90 @@ Chosen on 2026-10-02: all three, in this order (see M7 in the roadmap).
 
 Built: A on 2026-10-02. C on 2026-10-03, first at the old scale and then, after a playtest, as in the concept picture in four steps: its scale, a cozy starting room, the kitchen's pass and people's poses (see the decision log). B follows in M7c, after the more dynamic season (M7b).
 
+### 9.4 A new look: concepts (rounds 4–8, 2026-10-06; chosen: the Kashubian sketchbook, section 9.5)
+
+Playtest wish (2026-10-06): the graphics should evolve, all of them (the restaurant, the street, the menus and the people), because the pixel art reads as something from the 80s or 90s. Three modern directions, drawn as SVG and CSS by `npx tsx scripts/pixel/concepts-v4.ts` (pictures rendered by `node scripts/pixel/shoot.mjs art/concepts/v4/html art/concepts/v4`). Each shows the same moment: the day screen at lunch (`-day.png`), the same at 21:10 with the room dimmed and lamps, candles and the heat lamp glowing (`-evening.png`), the Menu tab with Pani Krystyna's portrait (`-menu.png`) and everyone at a large size (`-people.png`). Compare with the game today: `art/concepts/v3/a-world-fills-screen.png` and the screenshots of section 9.3.
+
+All three are vector art, which the game may draw at runtime (DOM, CSS and SVG). Like today, the room and people would be drawn once into pictures and reused, so the tablet only moves pictures while the day runs. Moving from pixels to vectors means redrawing the art layer (`src/ui/pixel/`): the room and its furniture and decor, the street and map, the people and their poses, the icons, and the menus' styles. That's a milestone of its own, done in steps like Graphics C.
+
+**1. Storybook** (`storybook-*.png`): a painted picture book. Warm paper colours, ink outlines with a slight hand-drawn wobble, a soft paper grain over everything. Stepped Gdańsk gables in sorbet colours. The menus are paper cards with a serif, like a printed menu. Evenings are warm lamplight against blue dusk.
+- **Gain:** the coziest and most personal: it looks like a gift, and like Gdańsk. Closest in warmth to today's charm, so the change feels like growing up rather than replacing it.
+- **Cost:** the wobble and grain are SVG filters, too slow to run live on a budget tablet, so they're baked into the pictures once (as the room is today). Outlines must stay readable at the tablet's size.
+
+**2. Toy box** (`toy-*.png`): a bright diorama of toys. Saturated colours, no outlines, round heads with a glossy shine, soft drop shadows, chunky rounded buttons that look pressable, as in modern mobile games.
+- **Gain:** the most readable and the most "game-like"; big, obvious buttons suit a tablet.
+- **Cost:** the least Gdańsk of the three, and it can look generic or childish. Glossy gradients on every person add a little drawing time (once).
+
+**3. Modern flat** (`flat-*.png`): a calm, grown-up illustration. Muted pastels and navy, no outlines, clean shapes, soft shadows, airy white cards and light type, like a stylish travel poster.
+- **Gain:** elegant and modern, and the lightest to draw.
+- **Cost:** cooler and less cozy; the evening needs care to stay warm rather than grey; the people can look like stock illustrations.
+
+**Recommendation:** Storybook, perhaps with Toy box's chunky, pressable buttons for touch. It keeps the warmth that makes this a gift, and looks the most like Gdańsk.
+
+**Round 4's verdict (2026-10-06):** none of them; they look too simple. Asked what to aim for, the player liked all four of: modern HD pixel art (Eastward, Stardew Valley 1.6, Coffee Talk), hand-painted illustration (Spiritfarer, Cozy Grove), a soft 3D look (Two Point Hospital, Animal Crossing) and detailed cartoon (Good Pizza, Great Pizza; Overcooked). Picture files may be shipped in the app if that makes the art richer (a change to the rule that all art is drawn in code); I can only draw in code myself, so pictures would come from an artist or an image tool.
+
+**Round 5** (`art/concepts/v5/`, `npx tsx scripts/pixel/concepts-v5.ts`): detail first. One scene with far more in it: a bar along the back wall with shelves of bottles, beer taps and a bartender, a regular on a stool, wallpaper with small Kashubian flowers above raised panelling and a dado rail, a cornice, a ship painting and the Żuraw, a chalkboard of today's dishes, a window with mullions, curtains with folds and geraniums on the sill, a shelf of preserves, a coat stand, parquet, a Kashubian rug, round tables with long embroidered cloths, plates of pierogi and żurek, glasses, bread and candles, pendant lamps, a kitchen with Delft tiles, a range hood, a pot on the flame, copper pans and plates on a rack, and the pass with dishes waiting under a heat lamp. People are about 4.5 heads tall with real faces (whites, irises, a shine, brows, nose, ears, mouths that smile, talk or laugh) and poses (eating with a fork, raising a glass, waving, reading the menu, carrying a tray, holding a pan, walking). The street has Długi Targ-style facades with cornices, arched windows, flower boxes and striped awnings, St Mary's and the Town Hall behind, a pavement with a kerb, cobbles stone by stone, lamps, benches and pigeons, and sunlight falls through the window. The same scene in four treatments: `1-pixel.png` (drawn at a third of the size with fewer colours and shown big without smoothing), `2-painted.png` (soft wobbling edges and canvas grain), `3-soft3d.png` (rounded shading and shine), `4-cartoon.png` (bold outlines and two-tone cel shading), and the people up close in all four, `5-people.png`.
+
+Round 5's verdict: not liked either. Both rounds kept the same isometric dollhouse seen from above, so only the paint changed.
+
+**Round 6** (`art/concepts/v6/`, `npx tsx scripts/pixel/concepts-v6.ts`): a different view and a different visual language. The restaurant is seen straight from the front, like a stage or a townhouse on Długi Targ with its front wall taken off. This makes the people about twice as large: a bar with a bartender on the left, two tables of guests under three arched windows onto the street and Neptune, a waiter with a tray, a guest at the door, and the kitchen hatch with the chef on the right. The same scene in three looks: `1-paper.png` (a paper theatre: cut-paper layers with soft shadows between them, paper fibre and sunbeams), `2-folk.png` (Kashubian folk art: wycinanki rosettes, embroidered bands on cloths, aprons and panelling, bold flat colours with dark outlines, rosy folk cheeks, and a painted flower frame), and `3-sketch.png` (an ink-and-watercolour travel sketchbook: wobbly ink lines over washes on grainy paper).
+
+Round 6's verdict: the ink-and-watercolour sketchbook is liked, with some of the Kashubian folk style worked into it.
+
+**Round 7** (`art/concepts/v7/`, `npx tsx scripts/pixel/concepts-v7.ts`): the sketchbook with Kashubian folk art in three strengths. `1-kashubian-details.png` keeps the sketchbook's soft colours and brick edge, and sketches the folk art into the room: tulips and rosettes on the wallpaper, embroidered bands on the cloths, aprons, bar and rug, and flowers stitched on clothes; its panels have a red running stitch. `2-kashubian-colours.png` paints with the seven colours of Kashubian embroidery (three blues, yellow, red, green, dark brown), so the panelling is pale blue and the bar red, with a painted border of tulip and rosette vines in Kashubian blue; its panels are inked in blue with a red stitch and a rosette on the corner. `3-sketchbook-page.png` paints the scene onto a sketchbook page with a ragged watercolour edge, Kashubian tulips and rosettes inked in the margins, handwritten notes, and the panels as paper scraps taped on.
+
+Round 7's verdict: option 3, the page from a Kashubian sketchbook, is the chosen direction, to be polished with more detail.
+
+**Round 8** (`art/concepts/v8/sketchbook-page.png`, `npx tsx scripts/pixel/concepts-v8.ts`): option 3 polished. The regular at the bar sits on a proper stool (legs, knees, a brass footrest) instead of ending at the waist. People have shading and ink hatching down one side of their clothes, rounded arms with cuffs, ink strands in their hair, and soft shadows on the floor. The room has ink hatching under the ceiling, in the corners, under the sills and counters; paper-cut bunting in folk colours; Kashubian painted plates and a shelf of preserves; Mewa perched on the picture frame; steam off the soup and cutlery by the plates; a crate of cabbages, beetroot and carrots from the market; a young fig tree; and a coat stand with a hat and scarf by the door. The windows have clouds, seagulls, St Mary's tower and the Town Hall spire. The page has a note pointing at Mewa, a red ribbon bookmark and a faint coffee ring.
+
+Round 8's verdict: chosen. This is the new look for the whole game, written up as a plan in section 9.5 and built in M8.
+
+### 9.5 The Kashubian sketchbook look (chosen 2026-10-06; built in M8)
+
+The game's new look, replacing the pixel art of section 9.1 everywhere: the restaurant, its people, the street, the map, the icons, the HUD, the menus and the pop-ups. **The reference picture is `art/concepts/v8/sketchbook-page.png`**, and its code, `scripts/pixel/concepts-v8.ts`, is the starting point for the real thing. Built in M8, which comes before everything else still open on the roadmap.
+
+**What it looks like**
+
+- **The view:** straight from the front, like a stage, or a townhouse on Długi Targ with its front wall taken off. This replaces the isometric dollhouse. The room fills the page: the bar on the left, the tables in the middle under tall arched windows onto the street, and the kitchen hatch on the right. A strip of pavement and cobbles runs along the bottom. People are large (a seated guest is about 195 pixels tall at 1364×603), so faces and moods read at a glance.
+- **Ink and watercolour:** warm dark-brown ink lines (`#3b2a24`), with a slight hand-drawn wobble. Under them are watercolour washes, set a little off the lines, on grainy cream paper (`#fbf6ea`). Shade is drawn as **ink hatching** (diagonal strokes) rather than dark fills, with soft wash shadows under people, tables and furniture. The palette is the `sketch` palette in `concepts-v8.ts`: soft sorbet facades, warm wood and folk red, blue, yellow and green as accents.
+- **Kashubian folk art, as accents:** tulips and rosettes on the wallpaper and in the margins, embroidered bands on tablecloths, aprons, counters and the rug, painted plates on the wall, and paper-cut bunting. The folk colours stay accents, so the room doesn't turn into a pattern sheet.
+- **The sketchbook page:** the scene is painted onto a page with a ragged watercolour edge. Ink-drawn vines of tulips and rosettes run down the margins. There are handwritten notes in the margins, a ribbon bookmark and a faint coffee ring. The margin notes can carry real game information: Mewa's comments, a wish that was missed, today's goal.
+- **People:** about 4.5 heads tall, facing the front and turned a little left or right (mirrored, not separately drawn). They have simple, friendly faces with rosy cheeks, and each group keeps its telltale things (tourists' sun hats and cameras, students' backpacks, foodies' berets and scarves, and so on). Clothes have shading and hatching down one side, and people have rounded arms with cuffs, ink strands in their hair, and a shadow on the floor.
+- **Mewa** lives in the room: perched on the picture frame, the window sill or the bar, and pointed out by notes in the margin.
+- **The HUD and buttons:** paper scraps taped onto the page, a little crooked, with handwritten numbers. Buttons are paper tags with a red running stitch, at least 48 px. Longer text (menus, reports, card texts) stays in a clear, readable font; handwriting is for numbers, headings and notes.
+- **Evenings:** a blue dusk wash over the page, with the lamps, candles and windows glowing warm.
+
+**How it is built**
+
+- **Code:** a new folder, `src/ui/sketch/`, replaces `src/ui/pixel/` piece by piece. It starts from `concepts-v8.ts`: the palette, the painter (the wash plus the ink line), the motifs (rosette, tulip, folk band, hatching, bunting), people (`figure`), Mewa and the page frame. Everything is still drawn by the game in code, as SVG, so nothing is downloaded and decor, weather and dusk combine freely. Picture files are allowed if a piece really needs one (decided 2026-10-06).
+- **Baked, not live:** the SVG filters that make the wash, the ink wobble and the grain are far too slow to run live on a budget tablet. So each piece is **baked once into a picture** and cached:
+  - the room for a given decor, weather and time of day
+  - each person for a given look and pose
+  - each icon
+  The bake draws the SVG once into an offscreen canvas and keeps the result as an image; that is the only canvas use. During the day only these images move, with CSS transforms. Pictures are baked at the screen's device pixel ratio, so lines stay crisp. Targets on the tablet: under a second of baking when a day starts, and a smooth frame rate with `?perf`.
+- **The simulation does not change.** The view keeps reading `floorView()`. A new front-view layout places the tables, seats, door, bar and kitchen on the stage.
+- **A handwriting font:** the concepts use Segoe Print, which only exists on Windows, so the tablet would show a fallback. The game bundles one handwriting font with Polish letters (ą, ę, ł, ś, ż …), for example Caveat or Patrick Hand (both under the SIL Open Font Licence). It ships as a `.woff2` file and is precached for offline use. Ask before adding it.
+- **The layout** must still work from about 850×530 up: the margins and notes shrink first, and the scene scales to fit.
+
+**Settled while building** (each recorded in the decision log as it is decided)
+
+- The front-view layout for each of the six premises: how many tables fit in one row, whether a front row (a little larger, nearer) is needed, and how the bigger premises show (a wider room, or the cellar room as a second scene).
+- Where the terrace goes: on the pavement in front of the house, along the bottom of the page.
+- How people move: guests come in from the door on the street side and walk along the floor to their table; waiters cross between the hatch and the tables.
+- What becomes of the street panorama: the street is seen through the windows and along the pavement strip; the isometric street goes.
+- How the planning screens use the page: one sketchbook page per tab, or a notebook with ribbon tabs.
+
+**Order of work** (the items of M8, one at a time, each tested in the browser and on the tablet):
+
+1. **Foundations and one still scene:** `src/ui/sketch/` with the palette, painter, motifs and page frame; the bake-and-cache pipeline; the handwriting font. The day screen shows the concept scene as a still picture behind today's UI. Measure baking time and frame rate on the tablet.
+2. **The room in the front view:** walls, windows onto the street, bar, kitchen hatch, floor and the tables laid out from `floorView()` for all six premises; the decor items in their four styles; the equipment in the hatch.
+3. **People:** the five guest groups, chefs, waiters, Tomek, Adrian, the Friday regular, the food critic and Mewa. They get poses (walk, sit, eat, drink, carry, cook, wave) and simple CSS walking. Bubbles (wishes, patience, rush) become ink speech bubbles, along with the floating coins and hearts.
+4. **Light and weather:** sky, clouds and sun in the windows from the day's weather, rain, the evening dusk with glowing lamps and candles, and the terrace on the pavement.
+5. **The HUD and controls:** paper scraps, tape, handwritten numbers and stitched paper-tag buttons. Choice cards and rush prompts become notes pinned to the page.
+6. **Planning screens and pop-ups** (replaces Graphics B): Menu, Staff, Kitchen, Interior, Marketing and the cards as sketchbook pages; the day report as a journal page with Mewa's notes in the margin.
+7. **The map and icons:** the Old Town map as an ink-and-wash sketch map; food and UI icons in ink and wash.
+8. **Retire the pixel art:** remove `src/ui/pixel/` and its tests and tools once nothing uses them; check the bundle size and the tablet's speed.
+
 ## 10. Personal touches (fill in)
 
 - Her name: Joana / the restaurant's default name: **[Joana´s Kitchen ]**
@@ -763,9 +849,22 @@ Each item is tested in the browser and on the tablet before the next one starts.
 - [x] Graphics C as in the concept: the kitchen as a long wooden counter (the pass) with plates and a heat lamp
 - [x] Graphics C as in the concept: people's details and poses at the new size
 
+**M8 – The Kashubian sketchbook look (section 9.5)**
+
+Chosen on 2026-10-06. **This comes first**, before the rest of M7b and M7c. Each item is tested in the browser and on the tablet before the next one starts.
+
+- [ ] Foundations: `src/ui/sketch/`, the bake-and-cache pipeline, the handwriting font, and the concept scene as a still on the day screen
+- [ ] The restaurant room in the front view, laid out from `floorView()` for every premises, with decor and equipment
+- [ ] People: guests, staff, special characters and Mewa, with poses, walking and ink speech bubbles
+- [ ] Light and weather: the windows' sky, rain, the evening and the terrace
+- [ ] The HUD and controls as paper scraps and stitched tags
+- [ ] Planning screens, cards and pop-ups as sketchbook pages; the day report as a journal page
+- [ ] The Old Town map and the icons in ink and wash
+- [ ] Retire the pixel art, then check the bundle size and the tablet's speed
+
 **M7b – A more dynamic season (section 6.15)**
 
-Comes next, before M7c. Each item is tested in the browser and on the tablet before the next one starts. In order of how much each is expected to help:
+Comes after M8, before M7c. Each item is tested in the browser and on the tablet before the next one starts. In order of how much each is expected to help:
 
 - [x] Tomorrow's forecast at the end of the day report
 - [x] Bookings and big orders to accept or decline
@@ -785,7 +884,7 @@ Comes next, before M7c. Each item is tested in the browser and on the tablet bef
 
 Moved out of M7 on 2026-10-03, so the more dynamic season (M7b) comes first.
 
-- [ ] Graphics B: pixel-framed menus and pop-ups
+- ~~Graphics B: pixel-framed menus and pop-ups~~ (replaced by M8's planning screens, 2026-10-06)
 - [ ] Attracting passers-by: a waiter offering samples at the door
 - [ ] Bigger premises: cellar room, bar counter, toilet
 - [ ] Sticker album ("Gdańsk passport")
@@ -1074,3 +1173,6 @@ Moved out of M7 on 2026-10-03, so the more dynamic season (M7b) comes first.
   - **Who and what** (`data/wishes.ts`, `balance.wishes`): one walk-in party in ten at the player's restaurant hopes for something its group would ask for: something without meat (🌱?, foodies and students), extra dill (🌿!, locals), anything with fish (🐟?), a hot soup (🥣?), something sweet (🍰?), pierogi (🥟!), a coffee (☕?), something spicy (🌶️?), a Polish classic (🇵🇱?) or anything with mushrooms (🍄?, wild mushrooms or chanterelles on a dish, or the mushroom pierogi and gołąbki). Booked parties and regulars bring their own wishes instead. Their own dice, so they never change who comes or what they order.
   - **At the table:** the wish shows as their bubble until the food comes (unless they're losing patience, when ⏳ or 😤 shows instead). It first showed only while ordering, about a second at normal speed, too short to notice. On the menu: ❤️ when the food comes and +8 happiness; missing: 🤷 and −2, a nudge rather than a punishment. The day report sums them up as a hint for tomorrow's menu ("Wishes: 6 of 9 tables found what they hoped for. Asked for but missing: something without meat (×2), extra dill."). Nothing is saved: wishes live only while the day runs. A wish can now be "any one of these" or name an extra or a variant (`MenuWant`), which the mushroom wish needs.
   - **Simulator,** 3 seasons, before → after: do nothing 17,407 → 16,064 zł; cheap and fast 3,779 → 2,405 zł; quality focus 15,797 → 16,165 zł; balanced 54,355 → 57,518 zł, rating 58.9 → 61.6, Neptune 42.2 → 43.9 against Bar Błyskawica's 45.2 (small shifts, mostly the dice). How often wishes were granted: balanced 66%, the others about 40%. Also fixed: the first day's takings goal said "more than yesterday" when there was no yesterday.
+- 2026-10-06: A new look for the whole game: the Kashubian sketchbook (section 9.5), built in M8, which now comes before the rest of M7b and M7c.
+  - **How it was chosen:** eight rounds of concepts (section 9.4). Rounds 4 and 5 kept the isometric dollhouse and changed only the paint (storybook, toy box, modern flat; then pixel, painted, soft 3D and cartoon), and none was liked. Round 6 turned the camera to a front-on stage with bigger people, in three looks (paper theatre, Kashubian folk art, ink-and-watercolour sketchbook); the sketchbook was liked, with some folk art in it. Round 7 tried three strengths of folk art, and the sketchbook page won. Round 8 polished it (`art/concepts/v8/sketchbook-page.png`).
+  - **Rules that change:** the front view replaces the isometric one; the art moves from `src/ui/pixel/` to `src/ui/sketch/`; it is still drawn in code, but baked once into pictures through an offscreen canvas because its SVG filters are too slow to run live; picture files and one bundled handwriting font are allowed. Graphics B (pixel-framed menus) is dropped in favour of M8's sketchbook pages.

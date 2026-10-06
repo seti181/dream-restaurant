@@ -5,7 +5,7 @@
 //   node scripts/play-day.mjs <folder> [days] [url]                 (in another)
 //
 // It opens the restaurant, sets 4x speed, answers every choice card with its first answer, and
-// accepts every booking request, hurries someone in the first rush (rush-<n>.png), photographs the first wish bubble (wish-<n>.png), and screenshots the start (0-start.png), the day (1-during.png),
+// accepts every booking request, hurries someone in the first rush (rush-<n>.png), photographs the first wish bubble (wish-<n>.png) and the evening at 21:00 (evening-<n>.png), and screenshots the start (0-start.png), the day (1-during.png),
 // the top of each day report (report-<n>-top.png), its "Tomorrow" box (report-<n>-tomorrow.png)
 // and the next morning's Today tab at its bookings (plan-<n>.png) its Menu tab (menu-<n>.png) and its Mewa tab (mewa-<n>.png). The browser profile lives
 // in <folder>/edge-profile, so a second run with the same folder carries on from the save.
@@ -138,12 +138,21 @@ for (let day = 1; day <= Number(days); day++) {
   let reached = false;
   let rushShot = false;
   let wishShot = false;
+  let eveningShot = false;
   let themeShot = false;
   for (let i = 0; i < 300; i++) {
     const did = await evaluate(step);
     if (did !== last && did !== 'waiting') console.log(`day ${day}: ${did}`);
     last = did;
     if (day === 1 && i === 20) await screenshot('1-during');
+    // The evening, after dusk (evening-<n>.png), paused for the picture.
+    if (!eveningShot && (await evaluate(`(document.querySelector('.day-time')?.textContent ?? '') >= '21:00'`))) {
+      eveningShot = true;
+      await evaluate(`document.querySelector('button[aria-label="Pause"]')?.click()`);
+      await sleep(600);
+      await screenshot(`evening-${day}`);
+      await evaluate(`document.querySelector('button[aria-label="Four times speed"]')?.click()`);
+    }
     // The first guest with a wish (a bubble like 🌱? or 🌿!): a picture of it (wish-<n>.png).
     if (!wishShot && (await evaluate(`[...document.querySelectorAll('.pixel-bubble')].some((b) => /[?!]$/.test(b.textContent.trim()))`))) {
       wishShot = true;

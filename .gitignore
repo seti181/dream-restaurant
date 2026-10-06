@@ -2,3 +2,6 @@ node_modules
 dist
 *.local
 .DS_Store
+
+# Concept pages, rebuilt by scripts/pixel/concepts-v*.ts
+art/concepts/*/html/

@@ -7,7 +7,8 @@
 - It is a personal gift, for one player on an Android tablet (Samsung Galaxy Tab A series).
 - It is installed as a PWA from GitHub Pages.
 - The full design is in `project.md`. Read the relevant section before starting any feature.
-- The next task is the first unchecked item of M7b in `project.md` section 12, then M7c. M5's "Balancing" item stays open as an ongoing task alongside them, and M6 is the gift day itself.
+- **The priority is the new look: M8, "The Kashubian sketchbook look".** The next task is the first unchecked item of M8 in `project.md` section 12. The plan is in section 9.5, the reference picture is `art/concepts/v8/sketchbook-page.png`, and its code, `scripts/pixel/concepts-v8.ts`, is the starting point. Section 9.5 lists what is settled while building (the front-view layout, the terrace, how people move and more): propose a small design for those, and record what was settled in the decision log (section 16).
+- After M8: the last item of M7b (the morning market), then M7c. M5's "Balancing" item stays open as an ongoing task alongside them, and M6 is the gift day itself.
 - M7b's ideas are described in section 6.15, but only in outline: the details of each are settled when it is built. Look at the code first, propose a small design, and once it is built, record what was settled in the decision log (section 16), as was done for "Tomorrow's forecast".
 
 ## About the developer
@@ -39,6 +40,8 @@ SEEDS=1 npm run simulate                        # a quicker run with one seed
 npx tsx scripts/pixel/room-preview.ts <folder>  # draw the restaurant, its kitchen and everyone in it into PNGs
 npx vite preview --port 4179 --strictPort       # serve the build for play-day.mjs (after npm run build)
 node scripts/play-day.mjs <folder> [days]       # play days in headless Edge at 1364x603 and screenshot the screens and day reports
+npx tsx scripts/pixel/concepts-v8.ts            # write the sketchbook concept page to art/concepts/v8/html
+node scripts/pixel/shoot.mjs <html|folder> <png|folder> [w] [h]  # render HTML/SVG pages to PNGs in headless Edge
 ```
 
 Add `?perf` to the game's address to show the performance meter (for checking on the tablet).
@@ -53,7 +56,9 @@ Add `?perf` to the game's address to show the performance meter (for checking on
 - `src/ui/` holds React components and screens.
   - The UI reads simulation state and sends player actions.
   - It never changes simulation state directly.
-- `src/ui/pixel/` draws all the pixel art in code at runtime (rooms, people, street, map, icons); no image files are shipped. `scripts/pixel/` holds dev-only art tools that never ship.
+- `src/ui/sketch/` (new in M8) draws the Kashubian sketchbook art in code as SVG: rooms, people, street, map, icons, the page frame. Its SVG filters (wash, ink wobble, grain) are too slow to run live, so every piece is baked once into a picture (through an offscreen canvas) and cached; only the baked pictures move during the day.
+- `src/ui/pixel/` draws today's pixel art. M8 replaces it piece by piece and then removes it, so don't extend it.
+- Art is drawn in code where possible. Picture files and one bundled handwriting font (with Polish letters, precached for offline use) are allowed since 2026-10-06; ask before adding one. `scripts/pixel/` holds dev-only art tools that never ship.
 - `src/save/` handles save/load.
   - Saves go to `localStorage`, wrapped in try/catch.
   - Saves carry a `saveVersion` and a migration function.
@@ -67,8 +72,9 @@ Add `?perf` to the game's address to show the performance meter (for checking on
 - No hover-only interactions.
 - Disable pinch-zoom and pull-to-refresh.
 - Keep it light for a budget tablet:
-  - DOM/CSS and SVG only (the pixel art is drawn by our code into images shown as DOM `<img>`s)
-  - no heavy canvas or particle effects
+  - DOM/CSS and SVG only (the art is drawn by our code into images shown as DOM `<img>`s)
+  - no live canvas drawing or particle effects; a canvas may only be used once, to bake a picture
+  - no live SVG filters: bake them into pictures
   - animate with CSS, using transforms where possible
   - small total bundle
 - All player-facing text is English and cozy in tone.
@@ -77,7 +83,7 @@ Add `?perf` to the game's address to show the performance meter (for checking on
 
 - Work on one checklist item at a time. When it is done, tick it in `project.md`.
 - Run `npm run test` (and `npm run build` for UI or config changes) before saying a task is finished.
-- For pixel-art changes, also look at the pictures from `scripts/pixel/room-preview.ts` and at the game at 1364×603.
+- For art changes, look at the game at 1364×603 and compare it with `art/concepts/v8/sketchbook-page.png`. For the old pixel art, `scripts/pixel/room-preview.ts` draws preview pictures. For the new art, check how long baking takes and the frame rate with `?perf`.
 - Ask before adding a new dependency.
 - Don't add features that aren't in `project.md`. Suggest them instead, and add accepted decisions to the decision log (section 16).
 - When changing balance numbers, or adding anything that changes who comes or what they spend, run `npm run simulate` and report the before and after results. For the "before", run it on the last commit in a separate `git worktree` (with a junction to this `node_modules`) rather than stashing the working files.
