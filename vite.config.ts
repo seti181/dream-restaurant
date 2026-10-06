@@ -9,6 +9,8 @@ export default defineConfig({
     // The game's own JSX: React's, with emojis in text shown as drawn icons (src/ui/iconJsx).
     alias: { '@icon-jsx': '/src/ui/iconJsx' },
   },
+  // That JSX is the game's own code, not a package: the dev server mustn't try to pre-bundle it.
+  optimizeDeps: { exclude: ['@icon-jsx/jsx-runtime', '@icon-jsx/jsx-dev-runtime'] },
   plugins: [
     react({ jsxImportSource: '@icon-jsx' }),
     VitePWA({
