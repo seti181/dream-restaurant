@@ -26,6 +26,7 @@ import { MewaIcon } from './MewaIcon';
 import { WEATHER_ICON } from './sketch/icons';
 import { FoodIcon, Icon } from './Icon';
 import { PanoramaScreen } from './Panorama';
+import { sketchWanted } from './SketchRoomView';
 import { isFairDay } from '../sim/neptune';
 import { useGame } from './store';
 
@@ -237,270 +238,283 @@ export function DayOverScreen() {
 
   return (
     <PanoramaScreen weather={summary.weather} evening fair={isFairDay(summary.day)}>
-      <div className="card plan-card">
+      <div className="card plan-card journal">
         <div className="plan-body">
-          <MewaTip screen="dayOver" />
-          <p className="eyebrow">
-            {formatDate(dateOf(summary.day))} · day over
-            {summary.events.length > 0 && ` · ${summary.events.join(' · ')}`}
-          </p>
-          <h1>{headline(summary)}</h1>
-          {!gameOver && <TomorrowTeaser summary={summary} />}
-          {(summary.goalCompleted || summary.rankUp !== null) && <Confetti />}
-          {summary.rankUp !== null && (
-            <div className="note goal-complete rank-up">
-              <p>
-                🏅 <strong>
-                  {restaurantName} is {RANKS[summary.rankUp].inSentence} now!
-                </strong>
+          {/* A journal page: Mewa's notes in the margin (the sketchbook look), the day written up beside them. */}
+          <div className="journal-page">
+            <aside className="journal-margin">
+              {sketchWanted && (
+                <span className="journal-mewa" aria-hidden="true">
+                  <MewaIcon size={88} />
+                </span>
+              )}
+              <MewaTip screen="dayOver" />
+              {!gameOver && sketchWanted && <TomorrowTeaser summary={summary} />}
+            </aside>
+            <div className="journal-entry">
+              <p className="eyebrow">
+                {formatDate(dateOf(summary.day))} · day over
+                {summary.events.length > 0 && ` · ${summary.events.join(' · ')}`}
               </p>
-              <p className="with-icon">
-                <MewaIcon size={32} /> “{RANKS[summary.rankUp].mewa}”
-              </p>
-              <p className="small">✨ {RANKS[summary.rankUp].unlockText}</p>
-            </div>
-          )}
-          {summary.goalCompleted && (
-            <p className="note goal-complete">
-              🎉 Goal complete: {summary.goalCompleted.text}! Mewa drops {money(summary.goalCompleted.reward)} at your
-              door.
-            </p>
-          )}
-          <p className="said">💬 {guestsSaid(summary.feedback)}</p>
-          {summary.forecastSaid && (
-            <p className="said small">
-              <Icon id={WEATHER_ICON[summary.weather]} />{' '}
-              {forecastMiss(summary.forecastSaid, summary.weather)}
-            </p>
-          )}
-          {summary.regulars.map((visit) => {
-            const regular = REGULARS[visit.id];
-            return (
-              <p key={visit.id} className={visit.friends ? 'said small regular-story friends' : 'said small regular-story'}>
-                {regular.emoji} <strong>{regular.name}</strong> {visit.story}
-                {visit.note && (
-                  <span className="muted">
-                    {' '}
-                    {MOOD[visit.mood]} {visit.note}
-                  </span>
-                )}
-                {visit.friends && (
-                  <strong>
-                    {' '}
-                    💛 Friends of the house! {GROUPS[regular.group].name} like you more, and more of them have heard of you.
-                  </strong>
-                )}
-              </p>
-            );
-          })}
-          {summary.wishes.asked > 0 && (
-            <p className="said small">
-              💭 <strong>Wishes:</strong> {summary.wishes.granted} of {summary.wishes.asked}{' '}
-              {summary.wishes.asked === 1 ? 'table' : 'tables'} found what they hoped for.
-              {summary.wishes.missing.length > 0 &&
-                ` Asked for but missing: ${summary.wishes.missing.map((m) => (m.count > 1 ? `${m.text} (×${m.count})` : m.text)).join(', ')}. A hint for tomorrow’s menu?`}
-            </p>
-          )}
-          {summary.cookOff && (
-            <p className="said small">
-              ⚔️ <strong>The cook-off with {RIVALS[summary.cookOff.rival].name}:</strong>{' '}
-              {summary.cookOff.playerDish
-                ? `${summary.cookOff.won ? 'You won!' : 'They won, this time.'} Your ${dishName(summary.cookOff.playerDish)}: ${Math.round(summary.cookOff.playerScore)}, against their ${summary.cookOff.rivalDish ? dishName(summary.cookOff.rivalDish) : 'entry'}: ${Math.round(summary.cookOff.rivalScore)}. ${summary.cookOff.won ? 'The whole Old Town is talking about you.' : 'Everyone talked about it anyway.'}`
-                : `You didn’t enter. ${RIVALS[summary.cookOff.rival].owner} is telling everyone.`}
-            </p>
-          )}
-          {summary.rivalMove && (
-            <p className="said small">
-              {summary.rivalMove.icon} <strong>{summary.rivalMove.title}</strong> is over. {summary.rivalMove.result}
-            </p>
-          )}
-          {summary.themeNight && (
-            <p className="said small">
-              {summary.themeNight.icon} <strong>{summary.themeNight.name}:</strong> {summary.themeNight.guests}{' '}
-              {summary.themeNight.guests === 1 ? 'guest' : 'guests'} from 18:00
-              {summary.themeNight.wantText !== null && `, and ${summary.themeNight.portions} portions of ${summary.themeNight.wantText}`}.
-            </p>
-          )}
-          {summary.dailyGoal && (
-            <p className="said small">
-              🎯 <strong>Today’s goal:</strong> {summary.dailyGoal.text}.{' '}
-              {summary.dailyGoal.done
-                ? `Done! Mewa drops ${money(summary.dailyGoal.reward)} at the door.`
-                : `Not this time: ${goalProgressText(summary.dailyGoal, true).replace(/\.$/, '')}.`}
-            </p>
-          )}
-          {summary.starsEarned.map((earned) => (
-            <p key={earned.template} className="said small">
-              <FoodIcon template={earned.template} /> {earned.text}
-            </p>
-          ))}
-          {summary.bookings.map((booking) => (
-            <p key={booking.name} className="said small">
-              {booking.icon} <strong>{booking.name}.</strong> {booking.text}
-            </p>
-          ))}
-          {summary.staffNews.map((line) => (
-            <p key={line} className="said small">
-              🧑‍🍳 {line}
-            </p>
-          ))}
-          {summary.moments.map((moment) => (
-            <p key={moment.id} className="said small">
-              🃏 <strong>{moment.title}</strong> <span className="muted">({moment.choice})</span> {moment.result}
-            </p>
-          ))}
-          {(summary.help.drinks > 0 || summary.help.apologies > 0) && (
-            <p className="said small">
-              {summary.help.drinks > 0 &&
-                `🥤 ${summary.help.drinks} free ${summary.help.drinks === 1 ? 'drink' : 'drinks'} for waiting tables (${money(-summary.help.cash)}). `}
-              {summary.help.apologies > 0 &&
-                `👨‍🍳 The chef came out to apologise ${summary.help.apologies === 1 ? 'once' : `${summary.help.apologies} times`}.`}
-            </p>
-          )}
-          {(summary.rush.chefs + summary.rush.waiters > 0 || summary.rush.bestStreak >= 3) && (
-            <p className="said small">
-              ⚡ {rushText(summary.rush)}
-            </p>
-          )}
-          {summary.seating.moved > 0 && (
-            <p className="said small">
-              🪑 You showed {summary.seating.moved} {summary.seating.moved === 1 ? 'group' : 'groups'} to a new table
-              {summary.seating.favourites > 0 && `, ${summary.seating.favourites} to a favourite spot`}.
-            </p>
-          )}
-          {summary.happyHour && (
-            <p className="said small">
-              🍹 Happy hour from {formatTime(summary.happyHour.from)} to {formatTime(summary.happyHour.until)}.
-            </p>
-          )}
-          {summary.flyers.handedOut > 0 && (
-            <p className="said small">
-              📜 You handed out {summary.flyers.handedOut} {summary.flyers.handedOut === 1 ? 'flyer' : 'flyers'}
-              {summary.flyers.parties > 0
-                ? `, and ${summary.flyers.guests} ${summary.flyers.guests === 1 ? 'guest' : 'guests'} came in because of them.`
-                : '. Nobody came in this time, but now they know where you are.'}
-            </p>
-          )}
-          {(summary.gulls.shooed > 0 || summary.gulls.stolen > 0) && (
-            <p className="said small">
-              <MewaIcon size={24} label="A gull" /> Gulls on the terrace: {summary.gulls.shooed} shooed away
-              {summary.gulls.stolen > 0 && `, ${summary.gulls.stolen} ${summary.gulls.stolen === 1 ? 'plate' : 'plates'} stolen`}.
-            </p>
-          )}
-          {summary.pairingComments.slice(0, 3).map(({ comment, happy }) => (
-            <p key={comment} className="said small">
-              {happy ? '😋' : '🤔'} “{comment}”
-            </p>
-          ))}
-
-          {summary.reviews.length > 0 && (
-            <div className="reviews">
-              {summary.reviews.slice(0, 4).map((review, i) => (
-                <blockquote key={i} className={review.critic ? 'review critic' : 'review'}>
-                  <span className="review-stars">
-                    <StarRow stars={review.stars} delay={0.2 + i * 0.3} />
-                  </span>
-                  <p>“{review.text}”</p>
-                  <footer>
-                    {review.critic ? '🖋️ ' : '— '}
-                    {review.reviewer}
-                  </footer>
-                  <ReplyBox review={review} index={i} />
-                </blockquote>
+              <h1>{headline(summary)}</h1>
+              {!gameOver && !sketchWanted && <TomorrowTeaser summary={summary} />}
+              {(summary.goalCompleted || summary.rankUp !== null) && <Confetti />}
+              {summary.rankUp !== null && (
+                <div className="note goal-complete rank-up">
+                  <p>
+                    🏅 <strong>
+                      {restaurantName} is {RANKS[summary.rankUp].inSentence} now!
+                    </strong>
+                  </p>
+                  <p className="with-icon">
+                    <MewaIcon size={32} /> “{RANKS[summary.rankUp].mewa}”
+                  </p>
+                  <p className="small">✨ {RANKS[summary.rankUp].unlockText}</p>
+                </div>
+              )}
+              {summary.goalCompleted && (
+                <p className="note goal-complete">
+                  🎉 Goal complete: {summary.goalCompleted.text}! Mewa drops {money(summary.goalCompleted.reward)} at your
+                  door.
+                </p>
+              )}
+              <p className="said">💬 {guestsSaid(summary.feedback)}</p>
+              {summary.forecastSaid && (
+                <p className="said small">
+                  <Icon id={WEATHER_ICON[summary.weather]} />{' '}
+                  {forecastMiss(summary.forecastSaid, summary.weather)}
+                </p>
+              )}
+              {summary.regulars.map((visit) => {
+                const regular = REGULARS[visit.id];
+                return (
+                  <p key={visit.id} className={visit.friends ? 'said small regular-story friends' : 'said small regular-story'}>
+                    {regular.emoji} <strong>{regular.name}</strong> {visit.story}
+                    {visit.note && (
+                      <span className="muted">
+                        {' '}
+                        {MOOD[visit.mood]} {visit.note}
+                      </span>
+                    )}
+                    {visit.friends && (
+                      <strong>
+                        {' '}
+                        💛 Friends of the house! {GROUPS[regular.group].name} like you more, and more of them have heard of you.
+                      </strong>
+                    )}
+                  </p>
+                );
+              })}
+              {summary.wishes.asked > 0 && (
+                <p className="said small">
+                  💭 <strong>Wishes:</strong> {summary.wishes.granted} of {summary.wishes.asked}{' '}
+                  {summary.wishes.asked === 1 ? 'table' : 'tables'} found what they hoped for.
+                  {summary.wishes.missing.length > 0 &&
+                    ` Asked for but missing: ${summary.wishes.missing.map((m) => (m.count > 1 ? `${m.text} (×${m.count})` : m.text)).join(', ')}. A hint for tomorrow’s menu?`}
+                </p>
+              )}
+              {summary.cookOff && (
+                <p className="said small">
+                  ⚔️ <strong>The cook-off with {RIVALS[summary.cookOff.rival].name}:</strong>{' '}
+                  {summary.cookOff.playerDish
+                    ? `${summary.cookOff.won ? 'You won!' : 'They won, this time.'} Your ${dishName(summary.cookOff.playerDish)}: ${Math.round(summary.cookOff.playerScore)}, against their ${summary.cookOff.rivalDish ? dishName(summary.cookOff.rivalDish) : 'entry'}: ${Math.round(summary.cookOff.rivalScore)}. ${summary.cookOff.won ? 'The whole Old Town is talking about you.' : 'Everyone talked about it anyway.'}`
+                    : `You didn’t enter. ${RIVALS[summary.cookOff.rival].owner} is telling everyone.`}
+                </p>
+              )}
+              {summary.rivalMove && (
+                <p className="said small">
+                  {summary.rivalMove.icon} <strong>{summary.rivalMove.title}</strong> is over. {summary.rivalMove.result}
+                </p>
+              )}
+              {summary.themeNight && (
+                <p className="said small">
+                  {summary.themeNight.icon} <strong>{summary.themeNight.name}:</strong> {summary.themeNight.guests}{' '}
+                  {summary.themeNight.guests === 1 ? 'guest' : 'guests'} from 18:00
+                  {summary.themeNight.wantText !== null && `, and ${summary.themeNight.portions} portions of ${summary.themeNight.wantText}`}.
+                </p>
+              )}
+              {summary.dailyGoal && (
+                <p className="said small">
+                  🎯 <strong>Today’s goal:</strong> {summary.dailyGoal.text}.{' '}
+                  {summary.dailyGoal.done
+                    ? `Done! Mewa drops ${money(summary.dailyGoal.reward)} at the door.`
+                    : `Not this time: ${goalProgressText(summary.dailyGoal, true).replace(/\.$/, '')}.`}
+                </p>
+              )}
+              {summary.starsEarned.map((earned) => (
+                <p key={earned.template} className="said small">
+                  <FoodIcon template={earned.template} /> {earned.text}
+                </p>
               ))}
-            </div>
-          )}
+              {summary.bookings.map((booking) => (
+                <p key={booking.name} className="said small">
+                  {booking.icon} <strong>{booking.name}.</strong> {booking.text}
+                </p>
+              ))}
+              {summary.staffNews.map((line) => (
+                <p key={line} className="said small">
+                  🧑‍🍳 {line}
+                </p>
+              ))}
+              {summary.moments.map((moment) => (
+                <p key={moment.id} className="said small">
+                  🃏 <strong>{moment.title}</strong> <span className="muted">({moment.choice})</span> {moment.result}
+                </p>
+              ))}
+              {(summary.help.drinks > 0 || summary.help.apologies > 0) && (
+                <p className="said small">
+                  {summary.help.drinks > 0 &&
+                    `🥤 ${summary.help.drinks} free ${summary.help.drinks === 1 ? 'drink' : 'drinks'} for waiting tables (${money(-summary.help.cash)}). `}
+                  {summary.help.apologies > 0 &&
+                    `👨‍🍳 The chef came out to apologise ${summary.help.apologies === 1 ? 'once' : `${summary.help.apologies} times`}.`}
+                </p>
+              )}
+              {(summary.rush.chefs + summary.rush.waiters > 0 || summary.rush.bestStreak >= 3) && (
+                <p className="said small">
+                  ⚡ {rushText(summary.rush)}
+                </p>
+              )}
+              {summary.seating.moved > 0 && (
+                <p className="said small">
+                  🪑 You showed {summary.seating.moved} {summary.seating.moved === 1 ? 'group' : 'groups'} to a new table
+                  {summary.seating.favourites > 0 && `, ${summary.seating.favourites} to a favourite spot`}.
+                </p>
+              )}
+              {summary.happyHour && (
+                <p className="said small">
+                  🍹 Happy hour from {formatTime(summary.happyHour.from)} to {formatTime(summary.happyHour.until)}.
+                </p>
+              )}
+              {summary.flyers.handedOut > 0 && (
+                <p className="said small">
+                  📜 You handed out {summary.flyers.handedOut} {summary.flyers.handedOut === 1 ? 'flyer' : 'flyers'}
+                  {summary.flyers.parties > 0
+                    ? `, and ${summary.flyers.guests} ${summary.flyers.guests === 1 ? 'guest' : 'guests'} came in because of them.`
+                    : '. Nobody came in this time, but now they know where you are.'}
+                </p>
+              )}
+              {(summary.gulls.shooed > 0 || summary.gulls.stolen > 0) && (
+                <p className="said small">
+                  <MewaIcon size={24} label="A gull" /> Gulls on the terrace: {summary.gulls.shooed} shooed away
+                  {summary.gulls.stolen > 0 && `, ${summary.gulls.stolen} ${summary.gulls.stolen === 1 ? 'plate' : 'plates'} stolen`}.
+                </p>
+              )}
+              {summary.pairingComments.slice(0, 3).map(({ comment, happy }) => (
+                <p key={comment} className="said small">
+                  {happy ? '😋' : '🤔'} “{comment}”
+                </p>
+              ))}
 
-          <div className="report">
-            <section>
-              <h2>Guests</h2>
-              <ul className="rows">
-                <Row label="Served" value={summary.guestsServed} />
-                <Row label="Walked out (waited too long)" value={summary.guestsWalkedOut} />
-                <Row label="Turned away (no free table)" value={summary.guestsTurnedAway} />
-                <Row
-                  label="Average happiness"
-                  value={summary.averageSatisfaction === null ? '–' : `${Math.round(summary.averageSatisfaction)} / 100`}
-                />
-                <Row label="Rating" value={`${stars(summary.ratingBefore)} → ${stars(summary.ratingAfter)}`} />
-              </ul>
-              <h2 className="spaced">By group</h2>
-              <table className="groups">
-                <thead>
-                  <tr>
-                    <th />
-                    <th>Served</th>
-                    <th>Lost</th>
-                    <th>Reputation</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {GROUP_IDS.map((g) => {
-                    const day = summary.groups[g];
-                    return (
-                      <tr key={g}>
-                        <th>{GROUPS[g].name}</th>
-                        <td>{day.served}</td>
-                        <td>{day.lost}</td>
-                        <td>
-                          {Math.round(day.reputationAfter)}{' '}
-                          <Change before={day.reputationBefore} after={day.reputationAfter} />
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </section>
-
-            <section>
-              <h2>Money</h2>
-              <ul className="rows">
-                <Row label="Takings" value={money(summary.revenue)} />
-                <Row label="Ingredients" value={`−${money(summary.ingredientCost)}`} />
-                <Row label="Wages" value={`−${money(summary.wages)}`} />
-                {summary.momentsCash !== 0 && (
-                  <Row label="Cards and free drinks" value={signedMoney(summary.momentsCash)} />
-                )}
-                {summary.rush.tips > 0 && <Row label="Quick-service tips" value={signedMoney(summary.rush.tips)} />}
-                {summary.rivalMoveCost > 0 && <Row label="Free kompot (price war)" value={`−${money(summary.rivalMoveCost)}`} />}
-                {summary.bookingsCash !== 0 && (
-                  <Row label="Bookings: tips and orders" value={signedMoney(summary.bookingsCash)} />
-                )}
-                {summary.rent > 0 && <Row label="Rent for the week" value={`−${money(summary.rent)}`} />}
-                {summary.utilities > 0 && <Row label="Utilities" value={`−${money(summary.utilities)}`} />}
-                <Row label="Profit" value={signedMoney(summary.profit)} total />
-              </ul>
-            </section>
-
-            <section>
-              <h2>Best sellers</h2>
-              {summary.dishesSold.length === 0 ? (
-                <p className="muted">Nothing sold today.</p>
-              ) : (
-                <ul className="rows">
-                  {summary.dishesSold.slice(0, 5).map(({ dish, count }) => (
-                    <Row
-                      key={`${dish.template}/${dish.variant}`}
-                      icon={<FoodIcon template={dish.template} />}
-                      label={recipeKey(dish) === specialKey ? `⭐ ${dishName(dish)}` : dishName(dish)}
-                      value={`× ${count}`}
-                    />
+              {summary.reviews.length > 0 && (
+                <div className="reviews">
+                  {summary.reviews.slice(0, 4).map((review, i) => (
+                    <blockquote key={i} className={review.critic ? 'review critic' : 'review'}>
+                      <span className="review-stars">
+                        <StarRow stars={review.stars} delay={0.2 + i * 0.3} />
+                      </span>
+                      <p>“{review.text}”</p>
+                      <footer>
+                        {review.critic ? '🖋️ ' : '— '}
+                        {review.reviewer}
+                      </footer>
+                      <ReplyBox review={review} index={i} />
+                    </blockquote>
                   ))}
-                </ul>
+                </div>
               )}
-              {summary.lunchSetsSold > 0 && (
-                <p className="small">🍲 {summary.lunchSetsSold} lunch sets sold</p>
-              )}
-              <h2 className="spaced">Around the Old Town</h2>
-              <ul className="rows">
-                {summary.rivals.map((rival) => (
-                  <Row key={rival.id} label={rival.name} value={`${rival.guestsServed} guests`} />
-                ))}
-              </ul>
-            </section>
+
+              <div className="report">
+                <section>
+                  <h2>Guests</h2>
+                  <ul className="rows">
+                    <Row label="Served" value={summary.guestsServed} />
+                    <Row label="Walked out (waited too long)" value={summary.guestsWalkedOut} />
+                    <Row label="Turned away (no free table)" value={summary.guestsTurnedAway} />
+                    <Row
+                      label="Average happiness"
+                      value={summary.averageSatisfaction === null ? '–' : `${Math.round(summary.averageSatisfaction)} / 100`}
+                    />
+                    <Row label="Rating" value={`${stars(summary.ratingBefore)} → ${stars(summary.ratingAfter)}`} />
+                  </ul>
+                  <h2 className="spaced">By group</h2>
+                  <table className="groups">
+                    <thead>
+                      <tr>
+                        <th />
+                        <th>Served</th>
+                        <th>Lost</th>
+                        <th>Reputation</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {GROUP_IDS.map((g) => {
+                        const day = summary.groups[g];
+                        return (
+                          <tr key={g}>
+                            <th>{GROUPS[g].name}</th>
+                            <td>{day.served}</td>
+                            <td>{day.lost}</td>
+                            <td>
+                              {Math.round(day.reputationAfter)}{' '}
+                              <Change before={day.reputationBefore} after={day.reputationAfter} />
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </section>
+
+                <section>
+                  <h2>Money</h2>
+                  <ul className="rows">
+                    <Row label="Takings" value={money(summary.revenue)} />
+                    <Row label="Ingredients" value={`−${money(summary.ingredientCost)}`} />
+                    <Row label="Wages" value={`−${money(summary.wages)}`} />
+                    {summary.momentsCash !== 0 && (
+                      <Row label="Cards and free drinks" value={signedMoney(summary.momentsCash)} />
+                    )}
+                    {summary.rush.tips > 0 && <Row label="Quick-service tips" value={signedMoney(summary.rush.tips)} />}
+                    {summary.rivalMoveCost > 0 && <Row label="Free kompot (price war)" value={`−${money(summary.rivalMoveCost)}`} />}
+                    {summary.bookingsCash !== 0 && (
+                      <Row label="Bookings: tips and orders" value={signedMoney(summary.bookingsCash)} />
+                    )}
+                    {summary.rent > 0 && <Row label="Rent for the week" value={`−${money(summary.rent)}`} />}
+                    {summary.utilities > 0 && <Row label="Utilities" value={`−${money(summary.utilities)}`} />}
+                    <Row label="Profit" value={signedMoney(summary.profit)} total />
+                  </ul>
+                </section>
+
+                <section>
+                  <h2>Best sellers</h2>
+                  {summary.dishesSold.length === 0 ? (
+                    <p className="muted">Nothing sold today.</p>
+                  ) : (
+                    <ul className="rows">
+                      {summary.dishesSold.slice(0, 5).map(({ dish, count }) => (
+                        <Row
+                          key={`${dish.template}/${dish.variant}`}
+                          icon={<FoodIcon template={dish.template} />}
+                          label={recipeKey(dish) === specialKey ? `⭐ ${dishName(dish)}` : dishName(dish)}
+                          value={`× ${count}`}
+                        />
+                      ))}
+                    </ul>
+                  )}
+                  {summary.lunchSetsSold > 0 && (
+                    <p className="small">🍲 {summary.lunchSetsSold} lunch sets sold</p>
+                  )}
+                  <h2 className="spaced">Around the Old Town</h2>
+                  <ul className="rows">
+                    {summary.rivals.map((rival) => (
+                      <Row key={rival.id} label={rival.name} value={`${rival.guestsServed} guests`} />
+                    ))}
+                  </ul>
+                </section>
+              </div>
+              {!gameOver && <Tomorrow summary={summary} />}
+            </div>
           </div>
-          {!gameOver && <Tomorrow summary={summary} />}
         </div>
         <footer className="plan-footer">
           <span className={saved ? 'save-note' : 'save-note warning'}>
