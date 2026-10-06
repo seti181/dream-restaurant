@@ -703,6 +703,8 @@ The game's new look, replacing the pixel art of section 9.1 everywhere: the rest
 - The musician (`floor.musician`) isn't drawn yet.
 - Each street's landmark (section 9.5, the street outside) and the switch with its badge.
 
+**All the icons** (playtest, 2026-10-06): "all the icons" means every one in the game, not only the room's. Still to redo: the emojis in the top panels (weather, coins, stars, today's goal), the round buttons (Manage, Happy hour, Flyers, Who's who), the notes over the room (rush, streak, results), the help panel (move, free drink, apology) and the ⭐ and 🪑 for moving a party; Mewa, whose picture by her tips and on the Mewa tab is still pixel art; the Who's who legend, which shows the guest groups as pixel people; the food icons in the Menu tab; and the emojis in the planning screens, cards, the day report and the game's texts (events, goals, trends, theme nights, bookings and more). About 110 different emojis are used in all (found by searching `src/ui` and `src/data`). The plan: one icon library for everything, extending `src/ui/sketch/icons.ts`, and a small helper that shows any text with its emojis swapped for the drawn icons, so the texts in `src/data` can stay as they are.
+
 **Order of work** (the items of M8, one at a time, each tested in the browser and on the tablet):
 
 1. **Foundations and one still scene:** `src/ui/sketch/` with the palette, painter, motifs and page frame; the bake-and-cache pipeline; the handwriting font. The day screen shows the concept scene as a still picture behind today's UI. Measure baking time and frame rate on the tablet.
@@ -875,9 +877,10 @@ Chosen on 2026-10-06. **This comes first**, before the rest of M7b and M7c. The 
 - [x] People: guests, staff, special characters and Mewa, with poses, walking, eating and other animations, and ink speech bubbles
 - [ ] The street outside: a second view of the Old Town with the terrace, the queue, passers-by to hand flyers to, the gull and the musician
 - [ ] Light and weather: the sky, rain and the evening, inside and outside
+- [ ] Every icon drawn: one ink-and-wash icon for each of the game's emojis (about 110, of which the room's 33 are done), shown in place of the emoji wherever a text has one; Mewa redrawn in the new style (she's still pixel art by her tips); the Who's who legend with the new people
 - [ ] The HUD and controls as paper scraps and stitched tags
-- [ ] Planning screens, cards and pop-ups as sketchbook pages; the day report as a journal page
-- [ ] The Old Town map and the icons in ink and wash
+- [ ] Planning screens, cards and pop-ups as sketchbook pages, with the food icons redrawn; the day report as a journal page
+- [ ] The Old Town map in ink and wash
 - [ ] Retire the pixel art, then check the bundle size and the tablet's speed
 
 **M7b – A more dynamic season (section 6.15)**
@@ -1213,3 +1216,4 @@ Moved out of M7 on 2026-10-03, so the more dynamic season (M7b) comes first.
   - **Waiting is shown:** a bubble with an empty plate and a ring of patience round it, emptying as they wait: green, then amber with an hourglass past half, then red with a cross face and a little shake. Before, waiting showed nothing until they were impatient.
   - **A button to help:** guests getting frustrated (the same moment the old view let them be helped) get a round button beside their bubble, a glass of kompot with a heart, pulsing; it opens the help (a free drink, the chef's apology, another table). Tapping the guests or the bubble still works too.
   - **Drawn icons instead of emojis** in the room (`src/ui/sketch/icons.ts`, one baked sheet): reading the menu, waiting, the hourglass, faces (cross, loved it, happy, so-so, sad), heart and a missed wish; every wish (no meat, dill, fish, soup, something sweet, pierogi, coffee, spicy, a Polish classic, mushrooms); the Friday regular's lemon, the named regulars (laptop, book, anchor, pencil), the special guests (a shot glass, a football, Wałęsa's V, a clapperboard), the critic's pen, the hurry bolt and the coffee break, and a waving hand for later. The emojis in the panels and menus go with the HUD and menus items.
+- 2026-10-06: The new look covers every icon in the game, not only the room's: all the emojis (about 110 different ones, in the panels, buttons, notes, help, menus, report and texts) get a drawn icon, shown in place of the emoji wherever it appears; Mewa and the Who's who legend, still pixel art, are redrawn. A new M8 item, "Every icon drawn", after the street outside and the light and weather (section 9.5, "All the icons").
