@@ -4075,3 +4075,47 @@ h2.spaced {
   font-size: 0.7rem;
   rotate: -8deg;
 }
+
+/* The Top five during the day: the newspaper clipping on a note over the restaurant, wider than Who's who. */
+.ranking-panel {
+  width: min(640px, calc(100% - 24px));
+  max-height: calc(100% - 200px);
+  overflow: auto;
+}
+
+.ranking-panel > .note-close {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 1;
+}
+
+.ranking-panel .ranking {
+  margin: 0;
+  padding: 8px 12px;
+}
+
+.ranking-panel .ranking h2 {
+  padding-right: 40px;
+  font-size: 1.05rem;
+}
+
+.ranking-panel .ranking-table th,
+.ranking-panel .ranking-table td {
+  padding: 3px 6px;
+  font-size: 0.9rem;
+}
+
+/* On the Today tab: the line, with its button to see the whole table. */
+.ranking-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+}
+
+/* Numbers stay on one line (a long restaurant name may wrap instead). */
+.ranking-table td:not(:nth-child(2)) {
+  white-space: nowrap;
+}

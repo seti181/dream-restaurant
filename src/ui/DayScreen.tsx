@@ -19,6 +19,7 @@ import { GROUP_COLOURS } from './pixel/sprites';
 import { canHelp, canTend, PixelRestaurantView } from './PixelRestaurantView';
 import { SketchRoomView, sketchWanted } from './SketchRoomView';
 import { useUpright } from './sketchView/shared';
+import { RankingTable } from './plan/RankingBox';
 import { SketchStreetView } from './SketchStreetView';
 import { whatNeedsYou } from './sketch/street';
 import type { IconId } from './sketch/icons';
@@ -502,6 +503,7 @@ export function DayScreen() {
   const [choosing, setChoosing] = useState(false);
   const [stat, setStat] = useState<StatId | null>(null);
   const [legend, setLegend] = useState(false);
+  const [ranking, setRanking] = useState(false);
   const [outside, setOutside] = useState(false);
   const upright = useUpright();
   const [note, setNote] = useState<{ text: string; at: number } | null>(null);
@@ -685,7 +687,24 @@ export function DayScreen() {
             setNote({ text: '📜 Tap someone walking past to hand them a flyer.', at: Date.now() });
           }}
         />
-        <RoundButton icon="👥" label="Who’s who" expanded={legend} onClick={() => setLegend(!legend)} />
+        <RoundButton
+          icon="👥"
+          label="Who’s who"
+          expanded={legend}
+          onClick={() => {
+            setLegend(!legend);
+            setRanking(false);
+          }}
+        />
+        <RoundButton
+          icon="📰"
+          label="Top five"
+          expanded={ranking}
+          onClick={() => {
+            setRanking(!ranking);
+            setLegend(false);
+          }}
+        />
         {sketchWanted && !upright && (
           <RoundButton
             icon={<Icon id={outside ? 'chefHat' : `street:${live.floor.location}`} size={30} />}
@@ -701,6 +720,12 @@ export function DayScreen() {
       </div>
 
       {legend && <WhoIsWho flyersLeft={flyers} onClose={() => setLegend(false)} />}
+      {ranking && (
+        <div className="frame legend-panel ranking-panel" role="dialog" aria-label="The Old Town top five">
+          <NoteClose onClose={() => setRanking(false)} />
+          <RankingTable today={live.guestsToday} />
+        </div>
+      )}
       {stat && !live.moment && <StatPanel stat={stat} onClose={() => setStat(null)} />}
       {choosing && stillThere && !live.moment && (
         <div className="help-panel" role="dialog" aria-label="Choose a table">

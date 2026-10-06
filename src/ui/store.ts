@@ -79,6 +79,8 @@ export interface LiveDay extends DayTally {
   closing: boolean;
   /** Who is sitting where, for the restaurant view. */
   floor: FloorView;
+  /** Guests each restaurant (yours, then the rivals) has served so far today, for the Top five. */
+  guestsToday: Record<string, number>;
   /** Excuses from anyone who didn't turn up today. */
   absent: string[];
   /** A choice card waiting for an answer; the clock stops until it gets one. */
@@ -193,6 +195,7 @@ function liveFrom(openDay: OpenDay): LiveDay {
   const pending = moments.pending && MOMENTS[moments.pending.id];
   return {
     ...tallyFor(progress.outcomes, 'player'),
+    guestsToday: Object.fromEntries(progress.restaurants.map((r) => [r.id, tallyFor(progress.outcomes, r.id).guestsServed])),
     minute,
     closing: minute >= balance.clock.closeMinute,
     floor: {

@@ -372,7 +372,7 @@ Playtest (2026-10-03): after a few days the game feels repetitive, because one d
 5. **Dishes level up** (Cafeteria Nipponica). The more a dish is cooked, the better the kitchen gets at it: up to three stars, each a little more quality, and at three stars a new variant or taste tag.
 6. **Trends** (Game Dev Tycoon, Cafeteria Nipponica). Every week Gdańsk is crazy about something ("Everyone wants seafood this week", "Sweet tooth week"): one group's tastes shift for a week, shown on the Today tab, so the menu is worth adjusting.
 7. **Restaurant rank-ups** (Kairosoft). Milestones of guests served and stars raise the restaurant's rank (for example Bar, Bistro, Restaurant, Old Town Favourite), with a little celebration from Mewa. Each rank unlocks something: decor, a menu slot, new kinds of choice cards.
-8. **A weekly Old Town ranking** (Kairosoft's rankings). Every Monday a newspaper top five of the player and the rivals, by rating and guests, so the race for the Golden Neptune is visible all season.
+8. **A weekly Old Town ranking** (Kairosoft's rankings). Every Monday a newspaper top five of the player and the rivals, by rating and guests, so the race for the Golden Neptune is visible all season. The table can be looked at any time: from the Today tab on any day, and during the day from a Top five button, with each restaurant's guests so far today (added 2026-10-06).
 
 **C. Rivals who do things**
 
@@ -1269,3 +1269,7 @@ Moved out of M7 on 2026-10-03, so the more dynamic season (M7b) comes first.
   - **On top, as before:** the six street markers (now stitched badges), their names on paper tags, the rivals as round stamped seals, Mewa by your door. The map fills its column's width.
   - **"Have a look"** on the Map tab now shows the street's restaurant in the sketchbook look.
   - **Checked** at 1364×603, 850×530 and held upright (where the map is small beside the details); a test checks the picture is sound and every street lands where the old map had it.
+- 2026-10-06: The Old Town top five, any time (the player wants to see how the restaurant is doing against the competition at any point in the game). Before, the full table showed only on the Monday it came out, with a single line on the other days.
+  - **During the day:** a new round button, Top five (a newspaper), after Who's who, opens the Dziennik Bałtycki clipping on a note over the restaurant (the game keeps running; it and Who's who close each other). It shows this week's table with one more column, **Today so far**: each restaurant's guests today, live. Before the first Monday there's no table yet: the note says the first top five comes out next Monday and shows today's race alone, best first.
+  - **While planning:** the line on the Today tab has a See the table button, any day.
+  - It only reads what the simulation already knows (each restaurant's tally for the day), so nothing about who comes or what they spend changes; no simulator run needed.
