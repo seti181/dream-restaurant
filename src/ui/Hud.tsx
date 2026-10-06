@@ -6,8 +6,8 @@ import { dateOf, formatDate, seasonWeek } from '../sim/calendar';
 import { formatTime } from '../sim/clock';
 import { playerRating } from '../sim/game';
 import { money } from './format';
-import { COIN, STAR, WEATHER_ICONS } from './pixel/icons';
-import { PixelIcon } from './PixelIcon';
+import { WEATHER_ICON } from './sketch/icons';
+import { Icon } from './Icon';
 import { setSoundPrefs, useSoundPrefs } from './sound';
 import { useGame, type Speed } from './store';
 
@@ -83,7 +83,7 @@ export function useHudFacts() {
 export function WeatherName({ facts }: { facts: ReturnType<typeof useHudFacts> }) {
   return (
     <>
-      <PixelIcon art={WEATHER_ICONS[facts.weatherId]} name={`weather:${facts.weatherId}`} /> {facts.weather.name}
+      <Icon id={WEATHER_ICON[facts.weatherId]} /> {facts.weather.name}
     </>
   );
 }
@@ -92,7 +92,7 @@ export function WeatherName({ facts }: { facts: ReturnType<typeof useHudFacts> }
 export function Cash({ facts }: { facts: ReturnType<typeof useHudFacts> }) {
   return (
     <>
-      <PixelIcon art={COIN} name="coin" /> {money(facts.cash)}
+      <Icon id="coin" /> {money(facts.cash)}
     </>
   );
 }
@@ -101,7 +101,7 @@ export function Cash({ facts }: { facts: ReturnType<typeof useHudFacts> }) {
 export function Rating({ facts }: { facts: ReturnType<typeof useHudFacts> }) {
   return (
     <>
-      {facts.rating.toFixed(1)} <PixelIcon art={STAR} name="star" label="stars" />
+      {facts.rating.toFixed(1)} <Icon id="star" label="stars" />
     </>
   );
 }

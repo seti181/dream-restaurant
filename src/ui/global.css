@@ -478,7 +478,8 @@ button {
 .portrait {
   flex: none;
   align-self: center;
-  image-rendering: pixelated;
+  display: inline-block;
+  background-size: 100% 100%;
 }
 
 .role {
@@ -1625,18 +1626,6 @@ h2.spaced {
   transform: translate(-50%, -50%);
 }
 
-/* Pixel-art icons in the interface. */
-.pixel-icon {
-  display: inline-block;
-  vertical-align: middle;
-  image-rendering: pixelated;
-}
-
-.dish-row > .pixel-icon {
-  flex: none;
-  margin-right: 10px;
-}
-
 /* ---------- The pixel-art Old Town map ---------- */
 
 .pixel-map-wrap {
@@ -2525,6 +2514,16 @@ h2.spaced {
   flex: none;
   background-repeat: no-repeat;
   vertical-align: middle;
+}
+
+/* An icon in a line of text: a little bigger than the letters, sitting on the line. */
+.sk-icon.inline {
+  margin: 0 0.05em;
+  vertical-align: -0.3em;
+}
+
+.dish-row > .food-icon {
+  margin-right: 10px;
 }
 
 .sk-bubble-face {

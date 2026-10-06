@@ -23,8 +23,8 @@ import { dishName, forecastMiss, money, signedMoney, stars } from './format';
 import { Confetti, StarRow } from './Juice';
 import { MewaTip } from './Mewa';
 import { MewaIcon } from './MewaIcon';
-import { WEATHER_ICONS } from './pixel/icons';
-import { FoodIcon, PixelIcon } from './PixelIcon';
+import { WEATHER_ICON } from './sketch/icons';
+import { FoodIcon, Icon } from './Icon';
 import { PanoramaScreen } from './Panorama';
 import { isFairDay } from '../sim/neptune';
 import { useGame } from './store';
@@ -108,7 +108,7 @@ function TomorrowTeaser({ summary }: { summary: DaySummary }) {
   const booked = game.bookings.filter((r) => r.accepted && r.day === tomorrow.day).map((r) => bookingKindOf(r).name.toLowerCase());
   return (
     <p className="tomorrow-teaser">
-      <PixelIcon art={WEATHER_ICONS[tomorrow.weather]} name={`weather:${tomorrow.weather}`} />{' '}
+      <Icon id={WEATHER_ICON[tomorrow.weather]} />{' '}
       <strong>Tomorrow:</strong> {WEATHER[tomorrow.weather].name.toLowerCase()} and {CROWD_SHORT[tomorrow.crowd]}
       {happening && `, and ${happening.short}`}
       {booked.length > 0 && `, with ${booked.join(' and ')} booked`}. <span className="muted">More at the bottom.</span>
@@ -130,7 +130,7 @@ function Tomorrow({ summary }: { summary: DaySummary }) {
     <section className="today-news tomorrow">
       <h2>Tomorrow: {formatDate(dateOf(tomorrow.day))}</h2>
       <p>
-        <PixelIcon art={WEATHER_ICONS[tomorrow.weather]} name={`weather:${tomorrow.weather}`} />{' '}
+        <Icon id={WEATHER_ICON[tomorrow.weather]} />{' '}
         <strong>{WEATHER[tomorrow.weather].name}, says the forecast.</strong> {WEATHER[tomorrow.weather].forecast}
       </p>
       {happening && (
@@ -269,7 +269,7 @@ export function DayOverScreen() {
           <p className="said">💬 {guestsSaid(summary.feedback)}</p>
           {summary.forecastSaid && (
             <p className="said small">
-              <PixelIcon art={WEATHER_ICONS[summary.weather]} name={`weather:${summary.weather}`} />{' '}
+              <Icon id={WEATHER_ICON[summary.weather]} />{' '}
               {forecastMiss(summary.forecastSaid, summary.weather)}
             </p>
           )}

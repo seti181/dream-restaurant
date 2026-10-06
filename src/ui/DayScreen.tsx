@@ -11,7 +11,7 @@ import { streakTipPerGuest } from '../sim/rush';
 import { THEME_NIGHTS } from '../data/themeNights';
 import { dishName, forecastMiss, money } from './format';
 import { Cash, MuteButton, Rating, SpeedControls, useHudFacts, WeatherName } from './Hud';
-import { FoodIcon } from './PixelIcon';
+import { FoodIcon, Icon } from './Icon';
 import type { GroupId } from '../data/groups';
 import { MewaTip } from './Mewa';
 import { MomentCard, MomentResultNote, NoteClose } from './MomentCard';
@@ -83,7 +83,7 @@ function GroupRows({ counts }: { counts: Partial<Record<GroupId, number>> }) {
     <ul className="stat-rows">
       {rows.map(({ g, n }) => (
         <li key={g}>
-          <span className="swatch" style={{ background: GROUP_COLOURS[g] }} />
+          <Icon id={`group:${g}`} size={26} />
           <span className="stat-name">{GROUPS[g].name}</span>
           <span className="stat-bar">
             <span style={{ width: `${(n / most) * 100}%`, background: GROUP_COLOURS[g] }} />
@@ -318,17 +318,32 @@ function WhoIsWho({ flyersLeft, onClose }: { flyersLeft: number; onClose: () => 
       <ul className="legend-groups">
         {GROUP_IDS.map((g) => (
           <li key={g}>
-            <span className="swatch" style={{ background: GROUP_COLOURS[g] }} />
+            <Icon id={`group:${g}`} size={38} />
             {GROUPS[g].name}
           </li>
         ))}
       </ul>
       <ul className="legend-bubbles">
-        <li>💬 choosing from the menu</li>
-        <li>⏳ 😤 waiting for their food: tap the table to look after them</li>
-        <li>😋 🙂 😐 😞 how the food went</li>
-        <li>😠 walked out</li>
-        {flyersLeft > 0 && <li>📜 tap someone walking past to hand them a flyer</li>}
+        <li>
+          <Icon id="menu" /> reading the menu
+        </li>
+        <li>
+          <Icon id="plate" /> waiting for their food: the ring round it empties as they wait
+        </li>
+        <li>
+          <Icon id="hourglass" /> <Icon id="angry" /> getting impatient: tap <Icon id="help" /> or the table to look after them
+        </li>
+        <li>
+          <Icon id="yum" /> <Icon id="happy" /> <Icon id="meh" /> <Icon id="sad" /> how the food went
+        </li>
+        <li>
+          <Icon id="angry" /> walking out cross
+        </li>
+        {flyersLeft > 0 && (
+          <li>
+            <Icon id="scroll" /> tap someone walking past to hand them a flyer
+          </li>
+        )}
       </ul>
     </div>
   );

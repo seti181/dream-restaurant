@@ -21,7 +21,7 @@ import { trendLine, type TrendState } from '../../sim/trends';
 import { MONTH_NAMES } from '../../sim/calendar';
 import { dishFits, extraCost, extrasOf, freshOn, ingredientCostOf, inSeasonOn, produceName, recipeKey, tagsOf, templateOf } from '../../sim/menu';
 import { money, recipeText } from '../format';
-import { FoodIcon } from '../PixelIcon';
+import { FoodIcon } from '../Icon';
 import { useGame } from '../store';
 
 const CATEGORIES: Category[] = ['soup', 'main', 'dessert', 'drink'];

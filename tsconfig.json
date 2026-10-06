@@ -5,6 +5,9 @@
     "module": "ESNext",
     "moduleResolution": "bundler",
     "jsx": "react-jsx",
+    // The game's own JSX: React's, with emojis in text shown as drawn icons (src/ui/iconJsx).
+    "jsxImportSource": "@icon-jsx",
+    "paths": { "@icon-jsx/*": ["./src/ui/iconJsx/*"] },
     "types": ["vite/client"],
 
     "strict": true,

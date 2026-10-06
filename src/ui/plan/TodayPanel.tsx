@@ -21,8 +21,8 @@ import { dailyGoalText } from '../../sim/dailyGoals';
 import { RankingBox } from './RankingBox';
 import { RivalMoveCard } from './RivalMoveCard';
 import { CookOffCard } from './CookOffCard';
-import { WEATHER_ICONS } from '../pixel/icons';
-import { FoodIcon, PixelIcon } from '../PixelIcon';
+import { WEATHER_ICON } from '../sketch/icons';
+import { FoodIcon, Icon } from '../Icon';
 import { useGame } from '../store';
 
 const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? '' : 's'}`;
@@ -96,7 +96,7 @@ export function TodayPanel() {
       <section className="today-news">
         <h2>Today in Gdańsk</h2>
         <p>
-          <PixelIcon art={WEATHER_ICONS[weather]} name={`weather:${weather}`} /> {WEATHER[weather].forecast}
+          <Icon id={WEATHER_ICON[weather]} /> {WEATHER[weather].forecast}
         </p>
         {happening && (
           <p>

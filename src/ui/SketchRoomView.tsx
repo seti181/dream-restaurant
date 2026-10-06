@@ -4,7 +4,7 @@
 // their pans; bubbles and money float over the tables. Every picture is baked once (sketch/bake.ts),
 // and only those pictures move, with CSS and the browser's animations.
 
-import { createContext, useCallback, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { balance } from '../data/balance';
 import { LOCATIONS } from '../data/locations';
 import type { GroupId } from '../data/groups';
@@ -14,7 +14,8 @@ import { TOP_RANK } from '../sim/ranks';
 import { dishName, money } from './format';
 import { canHelp, canTend } from './PixelRestaurantView';
 import { REGULARS } from '../data/regulars';
-import { ICON_CELL, ICON_IDS, iconOf, iconSheet, type IconId } from './sketch/icons';
+import { iconOf, type IconId } from './sketch/icons';
+import { Icon } from './Icon';
 import { bake } from './sketch/bake';
 import { GROUP_LOOKS, type SketchKind } from './sketch/cast';
 import { chefSpot, depthScale, frontLayout, LAYER, moveWalk, queueSpot, serveWalk, waiterSpot, walkIn, zOf, type FrontLayout, type Point } from './sketch/frontRoom';
@@ -110,21 +111,6 @@ const chefSpec = (variant: number): SheetSpec => ({ key: `chef|${variant}`, shee
 const lengthOf = (path: Point[]) => path.slice(1).reduce((sum, p, i) => sum + Math.hypot(p.x - path[i].x, p.y - path[i].y), 0);
 /** The pace that walks a path within `seconds`, never slower than `pace`. */
 const brisk = (path: Point[], pace: number, seconds: number) => Math.max(pace, lengthOf(path) / seconds);
-
-/** The baked sheet of icons, for anything in the room that shows one. */
-const IconSheet = createContext<string | null>(null);
-
-/** A hand-drawn icon, `size` pixels square. */
-function Icon({ id, size }: { id: IconId; size: number }) {
-  const url = useContext(IconSheet);
-  const i = ICON_IDS.indexOf(id);
-  return (
-    <span
-      className="sk-icon"
-      style={{ width: size, height: size, backgroundImage: url ? `url(${url})` : undefined, backgroundSize: `${size * ICON_IDS.length}px ${size}px`, backgroundPositionX: -i * size }}
-    />
-  );
-}
 
 /** One at a time, so baking never holds up the day for long. */
 let queue: Promise<unknown> = Promise.resolve();
@@ -624,8 +610,6 @@ export function SketchRoomView({
   const { walks, done, arriving, busyWaiters, served, seatedAt } = useWalks(layout, floor, minute);
   const leavers = useQueueLeavers(layout, floor);
   const floats = useFloats(floor, served);
-  const iconScale = Math.round(dpr * 40) / 40;
-  const icons = useBaked(ready ? `icons|${iconScale}` : null, () => svgPicture(ICON_IDS.length * ICON_CELL, ICON_CELL, iconSheet(new Painter())), ICON_IDS.length * ICON_CELL, ICON_CELL, iconScale);
   /** The visit as the player sees it: reading the menu after sitting down, then waiting until the waiter brings the food. */
   const stageOf = (guests: TableGuests, table: number): GuestStage => {
     const key = `${table}:${guests.since}`;
@@ -785,89 +769,87 @@ export function SketchRoomView({
 
   return (
     <div ref={wrap} className="sk-wrap">
-      <IconSheet.Provider value={icons}>
-        <div className="sk-scene" style={{ width: at(layout.width), height: at(layout.height) }} role="img" aria-label="Your restaurant">
-          {room && <img src={room} className="sk-layer" alt="" style={{ width: at(layout.width), height: at(layout.height), zIndex: 0 }} />}
-          {clock && <WallClock minute={minute} x={at(clock.x)} y={at(clock.y)} r={at(19)} />}
-          {chefs}
-          {counter && <img src={counter} className="sk-layer" alt="" style={{ width: at(layout.width), height: at(layout.height), zIndex: 7 }} />}
-          {layout.tables.slice(0, furnished).map((spot, t) => {
-            const k = spot.scale;
-            const style = (z: number) => ({ left: at(spot.x + TABLE_BOX.left * k), top: at(spot.top + TABLE_BOX.top * k), width: at(TABLE_BOX.width * k), height: at(TABLE_BOX.height * k), zIndex: z });
+      <div className="sk-scene" style={{ width: at(layout.width), height: at(layout.height) }} role="img" aria-label="Your restaurant">
+        {room && <img src={room} className="sk-layer" alt="" style={{ width: at(layout.width), height: at(layout.height), zIndex: 0 }} />}
+        {clock && <WallClock minute={minute} x={at(clock.x)} y={at(clock.y)} r={at(19)} />}
+        {chefs}
+        {counter && <img src={counter} className="sk-layer" alt="" style={{ width: at(layout.width), height: at(layout.height), zIndex: 7 }} />}
+        {layout.tables.slice(0, furnished).map((spot, t) => {
+          const k = spot.scale;
+          const style = (z: number) => ({ left: at(spot.x + TABLE_BOX.left * k), top: at(spot.top + TABLE_BOX.top * k), width: at(TABLE_BOX.width * k), height: at(TABLE_BOX.height * k), zIndex: z });
+          return (
+            <span key={`table${t}`}>
+              {chairs && <img src={chairs} className="sk-layer" alt="" style={style(zOf(spot.row, LAYER.chairs))} />}
+              {table && <img src={table} className="sk-layer" alt="" style={style(zOf(spot.row, LAYER.table))} />}
+            </span>
+          );
+        })}
+        {people}
+        {idleWaiters}
+        {queue}
+        {[...walks, ...leavers.walks].map((walk) => (
+          <Walker key={walk.id} walk={walk} url={sheets.get(walk.sheet.key)} layout={layout} scale={scale} speed={speed} onDone={walks.includes(walk) ? done : leavers.done} />
+        ))}
+        {frame && <img src={frame} className="sk-layer sk-frame" alt="" style={{ width: at(layout.width), height: at(layout.height) }} />}
+        {bubbles}
+        {/* Every table still waiting for food can be tapped: its bubble, or the guests themselves. Nearer rows on top. */}
+        {onTableTap &&
+          layout.tables.slice(0, furnished).map((spot, t) =>
+            canTend(floor.tables[t]) ? (
+              <button
+                key={`tend${t}`}
+                type="button"
+                className="sk-tend"
+                style={{
+                  left: at(spot.x - 75 * spot.scale),
+                  top: at(spot.top - 150 * spot.scale) - 34,
+                  width: at(150 * spot.scale),
+                  height: at(150 * spot.scale) + 34,
+                  zIndex: 960 + spot.row,
+                }}
+                aria-label="Look after this table"
+                onClick={() => onTableTap(t)}
+              />
+            ) : null,
+          )}
+        {onFreeTableTap &&
+          freeTables.map(({ table: t, favourite }) => {
+            const spot = layout.tables[t];
+            if (!spot || t >= furnished) return null;
             return (
-              <span key={`table${t}`}>
-                {chairs && <img src={chairs} className="sk-layer" alt="" style={style(zOf(spot.row, LAYER.chairs))} />}
-                {table && <img src={table} className="sk-layer" alt="" style={style(zOf(spot.row, LAYER.table))} />}
-              </span>
+              <button
+                key={`free${t}`}
+                type="button"
+                className={`free-table${favourite ? ' favourite' : ''}`}
+                style={{ left: at(spot.x), top: at(spot.top) }}
+                aria-label={favourite ? 'Their favourite spot: seat them here' : 'Seat them here'}
+                onClick={() => onFreeTableTap(t)}
+              >
+                {favourite ? '⭐' : '🪑'}
+              </button>
             );
           })}
-          {people}
-          {idleWaiters}
-          {queue}
-          {[...walks, ...leavers.walks].map((walk) => (
-            <Walker key={walk.id} walk={walk} url={sheets.get(walk.sheet.key)} layout={layout} scale={scale} speed={speed} onDone={walks.includes(walk) ? done : leavers.done} />
-          ))}
-          {frame && <img src={frame} className="sk-layer sk-frame" alt="" style={{ width: at(layout.width), height: at(layout.height) }} />}
-          {bubbles}
-          {/* Every table still waiting for food can be tapped: its bubble, or the guests themselves. Nearer rows on top. */}
-          {onTableTap &&
-            layout.tables.slice(0, furnished).map((spot, t) =>
-              canTend(floor.tables[t]) ? (
-                <button
-                  key={`tend${t}`}
-                  type="button"
-                  className="sk-tend"
-                  style={{
-                    left: at(spot.x - 75 * spot.scale),
-                    top: at(spot.top - 150 * spot.scale) - 34,
-                    width: at(150 * spot.scale),
-                    height: at(150 * spot.scale) + 34,
-                    zIndex: 960 + spot.row,
-                  }}
-                  aria-label="Look after this table"
-                  onClick={() => onTableTap(t)}
-                />
-              ) : null,
-            )}
-          {onFreeTableTap &&
-            freeTables.map(({ table: t, favourite }) => {
-              const spot = layout.tables[t];
-              if (!spot || t >= furnished) return null;
-              return (
-                <button
-                  key={`free${t}`}
-                  type="button"
-                  className={`free-table${favourite ? ' favourite' : ''}`}
-                  style={{ left: at(spot.x), top: at(spot.top) }}
-                  aria-label={favourite ? 'Their favourite spot: seat them here' : 'Seat them here'}
-                  onClick={() => onFreeTableTap(t)}
-                >
-                  {favourite ? '⭐' : '🪑'}
-                </button>
-              );
-            })}
-          {floor.chefHurry?.map((state, i) => {
-            const spot = chefSpot(layout, floor.chefHurry!.length, i);
-            return <StaffHurry key={`hurryChef${i}`} state={state} left={at(spot.x)} top={at(layout.hatch.counter - 150)} label="Hurry this chef" onTap={onStaffTap && (() => onStaffTap('chef', i))} />;
-          })}
-          {floor.waiterHurry?.map((state, i) => {
-            if (busyWaiters.has(i) && state === 'ready') return null;
-            const spot = waiterSpot(layout, i);
-            return <StaffHurry key={`hurryWaiter${i}`} state={state} left={at(spot.x)} top={at(spot.y - 220 * depthScale(layout, spot.y))} label="Hurry this waiter" onTap={onStaffTap && (() => onStaffTap('waiter', i))} />;
-          })}
-          {floats.map((f) => {
-            const spot = layout.tables[f.table];
-            if (!spot) return null;
-            return (
-              <span key={f.id} className="sk-float" style={{ left: at(spot.x), top: at(spot.top - 170 * spot.scale) }}>
-                +{money(f.bill)}
-                {f.heart && <span className="sk-heart">♥</span>}
-              </span>
-            );
-          })}
-          {floor.gull && <DoorGull layout={layout} scale={scale} onTap={onGullTap} />}
-        </div>
-      </IconSheet.Provider>
+        {floor.chefHurry?.map((state, i) => {
+          const spot = chefSpot(layout, floor.chefHurry!.length, i);
+          return <StaffHurry key={`hurryChef${i}`} state={state} left={at(spot.x)} top={at(layout.hatch.counter - 150)} label="Hurry this chef" onTap={onStaffTap && (() => onStaffTap('chef', i))} />;
+        })}
+        {floor.waiterHurry?.map((state, i) => {
+          if (busyWaiters.has(i) && state === 'ready') return null;
+          const spot = waiterSpot(layout, i);
+          return <StaffHurry key={`hurryWaiter${i}`} state={state} left={at(spot.x)} top={at(spot.y - 220 * depthScale(layout, spot.y))} label="Hurry this waiter" onTap={onStaffTap && (() => onStaffTap('waiter', i))} />;
+        })}
+        {floats.map((f) => {
+          const spot = layout.tables[f.table];
+          if (!spot) return null;
+          return (
+            <span key={f.id} className="sk-float" style={{ left: at(spot.x), top: at(spot.top - 170 * spot.scale) }}>
+              +{money(f.bill)}
+              {f.heart && <span className="sk-heart">♥</span>}
+            </span>
+          );
+        })}
+        {floor.gull && <DoorGull layout={layout} scale={scale} onTap={onGullTap} />}
+      </div>
     </div>
   );
 }

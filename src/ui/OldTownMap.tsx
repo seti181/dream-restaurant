@@ -6,9 +6,9 @@ import { LOCATION_IDS, LOCATIONS, type LocationId } from '../data/locations';
 import type { RivalId } from '../data/rivals';
 import { playerOf } from '../sim/game';
 import { MewaIcon } from './MewaIcon';
-import { drawOldTown, MAP_HEIGHT, MAP_WIDTH, mapPixel, STREET_ICONS } from './pixel/map';
+import { drawOldTown, MAP_HEIGHT, MAP_WIDTH, mapPixel } from './pixel/map';
 import { imageUrl } from './pixel/raster';
-import { PixelIcon } from './PixelIcon';
+import { Icon } from './Icon';
 import { useGame } from './store';
 import { useFittingScale } from './useFittingScale';
 
@@ -56,7 +56,7 @@ export function OldTownMap({ selected, onSelect }: { selected: LocationId; onSel
                 aria-label={LOCATIONS[id].name}
                 onClick={() => onSelect(id)}
               >
-                <PixelIcon art={STREET_ICONS[id]} name={`street:${id}`} scale={3} />
+                <Icon id={`street:${id}`} size={34} />
               </button>
               <span className="map-name">{LOCATIONS[id].name}</span>
               {here.length > 0 && (

@@ -5,8 +5,12 @@ import { VitePWA } from 'vite-plugin-pwa';
 export default defineConfig({
   // The game is served from https://<user>.github.io/dream-restaurant/
   base: '/dream-restaurant/',
+  resolve: {
+    // The game's own JSX: React's, with emojis in text shown as drawn icons (src/ui/iconJsx).
+    alias: { '@icon-jsx': '/src/ui/iconJsx' },
+  },
   plugins: [
-    react(),
+    react({ jsxImportSource: '@icon-jsx' }),
     VitePWA({
       // New versions install themselves; they take over when the app is reopened.
       registerType: 'autoUpdate',

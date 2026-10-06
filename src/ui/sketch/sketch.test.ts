@@ -9,7 +9,7 @@ import { frontLayout, moveWalk, PITCH, serveWalk, walkIn } from './frontRoom';
 import { Painter, svgPicture } from './painter';
 import { chairsPicture, hatchCounterPicture, pageFramePicture, platesPicture, roomPicture, tablePicture } from './roomArt';
 import { chefSheet, guestSheet, waiterSheet } from './sheets';
-import { ICON_CELL, ICON_IDS, iconOf, iconSheet } from './icons';
+import { ICON_CELL, ICON_COLUMNS, ICON_ROWS, iconForEmoji, iconOf, iconSheet } from './icons';
 import { WISHES } from '../../data/wishes';
 import { REGULARS } from '../../data/regulars';
 
@@ -124,7 +124,19 @@ describe('the pictures', () => {
 
 describe('the icons', () => {
   it('are drawn soundly', () => {
-    expectSound(svgPicture(ICON_IDS.length * ICON_CELL, ICON_CELL, iconSheet(new Painter())));
+    expectSound(svgPicture(ICON_COLUMNS * ICON_CELL, ICON_ROWS * ICON_CELL, iconSheet(new Painter())));
+  });
+
+  it('have a drawing for every emoji the game writes anywhere', () => {
+    // Every source file of the game, as text.
+    const sources = import.meta.glob(['/src/**/*.ts', '/src/**/*.tsx', '!/src/**/*.test.ts'], { query: '?raw', import: 'default', eager: true }) as Record<string, string>;
+    expect(Object.keys(sources).length).toBeGreaterThan(100);
+    const segmenter = new Intl.Segmenter('en', { granularity: 'grapheme' });
+    const missing = new Set<string>();
+    for (const [file, text] of Object.entries(sources))
+      for (const { segment } of segmenter.segment(text))
+        if (/\p{Extended_Pictographic}|\p{Regional_Indicator}/u.test(segment) && !iconForEmoji(segment)) missing.add(`${segment} (${file})`);
+    expect([...missing]).toEqual([]);
   });
 
   it('have a drawing for every wish and every regular', () => {
