@@ -2,6 +2,7 @@
 // Open the game with "?perf" at the end of the address to see it; normal play never shows it.
 
 import { useEffect, useState } from 'react';
+import { lastBakeTime } from './sketch/bake';
 
 export const perfMeterWanted = typeof location !== 'undefined' && new URLSearchParams(location.search).has('perf');
 
@@ -32,9 +33,12 @@ export function PerfMeter() {
   const smooth = reading.fps >= 50 && reading.slowest < 50;
   // The size the browser lays the page out at, which on tablets is smaller than the screen's pixels.
   const size = typeof window !== 'undefined' ? `${window.innerWidth}×${window.innerHeight}` : '';
+  // How long the last sketchbook picture took to bake (project.md section 9.5).
+  const bake = lastBakeTime();
   return (
     <div className={smooth ? 'perf-meter' : 'perf-meter slow'} aria-hidden="true">
       {reading.fps} fps · slowest frame {reading.slowest} ms · screen {size}
+      {bake && ` · picture ${bake.total} ms (font ${bake.font}, drawing ${bake.draw})`}
     </div>
   );
 }

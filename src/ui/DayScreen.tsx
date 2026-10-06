@@ -17,6 +17,7 @@ import { MewaTip } from './Mewa';
 import { MomentCard, MomentResultNote, NoteClose } from './MomentCard';
 import { GROUP_COLOURS } from './pixel/sprites';
 import { canTend, PixelRestaurantView } from './PixelRestaurantView';
+import { SketchStill, sketchWanted } from './SketchStill';
 import { isFavourite } from '../sim/seating';
 import { playerOf } from '../sim/game';
 import { FAVOURITE_SPOTS, GROUP_IDS, GROUPS, SPOT_NAMES } from '../data/groups';
@@ -530,32 +531,36 @@ export function DayScreen() {
 
   return (
     <main className="day-screen">
-      <PixelRestaurantView
-        floor={live.floor}
-        weather={weather}
-        minute={live.minute}
-        selectedTable={stillThere ? selected!.table : null}
-        onTableTap={(table) => {
-          const guests = live.floor.tables[table];
-          if (guests) setSelected({ table, since: guests.since });
-        }}
-        onGullTap={shooGull}
-        onStaffTap={hurryStaff}
-        onPasserTap={flyers > 0 ? handFlyer : undefined}
-        onFlyerArrives={flyerArrives}
-        freeTables={choosing && stillThere ? free : []}
-        onFreeTableTap={(to) => {
-          if (!selected) return;
-          const favourite = moveGuests(selected.table, to);
-          if (favourite !== null) {
-            setNote({
-              text: favourite ? '🪑 Their favourite spot! They’re delighted. ⭐' : '🪑 They follow you to their new table.',
-              at: Date.now(),
-            });
-          }
-          close();
-        }}
-      />
+      {sketchWanted ? (
+        <SketchStill />
+      ) : (
+        <PixelRestaurantView
+          floor={live.floor}
+          weather={weather}
+          minute={live.minute}
+          selectedTable={stillThere ? selected!.table : null}
+          onTableTap={(table) => {
+            const guests = live.floor.tables[table];
+            if (guests) setSelected({ table, since: guests.since });
+          }}
+          onGullTap={shooGull}
+          onStaffTap={hurryStaff}
+          onPasserTap={flyers > 0 ? handFlyer : undefined}
+          onFlyerArrives={flyerArrives}
+          freeTables={choosing && stillThere ? free : []}
+          onFreeTableTap={(to) => {
+            if (!selected) return;
+            const favourite = moveGuests(selected.table, to);
+            if (favourite !== null) {
+              setNote({
+                text: favourite ? '🪑 Their favourite spot! They’re delighted. ⭐' : '🪑 They follow you to their new table.',
+                at: Date.now(),
+              });
+            }
+            close();
+          }}
+        />
+      )}
 
       {/* Along the top: the clock, the day's numbers and the money. */}
       <div className="day-top">

@@ -44,7 +44,7 @@ npx tsx scripts/pixel/concepts-v8.ts            # write the sketchbook concept p
 node scripts/pixel/shoot.mjs <html|folder> <png|folder> [w] [h]  # render HTML/SVG pages to PNGs in headless Edge
 ```
 
-Add `?perf` to the game's address to show the performance meter (for checking on the tablet).
+Add `?perf` to the game's address to show the performance meter (for checking on the tablet). Add `?sketch` to see the new sketchbook look on the day screen while M8 is being built (both together: `?sketch&perf`).
 
 ## Architecture rules
 
