@@ -20,6 +20,7 @@ import { trendLine } from '../../sim/trends';
 import { dailyGoalText } from '../../sim/dailyGoals';
 import { RankingBox } from './RankingBox';
 import { RivalMoveCard } from './RivalMoveCard';
+import { CookOffCard } from './CookOffCard';
 import { WEATHER_ICONS } from '../pixel/icons';
 import { FoodIcon, PixelIcon } from '../PixelIcon';
 import { useGame } from '../store';
@@ -89,6 +90,7 @@ export function TodayPanel() {
       </p>
 
       <RivalMoveCard />
+      <CookOffCard />
       <RankingBox />
 
       <section className="today-news">

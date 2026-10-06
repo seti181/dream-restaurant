@@ -6,6 +6,7 @@ import { GROUP_IDS, GROUPS } from '../data/groups';
 import { HAPPENINGS } from '../data/happenings';
 import { LOCATIONS } from '../data/locations';
 import { RANKS } from '../data/ranks';
+import { RIVALS } from '../data/rivals';
 import { REGULARS } from '../data/regulars';
 import { REPLIES, REPLY_IDS } from '../data/reviews';
 import { WEATHER } from '../data/weather';
@@ -292,6 +293,14 @@ export function DayOverScreen() {
               </p>
             );
           })}
+          {summary.cookOff && (
+            <p className="said small">
+              ⚔️ <strong>The cook-off with {RIVALS[summary.cookOff.rival].name}:</strong>{' '}
+              {summary.cookOff.playerDish
+                ? `${summary.cookOff.won ? 'You won!' : 'They won, this time.'} Your ${dishName(summary.cookOff.playerDish)}: ${Math.round(summary.cookOff.playerScore)}, against their ${summary.cookOff.rivalDish ? dishName(summary.cookOff.rivalDish) : 'entry'}: ${Math.round(summary.cookOff.rivalScore)}. ${summary.cookOff.won ? 'The whole Old Town is talking about you.' : 'Everyone talked about it anyway.'}`
+                : `You didn’t enter. ${RIVALS[summary.cookOff.rival].owner} is telling everyone.`}
+            </p>
+          )}
           {summary.rivalMove && (
             <p className="said small">
               {summary.rivalMove.icon} <strong>{summary.rivalMove.title}</strong> is over. {summary.rivalMove.result}

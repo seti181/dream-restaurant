@@ -355,3 +355,11 @@ describe('upgrading version 24 saves (from before rival moves)', () => {
     expect(migrate({ saveVersion: 24, savedAt: '', game: old })).toEqual(game);
   });
 });
+
+describe('upgrading version 25 saves (from before cook-offs)', () => {
+  it('starts with no challenge', () => {
+    const game = newGame(71);
+    const { cookOff: _c, ...old } = game;
+    expect(migrate({ saveVersion: 25, savedAt: '', game: old })).toEqual(game);
+  });
+});

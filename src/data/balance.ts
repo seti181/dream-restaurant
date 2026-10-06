@@ -318,6 +318,28 @@ export const balance = {
     favouriteMood: 6,
   },
 
+  cookOffs: {
+    /** Chance each Wednesday, from the second week, that a rival challenges the player to a duel (data/cookOffs.ts)... */
+    chance: 0.5,
+    firstDay: 7,
+    /** ...on this weekday (0 = Monday), judged this many days later. */
+    offerWeekday: 2,
+    duelInDays: 3,
+    /** A dish's score is its quality, plus this many points times how much cheaper than usual it is (20% cheaper: +8)... */
+    valuePoints: 40,
+    /** ...and a little luck either way, on the day. */
+    luck: 4,
+    /** A rival enters its signature dish, cooked for years: this many quality points on top. */
+    rivalSignatureBonus: 16,
+    /** Winning: reputation and awareness points with every group. */
+    winReputation: 1,
+    winAwareness: 6,
+    /** Losing: everyone talked about it anyway. */
+    loseAwareness: 3,
+    /** Declining (or not entering): the rival's awareness with every group. */
+    declineRivalAwareness: 4,
+  },
+
   rivalMoves: {
     /** Chance each Monday that a rival makes a move against the player (data/rivalMoves.ts)... */
     chancePerMonday: 0.5,

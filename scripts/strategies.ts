@@ -54,6 +54,8 @@ interface Plan {
   themeNightFridays?: boolean;
   /** Answers a rival's move with this answer (otherwise it's left unanswered). */
   rivalAnswer?: 0 | 1 | 2;
+  /** Enters its best dish in a rival's cook-off (otherwise it doesn't enter). */
+  cookOffs?: boolean;
   /** Menu positions of a soup and a main for the lunch set. */
   lunchSet?: [number, number];
   /** Gives a day off (Monday to Thursday) to anyone whose morale is below this, where someone else can cover. */
@@ -260,6 +262,7 @@ export const STRATEGIES: Strategy[] = [
       hurryWhenOrders: 3,
       themeNightFridays: true,
       rivalAnswer: 0,
+      cookOffs: true,
     },
   },
 ];

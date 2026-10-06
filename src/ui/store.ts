@@ -3,6 +3,7 @@
 // change the game state themselves.
 
 import { answerRivalMove } from '../sim/rivalMoves';
+import { pickCookOffEntry } from '../sim/cookOffs';
 import type { ThemeNightId } from '../data/themeNights';
 import { create } from 'zustand';
 import { balance } from '../data/balance';
@@ -169,6 +170,8 @@ interface GameStore {
   relocate: (to: LocationId) => void;
   /** Books a theme night for an evening this week (while planning). */
   bookThemeNight: (id: ThemeNightId, day: number) => void;
+  /** Picks the player's cook-off entry (a recipe key), or declines (null), while planning. */
+  pickCookOffEntry: (entry: string | null) => void;
   /** Answers a rival's move (while planning). */
   answerRivalMove: (answer: number) => void;
   /** Says yes or no to a booking request. */
@@ -405,6 +408,7 @@ export const useGame = create<GameStore>((set, get) => ({
   // Mewa's tips can be dismissed on any screen, even mid-day.
   bookThemeNight: (id, day) => plan((game) => actions.bookThemeNight(game, id, day), 'beforeOpening'),
   answerRivalMove: (answer) => plan((game) => answerRivalMove(game, answer), 'beforeOpening'),
+  pickCookOffEntry: (entry) => plan((game) => pickCookOffEntry(game, entry), 'beforeOpening'),
   acceptBooking: (id) => plan((game) => actions.acceptBooking(game, id)),
   declineBooking: (id) => plan((game) => actions.declineBooking(game, id)),
   dismissTip: (tip) => set({ game: actions.dismissTip(get().game, tip) }),

@@ -27,6 +27,8 @@ import { themeNightFor, type ThemeNightBooking } from './themeNights';
 import { THEME_NIGHTS } from '../data/themeNights';
 import { answerRivalMove, rivalMoveOn, rollRivalMove, type RivalMoveState } from './rivalMoves';
 import { RIVAL_MOVES } from '../data/rivalMoves';
+import { judgeCookOff, rollCookOff, type CookOffResult, type CookOffState } from './cookOffs';
+import { COOK_OFFS } from '../data/cookOffs';
 import { dishFits } from './menu';
 import { RANKS } from '../data/ranks';
 import { dateOf, isMonday } from './calendar';
@@ -134,6 +136,8 @@ export interface GameState {
   themeNight: ThemeNightBooking | null;
   /** A rival's latest move against the player, answered or waiting for an answer, or null. */
   rivalMove: RivalMoveState | null;
+  /** The latest cook-off challenge from a rival, or null. */
+  cookOff: CookOffState | null;
   /** True once the money ran out at the end of a day: the restaurant has closed for good. */
   gameOver: boolean;
   /** The player's restaurant first, then the rivals. */
@@ -272,6 +276,8 @@ export interface DaySummary extends DayTally {
   rivalMove: { icon: string; title: string; result: string } | null;
   /** What answering a rival cost today (free kompot for every guest). */
   rivalMoveCost: number;
+  /** A cook-off judged today. */
+  cookOff: CookOffResult | null;
   /** Tonight's theme night, if one was on: guests served from its start, and portions of what they came for. */
   themeNight: { icon: string; name: string; guests: number; portions: number; wantText: string | null } | null;
   /** Today's goal from Mewa: what it was, how far it got, and whether it was done (and paid). */
@@ -320,6 +326,7 @@ export function newGame(seed: number, difficulty: Difficulty = 'normal'): GameSt
     trend: rollTrend(trendSeed(rng, 0), 0, null),
     themeNight: null,
     rivalMove: null,
+    cookOff: null,
     restaurants: [player, ...RIVAL_IDS.map(createRivalRestaurant)],
   };
 }
@@ -1028,6 +1035,33 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
     news.push({ ...SECRET_RECIPE.news });
   }
 
+  // A cook-off on its day: the guests judge, and the whole Old Town hears about it.
+  let cookOffResult: CookOffResult | null = null;
+  if (state.cookOff && state.cookOff.day === state.day) {
+    const rivalToday = open.progress.restaurants.find((r) => r.id === state.cookOff!.rival)!;
+    const c = balance.cookOffs;
+    cookOffResult = judgeCookOff(
+      state.cookOff,
+      open.progress.restaurants[0],
+      rivalToday,
+      open.progress.conditions.inSeason,
+      (rng.s ^ Math.imul(state.day + 47, 0x68e31da4)) >>> 0,
+    );
+    const everyone = (points: number) => Object.fromEntries(GROUP_IDS.map((g) => [g, points])) as Partial<Record<GroupId, number>>;
+    restaurants = restaurants.map((r) => {
+      if (r.id === playerBefore.id && cookOffResult!.playerDish) {
+        return cookOffResult!.won
+          ? { ...r, reputation: addToGroups(r.reputation, everyone(c.winReputation)), awareness: addToGroups(r.awareness, everyone(c.winAwareness)) }
+          : { ...r, awareness: addToGroups(r.awareness, everyone(c.loseAwareness)) };
+      }
+      if (r.id === cookOffResult!.rival && !cookOffResult!.playerDish) {
+        return { ...r, awareness: addToGroups(r.awareness, everyone(c.declineRivalAwareness)) };
+      }
+      return r;
+    });
+    playerAfter = restaurants[0];
+  }
+
   // A new rank, and what it unlocks: more room on the menu, or word getting round.
   const rank = rankFor(state.rank, totalGuests(guestsServed), ratingAfter);
   let { menuSlots } = state;
@@ -1135,6 +1169,14 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
     next.rivalMove && next.rivalMove.untilDay === state.day && next.rivalMove.day <= state.day
       ? { icon: RIVAL_MOVES[next.rivalMove.id].icon, title: RIVAL_MOVES[next.rivalMove.id].title, result: next.rivalMove.result ?? '' }
       : null;
+  // On some Wednesdays, a rival challenges the player to a cook-off.
+  if (!next.cookOff || next.cookOff.day < nextDay) {
+    const cookOff = rollCookOff((rng.s ^ Math.imul(nextDay + 53, 0x4cf5ad43)) >>> 0, nextDay, next);
+    if (cookOff) {
+      const kind = COOK_OFFS[cookOff.rival];
+      next = { ...next, cookOff, news: [...next.news, { title: `⚔️ A cook-off challenge`, text: `${kind.text} Pick your entry on this tab.` }] };
+    }
+  }
   // On some Mondays, a rival makes a move against the player.
   if (isMonday(nextDay)) {
     const rivalMove = rollRivalMove((rng.s ^ Math.imul(nextDay + 43, 0x5bd1e995)) >>> 0, nextDay, next);
@@ -1190,6 +1232,7 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
       themeNight: themeNightReport(state, open),
       rivalMove: rivalMoveReport,
       rivalMoveCost,
+      cookOff: cookOffResult,
     },
   };
 }

@@ -6,6 +6,8 @@ import { balance } from '../src/data/balance';
 import { RIVAL_IDS, RIVALS, type RivalId } from '../src/data/rivals';
 import { acceptBooking, bookThemeNight } from '../src/sim/actions';
 import { answerRivalMove } from '../src/sim/rivalMoves';
+import { cookOffEntries, pickCookOffEntry } from '../src/sim/cookOffs';
+import { inSeasonOn, recipeKey } from '../src/sim/menu';
 import { THEME_NIGHT_IDS, THEME_NIGHTS } from '../src/data/themeNights';
 import { isInSeason, isMonday, weekdayOf } from '../src/sim/calendar';
 import { wageOf } from '../src/sim/finance';
@@ -77,6 +79,8 @@ interface SeasonResult {
   dailyGoals: Record<string, { came: number; done: number }>;
   /** Days with a trend on, and of those, days the menu had something on trend. */
   trendDays: { on: number; matched: number };
+  /** Cook-off challenges: judged, entered, and won. */
+  cookOffs: { judged: number; entered: number; won: number };
   /** Each rival move, and how it came out. */
   rivalMoves: string[];
 }
@@ -123,6 +127,7 @@ function playSeason(strategy: Strategy, seed: number): SeasonResult {
     dailyGoals: {},
     trendDays: { on: 0, matched: 0 },
     rivalMoves: [],
+    cookOffs: { judged: 0, entered: 0, won: 0 },
   };
   const fullTicks = { firstWeek: 0, season: 0 };
   const openTicks = { firstWeek: 0, season: 0 };
@@ -153,6 +158,11 @@ function playSeason(strategy: Strategy, seed: number): SeasonResult {
       const menu = state.restaurants[0].menu;
       const fits = THEME_NIGHT_IDS.find((id) => THEME_NIGHTS[id].wants && menu.some((dish) => dishFits(dish, THEME_NIGHTS[id].wants!)));
       state = bookThemeNight(state, fits ?? 'accordion', state.day);
+    }
+    // A cook-off challenge: the best dish it has, on the morning it comes.
+    if (strategy.plan?.cookOffs && state.cookOff && state.cookOff.offeredDay === state.day && state.cookOff.entry === null) {
+      const best = cookOffEntries(state.restaurants[0], state.cookOff.rival, inSeasonOn(state.day))[0];
+      if (best) state = pickCookOffEntry(state, recipeKey(best));
     }
     // A rival's move waiting for an answer.
     if (state.rivalMove && state.rivalMove.answer === null && strategy.plan?.rivalAnswer !== undefined) {
@@ -226,6 +236,11 @@ function playSeason(strategy: Strategy, seed: number): SeasonResult {
     week.walkedOut += summary.guestsWalkedOut;
     week.turnedAway += summary.guestsTurnedAway;
     week.profit += summary.profit;
+    if (summary.cookOff) {
+      result.cookOffs.judged++;
+      if (summary.cookOff.playerDish) result.cookOffs.entered++;
+      if (summary.cookOff.won) result.cookOffs.won++;
+    }
     if (summary.rivalMove) {
       result.rivalMoves.push(`day ${day}: ${summary.rivalMove.title}: ${summary.rivalMove.result}`);
     }
@@ -396,6 +411,17 @@ console.log(
       const on = seasons.reduce((sum, s) => sum + s.trendDays.on, 0);
       const matched = seasons.reduce((sum, s) => sum + s.trendDays.matched, 0);
       return [strategy.name, `${Math.round((matched / Math.max(1, on)) * 100)}% of ${on} days`];
+    }),
+  ),
+);
+
+console.log('\nCook-off challenges: entered and won, over all seasons\n');
+console.log(
+  table(
+    ['Strategy', 'Challenges', 'Entered', 'Won'],
+    results.map(({ strategy, seasons }) => {
+      const sum = (key: 'judged' | 'entered' | 'won') => seasons.reduce((total, s) => total + s.cookOffs[key], 0);
+      return [strategy.name, String(sum('judged')), String(sum('entered')), String(sum('won'))];
     }),
   ),
 );
