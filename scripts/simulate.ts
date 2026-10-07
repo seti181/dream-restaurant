@@ -64,6 +64,8 @@ interface SeasonResult {
   staff: number;
   guestsServed: number;
   guestsLost: number;
+  /** Of those, the ones who walked out waiting for their food (the rest found no table). */
+  guestsWalkedOut: number;
   averageRating: number;
   fairShare: number;
   /** Neptune Score for the player and each rival, and what it's made of. */
@@ -123,6 +125,7 @@ function playSeason(strategy: Strategy, seed: number): SeasonResult {
     staff: 0,
     guestsServed: 0,
     guestsLost: 0,
+    guestsWalkedOut: 0,
     averageRating: 0,
     fairShare: 0,
     neptune: {},
@@ -145,7 +148,7 @@ function playSeason(strategy: Strategy, seed: number): SeasonResult {
   const ratings = new Map<string, { total: number; count: number }>();
   const fairGuests = new Map<string, number>();
   let allFairGuests = 0;
-  let week: WeekReport = { served: 0, walkedOut: 0, turnedAway: 0, profit: 0 };
+  let week: WeekReport = { served: 0, walkedOut: 0, turnedAway: 0, profit: 0, openTicks: 0, fullTicks: 0 };
   // Opening-day purchases count towards the first week.
   const opening = manage(strategy, state, null);
   weekProfit += opening.cash - state.cash;
@@ -161,7 +164,7 @@ function playSeason(strategy: Strategy, seed: number): SeasonResult {
       const before = state.cash;
       state = manage(strategy, state, week);
       weekProfit += state.cash - before;
-      week = { served: 0, walkedOut: 0, turnedAway: 0, profit: 0 };
+      week = { served: 0, walkedOut: 0, turnedAway: 0, profit: 0, openTicks: 0, fullTicks: 0 };
     }
 
     // A theme night every Friday, one the menu fits.
@@ -218,6 +221,8 @@ function playSeason(strategy: Strategy, seed: number): SeasonResult {
       const full = tables.length > 0 && tables.every((guests) => guests !== null);
       const firstWeek = day < 7;
       openTicks.season++;
+      week.openTicks++;
+      if (full) week.fullTicks++;
       if (firstWeek) openTicks.firstWeek++;
       if (full) {
         fullTicks.season++;
@@ -239,7 +244,10 @@ function playSeason(strategy: Strategy, seed: number): SeasonResult {
       }
       if (o.restaurant === 'player') {
         if (o.kind === 'served') result.guestsServed += o.size;
-        else result.guestsLost += o.size;
+        else {
+          result.guestsLost += o.size;
+          if (o.kind === 'walkedOut') result.guestsWalkedOut += o.size;
+        }
       }
     }
 
@@ -346,7 +354,7 @@ console.log(
         mean(seasons.map((s) => s.tables)).toFixed(1),
         mean(seasons.map((s) => s.staff)).toFixed(1),
         Math.round(mean(seasons.map((s) => s.guestsServed))).toLocaleString('en-GB'),
-        Math.round(mean(seasons.map((s) => s.guestsLost))).toLocaleString('en-GB'),
+        `${Math.round(mean(seasons.map((s) => s.guestsLost))).toLocaleString('en-GB')} (${Math.round(mean(seasons.map((s) => s.guestsWalkedOut))).toLocaleString('en-GB')} walked out)`,
         mean(seasons.map((s) => s.averageRating)).toFixed(1),
         `${(mean(seasons.map((s) => s.fairShare)) * 100).toFixed(1)}%`,
         mean(seasons.map((s) => s.neptune.player)).toFixed(1),

@@ -72,11 +72,13 @@ describe('dish stars over a day', () => {
     const open = openRestaurant(start);
     while (!open.progress.done) playTick(open);
     const { state, summary } = closeDay(start, open);
-    expect(summary.starsEarned.length).toBeGreaterThan(0);
-    expect(summary.starsEarned.every((e) => e.stars === 2)).toBe(true);
+    // The three dishes one portion short of two stars reach them (another dish may earn its first meanwhile).
+    const primed = summary.starsEarned.filter((e) => ['zurek', 'pierogi', 'schabowy'].includes(e.template));
+    expect(primed.length).toBeGreaterThan(0);
+    expect(primed.every((e) => e.stars === 2)).toBe(true);
     const tomorrow = openRestaurant(state).progress.restaurants[0];
-    const earned = summary.starsEarned.map((e) => e.template);
-    expect(tomorrow.menu.filter((dish) => earned.includes(dish.template)).every((dish) => dish.stars === 2)).toBe(true);
+    // Tomorrow the kitchen cooks each with the stars it earned.
+    for (const e of summary.starsEarned) expect(tomorrow.menu.filter((dish) => dish.template === e.template).every((dish) => dish.stars === e.stars)).toBe(true);
     // The saved menu stays as the player made it.
     expect(playerOf(state).menu.every((dish) => dish.stars === undefined)).toBe(true);
     // The rivals don't keep count.

@@ -672,8 +672,9 @@ export function stepDay(rng: RngState, progress: DayInProgress): void {
   const waits = restaurants.map((restaurant, i) =>
     expectedWait(restaurant, allTables(restaurant) - floors[i].freeTables, floors[i].queue.length),
   );
-  // People can see when every table is taken and the queue at the door is as long as it gets.
-  const isFull = (floor: Floor) => floor.freeTables < 1 && floor.door.length >= balance.service.doorQueueMax;
+  // People can see through the window when every table is taken, and most go somewhere else; a few
+  // who want it badly enough still wait at the door, if there's room in the queue.
+  const isFull = (floor: Floor) => floor.freeTables < 1;
   const full = floors.map(isFull);
   for (const party of generateParties(rng, day, tick, conditions)) {
     // Someone from the player's street tastes the samples on the way past, before deciding.

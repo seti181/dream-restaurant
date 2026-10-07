@@ -24,12 +24,12 @@ const sample: string[] = [];
 
 for (let s = 0; s < seasons; s++) {
   let state = newGame(1000 + s);
-  let week: WeekReport = { served: 0, walkedOut: 0, turnedAway: 0, profit: 0 };
+  let week: WeekReport = { served: 0, walkedOut: 0, turnedAway: 0, profit: 0, openTicks: 0, fullTicks: 0 };
   let yesterday: MomentId[] = [];
   while (isInSeason(state.day) && !state.gameOver) {
     if (state.day > 0 && isMonday(state.day)) {
       state = manage(strategy, state, week);
-      week = { served: 0, walkedOut: 0, turnedAway: 0, profit: 0 };
+      week = { served: 0, walkedOut: 0, turnedAway: 0, profit: 0, openTicks: 0, fullTicks: 0 };
     }
     const open = openRestaurant(state);
     const today: MomentId[] = [];

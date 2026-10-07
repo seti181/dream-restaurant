@@ -20,14 +20,17 @@ export interface WeekReport {
   walkedOut: number;
   turnedAway: number;
   profit: number;
+  /** Opening ticks this week, and how many of them had every table taken. */
+  openTicks: number;
+  fullTicks: number;
 }
 
 /** How a strategy grows its restaurant. Everything is optional: "do nothing" uses none of it. */
 interface Plan {
   /** Cash it always keeps in hand, never spending below this. */
   reserve: number;
-  /** Buys a table when it turned away more than this share of the guests it served. */
-  tableWhenTurnedAway?: number;
+  /** Buys a table when every table was taken for more than this share of last week's opening hours. */
+  tableWhenFull?: number;
   /** Hires a chef when this share of guests walked out. */
   chefWhenWalkouts?: number;
   /** Moves to this street once it has this much cash, before the Fair. */
@@ -110,7 +113,8 @@ export function manage(strategy: Strategy, state: GameState, week: WeekReport | 
 
   if (week) {
     // More room when guests are being turned away...
-    const crowded = plan.tableWhenTurnedAway !== undefined && week.turnedAway > week.served * plan.tableWhenTurnedAway;
+    // A full room for much of the day, as a player sees it, says it's time for another table.
+    const crowded = plan.tableWhenFull !== undefined && week.openTicks > 0 && week.fullTicks / week.openTicks > plan.tableWhenFull;
     for (let i = 0; i < 2 && crowded && canSpend(s, plan, balance.interior.tableCost); i++) {
       if (actions.tableUnavailableReason(s) !== null) break;
       s = actions.buyTable(s);
@@ -206,7 +210,7 @@ export const STRATEGIES: Strategy[] = [
     waiters: [{ skill: 3, speed: 4 }],
     plan: {
       reserve: 5_000,
-      tableWhenTurnedAway: 0.1,
+      tableWhenFull: 0.3,
       chefWhenWalkouts: 0.08,
       hireFor: 'speed',
       tablesPerWaiter: 4,
@@ -232,7 +236,7 @@ export const STRATEGIES: Strategy[] = [
     waiters: [{ skill: 5, speed: 3 }],
     plan: {
       reserve: 10_000,
-      tableWhenTurnedAway: 0.2,
+      tableWhenFull: 0.25,
       chefWhenWalkouts: 0.1,
       hireFor: 'skill',
       tablesPerWaiter: 4,
@@ -243,7 +247,7 @@ export const STRATEGIES: Strategy[] = [
       dayOffBelow: 55,
       acceptBookings: true,
       samplesAt: 15 * 60,
-      works: ['toilet', 'counter', 'cellar'],
+      works: ['toilet', 'counter'],
     },
   },
   {
@@ -261,7 +265,7 @@ export const STRATEGIES: Strategy[] = [
     waiters: [{ skill: 4, speed: 3 }],
     plan: {
       reserve: 8_000,
-      tableWhenTurnedAway: 0.02,
+      tableWhenFull: 0.2,
       chefWhenWalkouts: 0.08,
       hireFor: 'both',
       tablesPerWaiter: 4,
@@ -277,6 +281,7 @@ export const STRATEGIES: Strategy[] = [
       themeNightFridays: true,
       rivalAnswer: 0,
       cookOffs: true,
+      works: ['toilet', 'counter', 'cellar'],
     },
   },
 ];
