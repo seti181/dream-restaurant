@@ -5,7 +5,7 @@ import type { GroupId } from './groups';
 
 // ---------- Tutorial tips (the first three days) ----------
 
-export type TipId = 'welcome' | 'speed' | 'report' | 'prices' | 'hiring' | 'helpTables' | 'happyHour' | 'farewell' | 'daysOff' | 'training' | 'special' | 'replies' | 'flyers';
+export type TipId = 'welcome' | 'speed' | 'report' | 'prices' | 'hiring' | 'helpTables' | 'happyHour' | 'farewell' | 'daysOff' | 'training' | 'special' | 'replies' | 'flyers' | 'samples';
 
 export interface Tip {
   /** When the tip appears: on this day, on this screen. */
@@ -14,7 +14,7 @@ export interface Tip {
   text: string;
 }
 
-export const TIP_IDS: readonly TipId[] = ['welcome', 'speed', 'report', 'prices', 'hiring', 'helpTables', 'happyHour', 'farewell', 'daysOff', 'training', 'special', 'replies', 'flyers'];
+export const TIP_IDS: readonly TipId[] = ['welcome', 'speed', 'report', 'prices', 'hiring', 'helpTables', 'happyHour', 'farewell', 'daysOff', 'training', 'special', 'replies', 'flyers', 'samples'];
 
 export const TIPS: Record<TipId, Tip> = {
   welcome: {
@@ -66,6 +66,14 @@ export const TIPS: Record<TipId, Tip> = {
     text:
       'See the people walking past? Tap one to hand them a flyer. Some will come in, and the rest will remember you. ' +
       'You have a few every day.',
+  },
+  samples: {
+    day: 5,
+    screen: 'open',
+    text:
+      'Psst! The Samples button sends a waiter out of the door with a tray for an hour. ' +
+      'People walking past taste it and know your name afterwards, and the tastier it is, the more of them come in. ' +
+      'Your waiter is busy outside meanwhile, so pick a quiet hour. Save me a bite.',
   },
   replies: {
     day: 3,
@@ -212,6 +220,10 @@ export const HELP: { title: string; text: string }[] = [
   {
     title: 'Fresh produce and today’s special',
     text: 'Some extras are fresh produce with a season: strawberries early in July, new potatoes until August, blueberries and chanterelles all summer, plums from mid-August. In season they make a dish taste better; out of season they’re imported, dearer and not as good. One dish a day can be today’s special, “Dziś polecamy”, on the board outside: more guests order it, it tempts people walking by, and fresh produce on it tempts them more.',
+  },
+  {
+    title: 'Samples at the door',
+    text: 'Once a day, the Samples button sends a waiter out of the door for an hour with a tray of today’s special (or, without one, the dish your kitchen cooks best). People out on your street and the streets nearby walk past and have a taste: they know your name afterwards, and the better it tastes, the more of them come in. The tray holds 40 tastes, each costing a little in ingredients; once it’s empty the waiter comes back in. Meanwhile they aren’t serving inside, and a full restaurant can’t seat the people the samples bring, so a quiet hour suits it best.',
   },
   {
     title: 'The morning market',

@@ -5,7 +5,7 @@
 //   node scripts/play-day.mjs <folder> [days] [url]                 (in another)
 //
 // It opens the restaurant, sets 4x speed, answers every choice card with its first answer, and
-// accepts every booking request, hurries someone in the first rush (rush-<n>.png), photographs the first wish bubble (wish-<n>.png) and the evening at 21:00 (evening-<n>.png), and screenshots the start (0-start.png), the day (1-during.png),
+// accepts every booking request, hurries someone in the first rush (rush-<n>.png), sends samples out at 15:00 and photographs the street (samples-<n>.png), photographs the first wish bubble (wish-<n>.png) and the evening at 21:00 (evening-<n>.png), and screenshots the start (0-start.png), the day (1-during.png),
 // the top of each day report (report-<n>-top.png), its "Tomorrow" box (report-<n>-tomorrow.png)
 // and the next morning's Today tab at its bookings (plan-<n>.png) and its morning market (market-<n>.png, with the report's market line in report-<n>-market.png), its Menu tab (menu-<n>.png) and its Mewa tab (mewa-<n>.png). The browser profile lives
 // in <folder>/edge-profile, so a second run with the same folder carries on from the save.
@@ -140,6 +140,7 @@ for (let day = 1; day <= Number(days); day++) {
   let wishShot = false;
   let eveningShot = false;
   let themeShot = false;
+  let samplesShot = false;
   for (let i = 0; i < 300; i++) {
     const did = await evaluate(step);
     if (did !== last && did !== 'waiting') console.log(`day ${day}: ${did}`);
@@ -167,6 +168,17 @@ for (let day = 1; day <= Number(days); day++) {
       themeShot = true;
       await sleep(1500);
       await screenshot('theme-night');
+    }
+    // From 15:00, samples at the door: tap the button (it switches to the street), and photograph the waiter with the tray (samples-<n>.png).
+    if (!samplesShot && (await evaluate(`(document.querySelector('.day-time')?.textContent ?? '') >= '15:00'`))) {
+      samplesShot = true;
+      await evaluate(`[...document.querySelectorAll('button.round-button')].find((b) => b.textContent.includes('Samples'))?.click()`);
+      await sleep(1200);
+      await evaluate(`document.querySelector('button[aria-label="Pause"]')?.click()`);
+      await sleep(600);
+      await screenshot(`samples-${day}`);
+      await evaluate(`document.querySelector('button[aria-label="Four times speed"]')?.click()`);
+      console.log(`day ${day}: sent samples out to the door`);
     }
     if (!rushShot && (await evaluate(`Boolean(document.querySelector('.staff-hurry'))`))) {
       rushShot = true;

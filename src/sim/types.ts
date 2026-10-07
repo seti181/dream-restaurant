@@ -63,6 +63,8 @@ export interface Restaurant {
   supplier: Supplier;
   /** When today's happy hour started (minutes after midnight); only set while a day runs. See balance.happyHour. */
   happyHourFrom?: number;
+  /** Samples at the door: when they went out, how good they taste, and the dish (a recipe key); only set while a day runs (sim/samples.ts). */
+  samples?: { from: number; until: number; quality: number; dish: string };
   /** A rival move's effects on this restaurant, only set while that day runs (see sim/rivalMoves.ts): */
   /** menu prices multiplied by this (a price war)... */
   priceFactor?: number;
@@ -111,6 +113,8 @@ export interface Party {
   requestId?: number;
   /** What a party that booked hopes to find on the menu. */
   wish?: MenuWant;
+  /** They tasted the player's samples at the door on their way past: they know the place now. */
+  tasted?: boolean;
 }
 
 /** A review left by a guest. */

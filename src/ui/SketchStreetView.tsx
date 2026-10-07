@@ -3,7 +3,8 @@
 // terrace's guests sit, read the menu, wait and are served by a waiter who comes out of the door;
 // people going to eat inside walk in at the door, and out again; people stroll past (tap one to hand
 // them a flyer); parties wait by the door for a table; a gull drops in on the terrace's plates; on
-// live-music nights an accordion player plays by the door. The inside is the other view (SketchRoomView).
+// live-music nights an accordion player plays by the door; with samples out, a waiter stands by the door
+// with a tray and people walking past have a taste. The inside is the other view (SketchRoomView).
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { GroupId } from '../data/groups';
@@ -17,7 +18,7 @@ import { LAYER, zOf, type Point } from './sketch/frontRoom';
 import { Painter, svgPicture } from './sketch/painter';
 import { mewa } from './sketch/people';
 import { CANDLE_RISE, chairsPicture, pageFramePicture, PLATE_CELL, PLATES, platesPicture, TABLE_BOX, tablePicture } from './sketch/roomArt';
-import { MUSICIAN_SHEET, musicianSheet, STAND_CELL, GUEST_SHEET, WALK_BACK_CELL, WALK_CELL } from './sketch/sheets';
+import { MUSICIAN_SHEET, musicianSheet, STAND_CELL, GUEST_SHEET, WAITER_CELLS, WAITER_SHEET, WALK_BACK_CELL, WALK_CELL } from './sketch/sheets';
 import { doorWalk, FRONT_Z, BACK_Z, passerWalk, streetDepth, streetLamps, streetLayout, streetQueueSpot, terraceMove, terraceServe, terraceWalkIn, toTheDoor, type StreetLayout } from './sketch/street';
 import { streetPicture, type StreetLook } from './sketch/streetArt';
 import {
@@ -37,6 +38,7 @@ import {
   useSheets,
   useVisits,
   variantAt,
+  waiterSpec,
   Walker,
   type SheetSpec,
   type Walk,
@@ -134,7 +136,7 @@ export function SketchStreetView({
   const { walks, done, arriving, served, stageOf } = useVisits(ways, floor, minute);
   const floats = useFloats(floor, served).filter((f) => f.table >= inside && f.table - inside < spots);
   const door = useDoorTraffic(layout, floor);
-  const passers = usePassers(layout, minute, onPasserTap, onFlyerArrives);
+  const passers = usePassers(layout, minute, onPasserTap, onFlyerArrives, !!floor.samplesWaiter);
   const leavers = useQueueLeavers(layout, floor);
   const everyone = [...walks, ...door.walks, ...passers.walks, ...leavers.walks];
 
@@ -147,6 +149,8 @@ export function SketchStreetView({
   }
   floor.atTheDoor.slice(0, 3).forEach((party, p) => need(guestSpec(party.group, (p * 3) % GROUP_LOOKS)));
   if (floor.musician) need(musicianSpec);
+  const samplesSpec = floor.samplesWaiter ? waiterSpec(floor.samplesWaiter.special ?? 'waiter', floor.samplesWaiter.look) : null;
+  if (samplesSpec) need(samplesSpec);
   for (const w of everyone) need(w.sheet);
   const sheets = useSheets(specs, tableScale);
   const depth = useMemo(() => (y: number) => streetDepth(layout, y), [layout]);
@@ -187,6 +191,18 @@ export function SketchStreetView({
   }
 
   const musicianUrl = floor.musician ? sheets.get(musicianSpec.key) : undefined;
+  // The waiter with the tray of samples, and over them a bubble with the dish they're offering.
+  const samplesUrl = samplesSpec ? sheets.get(samplesSpec.key) : undefined;
+  if (samplesUrl && floor.samplesWaiter) {
+    const k = streetDepth(layout, layout.samples.y);
+    bubbles.push(
+      <span key="samples" className="sk-bubble" style={{ left: at(layout.samples.x), top: at(layout.samples.y - 230 * k) }}>
+        <span className="sk-bubble-face">
+          <Icon id={`dish:${floor.samplesWaiter.dish}`} size={28} />
+        </span>
+      </span>,
+    );
+  }
 
   // A candle on every terrace table that's out, and the street's lamps.
   const glows: Glow[] = [
@@ -213,6 +229,9 @@ export function SketchStreetView({
         {musicianUrl && (
           <Person url={musicianUrl} sheet={MUSICIAN_SHEET} cell={0} x={layout.musician.x} y={layout.musician.y} k={streetDepth(layout, layout.musician.y)} scale={scale} z={BACK_Z} frames={{ seconds: 1.2 / Math.max(speed, 0.25), offset: 0 }} />
         )}
+        {samplesUrl && (
+          <Person url={samplesUrl} sheet={WAITER_SHEET} cell={WAITER_CELLS.full} x={layout.samples.x} y={layout.samples.y} k={streetDepth(layout, layout.samples.y)} scale={scale} z={BACK_Z} mirror />
+        )}
         {walks.map((walk) => (
           <Walker key={walk.id} walk={walk} url={sheets.get(walk.sheet.key)} depth={depth} scale={scale} speed={speed} onDone={done} />
         ))}
@@ -231,7 +250,7 @@ export function SketchStreetView({
             scale={scale}
             speed={speed}
             onDone={passers.done}
-            onTap={onPasserTap && walk.passer && !walk.bubble ? passers.tap : undefined}
+            onTap={onPasserTap && walk.passer && (!walk.bubble || walk.tasted) ? passers.tap : undefined}
           />
         ))}
         {floor.gull && spotOf(floor.gull.table) && <Gull spot={spotOf(floor.gull.table)!} scale={scale} onTap={onGullTap} />}
@@ -343,8 +362,8 @@ function useQueueLeavers(L: StreetLayout, floor: FloorView) {
  * People strolling past, in their group's looks: one may set off every few game minutes while the day
  * runs. Handed a flyer, someone may turn and go in at the door instead.
  */
-function usePassers(L: StreetLayout, minute: number, onTap?: (group: GroupId) => boolean | null, onArrive?: (group: GroupId) => void) {
-  const [walks, setWalks] = useState<(Walk & { flyer?: boolean })[]>([]);
+function usePassers(L: StreetLayout, minute: number, onTap?: (group: GroupId) => boolean | null, onArrive?: (group: GroupId) => void, samples = false) {
+  const [walks, setWalks] = useState<(Walk & { flyer?: boolean; tasted?: boolean })[]>([]);
   const count = useRef(0);
   useEffect(() => {
     setWalks((now) => {
@@ -356,9 +375,11 @@ function usePassers(L: StreetLayout, minute: number, onTap?: (group: GroupId) =>
       const groups = (STROLLERS.find((s) => minute < s.until) ?? STROLLERS[STROLLERS.length - 1]).groups;
       const group = groups[(roll >>> 4) % groups.length];
       const path = passerWalk(L, ((roll >>> 12) & 3) === 0, ((roll >>> 14) & 1) === 0);
-      return [...now, { id: `passer:${n}`, passer: group, sheet: guestSpec(group, (roll >>> 8) % GROUP_LOOKS), cell: WALK_CELL, away: WALK_BACK_CELL, path, pace: GUEST_PACE * 0.8, delay: 0 }];
+      // With samples out by the door, most people walking past have had a taste (only for show: the day decides who comes in).
+      const tasted = samples && ((roll >>> 16) & 3) !== 0;
+      return [...now, { id: `passer:${n}`, passer: group, sheet: guestSpec(group, (roll >>> 8) % GROUP_LOOKS), cell: WALK_CELL, away: WALK_BACK_CELL, path, pace: GUEST_PACE * 0.8, delay: 0, bubble: tasted ? 'yum' : undefined, tasted }];
     });
-  }, [minute, L]);
+  }, [minute, L, samples]);
   const callbacks = useRef({ onTap, onArrive });
   callbacks.current = { onTap, onArrive };
   const tap = useCallback(

@@ -25,6 +25,7 @@ import {
   playTick,
   shooTheGull,
   startHappyHour,
+  sendOutSamples,
   type GameState,
 } from '../src/sim/game';
 import { isFairDay, neptuneScore } from '../src/sim/neptune';
@@ -44,6 +45,10 @@ const SEEDS = seedsFromEnv ? seedsFromEnv.split(',').map(Number) : [1, 2, 3];
 const NO_CARDS = (globalThis as { process?: { env: Record<string, string | undefined> } }).process?.env.NO_CARDS === '1';
 /** `NO_BOOKINGS=1 npm run simulate` leaves every booking request unanswered, to compare against. */
 const NO_BOOKINGS = (globalThis as { process?: { env: Record<string, string | undefined> } }).process?.env.NO_BOOKINGS === '1';
+/** `NO_SAMPLES=1 npm run simulate` never sends samples out to the door, to compare against. */
+const NO_SAMPLES = (globalThis as { process?: { env: Record<string, string | undefined> } }).process?.env.NO_SAMPLES === '1';
+/** `SAMPLES_AT=16:30 npm run simulate` sends them out at another time, to compare. */
+const SAMPLES_AT = (globalThis as { process?: { env: Record<string, string | undefined> } }).process?.env.SAMPLES_AT;
 /** `NO_RIVAL_MOVES=1 npm run simulate` plays without rival moves against the player, to compare against. */
 const NO_RIVAL_MOVES = (globalThis as { process?: { env: Record<string, string | undefined> } }).process?.env.NO_RIVAL_MOVES === '1';
 
@@ -83,6 +88,8 @@ interface SeasonResult {
   wishes: { asked: number; granted: number };
   /** Cook-off challenges: judged, entered, and won. */
   cookOffs: { judged: number; entered: number; won: number };
+  /** Samples at the door: days out, people who tasted, parties (and guests) from the street who came in meanwhile, and the cost. */
+  samples: { days: number; tasted: number; parties: number; guests: number; cost: number };
   /** Each rival move, and how it came out. */
   rivalMoves: string[];
 }
@@ -130,6 +137,7 @@ function playSeason(strategy: Strategy, seed: number): SeasonResult {
     trendDays: { on: 0, matched: 0 },
     rivalMoves: [],
     cookOffs: { judged: 0, entered: 0, won: 0 },
+    samples: { days: 0, tasted: 0, parties: 0, guests: 0, cost: 0 },
     wishes: { asked: 0, granted: 0 },
   };
   const fullTicks = { firstWeek: 0, season: 0 };
@@ -194,6 +202,8 @@ function playSeason(strategy: Strategy, seed: number): SeasonResult {
       }
       const happyHourAt = strategy.plan?.happyHourAt;
       if (happyHourAt !== undefined && minuteOfDay(open.progress.tick) >= happyHourAt) startHappyHour(open);
+      const samplesAt = strategy.plan?.samplesAt !== undefined && SAMPLES_AT ? Number(SAMPLES_AT.split(':')[0]) * 60 + Number(SAMPLES_AT.split(':')[1] ?? 0) : strategy.plan?.samplesAt;
+      if (!NO_SAMPLES && samplesAt !== undefined && !open.progress.samples && minuteOfDay(open.progress.tick) >= samplesAt) sendOutSamples(open);
       if (interactive) {
         // Shoos every gull, and looks after tables that have waited a while.
         shooTheGull(open);
@@ -239,6 +249,13 @@ function playSeason(strategy: Strategy, seed: number): SeasonResult {
     week.walkedOut += summary.guestsWalkedOut;
     week.turnedAway += summary.guestsTurnedAway;
     week.profit += summary.profit;
+    if (summary.samples) {
+      result.samples.days++;
+      result.samples.tasted += summary.samples.tasted;
+      result.samples.parties += summary.samples.parties;
+      result.samples.guests += summary.samples.guests;
+      result.samples.cost += summary.samples.cost;
+    }
     result.wishes.asked += summary.wishes.asked;
     result.wishes.granted += summary.wishes.granted;
     if (summary.cookOff) {
@@ -440,6 +457,19 @@ console.log(
       const sum = (key: 'judged' | 'entered' | 'won') => seasons.reduce((total, s) => total + s.cookOffs[key], 0);
       return [strategy.name, String(sum('judged')), String(sum('entered')), String(sum('won'))];
     }),
+  ),
+);
+
+console.log('\nSamples at the door: a season on average (strategies that send them out)\n');
+console.log(
+  table(
+    ['Strategy', 'Days', 'Tasted', 'Parties in meanwhile', 'Guests', 'Cost'],
+    results
+      .filter(({ seasons }) => seasons.some((s) => s.samples.days > 0))
+      .map(({ strategy, seasons }) => {
+        const avg = (key: keyof SeasonResult['samples']) => Math.round(seasons.reduce((total, s) => total + s.samples[key], 0) / seasons.length);
+        return [strategy.name, String(avg('days')), avg('tasted').toLocaleString('en-GB'), String(avg('parties')), String(avg('guests')), `${avg('cost').toLocaleString('en-GB')} zł`];
+      }),
   ),
 );
 

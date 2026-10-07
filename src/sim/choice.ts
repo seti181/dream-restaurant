@@ -9,6 +9,7 @@ import { LOCATIONS, type LocationId } from '../data/locations';
 import { interiorAppeal } from './interior';
 import type { GoodId } from '../data/market';
 import { fromTheMarket } from './market';
+import { samplesAppeal } from './samples';
 import { themeNightOn } from './themeNights';
 import { dishFits, freshOn, happyHourOn, lunchSetServing, priceMultiplier, specialOf, tagsOf, templateOf } from './menu';
 import { nextFloat, type RngState } from './rng';
@@ -90,7 +91,9 @@ export function utility(
 
   // People who haven't heard of a restaurant mostly don't think of it; a few walk in anyway.
   const { walkInShare } = balance.choice;
-  const heardOf = walkInShare + (1 - walkInShare) * (restaurant.awareness[party.group] / 100);
+  // Someone who has just tasted the samples at the door knows the place, whatever their group thinks.
+  const tastedHere = party.tasted === true && restaurant.samples !== undefined;
+  const heardOf = tastedHere ? 1 : walkInShare + (1 - walkInShare) * (restaurant.awareness[party.group] / 100);
 
   return (
     Math.log(heardOf) +
@@ -107,6 +110,8 @@ export function utility(
     // "Dziś polecamy" on the board, all the more tempting with something fresh in season or from the market.
     specialAppeal(restaurant, inSeason, deals) +
     interiorAppeal(restaurant, party.group) +
+    // Samples at the door, for people from this street walking past.
+    samplesAppeal(restaurant, party) +
     // A rival's special deal for some groups (a lunch deal).
     (restaurant.pull &&
     restaurant.pull.groups.includes(party.group) &&

@@ -3,7 +3,7 @@
 
 import { balance } from '../data/balance';
 import type { DecorId } from '../data/decor';
-import type { EquipmentId, ExtraId, MenuDish } from '../data/dishes';
+import type { EquipmentId, ExtraId, MenuDish, TemplateId } from '../data/dishes';
 import { GROUP_IDS, GROUPS } from '../data/groups';
 import { LOCATIONS, type LocationId } from '../data/locations';
 import { REGULARS, type RegularId } from '../data/regulars';
@@ -11,6 +11,7 @@ import { bigOrderMinutes, matchingDishes, tablesHeld, wantMet, type BigOrderJob 
 import { chooseRestaurant } from './choice';
 import { rushAt, rushName, streakTipPerGuest } from './rush';
 import { themeNightOn } from './themeNights';
+import { samplesOn, tasteSamples, type SamplesToday } from './samples';
 import { minuteOfDay, ticksPerDay } from './clock';
 import { ORDINARY_DAY } from './events';
 import { generateParties } from './guests';
@@ -398,6 +399,8 @@ export interface DayInProgress {
   bigOrders: BigOrderJob[];
   /** Dice for guests' wishes, kept apart so they never change who comes or what they order. */
   wishRng: RngState;
+  /** The player's samples at the door, once they've gone out today (sim/samples.ts). */
+  samples?: SamplesToday | null;
   /** True once the restaurants have closed and the last guest has left. */
   done: boolean;
 }
@@ -638,12 +641,18 @@ export function stepDay(rng: RngState, progress: DayInProgress): void {
   const isFull = (floor: Floor) => floor.freeTables < 1 && floor.door.length >= balance.service.doorQueueMax;
   const full = floors.map(isFull);
   for (const party of generateParties(rng, day, tick, conditions)) {
+    // Someone from the player's street tastes the samples on the way past, before deciding.
+    const tasted = tasteSamples(progress, party);
     const index = chooseRestaurant(rng, party, restaurants, waits, full, conditions.inSeason, conditions.trend ?? null, conditions.deals);
     if (index === null) {
       outcomes.push(lostOutcome(party, null, 'elsewhere'));
       continue;
     }
     seat(rng, progress, index, party, minute);
+    if (tasted && index === 0 && progress.samples) {
+      progress.samples.parties++;
+      progress.samples.guests += party.size;
+    }
     // The next people walking by see it as it is now.
     full[index] = isFull(floors[index]);
   }
@@ -817,6 +826,8 @@ export interface FloorView {
   streak?: number;
   /** A musician playing by the door (a theme night with live music). */
   musician?: boolean;
+  /** The waiter out by the door with a tray of samples, while they're out: which special waiter (if one) and their face. */
+  samplesWaiter?: { special: SpecialStaffId | null; look: number; dish: TemplateId } | null;
 }
 
 /** A snapshot of one restaurant for the restaurant view. Reads the day; changes nothing. */
@@ -876,5 +887,9 @@ export function floorView(progress: DayInProgress, index: number, recentMinutes 
     waiterHurry: restaurant.waiters.map((_, i) => hurryState(progress, index, 'waiter', i)),
     streak: floor.streak.current,
     musician: (restaurant.themeNight?.mood ?? 0) > 0 && themeNightOn(restaurant, minute) && progress.tick <= ticksPerDay(),
+    samplesWaiter:
+      index === 0 && progress.samples && samplesOn(restaurant, minute) && progress.tick <= ticksPerDay()
+        ? { special: progress.samples.waiter.special ?? null, look: progress.samples.waiter.look ?? 0, dish: progress.samples.dish.template }
+        : null,
   };
 }

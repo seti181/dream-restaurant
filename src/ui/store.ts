@@ -4,6 +4,7 @@
 
 import { answerRivalMove } from '../sim/rivalMoves';
 import { pickCookOffEntry } from '../sim/cookOffs';
+import { samplesUnavailable } from '../sim/samples';
 import type { ThemeNightId } from '../data/themeNights';
 import { create } from 'zustand';
 import { balance } from '../data/balance';
@@ -33,6 +34,8 @@ import {
   type GameState,
   handFlyer,
   happyHourToday,
+  samplesToday,
+  sendOutSamples,
   helpGuests,
   momentDue,
   moveGuests,
@@ -95,6 +98,10 @@ export interface LiveDay extends DayTally {
   happyHour: { from: number; until: number } | null;
   /** Flyers left in hand for people walking past. */
   flyersLeft: number;
+  /** Samples at the door, once they've gone out today. */
+  samples: ReturnType<typeof samplesToday>;
+  /** Why samples can't go out right now, or null if they can. */
+  samplesBlocked: string | null;
   /** Mewa's goal for today, and how far it has got. */
   dailyGoal: ReturnType<typeof dailyGoalToday>;
 }
@@ -140,6 +147,8 @@ interface GameStore {
   breakdown: () => DayBreakdown | null;
   /** Starts today's happy hour now. */
   startHappyHour: () => void;
+  /** Sends a waiter out of the door with samples for the next hour. */
+  sendOutSamples: () => void;
   /** Shows the guests at one table to another; true if it's one of their favourite spots. */
   moveGuests: (from: number, to: number) => boolean | null;
   setSpeed: (speed: Speed) => void;
@@ -212,6 +221,8 @@ function liveFrom(openDay: OpenDay): LiveDay {
     lastGull: openDay.gulls.last,
     happyHour: happyHourToday(openDay),
     flyersLeft: openDay.flyers.left,
+    samples: samplesToday(openDay),
+    samplesBlocked: samplesUnavailable(progress),
     dailyGoal: dailyGoalToday(openDay),
   };
 }
@@ -316,6 +327,13 @@ export const useGame = create<GameStore>((set, get) => ({
   startHappyHour: () => {
     const { openDay } = get();
     if (!openDay || !startHappyHour(openDay)) return;
+    play('goal');
+    set({ live: liveFrom(openDay) });
+  },
+
+  sendOutSamples: () => {
+    const { openDay } = get();
+    if (!openDay || !sendOutSamples(openDay)) return;
     play('goal');
     set({ live: liveFrom(openDay) });
   },

@@ -317,6 +317,50 @@ function HappyHourButton() {
   );
 }
 
+/** Samples at the door: a button to send a waiter out with a tray, then how long is left, then done. */
+function SamplesButton({ onNote }: { onNote: (text: string, sent: boolean) => void }) {
+  const samples = useGame((s) => s.live?.samples ?? null);
+  const blocked = useGame((s) => s.live?.samplesBlocked ?? null);
+  const minute = useGame((s) => s.live?.minute ?? 0);
+  const closing = useGame((s) => s.live?.closing ?? false);
+  const send = useGame((s) => s.sendOutSamples);
+  // Half the tables taken or more: say what stepping out will cost.
+  const busy = useGame((s) => {
+    const tables = s.live?.floor.tables ?? [];
+    return tables.length > 0 && tables.filter((t) => t !== null).length >= tables.length / 2;
+  });
+  if (samples && minute < samples.until) {
+    return (
+      <div className="round-button on" role="status">
+        <span className="round-icon" aria-hidden="true">
+          🍽️
+        </span>
+        <span className="round-label">
+          Samples out
+          <small>until {formatTime(samples.until)}</small>
+        </span>
+      </div>
+    );
+  }
+  return (
+    <RoundButton
+      icon="🍽️"
+      label="Samples"
+      detail={samples ? 'done for today' : `${balance.samples.minutes} min at the door`}
+      disabled={samples !== null || closing}
+      onClick={() => {
+        // Nobody free to step out: say why, rather than a button that just doesn't work.
+        if (blocked) return onNote(`🍽️ ${blocked}`, false);
+        send();
+        const inside = busy
+          ? ' It’s busy inside, though: without them, service will be slow and guests less happy. A quieter hour suits samples better.'
+          : ' Inside, service is a little slower until it’s empty.';
+        onNote(`🍽️ A waiter steps out of the door with a tray of ${balance.samples.tray} tastes for people walking past.${inside}`, true);
+      }}
+    />
+  );
+}
+
 /** Who is who on the street and at the tables, opened from its round button. */
 function WhoIsWho({ flyersLeft, onClose }: { flyersLeft: number; onClose: () => void }) {
   return (
@@ -675,6 +719,13 @@ export function DayScreen() {
       <div className="day-buttons">
         <RoundButton icon="📋" label="Manage" onClick={openManager} />
         <HappyHourButton />
+        <SamplesButton
+          onNote={(text, sent) => {
+            // The samples are out by the door: the button takes you there.
+            if (sent && !upright) setOutside(true);
+            setNote({ text, at: Date.now() });
+          }}
+        />
         <RoundButton
           icon="📜"
           label="Flyers"

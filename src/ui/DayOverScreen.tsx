@@ -309,6 +309,18 @@ export function DayOverScreen() {
                     ` Asked for but missing: ${summary.wishes.missing.map((m) => (m.count > 1 ? `${m.text} (×${m.count})` : m.text)).join(', ')}. A hint for tomorrow’s menu?`}
                 </p>
               )}
+              {summary.samples && (
+                <p className="said small">
+                  🍽️ <strong>Samples at the door</strong> ({formatTime(summary.samples.from)}–{formatTime(summary.samples.until)}):{' '}
+                  {summary.samples.tasted === 0
+                    ? `nobody walked past to taste your ${dishName(summary.samples.dish)}.`
+                    : `${summary.samples.tasted} ${summary.samples.tasted === 1 ? 'person' : 'people'} tasted your ${dishName(summary.samples.dish)}, and now they know your name. ${
+                        summary.samples.parties === 0
+                          ? 'Nobody came in straight away.'
+                          : `${summary.samples.parties} ${summary.samples.parties === 1 ? 'party' : 'parties'} of them (${summary.samples.guests} guests) came straight in.`
+                      }`}
+                </p>
+              )}
               {summary.market && (Math.abs(summary.market.saved) >= balance.market.reportFrom || summary.market.special) && (
                 <p className="said small">
                   🧺 <strong>The morning market:</strong>{' '}
@@ -486,6 +498,7 @@ export function DayOverScreen() {
                     )}
                     {summary.rush.tips > 0 && <Row label="Quick-service tips" value={signedMoney(summary.rush.tips)} />}
                     {summary.rivalMoveCost > 0 && <Row label="Free kompot (price war)" value={`−${money(summary.rivalMoveCost)}`} />}
+                    {summary.samples && summary.samples.cost > 0 && <Row label="Samples at the door" value={`−${money(summary.samples.cost)}`} />}
                     {summary.bookingsCash !== 0 && (
                       <Row label="Bookings: tips and orders" value={signedMoney(summary.bookingsCash)} />
                     )}

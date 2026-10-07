@@ -273,6 +273,26 @@ export const balance = {
     awareness: 0.5,
   },
 
+  /** Samples at the door: a waiter steps out with a tray, once a day (sim/samples.ts). */
+  samples: {
+    /** For this many minutes the waiter is off the floor... */
+    minutes: 60,
+    /** ...people out on streets this close (metres; the restaurant's own street and its neighbours) walk past and taste... */
+    reachMetres: 320,
+    /** ...and are this much more tempted to come in... */
+    appeal: 1.0,
+    /** ...in full when the sample's quality is this good, none of it at this, but never less than this share... */
+    qualityFull: 90,
+    qualityFrom: 40,
+    leastShare: 0.2,
+    /** ...everyone who tastes has heard of the place a little more (awareness with their group)... */
+    awareness: 0.2,
+    /** ...each taste costs this share of a portion's ingredients... */
+    costShare: 0.1,
+    /** ...and the tray holds this many tastes: once they're gone, the waiter goes back inside. */
+    tray: 40,
+  },
+
   /** "Dziś polecamy": one dish on the board outside as today's special. */
   specials: {
     /** How much more often guests order the special than they otherwise would... */

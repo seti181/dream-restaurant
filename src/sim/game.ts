@@ -23,6 +23,7 @@ import { dailyGoalMet, dailyGoalText, dailyProgress, rollDailyGoal, type DailyGo
 import { DAILY_GOALS } from '../data/dailyGoals';
 import { rollTrend, trendLine, type TrendState } from './trends';
 import { fromTheMarket, rollMarket, type MarketState } from './market';
+import { startSamples } from './samples';
 import { TRENDS } from '../data/trends';
 import { themeNightFor, type ThemeNightBooking } from './themeNights';
 import { THEME_NIGHTS } from '../data/themeNights';
@@ -276,6 +277,17 @@ export interface DaySummary extends DayTally {
   rankUp: number | null;
   /** Rush hour: chefs and waiters hurried, the longest quick-service streak, and the tips it brought. */
   rush: { chefs: number; waiters: number; bestStreak: number; tips: number };
+  /** Samples at the door, if they went out: the dish, when, how many tasted, who came in meanwhile, and the cost. */
+  samples: {
+    dish: MenuDish;
+    from: number;
+    until: number;
+    tasted: number;
+    parties: number;
+    guests: number;
+    cost: number;
+    waiterLook?: number;
+  } | null;
   /** A rival's move, on its last day: how it came out. */
   rivalMove: { icon: string; title: string; result: string } | null;
   /** What answering a rival cost today (free kompot for every guest). */
@@ -593,6 +605,18 @@ export function startHappyHour(open: OpenDay): boolean {
   if (player.happyHourFrom !== undefined || open.progress.tick >= ticksPerDay()) return false;
   player.happyHourFrom = minuteOfDay(open.progress.tick);
   return true;
+}
+
+/** Sends a waiter out of the door with samples for the next hour. Returns false if nobody can go now. */
+export function sendOutSamples(open: OpenDay): boolean {
+  return startSamples(open.progress);
+}
+
+/** Today's samples at the door, for the screen and the report: null until they've gone out. */
+export function samplesToday(open: OpenDay): DaySummary['samples'] {
+  const s = open.progress.samples;
+  if (!s) return null;
+  return { dish: s.dish, from: s.from, until: s.until, tasted: s.tasted, parties: s.parties, guests: s.guests, cost: Math.round(s.cost), waiterLook: s.waiter.look };
 }
 
 /** Today's happy hour: when it started and ends, or null if it hasn't been started. */
@@ -949,7 +973,9 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
   const rivalMoveCost = rivalMoveCostToday(state, tally.guestsServed);
   const momentsCash = open.moments.cash + open.help.cash - rivalMoveCost;
   const streak = open.progress.floors[0].streak;
-  const profit = tally.revenue - tally.ingredientCost - wages - rent - utilities + momentsCash + bookingsCash + streak.tips;
+  const samples = samplesToday(open);
+  const profit =
+    tally.revenue - tally.ingredientCost - wages - rent - utilities + momentsCash + bookingsCash + streak.tips - (samples?.cost ?? 0);
 
   const nextDay = state.day + 1;
   const news: NewsItem[] = [];
@@ -1291,6 +1317,7 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
       cookOff: cookOffResult,
       wishes: wishesToday(outcomes, playerBefore.id),
       market: marketReport(open, playerBefore.id),
+      samples,
     },
   };
 }

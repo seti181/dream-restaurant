@@ -44,6 +44,8 @@ interface Plan {
   premiumSupplier?: boolean;
   /** Starts the happy hour at this time every day (minutes after midnight). */
   happyHourAt?: number;
+  /** Sends a waiter out with samples at this time every day (minutes after midnight). */
+  samplesAt?: number;
   /** Plays along during the day: says yes to choice cards, shoos gulls, looks after waiting tables. */
   interactive?: boolean;
   /** Says yes to every booking request (otherwise they're left unanswered and lapse). */
@@ -230,6 +232,7 @@ export const STRATEGIES: Strategy[] = [
       premiumSupplier: true,
       dayOffBelow: 55,
       acceptBookings: true,
+      samplesAt: 15 * 60,
     },
   },
   {

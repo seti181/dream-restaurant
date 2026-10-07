@@ -40,6 +40,8 @@ export interface StreetLayout {
   rows: Row[];
   tables: TableSpot[];
   musician: { x: number; y: number };
+  /** Where a waiter stands with a tray of samples: by the door, past the board. */
+  samples: { x: number; y: number };
 }
 
 const WIDTH = 1500;
@@ -130,6 +132,7 @@ export function streetLayout(terrace: number, aspect: number, location: Location
     rows,
     tables,
     musician: { x: door.x - 200, y: backLane + 4 },
+    samples: { x: door.x + 150, y: backLane + 4 },
   };
 }
 
