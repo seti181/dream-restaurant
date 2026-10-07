@@ -14,6 +14,7 @@ import {
 import { HAPPENING_IDS, HAPPENINGS, type HappeningId } from '../data/happenings';
 import { REGULAR } from '../data/personal';
 import { inSeasonOn } from './menu';
+import { marketDeals, marketPrices } from './market';
 import { acceptedOn } from './bookings';
 import { trendOn } from './trends';
 import { regularsBookings } from './regulars';
@@ -109,6 +110,8 @@ export function conditionsFor(state: GameState): DayConditions {
     ingredientCost: {},
     inSeason: inSeasonOn(state.day),
     trend: trendOn(state.trend ?? null, state.day),
+    prices: marketPrices(state.market ?? null, state.day),
+    deals: marketDeals(state.market ?? null, state.day),
   };
   for (const id of calendarEventsOn(state.day)) applyEffects(conditions, CALENDAR_EVENTS[id].effects);
   const happening = happeningIn(state.happening, state.weather);

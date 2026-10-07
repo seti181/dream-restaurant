@@ -167,6 +167,7 @@ export function bookingsDay(
   player: Restaurant,
   costMultiplier: number,
   inSeason: Parameters<typeof ingredientCostOf>[2],
+  prices: Parameters<typeof ingredientCostOf>[3] = {},
 ): BookingsDay {
   const result: BookingsDay = { reports: [], cash: 0, ingredientCost: 0, reputation: {} };
   const b = balance.bookings;
@@ -207,7 +208,7 @@ export function bookingsDay(
       continue;
     }
     const paid = request.size * kind.pricePerPortion;
-    const ingredients = request.size * ingredientCostOf(job.dish, player.supplier, inSeason) * costMultiplier;
+    const ingredients = request.size * ingredientCostOf(job.dish, player.supplier, inSeason, prices) * costMultiplier;
     result.cash += paid;
     result.ingredientCost += ingredients;
     const late = job.readyAt !== undefined && job.readyAt > job.order.minute;

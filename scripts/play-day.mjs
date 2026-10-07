@@ -7,7 +7,7 @@
 // It opens the restaurant, sets 4x speed, answers every choice card with its first answer, and
 // accepts every booking request, hurries someone in the first rush (rush-<n>.png), photographs the first wish bubble (wish-<n>.png) and the evening at 21:00 (evening-<n>.png), and screenshots the start (0-start.png), the day (1-during.png),
 // the top of each day report (report-<n>-top.png), its "Tomorrow" box (report-<n>-tomorrow.png)
-// and the next morning's Today tab at its bookings (plan-<n>.png) its Menu tab (menu-<n>.png) and its Mewa tab (mewa-<n>.png). The browser profile lives
+// and the next morning's Today tab at its bookings (plan-<n>.png) and its morning market (market-<n>.png, with the report's market line in report-<n>-market.png), its Menu tab (menu-<n>.png) and its Mewa tab (mewa-<n>.png). The browser profile lives
 // in <folder>/edge-profile, so a second run with the same folder carries on from the save.
 // Uses Node's built-in WebSocket and fetch (Node 22+) and the Chrome DevTools Protocol: no dependencies.
 
@@ -187,6 +187,11 @@ for (let day = 1; day <= Number(days); day++) {
   }
   await sleep(1500);
   await screenshot(`report-${day}-top`);
+  // The morning market's line in the report, if it has one.
+  if (await evaluate(`(() => { const p = [...document.querySelectorAll('p.said')].find((e) => e.textContent.includes('The morning market')); p?.scrollIntoView({ block: 'center' }); return !!p; })()`)) {
+    await sleep(300);
+    await screenshot(`report-${day}-market`);
+  }
   console.log(await evaluate(showTomorrow));
   await sleep(500);
   await screenshot(`report-${day}-tomorrow`);
@@ -197,6 +202,10 @@ for (let day = 1; day <= Number(days); day++) {
     await evaluate(`(document.querySelector('.rival-move') ?? document.querySelector('.ranking') ?? document.querySelector('.bookings'))?.scrollIntoView({ block: 'start' })`);
     await sleep(300);
     await screenshot(`plan-${day + 1}`);
+    // ...the morning market...
+    await evaluate(`document.querySelector('.market')?.scrollIntoView({ block: 'start' })`);
+    await sleep(300);
+    await screenshot(`market-${day + 1}`);
     // ...its Menu and Mewa tabs, then back to Today.
     const tab = (label) => `[...document.querySelectorAll('button.tab')].find((b) => b.textContent.trim() === '${label}')?.click()`;
     await evaluate(tab('Menu'));

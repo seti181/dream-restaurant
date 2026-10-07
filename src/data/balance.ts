@@ -326,6 +326,29 @@ export const balance = {
     missedMood: -2,
   },
 
+  /** The morning market: ingredient prices change a little every day (data/market.ts, sim/market.ts). */
+  market: {
+    /** Each morning every good's price moves by up to this much either way... */
+    drift: 0.08,
+    /** ...after drifting back this far towards its usual price (0.5: halfway)... */
+    pullBack: 0.5,
+    /** ...and stays within this much of it. */
+    driftLimit: 0.15,
+    /** Every day one deal, and sometimes a second... */
+    secondDealChance: 0.4,
+    /** ...at this price... */
+    dealPrice: 0.65,
+    /** ...more likely for goods with fresh produce in season (this many times). */
+    inSeasonDealWeight: 2,
+    /** On some days one good is dear. */
+    dearChance: 0.4,
+    dearPrice: 1.25,
+    /** The Menu tab shows ↓ or ↑ when a dish costs this much less or more than usual... */
+    showFrom: 0.1,
+    /** ...and the day report mentions what the prices saved (or cost) from this many złoty. */
+    reportFrom: 10,
+  },
+
   cookOffs: {
     /** Chance each Wednesday, from the second week, that a rival challenges the player to a duel (data/cookOffs.ts)... */
     chance: 0.5,

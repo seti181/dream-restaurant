@@ -214,6 +214,10 @@ export const HELP: { title: string; text: string }[] = [
     text: 'Some extras are fresh produce with a season: strawberries early in July, new potatoes until August, blueberries and chanterelles all summer, plums from mid-August. In season they make a dish taste better; out of season they’re imported, dearer and not as good. One dish a day can be today’s special, “Dziś polecamy”, on the board outside: more guests order it, it tempts people walking by, and fresh produce on it tempts them more.',
   },
   {
+    title: 'The morning market',
+    text: 'Ingredient prices change a little every morning, and the Today tab says what’s cheap: a deal or two each day, more often fresh produce in season, and now and then something dear. Dishes made with a deal cost less to cook (the Menu tab shows ↓ or ↑ by the ingredients). Make one of them today’s special, and it’s fresh from the market: the board outside tempts people walking by as much as fresh produce does.',
+  },
+  {
     title: 'Flyers',
     text: 'While the restaurant is open, tap someone walking past to hand them a flyer: a few a day. The better their group likes you, the more likely they are to come in, with their friends. Everyone who takes one has heard of you afterwards.',
   },

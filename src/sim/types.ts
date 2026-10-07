@@ -6,6 +6,8 @@ import type { Cuisine, EquipmentId, ExtraId, MenuDish } from '../data/dishes';
 import type { DecorId } from '../data/decor';
 import type { GroupId } from '../data/groups';
 import type { LocationId } from '../data/locations';
+import type { GoodId } from '../data/market';
+import type { MarketPrices } from './market';
 import type { SpecialStaffId } from '../data/personal';
 import type { RegularId } from '../data/regulars';
 import type { TraitId } from '../data/staff';
@@ -167,6 +169,10 @@ export interface DayConditions {
   inSeason: ExtraId[];
   /** This week's trend: one group craves something (data/trends.ts). */
   trend?: TrendToday | null;
+  /** This morning's market prices for each good, compared with usual (sim/market.ts; usual if missing)... */
+  prices?: MarketPrices;
+  /** ...and its deals: a special made of one of them is fresh from the market. */
+  deals?: GoodId[];
 }
 
 /** What a weekly trend does: this group craves dishes that are what they want. */

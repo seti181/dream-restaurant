@@ -363,3 +363,11 @@ describe('upgrading version 25 saves (from before cook-offs)', () => {
     expect(migrate({ saveVersion: 25, savedAt: '', game: old })).toEqual(game);
   });
 });
+
+describe('upgrading version 26 saves (from before the morning market)', () => {
+  it('keeps usual prices until the next morning’s market', () => {
+    const game = newGame(72);
+    const { market: _m, ...old } = game;
+    expect(migrate({ saveVersion: 26, savedAt: '', game: old })).toEqual({ ...game, market: null });
+  });
+});

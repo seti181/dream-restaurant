@@ -1033,6 +1033,23 @@ h2.spaced {
   background: #fdf6ea;
 }
 
+/* ---------- The morning market (Today tab) ---------- */
+
+.market {
+  margin: 0 0 16px;
+  padding: 12px 16px;
+  border-radius: 16px;
+  background: #eef4e4;
+}
+
+.market h2 {
+  margin: 0 0 6px;
+}
+
+.market p {
+  margin: 4px 0;
+}
+
 /* ---------- Bookings (Today tab) ---------- */
 
 .bookings {
@@ -3198,19 +3215,23 @@ h2.spaced {
 }
 
 /* Boxes on the page: squared off like cut paper, not the old rounded cards. */
-.sketchbook :is(.note, .icon-button, .stepper button, .person, .shop-item, .choice-card, .text-input, .creator-summary, .lunch-set, .today-news, .review, .move, .goal-card, .bookings, .booking-request, .theme-nights, .rival-move, .help-entry, .code-box, .moment-result, .help-panel, .stat-panel, .dish-row.special, .tomorrow-teaser) {
+.sketchbook :is(.note, .icon-button, .stepper button, .person, .shop-item, .choice-card, .text-input, .creator-summary, .lunch-set, .today-news, .review, .move, .goal-card, .bookings, .market, .booking-request, .theme-nights, .rival-move, .help-entry, .code-box, .moment-result, .help-panel, .stat-panel, .dish-row.special, .tomorrow-teaser) {
   border-radius: 4px;
 }
 
 /* Inside the tabs: cards as scraps of paper with a slightly wobbly ink outline, like a hand-drawn box. */
-.sketchbook :is(.person, .shop-item, .choice-card, .goal-card, .bookings, .theme-nights, .today-news, .lunch-set, .creator-summary, .review, .help-entry, .rival-move) {
+.sketchbook :is(.person, .shop-item, .choice-card, .goal-card, .bookings, .market, .theme-nights, .today-news, .lunch-set, .creator-summary, .review, .help-entry, .rival-move) {
   border: 2px solid rgba(59, 36, 51, 0.5);
   border-radius: 3px 9px 4px 8px / 8px 4px 9px 3px;
   background-color: #fffaf0;
   box-shadow: 3px 3px 0 rgba(59, 36, 51, 0.12);
 }
 
-/* A wash of colour for the boxes that stand apart: today's news blue, the goal amber, the bookings and theme nights sand. */
+/* A wash of colour for the boxes that stand apart: today's news blue, the goal amber, the market green, the bookings and theme nights sand. */
+.sketchbook .market {
+  background-color: #eaf1dc;
+}
+
 .sketchbook .today-news {
   background-color: #e8f0f2;
 }

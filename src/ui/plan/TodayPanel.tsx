@@ -12,6 +12,8 @@ import { freshOn, inSeasonOn, produceName, specialOf } from '../../sim/menu';
 import { dishName, money } from '../format';
 import { GoalCard } from '../Mewa';
 import { BookingsBox } from './BookingsBox';
+import { MarketBox } from './MarketBox';
+import { fromTheMarket, marketDeals } from '../../sim/market';
 import { DAILY_GOALS } from '../../data/dailyGoals';
 import { TRENDS } from '../../data/trends';
 import { THEME_NIGHTS } from '../../data/themeNights';
@@ -70,6 +72,7 @@ function SpecialLine() {
     <p>
       ⭐ <strong>Dziś polecamy:</strong> {dishName(special)}
       {fresh.length > 0 && ` · 🌱 fresh ${fresh.map(produceName).join(' and ')}`}
+      {fromTheMarket(special, marketDeals(game.market, game.day)) && ' · 🧺 fresh from the market'}
     </p>
   );
 }
@@ -130,6 +133,7 @@ export function TodayPanel() {
         <SpecialLine />
       </section>
 
+      <MarketBox />
       <BookingsBox />
 
       <GoalCard />

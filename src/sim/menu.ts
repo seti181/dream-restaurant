@@ -14,7 +14,9 @@ import {
   type Variant,
 } from '../data/dishes';
 import type { MenuWant } from '../data/bookings';
+import { EXTRA_GOODS } from '../data/market';
 import { dateOf, MONTH_NAMES } from './calendar';
+import { goodOf, type MarketPrices } from './market';
 import type { Restaurant, Supplier } from './types';
 
 export function templateOf(dish: MenuDish): DishTemplate {
@@ -96,18 +98,22 @@ export function pairingQuality(dish: MenuDish): number {
 
 /**
  * What one portion's ingredients cost from the given supplier. Fresh produce out of season
- * is imported and dearer: pass what's in season (all of it counts as in season if left out).
+ * is imported and dearer: pass what's in season (all of it counts as in season if left out),
+ * and this morning's market prices (sim/market.ts; usual prices if left out).
  */
-export function ingredientCostOf(dish: MenuDish, supplier: Supplier, inSeason?: readonly ExtraId[]): number {
+export function ingredientCostOf(dish: MenuDish, supplier: Supplier, inSeason?: readonly ExtraId[], prices: MarketPrices = {}): number {
   const multiplier = supplier === 'premium' ? balance.supplier.premiumCostMultiplier : 1;
-  const extras = extrasOf(dish).reduce((sum, extra) => sum + extraCost(extra, inSeason), 0);
-  return (variantOf(dish).ingredientCost + extras) * multiplier;
+  const good = goodOf(dish);
+  const base = variantOf(dish).ingredientCost * (good ? (prices[good] ?? 1) : 1);
+  const extras = extrasOf(dish).reduce((sum, extra) => sum + extraCost(extra, inSeason, prices), 0);
+  return (base + extras) * multiplier;
 }
 
-/** What an extra adds to a portion (from the market): fresh produce out of season is imported, and dearer. */
-export function extraCost(extra: ExtraId, inSeason?: readonly ExtraId[]): number {
+/** What an extra adds to a portion: fresh produce out of season is imported, and dearer, and the market changes the rest. */
+export function extraCost(extra: ExtraId, inSeason?: readonly ExtraId[], prices: MarketPrices = {}): number {
   const imported = inSeason !== undefined && EXTRAS[extra].season !== undefined && !inSeason.includes(extra);
-  return EXTRAS[extra].ingredientCost * (imported ? balance.seasonal.outOfSeasonCost : 1);
+  const good = EXTRA_GOODS[extra];
+  return EXTRAS[extra].ingredientCost * (imported ? balance.seasonal.outOfSeasonCost : 1) * (good ? (prices[good] ?? 1) : 1);
 }
 
 // ---------- What's in season, and today's special ----------

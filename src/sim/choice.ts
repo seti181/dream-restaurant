@@ -7,6 +7,8 @@ import type { ExtraId, MenuDish } from '../data/dishes';
 import { GROUPS, type GroupId } from '../data/groups';
 import { LOCATIONS, type LocationId } from '../data/locations';
 import { interiorAppeal } from './interior';
+import type { GoodId } from '../data/market';
+import { fromTheMarket } from './market';
 import { themeNightOn } from './themeNights';
 import { dishFits, freshOn, happyHourOn, lunchSetServing, priceMultiplier, specialOf, tagsOf, templateOf } from './menu';
 import { nextFloat, type RngState } from './rng';
@@ -26,12 +28,15 @@ export function dishAppeal(dish: MenuDish, group: GroupId, trend: TrendToday | n
   return Math.min(1, matches / balance.choice.matchesForFullAppeal);
 }
 
-/** What today's special on the board outside adds to how tempting the restaurant looks. */
-export function specialAppeal(restaurant: Restaurant, inSeason: readonly ExtraId[]): number {
+/**
+ * What today's special on the board outside adds to how tempting the restaurant looks: more with
+ * something fresh in season on it, or made of one of the morning market's deals.
+ */
+export function specialAppeal(restaurant: Restaurant, inSeason: readonly ExtraId[], deals: readonly GoodId[] = []): number {
   const special = specialOf(restaurant);
   if (!special) return 0;
   const { appeal, freshAppeal } = balance.specials;
-  return appeal + (freshOn(special, inSeason).length > 0 ? freshAppeal : 0);
+  return appeal + (freshOn(special, inSeason).length > 0 || fromTheMarket(special, deals) ? freshAppeal : 0);
 }
 
 /** How tempting a menu looks to a group, 0–1: the average appeal of its best few dishes. */
@@ -68,6 +73,7 @@ export function utility(
   full = false,
   inSeason: readonly ExtraId[] = [],
   trend: TrendToday | null = null,
+  deals: readonly GoodId[] = [],
 ): number | null {
   const distance = distanceMetres(party.origin, restaurant.location);
   const range = balance.choice.walkRangeMetres;
@@ -98,8 +104,8 @@ export function utility(
     lunchSetTerm +
     // The happy hour board outside.
     (happyHourOn(restaurant, party.arrivalMinute) ? balance.happyHour.appealBonus : 0) +
-    // "Dziś polecamy" on the board, all the more tempting with something fresh in season.
-    specialAppeal(restaurant, inSeason) +
+    // "Dziś polecamy" on the board, all the more tempting with something fresh in season or from the market.
+    specialAppeal(restaurant, inSeason, deals) +
     interiorAppeal(restaurant, party.group) +
     // A rival's special deal for some groups (a lunch deal).
     (restaurant.pull &&
@@ -133,12 +139,13 @@ export function chooseRestaurant(
   full: boolean[] = [],
   inSeason: readonly ExtraId[] = [],
   trend: TrendToday | null = null,
+  deals: readonly GoodId[] = [],
 ): number | null {
   const options: { index: number | null; score: number }[] = [
     { index: null, score: balance.choice.noRestaurantUtility },
   ];
   restaurants.forEach((restaurant, index) => {
-    const score = utility(restaurant, party, expectedWaits[index], full[index] ?? false, inSeason, trend);
+    const score = utility(restaurant, party, expectedWaits[index], full[index] ?? false, inSeason, trend, deals);
     if (score !== null) options.push({ index, score });
   });
 

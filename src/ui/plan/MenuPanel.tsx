@@ -19,6 +19,7 @@ import { MAX_STARS, portionsToNextStar, starsFor, withStars } from '../../sim/pr
 import { TRENDS } from '../../data/trends';
 import { trendLine, type TrendState } from '../../sim/trends';
 import { MONTH_NAMES } from '../../sim/calendar';
+import { marketPrices } from '../../sim/market';
 import { dishFits, extraCost, extrasOf, freshOn, ingredientCostOf, inSeasonOn, produceName, recipeKey, tagsOf, templateOf } from '../../sim/menu';
 import { money, recipeText } from '../format';
 import { FoodIcon } from '../Icon';
@@ -47,6 +48,12 @@ function SeasonNote({ dish, inSeason }: { dish: MenuDish; inSeason: readonly Ext
       {imported.length > 0 && `Imported ${imported.map(produceName).join(' and ')}: out of season, dearer.`}
     </span>
   );
+}
+
+/** " ↓ from 16 zł" when the morning market makes a dish noticeably cheaper (or dearer) to cook today. */
+function marketTag(today: number, usual: number): string {
+  if (usual <= 0 || Math.abs(today / usual - 1) < balance.market.showFrom || money(today) === money(usual)) return '';
+  return ` ${today < usual ? '↓' : '↑'} from ${money(usual)}`;
 }
 
 /** "★★☆ · 40 more to ★★★": how well the kitchen knows this kind of dish (sim/practice.ts). */
@@ -122,6 +129,7 @@ function CurrentMenu() {
   const player = playerOf(game);
   const emptySlots = Math.max(0, game.menuSlots - player.menu.length);
   const inSeason = inSeasonOn(game.day);
+  const prices = marketPrices(game.market, game.day);
 
   return (
     <section className="panel-column">
@@ -130,7 +138,7 @@ function CurrentMenu() {
       </h2>
       <p className="small muted">
         Tap ☆ to put a dish on the board outside as today’s special, “Dziś polecamy”: more guests order it, and it
-        tempts people walking by, all the more with something fresh in season.
+        tempts people walking by, all the more with something fresh in season or from the morning market.
       </p>
       <ul className="dish-list">
         {player.menu.map((dish, index) => {
@@ -146,7 +154,8 @@ function CurrentMenu() {
               <span className="small muted">{recipeText(dish)}</span>
               <SeasonNote dish={dish} inSeason={inSeason} />
               <span className="small muted">
-                Ingredients {money(ingredientCostOf(dish, player.supplier, inSeason))} · usually sells for{' '}
+                Ingredients {money(ingredientCostOf(dish, player.supplier, inSeason, prices))}
+                {marketTag(ingredientCostOf(dish, player.supplier, inSeason, prices), ingredientCostOf(dish, player.supplier, inSeason))} · usually sells for{' '}
                 {money(templateOf(dish).referencePrice)}
               </span>
             </div>
@@ -278,6 +287,7 @@ function DishCreator() {
   const [variant, setVariant] = useState('');
   const [extras, setExtras] = useState<ExtraId[]>([]);
   const inSeason = inSeasonOn(game.day);
+  const prices = marketPrices(game.market, game.day);
 
   const chooseTemplate = (id: TemplateId) => {
     setTemplate(id);
@@ -370,7 +380,7 @@ function DishCreator() {
               >
                 {EXTRAS[extra].name}{' '}
                 <span className="muted">
-                  +{money(extraCost(extra, inSeason))}
+                  +{money(extraCost(extra, inSeason, prices))}
                 </span>
                 {seasonLabel(extra, inSeason) && (
                   <span className={inSeason.includes(extra) ? 'small season-note' : 'small muted'}> {seasonLabel(extra, inSeason)}</span>
@@ -384,7 +394,8 @@ function DishCreator() {
               <strong>{recipeText(draft)}</strong>
               <Tags dish={draft} />
               <span className="small muted">
-                Ingredients {money(ingredientCostOf(draft, playerOf(game).supplier, inSeason))} a portion · usually sells for{' '}
+                Ingredients {money(ingredientCostOf(draft, playerOf(game).supplier, inSeason, prices))} a portion
+                {marketTag(ingredientCostOf(draft, playerOf(game).supplier, inSeason, prices), ingredientCostOf(draft, playerOf(game).supplier, inSeason))} · usually sells for{' '}
                 {money(templateOf(draft).referencePrice)}
               </span>
             </div>

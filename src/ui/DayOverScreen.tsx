@@ -2,6 +2,7 @@
 // and how the rest of the Old Town did.
 
 import { useState, type ReactNode } from 'react';
+import { balance } from '../data/balance';
 import { GROUP_IDS, GROUPS } from '../data/groups';
 import { HAPPENINGS } from '../data/happenings';
 import { LOCATIONS } from '../data/locations';
@@ -306,6 +307,20 @@ export function DayOverScreen() {
                   {summary.wishes.asked === 1 ? 'table' : 'tables'} found what they hoped for.
                   {summary.wishes.missing.length > 0 &&
                     ` Asked for but missing: ${summary.wishes.missing.map((m) => (m.count > 1 ? `${m.text} (×${m.count})` : m.text)).join(', ')}. A hint for tomorrow’s menu?`}
+                </p>
+              )}
+              {summary.market && (Math.abs(summary.market.saved) >= balance.market.reportFrom || summary.market.special) && (
+                <p className="said small">
+                  🧺 <strong>The morning market:</strong>{' '}
+                  {summary.market.saved >= balance.market.reportFrom
+                    ? `today’s prices saved you ${money(summary.market.saved)} on ingredients.`
+                    : summary.market.saved <= -balance.market.reportFrom
+                      ? `today’s prices cost you ${money(-summary.market.saved)} more for ingredients.`
+                      : 'prices were about as usual.'}
+                  {summary.market.special &&
+                    ` Your ${dishName(summary.market.special)} on the board was fresh from the market: ${
+                      summary.dishesSold.find((d) => recipeKey(d.dish) === recipeKey(summary.market!.special!))?.count ?? 0
+                    } portions sold.`}
                 </p>
               )}
               {summary.cookOff && (

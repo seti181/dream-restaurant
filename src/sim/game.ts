@@ -22,6 +22,7 @@ import { weeklyRanking, type OldTownRanking } from './ranking';
 import { dailyGoalMet, dailyGoalText, dailyProgress, rollDailyGoal, type DailyGoalState } from './dailyGoals';
 import { DAILY_GOALS } from '../data/dailyGoals';
 import { rollTrend, trendLine, type TrendState } from './trends';
+import { fromTheMarket, rollMarket, type MarketState } from './market';
 import { TRENDS } from '../data/trends';
 import { themeNightFor, type ThemeNightBooking } from './themeNights';
 import { THEME_NIGHTS } from '../data/themeNights';
@@ -48,7 +49,7 @@ import { forecastFor, weatherAtOpening, type Forecast } from './forecast';
 import { flyerGuestsArrive, handOutFlyer, planFlyers, type FlyersToday } from './flyers';
 import { planGulls, shooGull, stepGulls, type GullsToday } from './gulls';
 import { answerMoment, checkMoments, planMoments, type MomentResult, type MomentsToday } from './moments';
-import { pairingsOf, seasonNews } from './menu';
+import { ingredientCostOf, inSeasonOn, pairingsOf, seasonNews, specialOf } from './menu';
 import { isFairDay, isNeptuneDay, neptuneResult, type NeptuneResult, type SeasonTally } from './neptune';
 import { canReply } from './reviews';
 import { regularsDay, regularsNews, type RegularStories, type RegularVisitReport } from './regulars';
@@ -133,6 +134,8 @@ export interface GameState {
   dailyGoal: DailyGoalState | null;
   /** What Gdańsk is crazy about this week, or null (an older save, until next Monday). */
   trend: TrendState | null;
+  /** This morning's market prices and deals, or null (an older save, until the next morning). */
+  market: MarketState | null;
   /** The theme night booked most recently (one a week), or null. */
   themeNight: ThemeNightBooking | null;
   /** A rival's latest move against the player, answered or waiting for an answer, or null. */
@@ -281,6 +284,8 @@ export interface DaySummary extends DayTally {
   cookOff: CookOffResult | null;
   /** Guests' wishes today: how many asked, how many found it on the menu, and what was missing (most asked first). */
   wishes: { asked: number; granted: number; missing: { text: string; count: number }[] };
+  /** The morning market: what today's prices saved on ingredients (less than 0: what they cost extra), and the special if it was made of a deal. */
+  market: { saved: number; special: MenuDish | null } | null;
   /** Tonight's theme night, if one was on: guests served from its start, and portions of what they came for. */
   themeNight: { icon: string; name: string; guests: number; portions: number; wantText: string | null } | null;
   /** Today's goal from Mewa: what it was, how far it got, and whether it was done (and paid). */
@@ -327,6 +332,7 @@ export function newGame(seed: number, difficulty: Difficulty = 'normal'): GameSt
     gameOver: false,
     dailyGoal: rollDailyGoal(dailyGoalSeed(rng, 0), null, player),
     trend: rollTrend(trendSeed(rng, 0), 0, null),
+    market: rollMarket(marketSeed(rng, 0), 0, null, inSeasonOn(0)),
     themeNight: null,
     rivalMove: null,
     cookOff: null,
@@ -337,6 +343,11 @@ export function newGame(seed: number, difficulty: Difficulty = 'normal'): GameSt
 /** Weekly trends get their own dice too. */
 function trendSeed(rng: RngState, day: number): number {
   return (rng.s ^ Math.imul(day + 37, 0x1b873593)) >>> 0;
+}
+
+/** The morning market gets its own dice too. */
+function marketSeed(rng: RngState, day: number): number {
+  return (rng.s ^ Math.imul(day + 59, 0x3c6ef372)) >>> 0;
 }
 
 /** Daily goals get their own dice, so they never change anything else that's rolled. */
@@ -668,6 +679,29 @@ function wishesToday(outcomes: readonly PartyOutcome[], playerId: string): DaySu
   };
 }
 
+/**
+ * What the morning market meant today: what the player's ingredients cost compared with usual
+ * prices (more than 0: saved), and today's special if it was made of one of the deals.
+ */
+function marketReport(open: OpenDay, playerId: string): DaySummary['market'] {
+  const { conditions, outcomes, restaurants } = open.progress;
+  if (!conditions.prices || Object.keys(conditions.prices).length === 0) return null;
+  const player = restaurants[0];
+  const multiplier = conditions.ingredientCost[playerId] ?? 1;
+  let usual = 0;
+  let paid = 0;
+  for (const o of outcomes) {
+    if (o.restaurant !== playerId || o.ingredientCost <= 0) continue;
+    paid += o.ingredientCost;
+    usual += o.order.reduce((sum, dish) => sum + ingredientCostOf(dish, player.supplier, conditions.inSeason), 0) * multiplier;
+  }
+  const special = specialOf(player);
+  return {
+    saved: Math.round(usual - paid),
+    special: special && fromTheMarket(special, conditions.deals ?? []) ? special : null,
+  };
+}
+
 /** How tonight's theme night went, if one was on. */
 function themeNightReport(state: GameState, open: OpenDay): DaySummary['themeNight'] {
   const booking = state.themeNight;
@@ -894,6 +928,7 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
     open.progress.restaurants[0],
     open.progress.conditions.ingredientCost[playerBefore.id] ?? 1,
     open.progress.conditions.inSeason,
+    open.progress.conditions.prices,
   );
   const bookingsCash = bookingsToday.cash - bookingsToday.ingredientCost;
   playerAfter = { ...playerAfter, reputation: addToGroups(playerAfter.reputation, bookingsToday.reputation) };
@@ -1045,6 +1080,9 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
     news.push({ title: `${details.icon} ${details.name}`, text: `${details.story} ${trendLine(trend.id)}` });
   }
 
+  // Tomorrow morning's market: prices move a little, with a deal or two.
+  const market = rollMarket(marketSeed(rng, nextDay), nextDay, state.market ?? null, inSeasonOn(nextDay));
+
   // Mewa finds the secret recipe once the restaurant is doing well, or by week 3 at the latest.
   let { secretRecipe } = state;
   if (!secretRecipe && (ratingAfter >= SECRET_RECIPE.unlockStars || nextDay >= SECRET_RECIPE.unlockByDay)) {
@@ -1173,6 +1211,7 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
     ranking,
     dailyGoal,
     trend,
+    market,
     menuSlots,
     // Running out of money ends the game.
     gameOver: state.gameOver || cash <= 0,
@@ -1251,6 +1290,7 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
       rivalMoveCost,
       cookOff: cookOffResult,
       wishes: wishesToday(outcomes, playerBefore.id),
+      market: marketReport(open, playerBefore.id),
     },
   };
 }

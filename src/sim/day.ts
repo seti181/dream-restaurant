@@ -259,7 +259,7 @@ function progressRestaurant(
 
   const costMultiplier = conditions.ingredientCost[restaurant.id] ?? 1;
   const ingredients = (order: MenuDish[]) =>
-    sum(order, (dish) => ingredientCostOf(dish, restaurant.supplier, conditions.inSeason)) * costMultiplier;
+    sum(order, (dish) => ingredientCostOf(dish, restaurant.supplier, conditions.inSeason, conditions.prices)) * costMultiplier;
 
   for (const visit of [...floor.visits]) {
     const { party } = visit;
@@ -567,7 +567,7 @@ function cookBigOrders(progress: DayInProgress, index: number, minute: number): 
   const restaurant = progress.restaurants[index];
   const floor = progress.floors[index];
   const { supplier } = restaurant;
-  const { inSeason } = progress.conditions;
+  const { inSeason, prices } = progress.conditions;
   for (const job of progress.bigOrders) {
     if (job.status !== 'waiting' || job.order.restaurant !== restaurant.id) continue;
     if (floor.chefFreeAt.length === 0) {
@@ -579,7 +579,7 @@ function cookBigOrders(progress: DayInProgress, index: number, minute: number): 
     const start = Math.max(minute, floor.chefFreeAt[chefIndex]);
     if (start + minutes + balance.clock.tickMinutes <= job.order.minute) continue;
     const [dish] = matchingDishes(restaurant.menu, job.order.needs).sort(
-      (a, b) => ingredientCostOf(a, supplier, inSeason) - ingredientCostOf(b, supplier, inSeason),
+      (a, b) => ingredientCostOf(a, supplier, inSeason, prices) - ingredientCostOf(b, supplier, inSeason, prices),
     );
     if (!dish) {
       job.status = 'fellThrough';
@@ -638,7 +638,7 @@ export function stepDay(rng: RngState, progress: DayInProgress): void {
   const isFull = (floor: Floor) => floor.freeTables < 1 && floor.door.length >= balance.service.doorQueueMax;
   const full = floors.map(isFull);
   for (const party of generateParties(rng, day, tick, conditions)) {
-    const index = chooseRestaurant(rng, party, restaurants, waits, full, conditions.inSeason, conditions.trend ?? null);
+    const index = chooseRestaurant(rng, party, restaurants, waits, full, conditions.inSeason, conditions.trend ?? null, conditions.deals);
     if (index === null) {
       outcomes.push(lostOutcome(party, null, 'elsewhere'));
       continue;

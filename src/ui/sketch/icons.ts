@@ -24,6 +24,7 @@ const MORE = [
   'smile', 'thinking', 'weary', 'sick', 'sleepy', 'monocle', 'people', 'runner', 'eyes', 'handshake', 'crossedFingers', 'chefHat', 'gradCap',
   // Food and drink.
   'cocktail', 'pan', 'drink', 'pot', 'pasta', 'salad', 'meat', 'icecream', 'pizza', 'wine', 'cheers', 'bento', 'birthday', 'wheat', 'log', 'heartYellow',
+  'potato', 'cabbage', 'cheese', 'strawberry', 'basket',
   // Things.
   'star', 'starEmpty', 'chair', 'party', 'target', 'scroll', 'trophy', 'medal', 'swords', 'pause', 'sound', 'mute', 'chartUp', 'books', 'warning',
   'accordion', 'mailbox', 'sparkles', 'speech', 'thought', 'card', 'fire', 'clipboard', 'candle', 'lock', 'newspaper', 'trident', 'note',
@@ -78,6 +79,7 @@ const FROM_EMOJI: Record<string, IconId> = {
   '😊': 'smile', '🤔': 'thinking', '😩': 'weary', '🤒': 'sick', '😴': 'sleepy', '🧐': 'monocle', '👥': 'people', '🏃': 'runner', '👀': 'eyes', '🤝': 'handshake', '🤞': 'crossedFingers',
   '👨‍🍳': 'chefHat', '🧑‍🍳': 'chefHat', '🎓': 'gradCap',
   '🍹': 'cocktail', '🍳': 'pan', '🥤': 'drink', '🍲': 'pot', '🍝': 'pasta', '🥗': 'salad', '🍖': 'meat', '🍦': 'icecream', '🍕': 'pizza', '🍷': 'wine', '🥂': 'cheers', '🍱': 'bento', '🎂': 'birthday', '🌾': 'wheat', '🪵': 'log',
+  '🥔': 'potato', '🥬': 'cabbage', '🧀': 'cheese', '🍓': 'strawberry', '🧺': 'basket',
   '⭐': 'star', '★': 'star', '☆': 'starEmpty', '🪑': 'chair', '🎉': 'party', '🎯': 'target', '📜': 'scroll', '🏆': 'trophy', '🏅': 'medal', '⚔': 'swords', '⏸': 'pause', '🔊': 'sound', '🔇': 'mute', '📈': 'chartUp', '📚': 'books', '⚠': 'warning',
   '🪗': 'accordion', '📬': 'mailbox', '✨': 'sparkles', '💭': 'thought', '🃏': 'card', '🔥': 'fire', '📋': 'clipboard', '🕯': 'candle', '🔒': 'lock', '📰': 'newspaper', '🔱': 'trident', '🎵': 'note',
   '🔔': 'bell', '🛌': 'bed', '⚙': 'gear', '💒': 'wedding', '🚌': 'bus', '⛪': 'church', '🌙': 'moon', '💰': 'moneyBag', '🚢': 'ship', '💼': 'briefcase', '📸': 'camera', '🏖': 'beach', '🚆': 'train', '🎻': 'violin', '🧶': 'yarn',
@@ -256,6 +258,16 @@ function icon(pt: Painter, id: IconId, x: number, y: number): string {
       return pt.line(`M${x},${y + 24} V${y - 20}`, '#c9963a', 2.4) + [0, 1, 2, 3].map((k) => `<ellipse cx="${x - 6}" cy="${y - 14 + k * 9}" rx="5" ry="3" transform="rotate(-30 ${x - 6} ${y - 14 + k * 9})" fill="#e3b24a" stroke="${p.ink}" stroke-width="0.8"/><ellipse cx="${x + 6}" cy="${y - 14 + k * 9}" rx="5" ry="3" transform="rotate(30 ${x + 6} ${y - 14 + k * 9})" fill="#e3b24a" stroke="${p.ink}" stroke-width="0.8"/>`).join('');
     case 'log':
       return pt.rect(x - 22, y - 10, 40, 22, '#8a5534', 10) + pt.circle(x + 18, y + 1, 10, '#d9a066') + `<circle cx="${x + 18}" cy="${y + 1}" r="5" fill="none" stroke="#8a5534" stroke-width="1.4"/>`;
+    case 'potato':
+      return pt.fill(`M${x - 22},${y + 2} q-2,-16 16,-18 q12,-2 22,4 q10,8 4,18 q-8,12 -26,10 q-14,-2 -16,-14 Z`, '#c9a46a') + `<circle cx="${x - 8}" cy="${y - 4}" r="1.8" fill="${dark('#c9a46a', 0.45)}"/><circle cx="${x + 8}" cy="${y + 4}" r="1.8" fill="${dark('#c9a46a', 0.45)}"/><circle cx="${x + 2}" cy="${y - 9}" r="1.5" fill="${dark('#c9a46a', 0.45)}"/>`;
+    case 'cabbage':
+      return pt.fill(`M${x - 24},${y + 6} q-4,-22 14,-26 q-6,10 -2,20 Z M${x + 24},${y + 6} q4,-22 -14,-26 q6,10 2,20 Z`, '#7fb05a') + pt.circle(x, y + 2, 19, '#b8d88a') + pt.line(`M${x},${y + 20} q-6,-12 0,-34 M${x - 8},${y + 4} q4,-4 8,-2 M${x + 8},${y + 8} q-4,-4 -8,-2 M${x - 10},${y - 8} q6,0 10,4`, dark('#7fb05a', 0.25), 1.4);
+    case 'cheese':
+      return pt.fill(`M${x - 24},${y + 14} l6,-26 l40,10 l2,16 Z`, '#f2cf5a') + pt.fill(`M${x - 18},${y - 12} l40,10 l-46,10 Z`, '#f8e08a') + `<circle cx="${x - 8}" cy="${y + 8}" r="3" fill="${dark('#f2cf5a', 0.2)}"/><circle cx="${x + 10}" cy="${y + 10}" r="2.4" fill="${dark('#f2cf5a', 0.2)}"/><circle cx="${x + 2}" cy="${y + 4}" r="1.8" fill="${dark('#f2cf5a', 0.2)}"/>`;
+    case 'strawberry':
+      return pt.fill(`M${x - 18},${y - 8} q18,-8 36,0 q0,18 -18,32 q-18,-14 -18,-32 Z`, 'red') + pt.fill(`M${x - 14},${y - 10} l6,-6 l4,4 l4,-8 l4,8 l4,-4 l6,6 q-14,6 -28,0 Z`, 'green') + [[-8, -2], [6, -1], [-2, 6], [8, 9], [-7, 11], [0, 16]].map(([dx, dy]) => `<ellipse cx="${x + dx}" cy="${y + dy}" rx="1.1" ry="1.8" fill="#f8e08a"/>`).join('');
+    case 'basket':
+      return pt.line(`M${x - 18},${y - 2} q18,-34 36,0`, '#a8743a', 3.4) + pt.circle(x - 9, y - 4, 8, 'red') + pt.circle(x + 7, y - 5, 8, '#b8d88a') + pt.fill(`M${x - 24},${y - 2} h48 l-6,24 h-36 Z`, '#d9a95a') + pt.line(`M${x - 22},${y + 6} h44 M${x - 20},${y + 14} h40 M${x - 10},${y - 2} l-2,24 M${x},${y - 2} v24 M${x + 10},${y - 2} l2,24`, dark('#d9a95a', 0.3), 1.2);
 
     // ----- Things -----
     case 'star':
