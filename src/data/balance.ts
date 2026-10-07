@@ -204,6 +204,17 @@ export const balance = {
     tableCost: 4_000,
   },
 
+  /** Building works: bigger premises (data/works.ts). They stay behind when the restaurant moves. */
+  works: {
+    /** The bar counter: what it costs, how many parties it seats at once, and the most people in a party there. */
+    counterCost: 9_000,
+    counterPlaces: 2,
+    counterPartyMax: 2,
+    /** The toilet: what it costs, and how much happier (0–100) every guest is. */
+    toiletCost: 4_000,
+    toiletMood: 3,
+  },
+
   decor: {
     /** Decor items of one style needed before the room counts as that style. */
     itemsForStyle: 2,

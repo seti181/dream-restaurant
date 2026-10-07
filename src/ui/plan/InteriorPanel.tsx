@@ -8,7 +8,10 @@ import {
   decorUnavailableReason,
   tableUnavailableReason,
   terraceUnavailableReason,
+  workCost,
+  workUnavailableReason,
 } from '../../sim/actions';
+import { BUILDING_WORK_IDS, BUILDING_WORKS, type BuildingWorkId } from '../../data/works';
 import { dateOf, formatDate, MONTH_NAMES } from '../../sim/calendar';
 import { playerOf, terraceOpenOn } from '../../sim/game';
 import { decorStyleOf } from '../../sim/interior';
@@ -141,6 +144,35 @@ function DecorShop() {
   );
 }
 
+/** Building works: done overnight, they stay with the premises if you move. */
+function WorkCard({ id }: { id: BuildingWorkId }) {
+  const game = useGame((s) => s.game);
+  const buildWork = useGame((s) => s.buildWork);
+  const work = BUILDING_WORKS[id];
+  const done = playerOf(game).works?.includes(id) ?? false;
+  const reason = workUnavailableReason(game, id);
+  return (
+    <article className={done ? 'shop-item owned' : 'shop-item'}>
+      <div>
+        <strong>
+          {work.icon} {work.name}
+        </strong>
+        <p className="small muted">{work.blurb}</p>
+      </div>
+      <div className="buy">
+        {done ? (
+          <span className="small">✓ Done</span>
+        ) : (
+          <button type="button" className="secondary" disabled={reason !== null} onClick={() => buildWork(id)}>
+            Build · {money(workCost(id))}
+          </button>
+        )}
+        {!done && reason && <span className="small muted">{reason}</span>}
+      </div>
+    </article>
+  );
+}
+
 export function InteriorPanel() {
   return (
     <div className="two-panels even">
@@ -149,6 +181,13 @@ export function InteriorPanel() {
         <div className="shop">
           <SeatsCard />
           <TerraceCard />
+        </div>
+        <h2>Building works</h2>
+        <p className="small muted">Done overnight, ready tomorrow morning. They belong to these premises: if you move, they stay behind.</p>
+        <div className="shop">
+          {BUILDING_WORK_IDS.map((id) => (
+            <WorkCard key={id} id={id} />
+          ))}
         </div>
       </section>
       <DecorShop />

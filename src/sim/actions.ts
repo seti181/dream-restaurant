@@ -8,6 +8,7 @@ import { EQUIPMENT } from '../data/equipment';
 import { GROUP_IDS } from '../data/groups';
 import { LOCATIONS, type LocationId } from '../data/locations';
 import { CAMPAIGNS, type CampaignId } from '../data/marketing';
+import type { BuildingWorkId } from '../data/works';
 import type { TipId } from '../data/mewa';
 import { REPLIES, type ReplyId } from '../data/reviews';
 import { canReply } from './reviews';
@@ -294,6 +295,24 @@ export function buyTable(state: GameState): GameState {
   return { ...bought, cash: state.cash - balance.interior.tableCost };
 }
 
+/** What a piece of building work costs (balance.works). */
+export function workCost(id: BuildingWorkId): number {
+  return id === 'counter' ? balance.works.counterCost : balance.works.toiletCost;
+}
+
+/** Why this building work can't be done, or null if it can. */
+export function workUnavailableReason(state: GameState, id: BuildingWorkId): string | null {
+  if (playerOf(state).works?.includes(id)) return 'Already done';
+  return cantAfford(state, workCost(id));
+}
+
+/** Has the building work done (it's ready the next morning, like any purchase), and pays for it. */
+export function buildWork(state: GameState, id: BuildingWorkId): GameState {
+  if (workUnavailableReason(state, id) !== null) return state;
+  const built = withPlayer(state, { works: [...(playerOf(state).works ?? []), id] });
+  return { ...built, cash: state.cash - workCost(id) };
+}
+
 export function decorUnavailableReason(state: GameState, id: DecorId): string | null {
   if (DECOR[id].unlockable && !state.unlocks.includes(id)) return 'Not discovered yet';
   if (playerOf(state).decor.includes(id)) return 'Already in your dining room';
@@ -376,6 +395,8 @@ export function afterMove(state: GameState, to: LocationId): Restaurant {
     ambiance: ambianceWith(decor),
     tables: Math.min(player.tables, maxTables),
     reputation,
+    // Building works belong to the premises: they stay behind.
+    works: [],
   };
 }
 

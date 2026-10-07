@@ -222,6 +222,10 @@ export const HELP: { title: string; text: string }[] = [
     text: 'Some extras are fresh produce with a season: strawberries early in July, new potatoes until August, blueberries and chanterelles all summer, plums from mid-August. In season they make a dish taste better; out of season they’re imported, dearer and not as good. One dish a day can be today’s special, “Dziś polecamy”, on the board outside: more guests order it, it tempts people walking by, and fresh produce on it tempts them more.',
   },
   {
+    title: 'Building works',
+    text: 'When the room is full, the Interior tab has building works for these premises, done overnight. A bar counter puts four stools along the bar: someone on their own or a pair sits there, and your tables stay free for bigger parties. A toilet makes every guest a little happier. They belong to the building: if you move, they stay behind.',
+  },
+  {
     title: 'Samples at the door',
     text: 'Once a day, the Samples button sends a waiter out of the door for an hour with a tray of today’s special (or, without one, the dish your kitchen cooks best). People out on your street and the streets nearby walk past and have a taste: they know your name afterwards, and the better it tastes, the more of them come in. The tray holds 40 tastes, each costing a little in ingredients; once it’s empty the waiter comes back in. Meanwhile they aren’t serving inside, and a full restaurant can’t seat the people the samples bring, so a quiet hour suits it best.',
   },

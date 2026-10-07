@@ -141,13 +141,15 @@ export function streetLayout(terrace: number, aspect: number, location: Location
  * that needs help inside; outside a gull, then a queue, then a terrace table that needs help.
  */
 export function whatNeedsYou(
-  floor: Pick<FloorView, 'tables' | 'insideTables' | 'gull' | 'atTheDoor'>,
+  floor: Pick<FloorView, 'tables' | 'insideTables' | 'counterFrom' | 'gull' | 'atTheDoor'>,
   needsHelp: (guests: TableGuests | null) => boolean,
 ): { inside: 'help' | null; outside: 'mewa' | 'hourglass' | 'help' | null } {
-  const { tables, insideTables } = floor;
+  const { tables, insideTables, counterFrom } = floor;
+  // Inside: the room's tables and the bar counter; outside: the terrace's tables between them.
+  const outsideTable = (t: number) => t >= insideTables && t < counterFrom;
   return {
-    inside: tables.some((g, t) => t < insideTables && needsHelp(g)) ? 'help' : null,
-    outside: floor.gull ? 'mewa' : floor.atTheDoor.length > 0 ? 'hourglass' : tables.some((g, t) => t >= insideTables && needsHelp(g)) ? 'help' : null,
+    inside: tables.some((g, t) => !outsideTable(t) && needsHelp(g)) ? 'help' : null,
+    outside: floor.gull ? 'mewa' : floor.atTheDoor.length > 0 ? 'hourglass' : tables.some((g, t) => outsideTable(t) && needsHelp(g)) ? 'help' : null,
   };
 }
 

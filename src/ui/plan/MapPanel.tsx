@@ -6,6 +6,7 @@ import { GROUP_IDS, GROUPS } from '../../data/groups';
 import { LOCATIONS, type LocationId } from '../../data/locations';
 import { RIVALS, type RivalId } from '../../data/rivals';
 import { afterMove, relocateUnavailableReason } from '../../sim/actions';
+import { BUILDING_WORKS } from '../../data/works';
 import { playerOf } from '../../sim/game';
 import { previewOf } from '../../sim/preview';
 import { money } from '../format';
@@ -60,6 +61,7 @@ function LocationCard({ id }: { id: LocationId }) {
   const moved = afterMove(game, id);
   const tablesLost = player.tables - moved.tables;
   const decorLost = player.decor.length - moved.decor.length;
+  const worksLeft = (player.works ?? []).map((w) => BUILDING_WORKS[w].name.toLowerCase());
   const [looking, setLooking] = useState(false);
 
   return (
@@ -116,6 +118,7 @@ function LocationCard({ id }: { id: LocationId }) {
             keep about {Math.round(balance.relocation.reputationKept * 100)}% of your reputation
             {decorLost > 0 && `, and ${decorLost} of your decor items stay behind`}
             {tablesLost > 0 && `. ${tablesLost} tables won’t fit the new room`}.
+            {worksLeft.length > 0 && ` Your building works belong to these premises and stay behind: the ${worksLeft.join(' and the ')}.`}
           </p>
           <div className="buy">
             <button type="button" className="primary" disabled={reason !== null} onClick={() => relocate(id)}>

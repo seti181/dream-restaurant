@@ -593,7 +593,7 @@ export function DayScreen() {
   // The free tables the selected guests could move to, their favourites marked.
   const free = live.floor.tables
     .map((guests, table) => ({ guests, table }))
-    .filter(({ guests, table }) => guests === null && (!selected || table !== selected.table))
+    .filter(({ guests, table }) => guests === null && table < live.floor.counterFrom && (!selected || table !== selected.table))
     .map(({ table }) => ({
       table,
       favourite: selectedGuests ? isFavourite(selectedGuests.group, location, live.floor.insideTables, table) : false,

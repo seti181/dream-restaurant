@@ -34,11 +34,14 @@ import type { DayConditions, Party, PartyOutcome, Restaurant, SatisfactionFactor
 import type { GroupId } from '../data/groups';
 import type { Visitor } from '../data/moments';
 import type { SpecialStaffId } from '../data/personal';
+import type { BuildingWorkId } from '../data/works';
 
 /** A party sitting in a restaurant. Only exists during the day, so it is never saved. */
 export interface Visit {
   party: Party;
   tablesUsed: number;
+  /** Sitting at the bar counter (its place is after every table), not at a table. */
+  counter?: boolean;
   /** Which tables they sit at: inside tables first, then the terrace. */
   tables: number[];
   order: MenuDish[];
@@ -83,6 +86,8 @@ interface Walkout {
 /** What is happening inside one restaurant right now. */
 export interface Floor {
   freeTables: number;
+  /** Places free at the bar counter, each for a party of one or two. */
+  freeCounter: number;
   visits: Visit[];
   /** Orders waiting for a chef, oldest first. */
   queue: Visit[];
@@ -145,6 +150,16 @@ function sum(order: MenuDish[], value: (dish: MenuDish) => number): number {
 /** Tables inside plus any terrace tables open today. */
 function allTables(restaurant: Restaurant): number {
   return restaurant.tables + restaurant.terraceTables;
+}
+
+/** Places at the bar counter, if it's been built: each seats a party of one or two. */
+export function counterPlaces(restaurant: Restaurant): number {
+  return restaurant.works?.includes('counter') ? balance.works.counterPlaces : 0;
+}
+
+/** True if this party can sit at the counter: few enough of them, and a place free. */
+function fitsAtCounter(floor: Floor, party: Party): boolean {
+  return floor.freeCounter > 0 && party.size <= balance.works.counterPartyMax;
 }
 
 /** When a party gives up waiting for its food. */
@@ -266,6 +281,7 @@ function progressRestaurant(
     const { party } = visit;
     const leave = () => {
       floor.freeTables += visit.tablesUsed;
+      if (visit.counter) floor.freeCounter++;
       floor.visits.splice(floor.visits.indexOf(visit), 1);
       // A visit people talk about afterwards.
       for (const [group, times] of Object.entries(visit.reputationAfterwards ?? {})) {
@@ -420,6 +436,7 @@ export function startDay(
     restaurants: working,
     floors: working.map((r) => ({
       freeTables: allTables(r),
+      freeCounter: counterPlaces(r),
       visits: [],
       queue: [],
       chefFreeAt: r.chefs.map(() => 0),
@@ -476,8 +493,10 @@ export function seat(
   // Tables held for a booked party due soon are not for anyone else.
   const free = floor.freeTables - (party.requestId === undefined ? heldTables(progress, index, minute) : 0);
   // The regular never gets turned away: with every table taken, he squeezes in at the bar.
-  const atTheBar = party.regular && free < 1;
-  const tablesUsed = atTheBar ? 0 : tablesNeeded(party.size);
+  // Someone on their own or a pair takes a place at the bar counter if there's one free.
+  const counter = fitsAtCounter(floor, party);
+  const atTheBar = !counter && party.regular && free < 1;
+  const tablesUsed = atTheBar || counter ? 0 : tablesNeeded(party.size);
   if (free < tablesUsed) {
     // Every table is taken: wait at the door if there's room in the queue, or go elsewhere.
     // Guests who booked always wait, at the front of the queue: their table is the next one free.
@@ -488,10 +507,14 @@ export function seat(
     return;
   }
   floor.freeTables -= tablesUsed;
+  if (counter) floor.freeCounter--;
   let order = chooseOrder(rng, restaurant, party, minute, progress.conditions.weather, progress.conditions.trend ?? null);
   if (party.regular) order = regularsOrder(restaurant, order);
   const taken = new Set(floor.visits.flatMap((v) => v.tables));
-  const tables = [...Array(allTables(restaurant)).keys()].filter((t) => !taken.has(t)).slice(0, tablesUsed);
+  const places = counter
+    ? [...Array(counterPlaces(restaurant)).keys()].map((c) => allTables(restaurant) + c)
+    : [...Array(allTables(restaurant)).keys()];
+  const tables = places.filter((t) => !taken.has(t)).slice(0, counter ? 1 : tablesUsed);
   // A party that booked hoped for something on the menu.
   const wishMet = party.wish ? wantMet(restaurant.menu, party.wish) : undefined;
   const wishMood = wishMet === undefined ? 0 : wishMet ? balance.bookings.wishMetMood : balance.bookings.wishMissedMood;
@@ -514,6 +537,7 @@ export function seat(
   floor.visits.push({
     party,
     tablesUsed,
+    counter: counter || undefined,
     tables,
     order,
     seatedAt: minute,
@@ -525,7 +549,13 @@ export function seat(
     leaveAt: 0,
     satisfaction: null,
     // Regulars feel at home here.
-    mood: (party.regularId ? balance.regulars.atHomeMood : 0) + wishMood + themeMood + walkInMood + (restaurant.moodBonus ?? 0),
+    mood:
+      (party.regularId ? balance.regulars.atHomeMood : 0) +
+      wishMood +
+      themeMood +
+      walkInMood +
+      (restaurant.moodBonus ?? 0) +
+      (restaurant.works?.includes('toilet') ? balance.works.toiletMood : 0),
     walkInWish,
     extraPatience: party.requestId === undefined ? 0 : balance.bookings.extraPatienceMinutes,
     wishMet,
@@ -540,7 +570,7 @@ function serveTheDoor(rng: RngState, progress: DayInProgress, index: number, min
   const floor = progress.floors[index];
   for (const waiting of [...floor.door]) {
     const held = waiting.party.requestId === undefined ? heldTables(progress, index, minute) : 0;
-    const fits = floor.freeTables - held >= tablesNeeded(waiting.party.size);
+    const fits = fitsAtCounter(floor, waiting.party) || floor.freeTables - held >= tablesNeeded(waiting.party.size);
     // Guests who booked wait longer for their table than people who just walked up.
     const patience = balance.service.doorWaitMinutes * (waiting.party.bookedAt ? balance.service.bookedWaitFactor : 1);
     const gaveUp = closed || minute - waiting.since >= patience;
@@ -687,7 +717,7 @@ export function moveParty(progress: DayInProgress, index: number, from: number, 
   const floor = progress.floors[index];
   const restaurant = progress.restaurants[index];
   const visit = floor.visits.find(
-    (v) => v.tables.length === 1 && v.tables[0] === from && !v.eating && !v.skipped && !v.visitor && !v.moved,
+    (v) => v.tables.length === 1 && v.tables[0] === from && !v.eating && !v.skipped && !v.visitor && !v.moved && !v.counter,
   );
   const free = to >= 0 && to < allTables(restaurant) && !floor.visits.some((v) => v.tables.includes(to));
   if (!visit || !free) return null;
@@ -796,6 +826,8 @@ export interface FloorView {
   /** Inside tables first, then terrace tables open today; null for an empty table. */
   tables: (TableGuests | null)[];
   insideTables: number;
+  /** Where the bar counter's places start in `tables` (after the terrace's); the same as its length without a counter. */
+  counterFrom: number;
   /** Terrace tables to draw: all of them with a permit, even on days the terrace is closed. */
   terraceTables: number;
   /** For each chef: busy cooking right now? */
@@ -807,6 +839,8 @@ export interface FloorView {
   waiterLooks: number[];
   decor: DecorId[];
   equipment: EquipmentId[];
+  /** Building works done on the premises (the bar counter's stools, the toilet door). */
+  works?: BuildingWorkId[];
   /** Orders waiting for a free chef. */
   ordersWaiting: number;
   /** Parties that walked out in the last few minutes. */
@@ -835,7 +869,8 @@ export function floorView(progress: DayInProgress, index: number, recentMinutes 
   const restaurant = progress.restaurants[index];
   const floor = progress.floors[index];
   const minute = minuteOfDay(Math.max(0, progress.tick - 1));
-  const tables: (TableGuests | null)[] = Array(allTables(restaurant)).fill(null);
+  // The tables (inside, then the terrace's open today), then the places at the bar counter.
+  const tables: (TableGuests | null)[] = Array(allTables(restaurant) + counterPlaces(restaurant)).fill(null);
 
   for (const visit of floor.visits) {
     const { party } = visit;
@@ -869,12 +904,14 @@ export function floorView(progress: DayInProgress, index: number, recentMinutes 
     location: restaurant.location,
     tables,
     insideTables: restaurant.tables,
+    counterFrom: allTables(restaurant),
     terraceTables: restaurant.terraceTables,
     chefsBusy: floor.chefFreeAt.map((freeAt) => freeAt > minute),
     waiters: restaurant.waiters.map((waiter) => waiter.special ?? null),
     chefLooks: restaurant.chefs.map((chef, i) => chef.look ?? i),
     waiterLooks: restaurant.waiters.map((waiter, i) => waiter.look ?? i),
     decor: restaurant.decor,
+    works: restaurant.works,
     equipment: restaurant.equipment,
     ordersWaiting: floor.queue.length,
     walkouts: floor.walkouts

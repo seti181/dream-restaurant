@@ -154,9 +154,11 @@ describe('the street outside', () => {
   it('badges the switch with what needs the player on the other side', () => {
     const waiting = { stage: 'waiting' } as TableGuests;
     const help = (g: TableGuests | null) => g !== null && g.stage === 'waiting';
-    const floor = { tables: [null, waiting, null], insideTables: 2, gull: null, atTheDoor: [] };
+    const floor = { tables: [null, waiting, null], insideTables: 2, counterFrom: 3, gull: null, atTheDoor: [] };
     expect(whatNeedsYou(floor, help)).toEqual({ inside: 'help', outside: null });
     expect(whatNeedsYou({ ...floor, tables: [null, null, waiting] }, help)).toEqual({ inside: null, outside: 'help' });
+    // The bar counter's places come after the terrace's tables, and they're inside.
+    expect(whatNeedsYou({ ...floor, tables: [null, null, null, waiting] }, help)).toEqual({ inside: 'help', outside: null });
     expect(whatNeedsYou({ ...floor, atTheDoor: [{}] } as never, help).outside).toBe('hourglass');
     expect(whatNeedsYou({ ...floor, gull: {}, atTheDoor: [{}] } as never, help).outside).toBe('mewa');
   });

@@ -12,6 +12,7 @@ import type { DecorId } from '../data/decor';
 import type { EquipmentId, ExtraId, TemplateId } from '../data/dishes';
 import type { LocationId } from '../data/locations';
 import type { CampaignId } from '../data/marketing';
+import type { BuildingWorkId } from '../data/works';
 import type { GroupId } from '../data/groups';
 import { MOMENTS } from '../data/moments';
 import type { TipId } from '../data/mewa';
@@ -175,6 +176,8 @@ interface GameStore {
   clearLunchSet: () => void;
   buyEquipment: (id: EquipmentId) => void;
   buyTable: () => void;
+  /** Has building work done on the premises (ready tomorrow morning). */
+  buildWork: (id: BuildingWorkId) => void;
   buyDecor: (id: DecorId) => void;
   buyTerracePermit: () => void;
   launchCampaign: (id: CampaignId) => void;
@@ -422,6 +425,7 @@ export const useGame = create<GameStore>((set, get) => ({
   clearLunchSet: () => plan((game) => actions.clearLunchSet(game), 'now'),
   buyEquipment: (id) => plan((game) => actions.buyEquipment(game, id)),
   buyTable: () => plan((game) => actions.buyTable(game)),
+  buildWork: (id) => plan((game) => actions.buildWork(game, id)),
   buyDecor: (id) => plan((game) => actions.buyDecor(game, id)),
   buyTerracePermit: () => plan((game) => actions.buyTerracePermit(game)),
   launchCampaign: (id) => plan((game) => actions.launchCampaign(game, id)),

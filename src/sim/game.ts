@@ -13,7 +13,7 @@ import { LOCATIONS } from '../data/locations';
 import { PORTUGUESE_CORNER, SECRET_RECIPE, SPECIAL_STAFF, type SpecialStaffId } from '../data/personal';
 import { RIVAL_IDS } from '../data/rivals';
 import type { Weather } from '../data/weather';
-import { helpTable, hurryStaff, moveParty, startDay, stepDay, type DayInProgress, type FloorView, type Help } from './day';
+import { counterPlaces, helpTable, hurryStaff, moveParty, startDay, stepDay, type DayInProgress, type FloorView, type Help } from './day';
 import { isFavourite } from './seating';
 import { bookingsDay, rollRequest, type BookingReport, type BookingRequest } from './bookings';
 import { practiceAfterDay, withStars, type DishPractice, type StarEarned } from './practice';
@@ -449,8 +449,9 @@ export function restingFloor(state: GameState): FloorView {
   const atWork = state.team.filter((person) => !awayOn(person, state.day));
   return {
     location: player.location,
-    tables: Array<null>(player.tables + terraceTables).fill(null),
+    tables: Array<null>(player.tables + terraceTables + counterPlaces(player)).fill(null),
     insideTables: player.tables,
+    counterFrom: player.tables + terraceTables,
     terraceTables: terraceTablesBuilt(state),
     chefsBusy: atWork.filter((person) => person.role === 'chef').map(() => false),
     waiters: atWork.filter((person) => person.role === 'waiter').map((person) => person.special ?? null),
@@ -461,6 +462,7 @@ export function restingFloor(state: GameState): FloorView {
     atTheDoor: [],
     leftTheDoor: [],
     decor: player.decor,
+    works: player.works,
     equipment: player.equipment,
   };
 }

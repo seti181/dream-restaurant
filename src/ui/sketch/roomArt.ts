@@ -2,10 +2,12 @@
 // the kitchen counter in front of the chefs, the tables and chairs, and the plates. Each is SVG
 // text in page units, baked into a picture once (bake.ts). People are drawn in sheets.ts.
 
+import { balance } from '../../data/balance';
 import type { DecorId } from '../../data/decor';
 import type { EquipmentId } from '../../data/dishes';
 import type { Weather } from '../../data/weather';
-import { CLOTH, type FrontLayout } from './frontRoom';
+import type { BuildingWorkId } from '../../data/works';
+import { CLOTH, counterSpots, type FrontLayout } from './frontRoom';
 import { bunting, folkBand, hatch as hatching, rosette, tulip } from './motifs';
 import type { Painter } from './painter';
 import { dark, HAND, light, mix } from './palette';
@@ -26,6 +28,8 @@ export interface RoomLook {
   live?: boolean;
   /** The brass plaque of an Old Town Favourite. */
   plaque: boolean;
+  /** Building works done: the bar counter's stools, the toilet door (data/works.ts). */
+  works?: readonly BuildingWorkId[];
   /** Up to three of today's dishes for the chalkboard: a short name and the price. */
   specials: { name: string; price: number }[];
 }
@@ -48,6 +52,7 @@ export function roomPicture(pt: Painter, L: FrontLayout, look: RoomLook): string
   g += door(pt, L, look);
   g += kitchen(pt, L, look);
   g += floor(pt, L);
+  if (look.works?.includes('counter')) g += stools(pt, L);
   g += lights(pt, L, look);
   g += `<rect width="${L.width}" height="${L.height}" filter="url(#grain)"/>`;
   if (look.dusk && !look.live) g += `<rect width="${L.width}" height="${L.height}" fill="#2c3a66" opacity="0.22"/>`;
@@ -165,9 +170,15 @@ function wallDecor(pt: Painter, L: FrontLayout, look: RoomLook): string {
     });
   if (has('clayPots'))
     items.push((x, y) => pt.rect(x - 46, y + 60, 92, 6, 'bar') + [-30, -6, 18, 38].map((dx, k) => pt.fill(`M${x + dx - 9},${y + 60} q-4,-14 3,-24 h12 q7,10 3,24 Z`, ['#b8643a', '#c9884a', '#9a5434', '#c27a5c'][k]) + `<path d="M${x + dx - 5},${y + 46} h10" stroke="#fffaf0" stroke-width="1.5"/>`).join(''));
-  // Pair up the stretches of wall with the things to hang, upper half first, then lower.
+  // Pair up the stretches of wall with the things to hang, upper half first, then lower. The toilet door
+  // takes the lower half of the last stretch, by the front door.
   let g = '';
-  const slots = gaps.flatMap((gap) => [{ x: gap.x, y: upper }, { x: gap.x, y: lower }]).sort((a, b) => a.y - b.y || a.x - b.x);
+  const toilet = look.works?.includes('toilet') ? toiletSpot(L) : null;
+  if (toilet) g += toiletDoor(pt, toilet.x, L.floorY);
+  const slots = gaps
+    .flatMap((gap) => [{ x: gap.x, y: upper }, { x: gap.x, y: lower }])
+    .filter((slot) => !toilet || slot.x !== toilet.x || slot.y === upper)
+    .sort((a, b) => a.y - b.y || a.x - b.x);
   items.forEach((item, i) => slots[i] && (g += item(slots[i].x, slots[i].y)));
   if (has('lanterns')) for (const gap of gaps) g += pt.line(`M${gap.x},46 L${gap.x},78`, 'ink', 1.4) + pt.rect(gap.x - 10, 78, 20, 26, '#4a4a55', 3) + `<rect x="${gap.x - 6}" y="${82}" width="12" height="18" fill="#ffd98a"/>`;
   if (has('tiledStove')) {
@@ -176,6 +187,40 @@ function wallDecor(pt: Painter, L: FrontLayout, look: RoomLook): string {
     g += pt.rect(x, L.floorY - 220, 64, 236, '#f4f7f9', 4) + pt.rect(x - 6, L.floorY - 228, 76, 12, '#e8e2d2', 3);
     for (let r = 0; r < 7; r++) for (let c = 0; c < 2; c++) g += rosette(pt, x + 16 + c * 32, L.floorY - 202 + r * 30, 8, r % 2 ? 'blue' : 'red');
   }
+  return g;
+}
+
+/** Where the toilet door goes: the last stretch of wall before the front door. */
+export function toiletSpot(L: FrontLayout): { x: number } {
+  const gaps = wallGaps(L);
+  return { x: gaps.length > 0 ? gaps[gaps.length - 1].x : L.door.x - L.door.width / 2 - 60 };
+}
+
+/** The toilet door in the back wall: narrow and panelled, with the Polish signs above (a circle for ladies, a triangle for gents). */
+function toiletDoor(pt: Painter, x: number, floorY: number): string {
+  const w = 56;
+  const top = floorY - 148;
+  let g = pt.rect(x - w / 2 - 6, top - 6, w + 12, floorY - top + 6, 'beam', 3);
+  g += pt.rect(x - w / 2, top, w, floorY - top, 'panel2', 2);
+  g += pt.rect(x - w / 2 + 8, top + 10, w - 16, 50, light('#a87754', 0.12), 2) + pt.rect(x - w / 2 + 8, top + 70, w - 16, 64, light('#a87754', 0.12), 2);
+  g += pt.circle(x + w / 2 - 10, top + 78, 3.5, 'brass');
+  g += pt.rect(x - 26, top - 38, 52, 26, 'white', 4);
+  g += `<circle cx="${x - 11}" cy="${top - 25}" r="7" fill="none" stroke="${pt.p.ink}" stroke-width="2.4"/><path d="M${x + 4},${top - 32} h16 l-8,14 Z" fill="none" stroke="${pt.p.ink}" stroke-width="2.4" stroke-linejoin="round"/>`;
+  return g;
+}
+
+/** The bar counter's stools: tall, wooden, red-topped, with a brass footrest, two to each place. */
+function stools(pt: Painter, L: FrontLayout): string {
+  let g = '';
+  for (const spot of counterSpots(L, balance.works.counterPlaces))
+    for (const seat of spot.seats) {
+      const { x, y } = seat;
+      const k = spot.scale;
+      g += pt.shadow(x, y + 62 * k, 18 * k, 4);
+      g += pt.line(`M${x - 12 * k},${y + 62 * k} L${x - 8 * k},${y + 4} M${x + 12 * k},${y + 62 * k} L${x + 8 * k},${y + 4}`, 'bar2', 4);
+      g += pt.line(`M${x - 10 * k},${y + 38 * k} H${x + 10 * k}`, 'brass', 3);
+      g += `<ellipse cx="${x}" cy="${y + 2}" rx="${16 * k}" ry="${5.5 * k}" fill="${pt.p.red}" stroke="${pt.p.ink}" stroke-width="1.3"/>`;
+    }
   return g;
 }
 

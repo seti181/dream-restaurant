@@ -7,6 +7,7 @@ import { DECOR, type DecorId, type DecorStyle } from '../src/data/decor';
 import { DISH_TEMPLATES, type MenuDish, type TemplateId } from '../src/data/dishes';
 import type { LocationId } from '../src/data/locations';
 import type { CampaignId } from '../src/data/marketing';
+import type { BuildingWorkId } from '../src/data/works';
 import * as actions from '../src/sim/actions';
 import { dateOf } from '../src/sim/calendar';
 import { playerOf, type GameState } from '../src/sim/game';
@@ -40,6 +41,8 @@ interface Plan {
   decorItems?: number;
   /** Campaigns it runs whenever they're not already running and cash allows. */
   campaigns?: CampaignId[];
+  /** Building works it has done once it can afford them, in this order (data/works.ts). */
+  works?: BuildingWorkId[];
   terrace?: boolean;
   premiumSupplier?: boolean;
   /** Starts the happy hour at this time every day (minutes after midnight). */
@@ -154,6 +157,10 @@ export function manage(strategy: Strategy, state: GameState, week: WeekReport | 
     s = actions.buyTerracePermit(s);
   }
 
+  for (const id of plan.works ?? []) {
+    if (actions.workUnavailableReason(s, id) === null && canSpend(s, plan, actions.workCost(id))) s = actions.buildWork(s, id);
+  }
+
   for (const id of plan.campaigns ?? []) {
     if (actions.campaignUnavailableReason(s, id) === null && canSpend(s, plan, 0)) {
       const after = actions.launchCampaign(s, id);
@@ -233,6 +240,7 @@ export const STRATEGIES: Strategy[] = [
       dayOffBelow: 55,
       acceptBookings: true,
       samplesAt: 15 * 60,
+      works: ['toilet', 'counter'],
     },
   },
   {

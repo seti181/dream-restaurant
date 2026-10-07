@@ -89,6 +89,19 @@ await send('Page.enable');
 await send('Page.navigate', { url });
 await sleep(3000);
 await screenshot('0-start');
+// WORKS=1 has the building works done on the first morning (the bar counter and the toilet, ready from day 2),
+// and photographs the Interior tab (works.png).
+if (process.env.WORKS) {
+  await evaluate(`[...document.querySelectorAll('button.tab')].find((b) => b.textContent.includes('Interior'))?.click()`);
+  await sleep(500);
+  await evaluate(`[...document.querySelectorAll('button')].filter((b) => b.textContent.startsWith('Build ·')).forEach((b) => b.click())`);
+  await sleep(500);
+  await evaluate(`[...document.querySelectorAll('h2')].find((h) => h.textContent === 'Building works')?.scrollIntoView({ block: 'start' })`);
+  await sleep(300);
+  await screenshot('works');
+  await evaluate(`[...document.querySelectorAll('button.tab')].find((b) => b.textContent.includes('Today'))?.click()`);
+  await sleep(300);
+}
 // THEME=accordion (or pierogi, kashubian, seafood) books that theme night for the first evening, and
 // photographs the Marketing tab (theme-book.png) and the evening (theme-night.png).
 if (process.env.THEME) {
@@ -141,6 +154,7 @@ for (let day = 1; day <= Number(days); day++) {
   let eveningShot = false;
   let themeShot = false;
   let samplesShot = false;
+  let counterShot = false;
   for (let i = 0; i < 300; i++) {
     const did = await evaluate(step);
     if (did !== last && did !== 'waiting') console.log(`day ${day}: ${did}`);
@@ -169,8 +183,21 @@ for (let day = 1; day <= Number(days); day++) {
       await sleep(1500);
       await screenshot('theme-night');
     }
+    // With WORKS=1, the room from day 2 once someone sits at the bar counter (a bubble over the bar), tips skipped and
+    // notes closed, for the counter's guests, its stools and the toilet door (counter-<n>.png).
+    const atTheBar = `[...document.querySelectorAll('.sk-bubble')].some((b) => { const r = b.getBoundingClientRect(); return r.left < 0.2 * innerWidth && r.top > 0.25 * innerHeight; })`;
+    if (process.env.WORKS && day >= 2 && !counterShot && (await evaluate(atTheBar))) {
+      counterShot = true;
+      await evaluate(`document.querySelector('button[aria-label="Pause"]')?.click()`);
+      await evaluate(`[...document.querySelectorAll('button')].find((b) => b.textContent.trim() === 'Skip all tips')?.click()`);
+      await evaluate(`document.querySelectorAll('.note-close').forEach((b) => b.click())`);
+      await sleep(800);
+      await screenshot(`counter-${day}`);
+      await evaluate(`document.querySelector('button[aria-label="Four times speed"]')?.click()`);
+    }
     // From 15:00, samples at the door: tap the button (it switches to the street), and photograph the waiter with the tray (samples-<n>.png).
-    if (!samplesShot && (await evaluate(`(document.querySelector('.day-time')?.textContent ?? '') >= '15:00'`))) {
+    // (Not with WORKS=1, which stays inside to watch the bar counter.)
+    if (!process.env.WORKS && !samplesShot && (await evaluate(`(document.querySelector('.day-time')?.textContent ?? '') >= '15:00'`))) {
       samplesShot = true;
       await evaluate(`[...document.querySelectorAll('button.round-button')].find((b) => b.textContent.includes('Samples'))?.click()`);
       await sleep(1200);

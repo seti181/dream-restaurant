@@ -203,6 +203,61 @@ export function moveWalk(layout: FrontLayout, from: number, fromSeat: number, to
   ];
 }
 
+// ---------- The bar counter (bigger premises, section 6.14) ----------
+
+/** Where people sit at the bar counter: on stools in front of it, a few steps out from the back wall. */
+const COUNTER_SEAT = 46;
+/** How far apart the two places at the counter are, and the two stools of a place. */
+const COUNTER_PITCH = 112;
+const STOOL_GAP = 30;
+
+/**
+ * The bar counter's places, each for one or two on a pair of stools, turned to each other. Shaped like a
+ * table spot (its `top` is the counter's top, where the plates go), so a party there is drawn like one at a table.
+ */
+export function counterSpots(layout: FrontLayout, places: number): TableSpot[] {
+  const y = layout.floorY + COUNTER_SEAT;
+  const k = depthScale(layout, y + 30);
+  return Array.from({ length: places }, (_, c) => {
+    const x = layout.bar.x0 + 72 + c * COUNTER_PITCH;
+    return {
+      x,
+      row: -1,
+      top: layout.floorY - 40,
+      scale: k,
+      seats: [
+        { x: x - STOOL_GAP * k, y, end: true, mirror: false },
+        { x: x + STOOL_GAP * k, y, end: true, mirror: true },
+      ],
+    };
+  });
+}
+
+/** The counter's guests stack just in front of the bar, behind every row of tables. */
+export const COUNTER_Z = 3;
+
+/** In at the door and along the back wall to a stool at the counter. */
+export function counterWalkIn(layout: FrontLayout, spot: TableSpot, seat: number): Point[] {
+  const s = spot.seats[seat] ?? spot.seats[0];
+  const along = layout.floorY + COUNTER_SEAT + 26 + seat * 6;
+  return [
+    { x: layout.door.x + (seat - 0.5) * 20, y: layout.floorY + 4, z: COUNTER_Z + 2 },
+    { x: layout.door.x + (seat - 0.5) * 20, y: along, z: COUNTER_Z + 2 },
+    { x: s.x, y: along, z: COUNTER_Z + 2 },
+    { x: s.x, y: s.y, z: COUNTER_Z },
+  ];
+}
+
+/** A waiter's way from the pass along the back of the room to the counter. */
+export function counterServe(layout: FrontLayout, spot: TableSpot): Point[] {
+  const along = layout.floorY + COUNTER_SEAT + 34;
+  return [
+    { x: layout.pass.x, y: layout.pass.y, z: COUNTER_Z + 2 },
+    { x: layout.pass.x, y: along, z: COUNTER_Z + 2 },
+    { x: spot.x + 60, y: along, z: COUNTER_Z + 2 },
+  ];
+}
+
 /** How big someone is drawn standing at depth y: smaller by the back wall, bigger near us, like the rows. */
 export function depthScale(layout: FrontLayout, y: number): number {
   const front = layout.rows[layout.rows.length - 1];
@@ -210,8 +265,9 @@ export function depthScale(layout: FrontLayout, y: number): number {
   return 0.82 + t * (front.scale - 0.82);
 }
 
-/** Where idle waiters wait: in front of the bar. */
-export function waiterSpot(layout: FrontLayout, i: number): Point {
+/** Where idle waiters wait: in front of the bar, or with guests at a bar counter, at the kitchen's pass. */
+export function waiterSpot(layout: FrontLayout, i: number, byThePass = false): Point {
+  if (byThePass) return { x: layout.pass.x + 30 + (i % 4) * 50, y: layout.hatch.front + 26 + (i >= 4 ? 24 : 0), z: 8 };
   return { x: layout.bar.x0 + 70 + (i % 4) * 52, y: layout.rows[0].lane + (i >= 4 ? 30 : 0), z: zOf(0, LAYER.aisle) };
 }
 

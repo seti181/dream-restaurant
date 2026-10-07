@@ -7,6 +7,7 @@ import type { DecorId } from '../data/decor';
 import type { GroupId } from '../data/groups';
 import type { LocationId } from '../data/locations';
 import type { GoodId } from '../data/market';
+import type { BuildingWorkId } from '../data/works';
 import type { MarketPrices } from './market';
 import type { SpecialStaffId } from '../data/personal';
 import type { RegularId } from '../data/regulars';
@@ -76,6 +77,8 @@ export interface Restaurant {
   themeNight?: { from: number; groups: GroupId[]; wants?: MenuWant; mood?: number };
   /** "Dziś polecamy": today's special on the board outside (a recipe key), if one is chosen. */
   special?: string;
+  /** Building works done on these premises (data/works.ts): the bar counter, the toilet. Lost when moving. */
+  works?: BuildingWorkId[];
   /** "Obiad dnia": a soup and a main (identified by recipe key) at one price, or null. */
   lunchSet: { soup: string; main: string; price: number } | null;
   tables: number;

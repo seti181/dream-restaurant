@@ -13,7 +13,7 @@ import type { FloorView, HurryState } from '../sim/day';
 import { TOP_RANK } from '../sim/ranks';
 import { dishName, money } from './format';
 import { Icon } from './Icon';
-import { chefSpot, depthScale, frontLayout, LAYER, moveWalk, serveWalk, waiterSpot, walkIn, zOf } from './sketch/frontRoom';
+import { chefSpot, COUNTER_Z, counterServe, counterSpots, counterWalkIn, depthScale, frontLayout, LAYER, moveWalk, serveWalk, waiterSpot, walkIn, zOf } from './sketch/frontRoom';
 import { Painter, svgPicture } from './sketch/painter';
 import { CANDLE_RISE, chairsPicture, hatchCounterPicture, pageFramePicture, PLATE_CELL, PLATES, platesPicture, roomLamps, roomPicture, TABLE_BOX, tablePicture, wallClock, type RoomLook } from './sketch/roomArt';
 import { CHEF_CELLS, CHEF_SHEET, WAITER_CELLS, WAITER_SHEET } from './sketch/sheets';
@@ -87,8 +87,8 @@ export function SketchRoomView({
     .filter((d) => !d.fromLunchSet)
     .slice(0, 3)
     .map((d) => ({ name: shorten(dishName(d)), price: d.price }));
-  const look: RoomLook = { decor: floor.decor, equipment: floor.equipment, weather, dusk, golden, live: true, plaque, specials };
-  const lookKey = [look.decor.join(), look.equipment.join(), weather, light, plaque, specials.map((s) => s.name + s.price).join()].join('|');
+  const look: RoomLook = { decor: floor.decor, equipment: floor.equipment, weather, dusk, golden, live: true, plaque, specials, works: floor.works };
+  const lookKey = [look.decor.join(), look.equipment.join(), (floor.works ?? []).join(), weather, light, plaque, specials.map((s) => s.name + s.price).join()].join('|');
   const ready = bakeScale > 0;
   const room = useBaked(ready ? `room|${slots}|${aspect}|${lookKey}|${bakeScale}` : null, () => svgPicture(layout.width, layout.height, roomPicture(new Painter(), layout, look)), layout.width, layout.height, bakeScale, true);
   const counter = useBaked(ready ? `counter|${slots}|${aspect}|${bakeScale}` : null, () => svgPicture(layout.width, layout.height, hatchCounterPicture(new Painter(), layout)), layout.width, layout.height, bakeScale);
@@ -103,26 +103,31 @@ export function SketchRoomView({
 
   // ----- People -----
   const furnished = Math.min(floor.insideTables, layout.tables.length);
+  // The bar counter's places come after the terrace's tables; drawn on the stools in front of the bar.
+  const counterFrom = floor.counterFrom;
+  const barPlaces = useMemo(() => counterSpots(layout, floor.tables.length - counterFrom), [layout, floor.tables.length, counterFrom]);
+  const atCounter = (t: number) => t >= counterFrom && t - counterFrom < barPlaces.length;
+  const shows = (t: number) => t < furnished || atCounter(t);
+  const spotAt = (t: number) => (atCounter(t) ? barPlaces[t - counterFrom] : layout.tables[t]);
   const ways: Ways = useMemo(
     () => ({
-      shows: (t) => t < furnished,
-      walkIn: (t, seat) => walkIn(layout, t, seat),
-      serve: (t) => serveWalk(layout, t),
+      shows: (t) => t < furnished || (t >= counterFrom && t - counterFrom < barPlaces.length),
+      walkIn: (t, seat) => (t >= counterFrom ? counterWalkIn(layout, barPlaces[t - counterFrom], seat) : walkIn(layout, t, seat)),
+      serve: (t) => (t >= counterFrom ? counterServe(layout, barPlaces[t - counterFrom]) : serveWalk(layout, t)),
       move: (from, fromSeat, to, toSeat) => (from < furnished && to < furnished ? moveWalk(layout, from, fromSeat, to, toSeat) : null),
     }),
-    [layout, furnished],
+    [layout, furnished, counterFrom, barPlaces],
   );
   const { walks, done, arriving, busyWaiters, served, stageOf } = useVisits(ways, floor, minute);
-  const floats = useFloats(floor, served).filter((f) => f.table < furnished);
+  const floats = useFloats(floor, served).filter((f) => shows(f.table));
   const specs: SheetSpec[] = [];
   const seen = new Set<string>();
   const need = (spec: SheetSpec) => !seen.has(spec.key) && (seen.add(spec.key), specs.push(spec));
   floor.chefsBusy.forEach((_, i) => need(chefSpec(floor.chefLooks[i] ?? i)));
   floor.waiters.forEach((w, i) => need(waiterSpec(w ?? 'waiter', floor.waiterLooks[i] ?? i)));
-  for (let t = 0; t < furnished; t++) {
-    const guests = floor.tables[t];
-    if (guests) for (let i = 0; i < Math.min(guests.seated, 4); i++) need(specFor(kindAt(guests, i), variantAt(guests, t, i)));
-  }
+  floor.tables.forEach((guests, t) => {
+    if (guests && shows(t)) for (let i = 0; i < Math.min(guests.seated, 4); i++) need(specFor(kindAt(guests, i), variantAt(guests, t, i)));
+  });
   for (const w of walks) need(w.sheet);
   const sheets = useSheets(specs, tableScale);
   const depth = useMemo(() => (y: number) => depthScale(layout, y), [layout]);
@@ -132,11 +137,13 @@ export function SketchRoomView({
   // Seated guests, their plates, their bubbles and the buttons to look after them.
   const people: ReactNode[] = [];
   const bubbles: ReactNode[] = [];
-  for (let t = 0; t < furnished; t++) {
+  for (let t = 0; t < floor.tables.length; t++) {
     const guests = floor.tables[t];
-    const spot = layout.tables[t];
-    if (!guests || arriving.has(t)) continue;
-    const party = partyAtTable({ table: t, guests, spot, stage: stageOf(guests, t), sheets, plates, scale, speed, z: (layer) => zOf(spot.row, layer), selected: t === selectedTable, onTableTap });
+    if (!guests || arriving.has(t) || !shows(t)) continue;
+    const spot = spotAt(t);
+    // At the counter, the plates stand on the bar behind the guests on their stools.
+    const z = atCounter(t) ? (layer: number) => (layer === LAYER.plates ? COUNTER_Z - 1 : COUNTER_Z) : (layer: number) => zOf(spot.row, layer);
+    const party = partyAtTable({ table: t, guests, spot, stage: stageOf(guests, t), sheets, plates, scale, speed, z, selected: t === selectedTable, onTableTap });
     people.push(...party.people);
     bubbles.push(...party.bubbles);
   }
@@ -164,7 +171,7 @@ export function SketchRoomView({
   // Waiters standing by at the bar, when they aren't carrying anything.
   const idleWaiters = floor.waiters.map((w, i) => {
     if (busyWaiters.has(i)) return null;
-    const spot = waiterSpot(layout, i);
+    const spot = waiterSpot(layout, i, barPlaces.length > 0);
     const url = sheets.get(waiterSpec(w ?? 'waiter', floor.waiterLooks[i] ?? i).key);
     return url ? <Person key={`waiter${i}`} url={url} sheet={WAITER_SHEET} cell={WAITER_CELLS.stand} x={spot.x} y={spot.y} k={depthScale(layout, spot.y)} scale={scale} z={spot.z} /> : null;
   });
@@ -225,11 +232,11 @@ export function SketchRoomView({
         })}
         {floor.waiterHurry?.map((state, i) => {
           if (busyWaiters.has(i) && state === 'ready') return null;
-          const spot = waiterSpot(layout, i);
+          const spot = waiterSpot(layout, i, barPlaces.length > 0);
           return <StaffHurry key={`hurryWaiter${i}`} state={state} left={at(spot.x)} top={at(spot.y - 220 * depthScale(layout, spot.y))} label="Hurry this waiter" onTap={onStaffTap && (() => onStaffTap('waiter', i))} />;
         })}
         {floats.map((f) => {
-          const spot = layout.tables[f.table];
+          const spot = spotAt(f.table);
           return (
             <span key={f.id} className="sk-float" style={{ left: at(spot.x), top: at(spot.top - 170 * spot.scale) }}>
               +{money(f.bill)}
