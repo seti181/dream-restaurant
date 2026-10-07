@@ -119,7 +119,7 @@ function DecorShop() {
           </h3>
           <p className="small muted">{DECOR_STYLES[styleId].description}</p>
           <div className="shop">
-            {DECOR_IDS.filter((id) => DECOR[id].style === styleId).map((id) => {
+            {DECOR_IDS.filter((id) => DECOR[id].style === styleId && (!DECOR[id].found || player.decor.includes(id))).map((id) => {
               const owned = player.decor.includes(id);
               const reason = decorUnavailableReason(game, id);
               return (

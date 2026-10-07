@@ -148,7 +148,7 @@ export function manage(strategy: Strategy, state: GameState, week: WeekReport | 
 
   if (plan.decorStyle && plan.decorItems) {
     const wanted = (Object.keys(DECOR) as DecorId[])
-      .filter((id) => DECOR[id].style === plan.decorStyle)
+      .filter((id) => DECOR[id].style === plan.decorStyle && !DECOR[id].found)
       .sort((a, b) => DECOR[a].cost - DECOR[b].cost)
       .slice(0, plan.decorItems);
     for (const id of wanted) {

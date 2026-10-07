@@ -243,6 +243,11 @@ for (let day = 1; day <= Number(days); day++) {
   }
   await sleep(1500);
   await screenshot(`report-${day}-top`);
+  // The passport's new stamps in the report, if there are any (report-<n>-passport.png).
+  if (await evaluate(`(() => { const p = [...document.querySelectorAll('p.said')].find((e) => e.textContent.includes('Gdańsk passport')); p?.scrollIntoView({ block: 'center' }); return !!p; })()`)) {
+    await sleep(300);
+    await screenshot(`report-${day}-passport`);
+  }
   // The morning market's line in the report, if it has one.
   if (await evaluate(`(() => { const p = [...document.querySelectorAll('p.said')].find((e) => e.textContent.includes('The morning market')); p?.scrollIntoView({ block: 'center' }); return !!p; })()`)) {
     await sleep(300);
@@ -270,6 +275,10 @@ for (let day = 1; day <= Number(days); day++) {
     await evaluate(tab('Mewa'));
     await sleep(500);
     await screenshot(`mewa-${day + 1}`);
+    // ...the Gdańsk passport further down it...
+    await evaluate(`document.querySelector('.passport')?.scrollIntoView({ block: 'start' })`);
+    await sleep(400);
+    await screenshot(`passport-${day + 1}`);
     await evaluate(tab('Today'));
     await sleep(300);
   }

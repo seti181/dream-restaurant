@@ -317,6 +317,7 @@ export function buildWork(state: GameState, id: BuildingWorkId): GameState {
 
 export function decorUnavailableReason(state: GameState, id: DecorId): string | null {
   if (DECOR[id].unlockable && !state.unlocks.includes(id)) return 'Not discovered yet';
+  if (DECOR[id].found && !playerOf(state).decor.includes(id)) return 'Only Mewa can find this';
   if (playerOf(state).decor.includes(id)) return 'Already in your dining room';
   return cantAfford(state, DECOR[id].cost);
 }

@@ -309,6 +309,21 @@ export const balance = {
     tray: 40,
   },
 
+  /** Mewa's finds (data/finds.ts): something on the doorstep now and then, each once. */
+  finds: {
+    /** From this day, the chance each morning that she brings something... */
+    firstDay: 3,
+    chance: 0.3,
+    /** ...but never within this many days of the last one. */
+    restDays: 2,
+    /** A group brought by a find comes out this much more the next day... */
+    groupBoost: 1.3,
+    /** ...the lucky grosz brings this much money... */
+    cash: 250,
+    /** ...and the postcard lifts everyone's morale (0–100) by this much. */
+    morale: 10,
+  },
+
   /** "Dziś polecamy": one dish on the board outside as today's special. */
   specials: {
     /** How much more often guests order the special than they otherwise would... */

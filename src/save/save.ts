@@ -8,7 +8,7 @@ import type { GameState } from '../sim/game';
 import { startGoal } from '../sim/goals';
 import { PORTUGUESE_CORNER } from '../data/personal';
 
-export const SAVE_VERSION = 27;
+export const SAVE_VERSION = 29;
 const SAVE_KEY = 'old-town-kitchen/save';
 
 interface SaveFile {
@@ -233,6 +233,16 @@ function upgradeFrom26(game: Record<string, unknown>): Record<string, unknown> {
   return { market: null, ...game };
 }
 
+/** Version 27 → 28 (M7c Gdańsk passport): an empty album; what the game already has is stamped at the next closing. */
+function upgradeFrom27(game: Record<string, unknown>): Record<string, unknown> {
+  return { passport: { stamps: {}, gullsShooed: 0 }, ...game };
+}
+
+/** Version 28 → 29 (M7c Mewa's finds): nothing found yet. */
+function upgradeFrom28(game: Record<string, unknown>): Record<string, unknown> {
+  return { finds: { found: [], lastDay: null }, ...game };
+}
+
 /**
  * Brings a save from any older version up to date, one version at a time.
  * Returns null for saves that can't be understood.
@@ -348,6 +358,14 @@ export function migrate(data: unknown): GameState | null {
   if (version === 26) {
     game = upgradeFrom26(game as unknown as Record<string, unknown>) as unknown as GameState;
     version = 27;
+  }
+  if (version === 27) {
+    game = upgradeFrom27(game as unknown as Record<string, unknown>) as unknown as GameState;
+    version = 28;
+  }
+  if (version === 28) {
+    game = upgradeFrom28(game as unknown as Record<string, unknown>) as unknown as GameState;
+    version = 29;
   }
 
   return looksLikeGame(game) ? game : null;

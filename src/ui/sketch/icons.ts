@@ -24,7 +24,7 @@ const MORE = [
   'smile', 'thinking', 'weary', 'sick', 'sleepy', 'monocle', 'people', 'runner', 'eyes', 'handshake', 'crossedFingers', 'chefHat', 'gradCap',
   // Food and drink.
   'cocktail', 'pan', 'drink', 'pot', 'pasta', 'salad', 'meat', 'icecream', 'pizza', 'wine', 'cheers', 'bento', 'birthday', 'wheat', 'log', 'heartYellow',
-  'potato', 'cabbage', 'cheese', 'strawberry', 'basket', 'door',
+  'potato', 'cabbage', 'cheese', 'strawberry', 'basket', 'door', 'key',
   // Things.
   'star', 'starEmpty', 'chair', 'party', 'target', 'scroll', 'trophy', 'medal', 'swords', 'pause', 'sound', 'mute', 'chartUp', 'books', 'warning',
   'accordion', 'mailbox', 'sparkles', 'speech', 'thought', 'card', 'fire', 'clipboard', 'candle', 'lock', 'newspaper', 'trident', 'note',
@@ -79,7 +79,7 @@ const FROM_EMOJI: Record<string, IconId> = {
   '😊': 'smile', '🤔': 'thinking', '😩': 'weary', '🤒': 'sick', '😴': 'sleepy', '🧐': 'monocle', '👥': 'people', '🏃': 'runner', '👀': 'eyes', '🤝': 'handshake', '🤞': 'crossedFingers',
   '👨‍🍳': 'chefHat', '🧑‍🍳': 'chefHat', '🎓': 'gradCap',
   '🍹': 'cocktail', '🍳': 'pan', '🥤': 'drink', '🍲': 'pot', '🍝': 'pasta', '🥗': 'salad', '🍖': 'meat', '🍦': 'icecream', '🍕': 'pizza', '🍷': 'wine', '🥂': 'cheers', '🍱': 'bento', '🎂': 'birthday', '🌾': 'wheat', '🪵': 'log',
-  '🥔': 'potato', '🥬': 'cabbage', '🧀': 'cheese', '🍓': 'strawberry', '🧺': 'basket', '🚪': 'door',
+  '🥔': 'potato', '🥬': 'cabbage', '🧀': 'cheese', '🍓': 'strawberry', '🧺': 'basket', '🚪': 'door', '🐦': 'mewa', '🔑': 'key',
   '⭐': 'star', '★': 'star', '☆': 'starEmpty', '🪑': 'chair', '🎉': 'party', '🎯': 'target', '📜': 'scroll', '🏆': 'trophy', '🏅': 'medal', '⚔': 'swords', '⏸': 'pause', '🔊': 'sound', '🔇': 'mute', '📈': 'chartUp', '📚': 'books', '⚠': 'warning',
   '🪗': 'accordion', '📬': 'mailbox', '✨': 'sparkles', '💭': 'thought', '🃏': 'card', '🔥': 'fire', '📋': 'clipboard', '🕯': 'candle', '🔒': 'lock', '📰': 'newspaper', '🔱': 'trident', '🎵': 'note',
   '🔔': 'bell', '🛌': 'bed', '⚙': 'gear', '💒': 'wedding', '🚌': 'bus', '⛪': 'church', '🌙': 'moon', '💰': 'moneyBag', '🚢': 'ship', '💼': 'briefcase', '📸': 'camera', '🏖': 'beach', '🚆': 'train', '🎻': 'violin', '🧶': 'yarn',
@@ -268,6 +268,8 @@ function icon(pt: Painter, id: IconId, x: number, y: number): string {
       return pt.fill(`M${x - 18},${y - 8} q18,-8 36,0 q0,18 -18,32 q-18,-14 -18,-32 Z`, 'red') + pt.fill(`M${x - 14},${y - 10} l6,-6 l4,4 l4,-8 l4,8 l4,-4 l6,6 q-14,6 -28,0 Z`, 'green') + [[-8, -2], [6, -1], [-2, 6], [8, 9], [-7, 11], [0, 16]].map(([dx, dy]) => `<ellipse cx="${x + dx}" cy="${y + dy}" rx="1.1" ry="1.8" fill="#f8e08a"/>`).join('');
     case 'door':
       return pt.rect(x - 16, y - 22, 32, 44, '#a87754', 2) + pt.rect(x - 11, y - 16, 22, 15, light('#a87754', 0.15), 2) + pt.rect(x - 11, y + 3, 22, 15, light('#a87754', 0.15), 2) + pt.circle(x + 10, y + 2, 2.2, 'brass') + `<circle cx="${x - 6}" cy="${y - 27}" r="3.5" fill="none" stroke="${p.ink}" stroke-width="1.6"/><path d="M${x + 2},${y - 31} h8 l-4,7 Z" fill="none" stroke="${p.ink}" stroke-width="1.6"/>`;
+    case 'key':
+      return pt.circle(x - 12, y - 4, 11, 'brass') + pt.circle(x - 12, y - 4, 4.5, '#fffaf0') + pt.rect(x - 2, y - 7, 30, 6, 'brass', 2) + pt.rect(x + 14, y - 2, 5, 10, 'brass', 1) + pt.rect(x + 22, y - 2, 5, 7, 'brass', 1);
     case 'basket':
       return pt.line(`M${x - 18},${y - 2} q18,-34 36,0`, '#a8743a', 3.4) + pt.circle(x - 9, y - 4, 8, 'red') + pt.circle(x + 7, y - 5, 8, '#b8d88a') + pt.fill(`M${x - 24},${y - 2} h48 l-6,24 h-36 Z`, '#d9a95a') + pt.line(`M${x - 22},${y + 6} h44 M${x - 20},${y + 14} h40 M${x - 10},${y - 2} l-2,24 M${x},${y - 2} v24 M${x + 10},${y - 2} l2,24`, dark('#d9a95a', 0.3), 1.2);
 

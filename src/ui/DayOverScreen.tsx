@@ -9,6 +9,7 @@ import { LOCATIONS } from '../data/locations';
 import { RANKS } from '../data/ranks';
 import { RIVALS } from '../data/rivals';
 import { REGULARS } from '../data/regulars';
+import { STAMPS } from '../data/passport';
 import { REPLIES, REPLY_IDS } from '../data/reviews';
 import { WEATHER } from '../data/weather';
 import { canReply } from '../sim/reviews';
@@ -307,6 +308,12 @@ export function DayOverScreen() {
                   {summary.wishes.asked === 1 ? 'table' : 'tables'} found what they hoped for.
                   {summary.wishes.missing.length > 0 &&
                     ` Asked for but missing: ${summary.wishes.missing.map((m) => (m.count > 1 ? `${m.text} (×${m.count})` : m.text)).join(', ')}. A hint for tomorrow’s menu?`}
+                </p>
+              )}
+              {summary.newStamps.length > 0 && (
+                <p className="said small">
+                  📖 <strong>New in your Gdańsk passport:</strong>{' '}
+                  {summary.newStamps.map((id) => `${STAMPS[id].icon} ${STAMPS[id].name} (${STAMPS[id].text.replace(/\.$/, '')})`).join(' · ')}. See the Mewa tab.
                 </p>
               )}
               {summary.samples && (

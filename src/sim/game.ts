@@ -24,6 +24,11 @@ import { DAILY_GOALS } from '../data/dailyGoals';
 import { rollTrend, trendLine, type TrendState } from './trends';
 import { fromTheMarket, rollMarket, type MarketState } from './market';
 import { startSamples } from './samples';
+import { EMPTY_PASSPORT, stampAfterDay, type PassportState } from './passport';
+import { findNews, NO_FINDS, rollFind, type FindsState } from './finds';
+import { ambianceWith } from './interior';
+import { FINDS } from '../data/finds';
+import type { StampId } from '../data/passport';
 import { TRENDS } from '../data/trends';
 import { themeNightFor, type ThemeNightBooking } from './themeNights';
 import { THEME_NIGHTS } from '../data/themeNights';
@@ -137,6 +142,10 @@ export interface GameState {
   trend: TrendState | null;
   /** This morning's market prices and deals, or null (an older save, until the next morning). */
   market: MarketState | null;
+  /** The sticker album, "Gdańsk passport": the stamps earned so far (sim/passport.ts). */
+  passport: PassportState;
+  /** Mewa's finds so far (sim/finds.ts). */
+  finds: FindsState;
   /** The theme night booked most recently (one a week), or null. */
   themeNight: ThemeNightBooking | null;
   /** A rival's latest move against the player, answered or waiting for an answer, or null. */
@@ -193,6 +202,8 @@ export interface OpenDay {
   dailyGoal: DailyGoalState | null;
   /** Whether every table has been taken at once before 14:00 today (for one of the daily goals). */
   everyTableTaken: boolean;
+  /** Whether every table has been taken at once at any time today (a stamp in the passport). */
+  fullHouse: boolean;
   /** When today's goal was reached during the day, or null. */
   dailyGoalDoneAt: number | null;
 }
@@ -277,6 +288,8 @@ export interface DaySummary extends DayTally {
   rankUp: number | null;
   /** Rush hour: chefs and waiters hurried, the longest quick-service streak, and the tips it brought. */
   rush: { chefs: number; waiters: number; bestStreak: number; tips: number };
+  /** Stamps earned today in the Gdańsk passport (data/passport.ts), in the album's order. */
+  newStamps: StampId[];
   /** Samples at the door, if they went out: the dish, when, how many tasted, who came in meanwhile, and the cost. */
   samples: {
     dish: MenuDish;
@@ -345,6 +358,8 @@ export function newGame(seed: number, difficulty: Difficulty = 'normal'): GameSt
     dailyGoal: rollDailyGoal(dailyGoalSeed(rng, 0), null, player),
     trend: rollTrend(trendSeed(rng, 0), 0, null),
     market: rollMarket(marketSeed(rng, 0), 0, null, inSeasonOn(0)),
+    passport: EMPTY_PASSPORT,
+    finds: NO_FINDS,
     themeNight: null,
     rivalMove: null,
     cookOff: null,
@@ -522,6 +537,7 @@ export function openRestaurant(state: GameState): OpenDay {
     hurried: { chefs: 0, waiters: 0 },
     dailyGoal: state.dailyGoal,
     everyTableTaken: false,
+    fullHouse: false,
     dailyGoalDoneAt: null,
     help: { drinks: 0, apologies: 0, cash: 0 },
     seating: { moved: 0, favourites: 0 },
@@ -539,6 +555,7 @@ export function playTick(open: OpenDay): void {
   const tables = open.progress.restaurants[0].tables + open.progress.restaurants[0].terraceTables;
   const lunchtime = minuteOfDay(Math.max(0, open.progress.tick - 1)) < 14 * 60;
   if (tables > 0 && floor.freeTables <= 0 && lunchtime) open.everyTableTaken = true;
+  if (tables > 0 && floor.freeTables <= 0) open.fullHouse = true;
   const goal = open.dailyGoal;
   if (goal && open.dailyGoalDoneAt === null && dailyGoalMet(goal, open.progress, open.everyTableTaken)) {
     open.dailyGoalDoneAt = minuteOfDay(Math.max(0, open.progress.tick - 1));
@@ -1029,7 +1046,7 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
   news.push(...regularsNews(nextDay, regularsToday.stories));
   // The team's stories, and now and then a small moment for someone (a birthday, pączki).
   const moment = teamMoment(rng, morale.team, nextDay);
-  const team = moment.team;
+  let team = moment.team;
   cash += moment.cash;
   news.push(...teamNews(team, nextDay));
   if (moment.news) news.push(moment.news);
@@ -1208,6 +1225,23 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
   const headChef = open.team.find((person) => person.role === 'chef')?.name ?? null;
   const practised = practiceAfterDay(state.dishPractice, outcomes, playerBefore.id, headChef);
 
+  // Mewa's finds: now and then something on the doorstep in the morning, and what comes of it.
+  let finds = state.finds ?? NO_FINDS;
+  const findSeed = (rng.s ^ Math.imul(nextDay + 61, 0x2c1b3c6d)) >>> 0;
+  const found = rollFind(findSeed, nextDay, finds);
+  if (found) {
+    const find = FINDS[found];
+    finds = { found: [...finds.found, found], lastDay: nextDay };
+    news.push(findNews(found, restaurants[0].menu, findSeed));
+    if (find.decor && !restaurants[0].decor.includes(find.decor)) {
+      const decor = [...restaurants[0].decor, find.decor];
+      restaurants = [{ ...restaurants[0], decor, ambiance: ambianceWith(decor) }, ...restaurants.slice(1)];
+    }
+    if (find.group) upcoming.push({ fromDay: nextDay, untilDay: nextDay, groups: { [find.group]: balance.finds.groupBoost } });
+    if (find.cash) cash += balance.finds.cash;
+    if (find.morale) team = team.map((person) => ({ ...person, morale: Math.min(100, person.morale + balance.finds.morale) }));
+  }
+
   // Tomorrow's weather, and maybe something small going on in town.
   const weather = rollWeather(rng, nextDay);
   const happening = rollHappening(rng, nextDay, weather);
@@ -1241,6 +1275,7 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
     dailyGoal,
     trend,
     market,
+    finds,
     menuSlots,
     // Running out of money ends the game.
     gameOver: state.gameOver || cash <= 0,
@@ -1271,9 +1306,7 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
     }
   }
 
-  return {
-    state: next,
-    summary: {
+  const summary: DaySummary = {
       ...tally,
       day: state.day,
       wages,
@@ -1321,6 +1354,9 @@ export function closeDay(state: GameState, open: OpenDay): { state: GameState; s
       wishes: wishesToday(outcomes, playerBefore.id),
       market: marketReport(open, playerBefore.id),
       samples,
-    },
+      newStamps: [],
   };
+  // The Gdańsk passport: any stamps the day earned.
+  const stamped = stampAfterDay(next, summary, open);
+  return { state: { ...next, passport: stamped.passport }, summary: { ...summary, newStamps: stamped.newStamps } };
 }

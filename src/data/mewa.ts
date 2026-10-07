@@ -222,6 +222,14 @@ export const HELP: { title: string; text: string }[] = [
     text: 'Some extras are fresh produce with a season: strawberries early in July, new potatoes until August, blueberries and chanterelles all summer, plums from mid-August. In season they make a dish taste better; out of season they’re imported, dearer and not as good. One dish a day can be today’s special, “Dziś polecamy”, on the board outside: more guests order it, it tempts people walking by, and fresh produce on it tempts them more.',
   },
   {
+    title: 'Mewa’s finds',
+    text: 'Now and then Mewa leaves something she found in town on the doorstep, and the morning news says what came of it: a piece of amber or a ship’s bell for the room, a family or an orchestra coming to eat, a recipe card with a pairing to try, a lucky coin. The Mewa tab keeps them on a shelf.',
+  },
+  {
+    title: 'Your Gdańsk passport',
+    text: 'The passport in this tab collects a stamp for everything you do in Gdańsk: your first five-star review, a full house, the tall ships, a wedding party, a famous guest… The empty rings say how to earn the rest. Stamps are just for collecting: see how many you can fill.',
+  },
+  {
     title: 'Building works',
     text: 'When the room is full, the Interior tab has building works for these premises, done overnight. A bar counter puts four stools along the bar: someone on their own or a pair sits there, and your tables stay free for bigger parties. A toilet makes every guest a little happier. With a toilet, the old vaulted cellar can be done up too: more tables down the stairs (the Cellar button takes you there), candlelit, and loved by foodies and tourists in the evening. They belong to the building: if you move, they stay behind.',
   },

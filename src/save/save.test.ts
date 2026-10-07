@@ -364,6 +364,22 @@ describe('upgrading version 25 saves (from before cook-offs)', () => {
   });
 });
 
+describe('upgrading version 28 saves (from before Mewa’s finds)', () => {
+  it('has found nothing yet', () => {
+    const game = newGame(74);
+    const { finds: _f, ...old } = game;
+    expect(migrate({ saveVersion: 28, savedAt: '', game: old })).toEqual(game);
+  });
+});
+
+describe('upgrading version 27 saves (from before the Gdańsk passport)', () => {
+  it('starts an empty passport', () => {
+    const game = newGame(73);
+    const { passport: _p, ...old } = game;
+    expect(migrate({ saveVersion: 27, savedAt: '', game: old })).toEqual(game);
+  });
+});
+
 describe('upgrading version 26 saves (from before the morning market)', () => {
   it('keeps usual prices until the next morning’s market', () => {
     const game = newGame(72);

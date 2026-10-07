@@ -169,6 +169,9 @@ function wallDecor(pt: Painter, L: FrontLayout, look: RoomLook): string {
       for (let k = 0; k < 26; k++) leaves += pt.fill(`M${x - 38 + ((k * 23) % 76)},${y + 8 + ((k * 37) % 84)} q-8,-7 0,-15 q8,8 0,15 Z`, k % 3 ? 'green' : light(p.green, 0.3));
       return leaves;
     });
+  if (has('amberCase'))
+    // Mewa's find: a few pieces of Baltic amber in a little glass case.
+    items.push((x, y) => pt.rect(x - 34, y + 20, 68, 52, 'bar', 3) + pt.rect(x - 28, y + 26, 56, 40, '#f6efe0', 2) + [[-14, 52, 9], [4, 48, 11], [18, 54, 7], [-4, 38, 6]].map(([dx, dy, r]) => pt.fill(`M${x + dx - r},${y + dy} q${r},${-r * 1.6} ${r * 2},0 q${-r},${r * 0.9} ${-r * 2},0 Z`, '#e8962e') + `<circle cx="${x + dx - r * 0.3}" cy="${y + dy - r * 0.45}" r="${r * 0.22}" fill="#fff4c8"/>`).join('') + `<path d="M${x - 26},${y + 28} l12,0" stroke="#ffffff" stroke-width="2" opacity="0.7"/>`);
   if (has('clayPots'))
     items.push((x, y) => pt.rect(x - 46, y + 60, 92, 6, 'bar') + [-30, -6, 18, 38].map((dx, k) => pt.fill(`M${x + dx - 9},${y + 60} q-4,-14 3,-24 h12 q7,10 3,24 Z`, ['#b8643a', '#c9884a', '#9a5434', '#c27a5c'][k]) + `<path d="M${x + dx - 5},${y + 46} h10" stroke="#fffaf0" stroke-width="1.5"/>`).join(''));
   // Pair up the stretches of wall with the things to hang, upper half first, then lower. The toilet door
@@ -179,6 +182,8 @@ function wallDecor(pt: Painter, L: FrontLayout, look: RoomLook): string {
   const slots = gaps
     .flatMap((gap) => [{ x: gap.x, y: upper }, { x: gap.x, y: lower }])
     .filter((slot) => !toilet || slot.x !== toilet.x || slot.y === upper)
+    // The chalkboard above the door covers the top of the last stretch of wall, when it's there.
+    .filter((slot) => !(chalkboardShown(L) && slot.y === upper && slot.x === gaps[gaps.length - 1]?.x && slot.x + 50 > L.door.x - 100))
     .sort((a, b) => a.y - b.y || a.x - b.x);
   items.forEach((item, i) => slots[i] && (g += item(slots[i].x, slots[i].y)));
   if (has('lanterns')) for (const gap of gaps) g += pt.line(`M${gap.x},46 L${gap.x},78`, 'ink', 1.4) + pt.rect(gap.x - 10, 78, 20, 26, '#4a4a55', 3) + `<rect x="${gap.x - 6}" y="${82}" width="12" height="18" fill="#ffd98a"/>`;
@@ -190,6 +195,9 @@ function wallDecor(pt: Painter, L: FrontLayout, look: RoomLook): string {
   }
   return g;
 }
+
+/** True when the chalkboard with today's dishes fits above the door (see door()). */
+const chalkboardShown = (L: FrontLayout) => L.door.top - 52 >= 96;
 
 /** Where the toilet door goes: the last stretch of wall before the front door. */
 export function toiletSpot(L: FrontLayout): { x: number } {
@@ -293,12 +301,17 @@ function door(pt: Painter, L: FrontLayout, look: RoomLook): string {
   g += pt.line(arch, 'beam', 8);
   g += pt.fill(`M${left - 6},${L.floorY + 4} h${width + 12} l8,14 h${-width - 28} Z`, 'red') + folkBand(pt, left - 4, L.floorY + 8, width + 8, 8, ['red', 'yellow', 'blue']);
   // The chalkboard with today's dishes, above the door when there's room.
-  if (top - 52 >= 96) {
+  if (chalkboardShown(L)) {
     const bx = x - 100;
     const by = top - 114;
     g += pt.rect(bx, by, 200, 100, '#6a3d26') + pt.rect(bx + 8, by + 8, 184, 84, '#2f4a3c');
     const lines = ['DZIŚ POLECAMY', ...look.specials.slice(0, 3).map((d) => `${d.name} · ${d.price}`)];
     lines.forEach((t, i) => (g += `<text x="${bx + 18}" y="${by + 28 + i * 19}" font-family="${HAND}" font-size="${i ? 14 : 13}" fill="#f4efe2">${escape(t)}</text>`));
+  }
+  // Mewa's find: a ship's bell on a bracket by the door.
+  if (look.decor.includes('shipsBell')) {
+    const bx = left - 28;
+    g += pt.line(`M${left - 4},${top + 2} H${bx} V${top + 10}`, 'black', 3) + pt.fill(`M${bx - 13},${top + 38} q2,-26 13,-26 q11,0 13,26 Z`, 'brass') + pt.rect(bx - 15, top + 36, 30, 5, 'brass', 2) + pt.circle(bx, top + 44, 3.5, 'bar2') + pt.line(`M${bx},${top + 44} q-6,10 2,18`, '#c9a46a', 2);
   }
   if (look.plaque) g += pt.rect(left - 56, top + 40, 44, 32, 'brass', 3) + `<text x="${left - 34}" y="${top + 60}" text-anchor="middle" font-family="${HAND}" font-size="9" font-weight="700" fill="${p.ink}">★ Old Town</text>`;
   return g;

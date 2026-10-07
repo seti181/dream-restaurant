@@ -17,7 +17,9 @@ export type DecorId =
   | 'pendantLights'
   | 'plantWall'
   | 'communalTable'
-  | 'azulejoTiles';
+  | 'azulejoTiles'
+  | 'amberCase'
+  | 'shipsBell';
 
 export interface DecorItem {
   name: string;
@@ -27,6 +29,8 @@ export interface DecorItem {
   ambiance: number;
   /** Hidden in the shop until a choice card unlocks it (see data/moments.ts). */
   unlockable?: boolean;
+  /** Never sold: one of Mewa's finds (data/finds.ts), given for free when she brings it. */
+  found?: boolean;
 }
 
 export const DECOR_STYLE_IDS: readonly DecorStyle[] = ['hanseatic', 'maritime', 'rustic', 'modern', 'portuguese'];
@@ -64,7 +68,7 @@ export const DECOR_IDS: readonly DecorId[] = [
   'shipsInBottles', 'lanterns', 'seaChart',
   'tablecloths', 'clayPots', 'tiledStove',
   'pendantLights', 'plantWall', 'communalTable',
-  'azulejoTiles',
+  'azulejoTiles', 'amberCase', 'shipsBell',
 ];
 
 export const DECOR: Record<DecorId, DecorItem> = {
@@ -81,4 +85,6 @@ export const DECOR: Record<DecorId, DecorItem> = {
   plantWall: { name: 'Living plant wall', style: 'modern', cost: 2_800, ambiance: 8 },
   communalTable: { name: 'Long oak communal table', style: 'modern', cost: 3_000, ambiance: 9 },
   azulejoTiles: { name: 'Azulejo tiles from Coimbra', style: 'portuguese', cost: 2_500, ambiance: 10, unlockable: true },
+  amberCase: { name: 'Baltic amber in a little case (Mewa’s find)', style: 'hanseatic', cost: 0, ambiance: 4, found: true },
+  shipsBell: { name: 'A ship’s bell by the door (Mewa’s find)', style: 'maritime', cost: 0, ambiance: 4, found: true },
 };
