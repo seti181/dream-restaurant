@@ -98,7 +98,7 @@ export function SketchStreetView({
   // ----- The street, the page around it, the terrace's tables and plates -----
   const inside = floor.insideTables;
   const spots = Math.min(floor.terraceTables, layout.tables.length);
-  const terraceOpen = floor.counterFrom > inside;
+  const terraceOpen = floor.cellarFrom > inside;
   const special = menu.find((d) => recipeKey(d) === specialKey) ?? null;
   // The light of the day, as inside: the sky changes with it, and the live light fades over everything.
   const light = lightAt(minute);
@@ -296,8 +296,8 @@ function useDoorTraffic(L: StreetLayout, floor: FloorView) {
   const [walks, setWalks] = useState<Walk[]>([]);
   useEffect(() => {
     const now = new Map<number, TableGuests>();
-    // Everyone inside comes in at the door: at the tables and at the bar counter.
-    floor.tables.forEach((guests, table) => guests && (table < floor.insideTables || table >= floor.counterFrom) && now.set(table, guests));
+    // Everyone inside comes in at the door: at the room's tables, in the cellar and at the bar counter.
+    floor.tables.forEach((guests, table) => guests && (table < floor.insideTables || table >= floor.cellarFrom) && now.set(table, guests));
     const before = known.current;
     known.current = now;
     if (!before) return;

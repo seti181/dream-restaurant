@@ -17,6 +17,7 @@ import { MewaTip } from './Mewa';
 import { MomentCard, MomentResultNote, NoteClose } from './MomentCard';
 import { GROUP_COLOURS } from './sketch/cast';
 import { SketchRoomView } from './SketchRoomView';
+import { SketchCellarView } from './SketchCellarView';
 import { canHelp, canTend, useUpright } from './sketchView/shared';
 import { RankingTable } from './plan/RankingBox';
 import { SketchStreetView } from './SketchStreetView';
@@ -548,6 +549,8 @@ export function DayScreen() {
   const [legend, setLegend] = useState(false);
   const [ranking, setRanking] = useState(false);
   const [outside, setOutside] = useState(false);
+  // Down in the cellar room, if there is one (bigger premises): its own view, like the street.
+  const [downstairs, setDownstairs] = useState(false);
   const upright = useUpright();
   const [note, setNote] = useState<{ text: string; at: number } | null>(null);
   const location = useGame((s) => playerOf(s.game).location);
@@ -596,7 +599,7 @@ export function DayScreen() {
     .filter(({ guests, table }) => guests === null && table < live.floor.counterFrom && (!selected || table !== selected.table))
     .map(({ table }) => ({
       table,
-      favourite: selectedGuests ? isFavourite(selectedGuests.group, location, live.floor.insideTables, table) : false,
+      favourite: selectedGuests ? isFavourite(selectedGuests.group, location, live.floor.insideTables, table, live.floor.cellarFrom) : false,
     }));
   const close = () => {
     setSelected(null);
@@ -605,7 +608,10 @@ export function DayScreen() {
   const flyers = !live.closing ? live.flyersLeft : 0;
   // The restaurant inside or the street outside, with a switch between them; held upright, the room
   // above and the street below, both at once (project.md section 9.5).
-  const RestaurantView = outside ? SketchStreetView : SketchRoomView;
+  const hasCellar = live.floor.counterFrom > live.floor.cellarFrom;
+  const inCellar = downstairs && hasCellar;
+  const InsideView = inCellar ? SketchCellarView : SketchRoomView;
+  const RestaurantView = outside ? SketchStreetView : InsideView;
   const both = upright;
   const needs = whatNeedsYou(live.floor, canHelp);
   // What each view is shown and what a tap on it does; held upright, both views get the same.
@@ -654,7 +660,7 @@ export function DayScreen() {
     <main className={both ? 'day-screen upright' : 'day-screen'}>
       {both ? (
         <div className="day-stack">
-          <SketchRoomView {...view} />
+          <InsideView {...view} />
           <SketchStreetView {...view} />
         </div>
       ) : (
@@ -755,11 +761,22 @@ export function DayScreen() {
             setLegend(false);
           }}
         />
+        {hasCellar && (
+          <RoundButton
+            icon={<Icon id={inCellar && !outside ? 'chefHat' : 'candle'} size={30} />}
+            label={inCellar && !outside ? 'Upstairs' : 'Cellar'}
+            badge={inCellar && !outside ? needs.inside : needs.cellar}
+            onClick={() => {
+              setDownstairs(!(inCellar && !outside));
+              setOutside(false);
+            }}
+          />
+        )}
         {!upright && (
           <RoundButton
             icon={<Icon id={outside ? 'chefHat' : `street:${live.floor.location}`} size={30} />}
             label={outside ? 'Inside' : 'Outside'}
-            badge={outside ? needs.inside : needs.outside}
+            badge={outside ? (inCellar ? needs.cellar : needs.inside) : needs.outside}
             onClick={() => setOutside(!outside)}
           />
         )}

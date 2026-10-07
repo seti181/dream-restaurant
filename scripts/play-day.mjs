@@ -89,13 +89,16 @@ await send('Page.enable');
 await send('Page.navigate', { url });
 await sleep(3000);
 await screenshot('0-start');
-// WORKS=1 has the building works done on the first morning (the bar counter and the toilet, ready from day 2),
-// and photographs the Interior tab (works.png).
+// WORKS=1 has the building works done on the first morning (the bar counter, the toilet and then the cellar,
+// ready from day 2), and photographs the Interior tab (works.png) and the cellar room on day 2 (cellar-2.png).
 if (process.env.WORKS) {
   await evaluate(`[...document.querySelectorAll('button.tab')].find((b) => b.textContent.includes('Interior'))?.click()`);
   await sleep(500);
-  await evaluate(`[...document.querySelectorAll('button')].filter((b) => b.textContent.startsWith('Build ·')).forEach((b) => b.click())`);
-  await sleep(500);
+  // Twice: the cellar's button only works once the toilet is done.
+  for (let pass = 0; pass < 2; pass++) {
+    await evaluate(`[...document.querySelectorAll('button')].filter((b) => b.textContent.startsWith('Build ·') && !b.disabled).forEach((b) => b.click())`);
+    await sleep(500);
+  }
   await evaluate(`[...document.querySelectorAll('h2')].find((h) => h.textContent === 'Building works')?.scrollIntoView({ block: 'start' })`);
   await sleep(300);
   await screenshot('works');
@@ -155,6 +158,7 @@ for (let day = 1; day <= Number(days); day++) {
   let themeShot = false;
   let samplesShot = false;
   let counterShot = false;
+  let cellarShot = false;
   for (let i = 0; i < 300; i++) {
     const did = await evaluate(step);
     if (did !== last && did !== 'waiting') console.log(`day ${day}: ${did}`);
@@ -193,6 +197,19 @@ for (let day = 1; day <= Number(days); day++) {
       await evaluate(`document.querySelectorAll('.note-close').forEach((b) => b.click())`);
       await sleep(800);
       await screenshot(`counter-${day}`);
+      await evaluate(`document.querySelector('button[aria-label="Four times speed"]')?.click()`);
+    }
+    // With WORKS=1, down to the cellar at 19:00 on day 2 and back up (cellar-2.png).
+    if (process.env.WORKS && day >= 2 && !cellarShot && (await evaluate(`(document.querySelector('.day-time')?.textContent ?? '') >= '19:00'`))) {
+      cellarShot = true;
+      await evaluate(`[...document.querySelectorAll('button.round-button')].find((b) => b.textContent.includes('Cellar'))?.click()`);
+      // Wait (up to 40 seconds) for someone to sit down down there: a bubble over a table.
+      for (let w = 0; w < 80 && !(await evaluate(`document.querySelectorAll('.sk-bubble').length > 0`)); w++) await sleep(500);
+      await evaluate(`document.querySelector('button[aria-label="Pause"]')?.click()`);
+      await evaluate(`document.querySelectorAll('.note-close').forEach((b) => b.click())`);
+      await sleep(800);
+      await screenshot(`cellar-${day}`);
+      await evaluate(`[...document.querySelectorAll('button.round-button')].find((b) => b.textContent.includes('Upstairs'))?.click()`);
       await evaluate(`document.querySelector('button[aria-label="Four times speed"]')?.click()`);
     }
     // From 15:00, samples at the door: tap the button (it switches to the street), and photograph the waiter with the tray (samples-<n>.png).

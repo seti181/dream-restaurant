@@ -13,7 +13,7 @@ import { LOCATIONS } from '../data/locations';
 import { PORTUGUESE_CORNER, SECRET_RECIPE, SPECIAL_STAFF, type SpecialStaffId } from '../data/personal';
 import { RIVAL_IDS } from '../data/rivals';
 import type { Weather } from '../data/weather';
-import { counterPlaces, helpTable, hurryStaff, moveParty, startDay, stepDay, type DayInProgress, type FloorView, type Help } from './day';
+import { cellarTablesOf, counterPlaces, helpTable, hurryStaff, moveParty, startDay, stepDay, type DayInProgress, type FloorView, type Help } from './day';
 import { isFavourite } from './seating';
 import { bookingsDay, rollRequest, type BookingReport, type BookingRequest } from './bookings';
 import { practiceAfterDay, withStars, type DishPractice, type StarEarned } from './practice';
@@ -449,9 +449,10 @@ export function restingFloor(state: GameState): FloorView {
   const atWork = state.team.filter((person) => !awayOn(person, state.day));
   return {
     location: player.location,
-    tables: Array<null>(player.tables + terraceTables + counterPlaces(player)).fill(null),
+    tables: Array<null>(player.tables + terraceTables + cellarTablesOf(player) + counterPlaces(player)).fill(null),
     insideTables: player.tables,
-    counterFrom: player.tables + terraceTables,
+    cellarFrom: player.tables + terraceTables,
+    counterFrom: player.tables + terraceTables + cellarTablesOf(player),
     terraceTables: terraceTablesBuilt(state),
     chefsBusy: atWork.filter((person) => person.role === 'chef').map(() => false),
     waiters: atWork.filter((person) => person.role === 'waiter').map((person) => person.special ?? null),
@@ -635,7 +636,7 @@ export function moveGuests(open: OpenDay, from: number, to: number): { favourite
   const player = open.progress.restaurants[0];
   const visit = moveParty(open.progress, 0, from, to);
   if (!visit) return null;
-  const favourite = isFavourite(visit.party.group, player.location, player.tables, to);
+  const favourite = isFavourite(visit.party.group, player.location, player.tables, to, player.tables + player.terraceTables);
   if (favourite) {
     visit.mood += balance.seating.favouriteMood;
     open.seating.favourites++;

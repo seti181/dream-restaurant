@@ -53,6 +53,7 @@ export function roomPicture(pt: Painter, L: FrontLayout, look: RoomLook): string
   g += kitchen(pt, L, look);
   g += floor(pt, L);
   if (look.works?.includes('counter')) g += stools(pt, L);
+  if (look.works?.includes('cellar')) g += stairsDown(pt, L);
   g += lights(pt, L, look);
   g += `<rect width="${L.width}" height="${L.height}" filter="url(#grain)"/>`;
   if (look.dusk && !look.live) g += `<rect width="${L.width}" height="${L.height}" fill="#2c3a66" opacity="0.22"/>`;
@@ -206,6 +207,18 @@ function toiletDoor(pt: Painter, x: number, floorY: number): string {
   g += pt.circle(x + w / 2 - 10, top + 78, 3.5, 'brass');
   g += pt.rect(x - 26, top - 38, 52, 26, 'white', 4);
   g += `<circle cx="${x - 11}" cy="${top - 25}" r="7" fill="none" stroke="${pt.p.ink}" stroke-width="2.4"/><path d="M${x + 4},${top - 32} h16 l-8,14 Z" fill="none" stroke="${pt.p.ink}" stroke-width="2.4" stroke-linejoin="round"/>`;
+  return g;
+}
+
+/** The stairs down to the cellar room, in the floor by the end of the bar: steps into warm light, a railing and a sign. */
+function stairsDown(pt: Painter, L: FrontLayout): string {
+  const x = L.bar.x1 + 70;
+  const y = L.floorY;
+  let g = pt.fill(`M${x - 62},${y + 6} h124 l18,32 h-160 Z`, 'ink');
+  for (let s = 0; s < 4; s++) g += pt.rect(x - 54 + s * 6, y + 10 + s * 7, 108 - s * 12, 5, s ? '#e9b96a' : 'floor', 1);
+  g += `<ellipse cx="${x}" cy="${y + 28}" rx="62" ry="11" fill="#ffd27a" opacity="0.35"/>`;
+  g += pt.line(`M${x - 70},${y + 2} V${y - 44} H${x + 70} V${y + 2} M${x - 35},${y - 44} V${y + 2} M${x},${y - 44} V${y + 2} M${x + 35},${y - 44} V${y + 2}`, 'bar2', 4);
+  g += pt.rect(x - 38, y - 76, 76, 24, 'white', 4) + `<text x="${x}" y="${y - 59}" text-anchor="middle" font-family="${HAND}" font-size="13" font-weight="700" fill="${pt.p.ink}">Piwnica ↓</text>`;
   return g;
 }
 

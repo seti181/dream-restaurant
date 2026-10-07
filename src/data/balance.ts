@@ -213,6 +213,11 @@ export const balance = {
     /** The toilet: what it costs, and how much happier (0–100) every guest is. */
     toiletCost: 4_000,
     toiletMood: 3,
+    /** The cellar room: what it costs (its tables come with it, data/locations.ts), and how much more tempting it makes the restaurant to its groups from its hour. */
+    cellarCost: 12_000,
+    cellarAppeal: 0.4,
+    cellarGroups: ['foodies', 'tourists'] as const,
+    cellarFromHour: 18,
   },
 
   decor: {

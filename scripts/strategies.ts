@@ -10,6 +10,7 @@ import type { CampaignId } from '../src/data/marketing';
 import type { BuildingWorkId } from '../src/data/works';
 import * as actions from '../src/sim/actions';
 import { dateOf } from '../src/sim/calendar';
+import { cellarTablesOf, counterPlaces } from '../src/sim/day';
 import { playerOf, type GameState } from '../src/sim/game';
 import type { Employee, Role, Staff } from '../src/sim/types';
 
@@ -116,13 +117,15 @@ export function manage(strategy: Strategy, state: GameState, week: WeekReport | 
     }
     // ...another chef when the kitchen can't keep up...
     const guests = week.served + week.walkedOut;
-    const kitchenFull = playerOf(s).chefs.length >= Math.ceil(playerOf(s).tables / 3);
+    // Every table counts: the room's, the cellar's and the bar counter's places.
+    const tables = playerOf(s).tables + cellarTablesOf(playerOf(s)) + counterPlaces(playerOf(s));
+    const kitchenFull = playerOf(s).chefs.length >= Math.ceil(tables / 3);
     if (plan.chefWhenWalkouts !== undefined && guests > 0 && week.walkedOut > guests * plan.chefWhenWalkouts && !kitchenFull) {
       const chef = bestCandidate(s, 'chef', plan);
       if (chef) s = actions.hire(s, chef.id);
     }
     // ...and enough waiters for the tables.
-    if (plan.tablesPerWaiter && playerOf(s).waiters.length * plan.tablesPerWaiter < playerOf(s).tables) {
+    if (plan.tablesPerWaiter && playerOf(s).waiters.length * plan.tablesPerWaiter < tables) {
       const waiter = bestCandidate(s, 'waiter', plan);
       if (waiter) s = actions.hire(s, waiter.id);
     }
@@ -240,7 +243,7 @@ export const STRATEGIES: Strategy[] = [
       dayOffBelow: 55,
       acceptBookings: true,
       samplesAt: 15 * 60,
-      works: ['toilet', 'counter'],
+      works: ['toilet', 'counter', 'cellar'],
     },
   },
   {

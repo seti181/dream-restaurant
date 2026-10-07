@@ -66,6 +66,8 @@ export interface Glow {
   y: number;
   r: number;
   kind: 'candle' | 'lamp';
+  /** Lit all day long (the cellar's candles), not only from the golden hour or the evening. */
+  always?: boolean;
 }
 
 /**
@@ -83,7 +85,7 @@ export function LightLayer({ light, weather, glows, rain = false }: { light: Lig
         </div>
       )}
       {glows.map((g, i) => {
-        const on = g.kind === 'candle' ? light !== 'day' : light === 'evening';
+        const on = g.always || (g.kind === 'candle' ? light !== 'day' : light === 'evening');
         return (
           <span
             key={i}

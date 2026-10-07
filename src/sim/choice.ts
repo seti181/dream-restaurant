@@ -40,6 +40,13 @@ export function specialAppeal(restaurant: Restaurant, inSeason: readonly ExtraId
   return appeal + (freshOn(special, inSeason).length > 0 || fromTheMarket(special, deals) ? freshAppeal : 0);
 }
 
+/** What a candlelit cellar adds in the evening for the groups who love it (foodies, tourists). */
+export function cellarAppeal(restaurant: Restaurant, party: Party): number {
+  const { cellarAppeal: appeal, cellarGroups, cellarFromHour } = balance.works;
+  const loves = (cellarGroups as readonly GroupId[]).includes(party.group);
+  return restaurant.works?.includes('cellar') && loves && party.arrivalMinute >= cellarFromHour * 60 ? appeal : 0;
+}
+
 /** How tempting a menu looks to a group, 0–1: the average appeal of its best few dishes. */
 export function menuMatch(menu: MenuDish[], group: GroupId, trend: TrendToday | null = null): number {
   const count = balance.choice.menuMatchDishes;
@@ -112,6 +119,8 @@ export function utility(
     interiorAppeal(restaurant, party.group) +
     // Samples at the door, for people from this street walking past.
     samplesAppeal(restaurant, party) +
+    // The candlelit cellar, in the evening, for the groups who love it.
+    cellarAppeal(restaurant, party) +
     // A rival's special deal for some groups (a lunch deal).
     (restaurant.pull &&
     restaurant.pull.groups.includes(party.group) &&

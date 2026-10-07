@@ -2,7 +2,7 @@
 // They belong to the premises: moving to another street leaves them behind. How much each costs
 // and does is in balance.ts (balance.works).
 
-export type BuildingWorkId = 'counter' | 'toilet';
+export type BuildingWorkId = 'counter' | 'toilet' | 'cellar';
 
 export interface BuildingWork {
   icon: string;
@@ -11,7 +11,7 @@ export interface BuildingWork {
   blurb: string;
 }
 
-export const BUILDING_WORK_IDS: readonly BuildingWorkId[] = ['counter', 'toilet'];
+export const BUILDING_WORK_IDS: readonly BuildingWorkId[] = ['counter', 'toilet', 'cellar'];
 
 export const BUILDING_WORKS: Record<BuildingWorkId, BuildingWork> = {
   counter: {
@@ -23,5 +23,10 @@ export const BUILDING_WORKS: Record<BuildingWorkId, BuildingWork> = {
     icon: '🚪',
     name: 'Toilet',
     blurb: 'A little door at the back with the ○ and ▽ on it. Guests feel looked after, and are a little happier.',
+  },
+  cellar: {
+    icon: '🕯️',
+    name: 'Cellar room (piwnica)',
+    blurb: 'Down the stairs, the old vaulted cellar done up with candles and barrels: more tables beyond the room’s limit. Foodies and tourists love it in the evening.',
   },
 };

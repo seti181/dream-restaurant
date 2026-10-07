@@ -16,8 +16,9 @@ export function tableColumns(maxTables: number): number {
   return maxTables <= 6 ? 3 : 4;
 }
 
-/** What kind of spot a table is: on the terrace, along the window wall, at the quiet back, or near the door. */
-export function spotsOf(location: LocationId, insideTables: number, table: number): TableSpot[] {
+/** What kind of spot a table is: in the cellar, on the terrace, along the window wall, at the quiet back, or near the door. */
+export function spotsOf(location: LocationId, insideTables: number, table: number, cellarFrom = Infinity): TableSpot[] {
+  if (table >= cellarFrom) return ['cellar'];
   if (table >= insideTables) return ['terrace'];
   const max = maxTablesAt(location);
   const columns = tableColumns(max);
@@ -31,6 +32,6 @@ export function spotsOf(location: LocationId, insideTables: number, table: numbe
 }
 
 /** True if this table is one of the group's favourite spots. */
-export function isFavourite(group: GroupId, location: LocationId, insideTables: number, table: number): boolean {
-  return spotsOf(location, insideTables, table).some((spot) => FAVOURITE_SPOTS[group].includes(spot));
+export function isFavourite(group: GroupId, location: LocationId, insideTables: number, table: number, cellarFrom = Infinity): boolean {
+  return spotsOf(location, insideTables, table, cellarFrom).some((spot) => FAVOURITE_SPOTS[group].includes(spot));
 }

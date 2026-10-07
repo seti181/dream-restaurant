@@ -26,6 +26,8 @@ export interface Location {
   terraceSeats: number;
   /** Pieces of kitchen equipment that fit, including the stove. */
   equipmentSlots: number;
+  /** Tables the vaulted cellar holds, once it's been done up (building works, data/works.ts). */
+  cellarTables: number;
   /** Position on the Old Town map in metres (x = east, y = north). */
   mapPosition: { x: number; y: number };
 }
@@ -60,6 +62,7 @@ export const LOCATIONS: Record<LocationId, Location> = {
     maxSeats: 24,
     terraceSeats: 8,
     equipmentSlots: 3,
+    cellarTables: 2,
     mapPosition: { x: 300, y: -100 },
   },
   piwna: {
@@ -77,6 +80,7 @@ export const LOCATIONS: Record<LocationId, Location> = {
     maxSeats: 32,
     terraceSeats: 12,
     equipmentSlots: 4,
+    cellarTables: 2,
     mapPosition: { x: 250, y: 200 },
   },
   mariacka: {
@@ -94,6 +98,7 @@ export const LOCATIONS: Record<LocationId, Location> = {
     maxSeats: 24,
     terraceSeats: 20,
     equipmentSlots: 3,
+    cellarTables: 3,
     mapPosition: { x: 650, y: 220 },
   },
   dluga: {
@@ -111,6 +116,7 @@ export const LOCATIONS: Record<LocationId, Location> = {
     maxSeats: 48,
     terraceSeats: 16,
     equipmentSlots: 6,
+    cellarTables: 3,
     mapPosition: { x: 450, y: 0 },
   },
   pobrzeze: {
@@ -128,6 +134,7 @@ export const LOCATIONS: Record<LocationId, Location> = {
     maxSeats: 40,
     terraceSeats: 24,
     equipmentSlots: 5,
+    cellarTables: 2,
     mapPosition: { x: 800, y: 150 },
   },
   spichrzow: {
@@ -145,6 +152,7 @@ export const LOCATIONS: Record<LocationId, Location> = {
     maxSeats: 40,
     terraceSeats: 16,
     equipmentSlots: 5,
+    cellarTables: 3,
     mapPosition: { x: 950, y: -80 },
   },
 };

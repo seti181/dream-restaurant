@@ -117,7 +117,7 @@ export const GROUPS: Record<GroupId, Group> = {
 // ---------- Favourite spots in the restaurant ----------
 
 /** Kinds of table: on the terrace, along the window wall, at the quiet back by the stove, or near the door. */
-export type TableSpot = 'terrace' | 'window' | 'back' | 'front';
+export type TableSpot = 'terrace' | 'window' | 'back' | 'front' | 'cellar';
 
 /** Where each group most likes to sit. Shown to a favourite spot, they're happier. */
 export const FAVOURITE_SPOTS: Record<GroupId, TableSpot[]> = {
@@ -125,7 +125,7 @@ export const FAVOURITE_SPOTS: Record<GroupId, TableSpot[]> = {
   students: ['front'],
   locals: ['back'],
   office: ['front'],
-  foodies: ['window'],
+  foodies: ['window', 'cellar'],
 };
 
 /** How the spots are described to the player. */
@@ -134,4 +134,5 @@ export const SPOT_NAMES: Record<TableSpot, string> = {
   window: 'the window wall',
   back: 'the quiet back, by the stove',
   front: 'near the door',
+  cellar: 'the candlelit cellar',
 };

@@ -157,7 +157,10 @@ function WorkCard({ id }: { id: BuildingWorkId }) {
         <strong>
           {work.icon} {work.name}
         </strong>
-        <p className="small muted">{work.blurb}</p>
+        <p className="small muted">
+          {work.blurb}
+          {id === 'cellar' && ` This cellar has room for ${LOCATIONS[playerOf(game).location].cellarTables} tables.`}
+        </p>
       </div>
       <div className="buy">
         {done ? (

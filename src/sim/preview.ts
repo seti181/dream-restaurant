@@ -36,7 +36,8 @@ export function previewOf(state: GameState, location: LocationId): StreetPreview
       location,
       tables: Array<null>(inside + terrace).fill(null),
       insideTables: inside,
-      // Building works stay behind with the old premises: no bar counter here (yet).
+      // Building works stay behind with the old premises: no cellar or bar counter here (yet).
+      cellarFrom: inside + terrace,
       counterFrom: inside + terrace,
       terraceTables: terrace,
       chefsBusy: (rival ? rival.chefs : team.filter((p) => p.role === 'chef')).map(() => false),

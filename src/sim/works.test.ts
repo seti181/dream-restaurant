@@ -4,7 +4,10 @@ import type { MenuDish } from '../data/dishes';
 import { RIVAL_IDS } from '../data/rivals';
 import { afterMove, buildWork, workCost, workUnavailableReason } from './actions';
 import { minuteOfDay } from './clock';
-import { counterPlaces, floorView, moveParty, seat, startDay, stepDay, type DayInProgress } from './day';
+import { cellarAppeal } from './choice';
+import { cellarTablesOf, counterPlaces, floorView, moveParty, seat, startDay, stepDay, type DayInProgress } from './day';
+import { LOCATIONS } from '../data/locations';
+import { isFavourite } from './seating';
 import { ORDINARY_DAY } from './events';
 import { newGame, playerOf, restingFloor } from './game';
 import { createRng } from './rng';
@@ -80,5 +83,42 @@ describe('building works', () => {
     seat(createRng(2), plain, 0, party(2), 12 * 60);
     seat(createRng(2), toilet, 0, party(2), 12 * 60);
     expect(toilet.floors[0].visits[0].mood - plain.floors[0].visits[0].mood).toBe(balance.works.toiletMood);
+  });
+});
+
+describe('the cellar room', () => {
+  it('needs a toilet first, and its tables come with it, after the terrace’s', () => {
+    const state = { ...newGame(6), cash: 80_000 };
+    expect(workUnavailableReason(state, 'cellar')).toMatch(/toilet first/);
+    const built = buildWork(buildWork(state, 'toilet'), 'cellar');
+    expect(playerOf(built).works).toEqual(['toilet', 'cellar']);
+    expect(built.cash).toBe(state.cash - workCost('toilet') - workCost('cellar'));
+    const floor = restingFloor(built);
+    const cellar = LOCATIONS[playerOf(built).location].cellarTables;
+    expect(floor.cellarFrom).toBe(playerOf(built).tables);
+    expect(floor.counterFrom - floor.cellarFrom).toBe(cellar);
+    expect(floor.tables).toHaveLength(playerOf(built).tables + cellar);
+  });
+
+  it('seats parties at its tables once the room is full', () => {
+    const progress = quietDay(['toilet', 'cellar'], 1);
+    const cellar = cellarTablesOf(progress.restaurants[0]);
+    expect(progress.floors[0].freeTables).toBe(1 + cellar);
+    seat(createRng(2), progress, 0, party(4), 12 * 60);
+    seat(createRng(2), progress, 0, party(4), 12 * 60);
+    const view = floorView(progress, 0);
+    expect(view.tables[0]).not.toBeNull();
+    expect(view.tables[view.cellarFrom]).not.toBeNull();
+  });
+
+  it('tempts foodies and tourists in the evening, and is a foodie’s favourite spot', () => {
+    const player = { ...playerOf(newGame(7)), works: ['toilet', 'cellar'] as BuildingWorkId[] };
+    const evening = (group: Party['group']) => ({ group, size: 2, origin: player.location, arrivalMinute: 19 * 60 });
+    expect(cellarAppeal(player, evening('foodies'))).toBe(balance.works.cellarAppeal);
+    expect(cellarAppeal(player, evening('students'))).toBe(0);
+    expect(cellarAppeal(player, { ...evening('foodies'), arrivalMinute: 12 * 60 })).toBe(0);
+    expect(cellarAppeal({ ...player, works: [] }, evening('foodies'))).toBe(0);
+    expect(isFavourite('foodies', 'ogarna', 4, 5, 4)).toBe(true);
+    expect(isFavourite('locals', 'ogarna', 4, 5, 4)).toBe(false);
   });
 });

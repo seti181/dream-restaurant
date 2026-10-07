@@ -297,12 +297,14 @@ export function buyTable(state: GameState): GameState {
 
 /** What a piece of building work costs (balance.works). */
 export function workCost(id: BuildingWorkId): number {
-  return id === 'counter' ? balance.works.counterCost : balance.works.toiletCost;
+  return { counter: balance.works.counterCost, toilet: balance.works.toiletCost, cellar: balance.works.cellarCost }[id];
 }
 
 /** Why this building work can't be done, or null if it can. */
 export function workUnavailableReason(state: GameState, id: BuildingWorkId): string | null {
-  if (playerOf(state).works?.includes(id)) return 'Already done';
+  const works = playerOf(state).works ?? [];
+  if (works.includes(id)) return 'Already done';
+  if (id === 'cellar' && !works.includes('toilet')) return 'The sanepid inspector wants a toilet first';
   return cantAfford(state, workCost(id));
 }
 

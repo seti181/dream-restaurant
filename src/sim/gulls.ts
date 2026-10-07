@@ -68,7 +68,9 @@ export function stepGulls(today: GullsToday, progress: DayInProgress): void {
 
   if (today.slots.length === 0 || today.slots[0] > minute || progress.tick >= ticksPerDay()) return;
   // Gulls go for food: a terrace table that is eating.
-  const eating = floor.visits.filter((v) => v.eating && v.tables.length > 0 && v.tables[0] >= restaurant.tables && !v.visitor);
+  // Only on the terrace: its tables come after the room's (and the cellar's come after them).
+  const onTerrace = (t: number) => t >= restaurant.tables && t < restaurant.tables + restaurant.terraceTables;
+  const eating = floor.visits.filter((v) => v.eating && v.tables.length > 0 && onTerrace(v.tables[0]) && !v.visitor);
   if (eating.length === 0) {
     today.slots[0] += balance.gulls.retryMinutes;
     if (today.slots[0] > balance.gulls.lastMinute) today.slots.shift();

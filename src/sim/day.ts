@@ -147,9 +147,14 @@ function sum(order: MenuDish[], value: (dish: MenuDish) => number): number {
   return order.reduce((total, dish) => total + value(dish), 0);
 }
 
-/** Tables inside plus any terrace tables open today. */
+/** Tables inside, any terrace tables open today, then the cellar's (if it's been done up). */
 function allTables(restaurant: Restaurant): number {
-  return restaurant.tables + restaurant.terraceTables;
+  return restaurant.tables + restaurant.terraceTables + cellarTablesOf(restaurant);
+}
+
+/** Tables in the cellar room, once it's been done up (building works): how many depends on the premises. */
+export function cellarTablesOf(restaurant: Restaurant): number {
+  return restaurant.works?.includes('cellar') ? LOCATIONS[restaurant.location].cellarTables : 0;
 }
 
 /** Places at the bar counter, if it's been built: each seats a party of one or two. */
@@ -826,7 +831,8 @@ export interface FloorView {
   /** Inside tables first, then terrace tables open today; null for an empty table. */
   tables: (TableGuests | null)[];
   insideTables: number;
-  /** Where the bar counter's places start in `tables` (after the terrace's); the same as its length without a counter. */
+  /** Where the cellar's tables start in `tables` (after the terrace's open today), and the bar counter's places (after the cellar's). */
+  cellarFrom: number;
   counterFrom: number;
   /** Terrace tables to draw: all of them with a permit, even on days the terrace is closed. */
   terraceTables: number;
@@ -904,6 +910,7 @@ export function floorView(progress: DayInProgress, index: number, recentMinutes 
     location: restaurant.location,
     tables,
     insideTables: restaurant.tables,
+    cellarFrom: restaurant.tables + restaurant.terraceTables,
     counterFrom: allTables(restaurant),
     terraceTables: restaurant.terraceTables,
     chefsBusy: floor.chefFreeAt.map((freeAt) => freeAt > minute),

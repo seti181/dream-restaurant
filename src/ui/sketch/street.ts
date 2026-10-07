@@ -141,15 +141,17 @@ export function streetLayout(terrace: number, aspect: number, location: Location
  * that needs help inside; outside a gull, then a queue, then a terrace table that needs help.
  */
 export function whatNeedsYou(
-  floor: Pick<FloorView, 'tables' | 'insideTables' | 'counterFrom' | 'gull' | 'atTheDoor'>,
+  floor: Pick<FloorView, 'tables' | 'insideTables' | 'cellarFrom' | 'counterFrom' | 'gull' | 'atTheDoor'>,
   needsHelp: (guests: TableGuests | null) => boolean,
-): { inside: 'help' | null; outside: 'mewa' | 'hourglass' | 'help' | null } {
-  const { tables, insideTables, counterFrom } = floor;
-  // Inside: the room's tables and the bar counter; outside: the terrace's tables between them.
-  const outsideTable = (t: number) => t >= insideTables && t < counterFrom;
+): { inside: 'help' | null; outside: 'mewa' | 'hourglass' | 'help' | null; cellar: 'help' | null } {
+  const { tables, insideTables, cellarFrom, counterFrom } = floor;
+  // In order: the room's tables, the terrace's (outside), the cellar's, then the bar counter's places (in the room).
+  const outsideTable = (t: number) => t >= insideTables && t < cellarFrom;
+  const cellarTable = (t: number) => t >= cellarFrom && t < counterFrom;
   return {
-    inside: tables.some((g, t) => !outsideTable(t) && needsHelp(g)) ? 'help' : null,
+    inside: tables.some((g, t) => !outsideTable(t) && !cellarTable(t) && needsHelp(g)) ? 'help' : null,
     outside: floor.gull ? 'mewa' : floor.atTheDoor.length > 0 ? 'hourglass' : tables.some((g, t) => outsideTable(t) && needsHelp(g)) ? 'help' : null,
+    cellar: tables.some((g, t) => cellarTable(t) && needsHelp(g)) ? 'help' : null,
   };
 }
 

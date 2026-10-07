@@ -223,7 +223,7 @@ export const HELP: { title: string; text: string }[] = [
   },
   {
     title: 'Building works',
-    text: 'When the room is full, the Interior tab has building works for these premises, done overnight. A bar counter puts four stools along the bar: someone on their own or a pair sits there, and your tables stay free for bigger parties. A toilet makes every guest a little happier. They belong to the building: if you move, they stay behind.',
+    text: 'When the room is full, the Interior tab has building works for these premises, done overnight. A bar counter puts four stools along the bar: someone on their own or a pair sits there, and your tables stay free for bigger parties. A toilet makes every guest a little happier. With a toilet, the old vaulted cellar can be done up too: more tables down the stairs (the Cellar button takes you there), candlelit, and loved by foodies and tourists in the evening. They belong to the building: if you move, they stay behind.',
   },
   {
     title: 'Samples at the door',
